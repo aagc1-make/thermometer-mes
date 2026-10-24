@@ -1,9 +1,9 @@
 <template>
-  <div class="app-container cockpit">
-    <div class="cockpit__head">
+  <div class="app-container cockpit zen-page">
+    <div class="cockpit__head zen-head">
       <div>
-        <h2 class="cockpit__title">生产驾驶舱</h2>
-        <p class="cockpit__sub">工单进度 · 库存水位 · 设备状态 · 产量趋势（每 30 秒自动刷新）</p>
+        <h2 class="cockpit__title zen-head__title">生产驾驶舱</h2>
+        <p class="cockpit__sub zen-head__sub">工单进度 · 库存水位 · 设备状态 · 产量趋势（每 30 秒自动刷新）</p>
       </div>
       <div class="cockpit__meta">
         <span>数据更新时间：{{ updatedAt }}</span>
@@ -11,22 +11,59 @@
       </div>
     </div>
 
+    <div class="zen-cards">
+      <div class="zen-card">
+        <span class="zen-card__delta" :class="kpi.woDone === kpi.woTotal ? 'zen-card__delta--up' : 'zen-card__delta--down'">
+          {{ kpi.woDone }}/{{ kpi.woTotal }} 已完工
+        </span>
+        <div class="zen-card__dot zen-card__dot--ink"></div>
+        <div class="zen-card__label">生产工单</div>
+        <div class="zen-card__value">{{ kpi.woTotal }}</div>
+        <div class="zen-card__desc">全部工单数量（含草稿/已取消）</div>
+      </div>
+      <div class="zen-card">
+        <span class="zen-card__delta" :class="kpi.rate >= 95 ? 'zen-card__delta--up' : 'zen-card__delta--down'">
+          {{ kpi.unq }} 件不合格
+        </span>
+        <div class="zen-card__dot zen-card__dot--matcha"></div>
+        <div class="zen-card__label">报工合格率</div>
+        <div class="zen-card__value">{{ kpi.rate }}%</div>
+        <div class="zen-card__desc">合格数 / 报工总数</div>
+      </div>
+      <div class="zen-card">
+        <span class="zen-card__delta zen-card__delta--up">{{ kpi.stockWh }} 个仓库</span>
+        <div class="zen-card__dot zen-card__dot--sand"></div>
+        <div class="zen-card__label">库存总量</div>
+        <div class="zen-card__value">{{ kpi.stock }}</div>
+        <div class="zen-card__desc">原料仓 + 线边库 + 成品仓</div>
+      </div>
+      <div class="zen-card">
+        <span class="zen-card__delta" :class="kpi.machRate >= 80 ? 'zen-card__delta--up' : 'zen-card__delta--down'">
+          {{ kpi.machRun }}/{{ kpi.machTotal }} 台运行
+        </span>
+        <div class="zen-card__dot zen-card__dot--sakura"></div>
+        <div class="zen-card__label">设备稼动率</div>
+        <div class="zen-card__value">{{ kpi.machRate }}%</div>
+        <div class="zen-card__desc">生产中台数 / 设备总数</div>
+      </div>
+    </div>
+
     <el-row :gutter="16">
       <el-col :xs="24" :md="12" class="cockpit__cell">
-        <div class="cockpit__card">
-          <div class="cockpit__card-title">工单进度</div>
+        <div class="cockpit__card zen-panel">
+          <div class="cockpit__card-title zen-panel__title">工单进度</div>
           <div ref="chartWorkorder" class="cockpit__chart"></div>
         </div>
       </el-col>
       <el-col :xs="24" :md="12" class="cockpit__cell">
-        <div class="cockpit__card">
-          <div class="cockpit__card-title">产量趋势（近 14 天报工合格数）</div>
+        <div class="cockpit__card zen-panel">
+          <div class="cockpit__card-title zen-panel__title">产量趋势（近 14 天报工合格数）</div>
           <div ref="chartTrend" class="cockpit__chart"></div>
         </div>
       </el-col>
       <el-col :xs="24" :md="12" class="cockpit__cell">
-        <div class="cockpit__card">
-          <div class="cockpit__card-title">库存水位（按仓库）</div>
+        <div class="cockpit__card zen-panel">
+          <div class="cockpit__card-title zen-panel__title">库存水位（按仓库）</div>
           <div ref="chartStock" class="cockpit__chart"></div>
           <div class="cockpit__warn" v-if="stockWarnings.length">
             <i class="el-icon-warning-outline"></i>
@@ -38,9 +75,86 @@
         </div>
       </el-col>
       <el-col :xs="24" :md="12" class="cockpit__cell">
-        <div class="cockpit__card">
-          <div class="cockpit__card-title">设备状态</div>
+        <div class="cockpit__card zen-panel">
+          <div class="cockpit__card-title zen-panel__title">设备状态</div>
           <div ref="chartMachinery" class="cockpit__chart"></div>
+        </div>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="16">
+      <el-col :span="24" class="cockpit__cell">
+        <div class="cockpit__card zen-panel">
+          <div class="cockpit__card-title zen-panel__title">
+            安全库存预警与补货建议
+            <span class="cockpit__overdue" v-if="stockAlerts.length">
+              <i class="el-icon-warning"></i> {{ stockAlerts.length }} 种物料低于安全库存
+            </span>
+            <span class="cockpit__overdue cockpit__overdue--ok" v-else>
+              <i class="el-icon-circle-check"></i> 全部物料库存充足
+            </span>
+          </div>
+          <el-table :data="stockAlerts" size="mini" border height="260" :header-cell-style="{ background: 'rgba(45,49,66,.03)', color: '#6b6f80', fontWeight: 400 }">
+            <el-table-column prop="itemCode" label="物料编码" width="140" />
+            <el-table-column prop="itemName" label="物料名称" show-overflow-tooltip />
+            <el-table-column label="当前结存" width="106" align="right">
+              <template slot-scope="s">
+                <span :style="{ color: s.row.level === 'CRITICAL' ? '#c0392b' : '#b45309', fontWeight: 600 }">{{ s.row.current }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="min" label="安全库存" width="100" align="right" />
+            <el-table-column label="缺口" width="96" align="right">
+              <template slot-scope="s">
+                <span style="color:#c0392b">{{ s.row.gap }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="suggest" label="建议补货" width="100" align="right" />
+            <el-table-column prop="unitName" label="单位" width="72" align="center" />
+            <el-table-column label="等级" width="92" align="center">
+              <template slot-scope="s">
+                <el-tag size="mini" :type="s.row.level === 'CRITICAL' ? 'danger' : 'warning'">
+                  {{ s.row.level === 'CRITICAL' ? '缺料' : '低于安全线' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div class="cockpit__tip">
+            <i class="el-icon-info"></i>
+            建议补货量 = 安全库存 × 2 − 当前结存；安全库存可在「物料产品」中维护，修改后 30 秒内自动刷新
+          </div>
+        </div>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="16">
+      <el-col :span="24" class="cockpit__cell">
+        <div class="cockpit__card zen-panel">
+          <div class="cockpit__card-title zen-panel__title">
+            工单进度明细
+            <span class="cockpit__overdue" v-if="overdue > 0">
+              <i class="el-icon-warning"></i> {{ overdue }} 个工单已超交期
+            </span>
+            <span class="cockpit__overdue cockpit__overdue--ok" v-else>
+              <i class="el-icon-circle-check"></i> 无超期工单
+            </span>
+          </div>
+          <el-table :data="woList" size="mini" border height="300" :header-cell-style="{ background: 'rgba(45,49,66,.03)', color: '#6b6f80', fontWeight: 400 }">
+            <el-table-column prop="workorderCode" label="工单号" width="150" />
+            <el-table-column prop="productName" label="产品" show-overflow-tooltip />
+            <el-table-column prop="quantity" label="计划" width="76" align="right" />
+            <el-table-column prop="quantityProduced" label="已生产" width="86" align="right" />
+            <el-table-column label="进度" width="160">
+              <template slot-scope="s">
+                <el-progress :percentage="s.row.percent" :stroke-width="8" :color="s.row.percent >= 100 ? '#12a150' : '#2F6BEF'" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="requestDate" label="交期" width="110" />
+            <el-table-column label="状态" width="96">
+              <template slot-scope="s">
+                <el-tag size="mini" :type="s.row.overdue ? 'danger' : 'success'">{{ s.row.overdue ? '已超期' : '正常' }}</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
         </div>
       </el-col>
     </el-row>
@@ -61,7 +175,11 @@ export default {
       timer: null,
       updatedAt: '-',
       charts: {},
-      stockWarnings: []
+      stockWarnings: [],
+      stockAlerts: [],
+      woList: [],
+      overdue: 0,
+      kpi: { woTotal: 0, woDone: 0, rate: 0, unq: 0, stock: 0, stockWh: 3, machRate: 0, machRun: 0, machTotal: 0 }
     }
   },
   mounted() {
@@ -94,12 +212,45 @@ export default {
     async loadAll() {
       this.loading = true
       try {
-        await Promise.all([this.loadWorkorder(), this.loadStock(), this.loadMachinery(), this.loadTrend()])
+        await Promise.all([this.loadWorkorder(), this.loadStock(), this.loadMachinery(), this.loadTrend(), this.loadKpi()])
         this.updatedAt = this.now()
       } catch (e) {
         this.updatedAt = this.now() + '（部分数据加载失败）'
       } finally {
         this.loading = false
+      }
+    },
+    // ⑤ KPI 四卡：工单总数 / 报工合格率 / 库存总量 / 设备稼动率
+    async loadKpi() {
+      const [wo, fb, st, mc] = await Promise.all([
+        this.get('/mes/pro/workorder/list'),
+        this.get('/mes/pro/feedback/list'),
+        this.get('/mes/wm/wmstock/list'),
+        this.get('/mes/dv/machinery/list')
+      ])
+      const woRows = wo.rows || []
+      const fbRows = fb.rows || []
+      const stRows = st.rows || []
+      const mcRows = mc.rows || []
+      const targets = ['原料仓', '线边库', '成品仓']
+
+      const fbTotal = fbRows.reduce((s, r) => s + Number(r.quantityFeedback || 0), 0)
+      const fbQualified = fbRows.reduce((s, r) => s + Number(r.quantityQualified || 0), 0)
+      const stockSum = stRows
+        .filter(r => targets.indexOf(r.warehouseName || '') > -1)
+        .reduce((s, r) => s + Number(r.quantityOnhand || 0), 0)
+      const machRun = mcRows.filter(r => r.status === 'WORKING').length
+
+      this.kpi = {
+        woTotal: woRows.length,
+        woDone: woRows.filter(r => r.status === 'FINISHED').length,
+        rate: fbTotal > 0 ? Math.round((fbQualified / fbTotal) * 1000) / 10 : 0,
+        unq: Math.max(0, Math.round((fbTotal - fbQualified) * 100) / 100),
+        stock: Math.round(stockSum * 100) / 100,
+        stockWh: targets.length,
+        machRun,
+        machTotal: mcRows.length,
+        machRate: mcRows.length > 0 ? Math.round((machRun / mcRows.length) * 1000) / 10 : 0
       }
     },
     now() {
@@ -120,6 +271,33 @@ export default {
         byProduct[key].cnt += 1
       })
       const names = Object.keys(byProduct).sort((a, b) => byProduct[b].plan - byProduct[a].plan).slice(0, 5)
+
+      // 工单明细：进度百分比 + 超期判定（未完工且交期已过）
+      const today = new Date().setHours(0, 0, 0, 0)
+      let overdueCount = 0
+      this.woList = rows
+        .map(r => {
+          const plan = Number(r.quantity || 0)
+          const done = Number(r.quantityProduced || 0)
+          const percent = plan > 0 ? Math.min(100, Math.round((done / plan) * 100)) : 0
+          const reqTs = r.requestDate ? new Date(String(r.requestDate).replace(/-/g, '/')).getTime() : 0
+          const overdue = r.status !== 'FINISHED' && r.status !== 'CANCELED' && reqTs > 0 && reqTs < today
+          if (overdue) overdueCount++
+          return {
+            workorderId: r.workorderId,
+            workorderCode: r.workorderCode,
+            productName: r.productName,
+            quantity: plan,
+            quantityProduced: done,
+            requestDate: r.requestDate ? String(r.requestDate).slice(0, 10) : '-',
+            percent,
+            overdue
+          }
+        })
+        .sort((a, b) => (b.overdue - a.overdue) || (a.percent - b.percent))
+        .slice(0, 12)
+      this.overdue = overdueCount
+
       this.charts.workorder.setOption({
         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
         legend: { data: ['计划数量', '已生产'], right: 0, top: 0, icon: 'roundRect', itemWidth: 10, itemHeight: 10 },
@@ -157,6 +335,38 @@ export default {
         }
       })
       this.stockWarnings = zero
+
+      // 安全库存预警：结存 < min_stock 即预警，并给出建议补货量（安全线 × 2 - 当前结存）
+      try {
+        const itemsRes = await this.get('/mes/md/mditem/list', { pageNum: 1, pageSize: 500 })
+        const itemRows = itemsRes.rows || []
+        const stockMap = {}
+        rows.forEach(r => {
+          if (!r.itemCode) return
+          stockMap[r.itemCode] = (stockMap[r.itemCode] || 0) + Number(r.quantityOnhand || 0)
+        })
+        this.stockAlerts = itemRows
+          .filter(i => Number(i.minStock || 0) > 0)
+          .map(i => {
+            const cur = Math.round((stockMap[i.itemCode] || 0) * 100) / 100
+            const min = Number(i.minStock)
+            return {
+              itemCode: i.itemCode,
+              itemName: i.itemName,
+              unitName: i.unitName || '',
+              current: cur,
+              min,
+              gap: Math.round((cur - min) * 100) / 100,
+              suggest: Math.max(0, Math.round((min * 2 - cur) * 100) / 100),
+              level: cur <= 0 ? 'CRITICAL' : (cur < min ? 'WARNING' : 'OK')
+            }
+          })
+          .filter(a => a.level !== 'OK')
+          .sort((a, b) => a.gap - b.gap)
+      } catch (e) {
+        this.stockAlerts = []
+      }
+
       this.charts.stock.setOption({
         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
         grid: { left: 44, right: 12, top: 24, bottom: 28 },
@@ -307,6 +517,20 @@ export default {
   &__warn--ok {
     color: #0f7a3d;
     background: #e7f8ef;
+  }
+  &__overdue {
+    margin-left: 12px;
+    font-size: 12px;
+    font-weight: 400;
+    color: #b45309;
+  }
+  &__overdue--ok {
+    color: #0f7a3d;
+  }
+  &__tip {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #6b6f80;
   }
 }
 </style>
