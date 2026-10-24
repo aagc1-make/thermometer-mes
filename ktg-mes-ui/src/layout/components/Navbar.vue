@@ -82,7 +82,7 @@ export default {
   methods: {
     // 头像加载失败（如数据库里存了不存在的头像路径）时回退到默认头像，避免出现碎图
     handleAvatarError(e) {
-      const fallback = require('@/assets/images/profile.jpg')
+      const fallback = require('@/assets/images/user.png')
       if (e && e.target && e.target.src.indexOf(fallback) === -1) {
         e.target.src = fallback
       }

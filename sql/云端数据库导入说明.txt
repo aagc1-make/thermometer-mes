@@ -1,0 +1,49 @@
+========================================
+红外测温枪MES系统 —— 云端数据库导入说明
+========================================
+
+一、需要导入的文件（共 3 个，按顺序执行）
+  1. 01_schema.sql    建 181 张表（约 0.3MB）
+  2. 02_data.sql      初始化数据：菜单/字典/角色/账号/测温枪主数据/演示单据（约 0.8MB）
+  3. patch 不用执行、ry_20210908.sql 不用执行、quartz.sql 不用执行、
+     backup_menu_20261024.sql 不要执行（会回退菜单）
+
+二、Navicat 操作
+  1. 连接云端 MySQL（主机=ECS公网IP，端口=3306，用户=mes，密码=自设）
+  2. 若库不存在，先执行：
+       CREATE DATABASE j2eedb DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+  3. 右键 j2eedb -> 运行 SQL 文件 -> 选 01_schema.sql -> 开始
+  4. 同样方式导入 02_data.sql
+
+三、命令行操作
+  mysql -h ECS公网IP -P 3306 -u mes -p j2eedb < 01_schema.sql
+  mysql -h ECS公网IP -P 3306 -u mes -p j2eedb < 02_data.sql
+
+四、导入后验证（必须为 181 和 17）
+  SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='j2eedb';
+  SELECT COUNT(*) FROM md_item WHERE item_code LIKE 'TG-%';
+
+五、后端启动（在装有 JDK8 的电脑上，jar 与本说明同目录）
+  java -jar ktg-admin.jar ^
+    --spring.datasource.druid.master.url="jdbc:mysql://ECS公网IP:3306/j2eedb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT%2B8" ^
+    --spring.datasource.druid.master.username=mes ^
+    --spring.datasource.druid.master.password=你的密码 ^
+    --spring.redis.host=ECS公网IP
+
+  说明：参数会覆盖 application-druid.yml，不必改配置文件。
+
+六、登录
+  http://localhost:8080  或  http://ECS公网IP:8080
+  账号 admin / admin123
+
+七、常见报错
+  1) Table 'j2eedb.md_item' doesn't exist
+     -> 01_schema.sql 没导入成功，重新导入
+  2) Unknown collation: utf8mb4_0900_ai_ci
+     -> 云端 MySQL 是 5.7，把 sql 文件里 utf8mb4_0900_ai_ci 全局替换为 utf8mb4_general_ci
+  3) Public Key Retrieval is not allowed
+     -> 连接串加 &allowPublicKeyRetrieval=true（上面已带）
+  4) 后端启动报 Unable to connect to Redis
+     -> 云端没装 Redis，或 --spring.redis.host 地址不对
+  5) 上传文件报 Failed to connect to 127.0.0.1:9100
+     -> 云端没装 MinIO，或 minio.url 未改

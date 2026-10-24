@@ -50,6 +50,7 @@ export const railDomains = [
     icon: 'el-icon-s-data',
     roots: ['/mes/pro'],
     groups: [
+      ['驾驶舱', ['dashboard']],
       ['计划', ['workorder', 'proschedule', 'schedule', 'andonrecord']],
       ['工艺', ['process', 'proroute']],
       ['执行', ['feedback', 'procard']]
