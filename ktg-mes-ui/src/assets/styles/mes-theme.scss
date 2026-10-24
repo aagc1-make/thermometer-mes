@@ -1,0 +1,621 @@
+/**
+ * 红外测温枪MES —— 界面主题
+ * 参照设计稿：蓝色顶栏 + 浅灰工作区 + 白色圆角卡片 + 蓝色主按钮 + 轻量状态标签
+ * 该文件在 main.js 中最后引入，用于覆盖 element-ui / ruoyi 的默认样式
+ */
+
+$mes-primary: #2563eb;
+$mes-primary-hover: #1d4ed8;
+$mes-primary-bg: #eaf1fe;
+$mes-header-start: #2b7cf0;
+$mes-header-end: #1f6ad8;
+$mes-bg: #f4f6fa;
+$mes-card: #ffffff;
+$mes-text: #1f2937;
+$mes-text-sub: #6b7280;
+$mes-border: #e5e7eb;
+$mes-radius: 8px;
+
+/* ---------- 设计令牌（统一改这里即可换肤） ---------- */
+:root {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-bg: #eaf1fe;
+  --color-text: #1f2937;
+  --color-text-secondary: #5b6472;
+  --color-border: #e5e7eb;
+  --color-bg: #f4f6fa;
+  --radius-control: 6px;
+  --radius-card: 10px;
+  --radius-dialog: 12px;
+  --shadow-card: 0 1px 3px rgba(17, 24, 39, 0.04);
+  --shadow-navbar: 0 2px 10px rgba(28, 78, 156, 0.18);
+  --transition-control: 0.15s ease;
+  --transition-expand: 0.2s ease;
+}
+
+/* 键盘可访问：统一焦点环（不改变鼠标点击观感） */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ---------- 基础 ---------- */
+html,
+body {
+  background: $mes-bg;
+  color: $mes-text;
+}
+
+.app-container {
+  background: $mes-card;
+  border-radius: 10px;
+  padding: 20px !important;
+  margin: 16px;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.04);
+}
+
+/* ---------- 顶栏：蓝色 ---------- */
+.navbar {
+  background: linear-gradient(90deg, $mes-header-start 0%, $mes-header-end 100%) !important;
+  border-bottom: none !important;
+  box-shadow: 0 2px 10px rgba(28, 78, 156, 0.18);
+
+  .hamburger-container,
+  .breadcrumb-container,
+  .right-menu-item,
+  .right-menu-item i {
+    color: #ffffff !important;
+  }
+
+  .breadcrumb-container {
+    .el-breadcrumb__inner,
+    .el-breadcrumb__inner a,
+    .el-breadcrumb__separator {
+      color: rgba(255, 255, 255, 0.88) !important;
+      font-weight: 400;
+    }
+    .el-breadcrumb__item:last-child .el-breadcrumb__inner {
+      color: #ffffff !important;
+      font-weight: 600;
+    }
+  }
+
+  .right-menu-item.hover-effect:hover {
+    background: rgba(255, 255, 255, 0.16) !important;
+  }
+
+  .avatar-wrapper .user-avatar {
+    border: 2px solid rgba(255, 255, 255, 0.75);
+  }
+}
+
+/* ---------- 侧边栏：白底 + 蓝色选中 ---------- */
+.sidebar-container {
+  background: #ffffff !important;
+  box-shadow: 1px 0 0 $mes-border;
+
+  .logo-container,
+  .sidebar-logo-container {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f0f2f5;
+    .sidebar-title,
+    h1 {
+      color: $mes-text !important;
+      font-weight: 700;
+    }
+  }
+
+  .el-menu {
+    background: #ffffff !important;
+    border-right: none !important;
+  }
+
+  .el-menu-item,
+  .el-submenu__title {
+    height: 44px;
+    line-height: 44px;
+    margin: 2px 8px;
+    border-radius: $mes-radius;
+    color: #4b5563 !important;
+    font-size: 14px;
+    background: transparent !important;
+
+    i {
+      color: #6b7280 !important;
+    }
+
+    &:hover {
+      background: #f2f5fa !important;
+      color: $mes-text !important;
+    }
+  }
+
+  .el-submenu.is-opened > .el-submenu__title {
+    color: $mes-text !important;
+    font-weight: 600;
+  }
+
+  .el-menu-item.is-active {
+    background: $mes-primary-bg !important;
+    color: $mes-primary !important;
+    font-weight: 600;
+
+    i {
+      color: $mes-primary !important;
+    }
+  }
+
+  /* 二级菜单缩进与浅色背景 */
+  .el-submenu .el-menu {
+    background: #ffffff !important;
+  }
+}
+
+/* ---------- 内容区标签页 ---------- */
+.tags-view-container {
+  background: #ffffff;
+  border-bottom: 1px solid #eef1f5;
+  box-shadow: none;
+
+  .tags-view-item {
+    color: $mes-text-sub;
+    background: transparent;
+    border: none;
+    border-radius: 6px 6px 0 0;
+
+    &.active {
+      color: $mes-primary;
+      background: $mes-primary-bg;
+      border: none;
+
+      &::before {
+        background: $mes-primary;
+      }
+    }
+  }
+}
+
+/* ---------- 按钮 ---------- */
+.el-button {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.el-button--primary {
+  background: $mes-primary;
+  border-color: $mes-primary;
+
+  &:hover,
+  &:focus {
+    background: $mes-primary-hover;
+    border-color: $mes-primary-hover;
+  }
+}
+
+.el-button--text {
+  color: $mes-primary;
+}
+
+/* ---------- 表单控件 ---------- */
+.el-input__inner,
+.el-textarea__inner {
+  border-radius: 6px;
+  border-color: #dfe3ea;
+
+  &:focus {
+    border-color: $mes-primary;
+  }
+}
+
+.el-select .el-input.is-focus .el-input__inner {
+  border-color: $mes-primary;
+}
+
+.el-form-item__label {
+  color: #4b5563;
+  font-weight: 500;
+}
+
+/* ---------- 表格 ---------- */
+.el-table {
+  border-radius: $mes-radius;
+  color: $mes-text;
+
+  th.el-table__cell {
+    background: #f7f9fc !important;
+    color: #4b5563;
+    font-weight: 600;
+    border-bottom: 1px solid #eef1f5;
+  }
+
+  td.el-table__cell {
+    border-bottom: 1px solid #f2f4f7;
+  }
+
+  &::before {
+    background-color: transparent;
+  }
+
+  .el-table__row:hover > td.el-table__cell {
+    background: #f5f8ff !important;
+  }
+}
+
+/* ---------- 状态标签（胶囊） ---------- */
+.el-tag {
+  border-radius: 999px;
+  border: none;
+  height: 24px;
+  line-height: 24px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #eef1f5;
+  color: #4b5563;
+
+  &.el-tag--success {
+    background: #e7f8ef;
+    color: #0f7a3d; /* 对比度 4.6:1，满足 WCAG AA */
+  }
+
+  &.el-tag--warning {
+    background: #fff4e5;
+    color: #b45309; /* 对比度 4.6:1 */
+  }
+
+  &.el-tag--danger {
+    background: #fdecec;
+    color: #dc2626;
+  }
+
+  &.el-tag--info {
+    background: #eef1f5;
+    color: #4b5563;
+  }
+}
+
+/* ---------- 页签 ---------- */
+.el-tabs__item {
+  color: $mes-text-sub;
+
+  &.is-active {
+    color: $mes-primary;
+    font-weight: 600;
+  }
+}
+
+.el-tabs__active-bar {
+  background-color: $mes-primary;
+  height: 3px;
+  border-radius: 2px;
+}
+
+/* ---------- 卡片 / 弹窗 ---------- */
+.el-card {
+  border-radius: 10px;
+  border-color: #eef1f5;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.04) !important;
+}
+
+.el-dialog {
+  border-radius: 12px;
+  overflow: hidden;
+
+  .el-dialog__header {
+    padding: 18px 22px;
+    border-bottom: 1px solid #f0f2f5;
+    .el-dialog__title {
+      font-weight: 600;
+      color: $mes-text;
+    }
+  }
+
+  .el-dialog__body {
+    padding: 20px 22px;
+  }
+}
+
+/* ---------- 分页 ---------- */
+.el-pagination {
+  padding: 14px 0 0;
+  font-weight: 400;
+
+  .el-pager li {
+    border-radius: 6px;
+    min-width: 30px;
+    height: 30px;
+    line-height: 30px;
+
+    &.active {
+      background: $mes-primary;
+      color: #fff;
+    }
+  }
+}
+
+/* ---------- 侧边栏：分组标题 + 组内图标菜单 ---------- */
+.sidebar-container {
+  .el-menu:not(.el-menu--collapse) {
+    padding: 6px 0 14px;
+
+    /* 一级目录 = 分组标题（浅灰小字 + 左侧折叠箭头） */
+    > .el-submenu > .el-submenu__title {
+      position: relative;
+      height: 38px;
+      line-height: 38px;
+      margin: 6px 8px 2px;
+      padding-left: 36px !important;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #9aa3af !important;
+      background: transparent !important;
+      border-radius: 6px;
+
+      &:hover {
+        color: #6b7280 !important;
+        background: #f7f9fc !important;
+      }
+
+      i {
+        color: #9aa3af !important;
+      }
+
+      .el-submenu__icon-arrow {
+        left: 16px;
+        right: auto !important;
+        margin-top: -4px;
+        font-size: 12px;
+        color: #b6bdc7 !important;
+        transition: transform 0.2s;
+      }
+    }
+
+    /* 组内菜单项 */
+    > .el-submenu > .el-menu {
+      padding-bottom: 4px;
+
+      > .el-menu-item {
+        height: 40px;
+        line-height: 40px;
+        margin: 2px 8px;
+        padding-left: 46px !important;
+        border-radius: 6px;
+        font-size: 14px;
+
+        i {
+          margin-right: 9px;
+          width: 16px;
+          font-size: 15px;
+          text-align: center;
+          color: #8a93a0 !important;
+        }
+
+        &.is-active {
+          background: $mes-primary-bg !important;
+          color: $mes-primary !important;
+          font-weight: 600;
+
+          i {
+            color: $mes-primary !important;
+          }
+        }
+      }
+    }
+
+    /* 一级叶子菜单（无子项，如「组织架构」）保持与组内一致 */
+    > .el-menu-item {
+      height: 40px;
+      line-height: 40px;
+      margin: 2px 8px;
+      padding-left: 20px !important;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+  }
+
+  /* 折叠态保持原样，仅收窄内边距 */
+  .el-menu--collapse .el-menu-item,
+  .el-menu--collapse .el-submenu__title {
+    padding: 0 !important;
+  }
+}
+
+/* ---------- 侧边栏：强制「白纸黑字」 ----------
+ * 说明：element-ui 会把 el-menu 的 background-color 写成行内样式，
+ * 若依 theme-dark 还有更高优先级的深色规则，因此这里用同级或更高的选择器
+ * + !important 统一压成白底深字，分组标题单独加深保证可读性。
+ */
+.sidebar-container,
+.sidebar-container .sidebar-light,
+.sidebar-container .el-scrollbar,
+.sidebar-container .el-scrollbar__wrap,
+.sidebar-container .el-scrollbar__view,
+.sidebar-container .el-menu,
+.sidebar-container .el-submenu .el-menu {
+  background-color: #ffffff !important;
+}
+
+/* 普通菜单项：白底 + 深灰字 */
+.sidebar-container .el-menu .el-menu-item,
+.sidebar-container .el-menu .el-menu-item span {
+  color: #303133 !important;
+}
+
+.sidebar-container .el-menu .el-menu-item {
+  background-color: transparent !important;
+}
+
+/* 分组标题：白底 + 加深的灰字（原来过浅看不清） */
+.sidebar-container .el-menu .el-submenu__title,
+.sidebar-container .el-menu .el-submenu__title span {
+  color: #5b6472 !important;
+  font-weight: 600;
+}
+
+.sidebar-container .el-menu .el-submenu__title {
+  background-color: transparent !important;
+}
+
+/* 图标统一灰蓝 */
+.sidebar-container .el-menu .el-menu-item i,
+.sidebar-container .el-menu .el-submenu__title i {
+  color: #7a828e !important;
+}
+
+/* 悬浮 */
+.sidebar-container .el-menu .el-menu-item:hover,
+.sidebar-container .el-menu .el-submenu__title:hover {
+  background-color: #f4f7fb !important;
+}
+
+/* 选中：淡蓝底 + 主蓝字 */
+.sidebar-container .el-menu .el-menu-item.is-active {
+  background-color: $mes-primary-bg !important;
+}
+
+.sidebar-container .el-menu .el-menu-item.is-active,
+.sidebar-container .el-menu .el-menu-item.is-active span,
+.sidebar-container .el-menu .el-menu-item.is-active i {
+  color: $mes-primary !important;
+}
+
+/* ---------- 左侧「总」导航栏（域切换） ---------- */
+.rail {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 72px;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0;
+  background: #ffffff;
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+
+  .rail-item {
+    width: 60px;
+    padding: 8px 0 6px;
+    margin-bottom: 4px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    color: #5b6472;
+    transition: background-color var(--transition-control), color var(--transition-control);
+
+    i {
+      font-size: 19px;
+      color: #7a828e;
+      transition: color var(--transition-control);
+    }
+
+    &__text {
+      font-size: 12px;
+      line-height: 14px;
+      white-space: nowrap;
+    }
+
+    &:hover {
+      background: #f4f7fb;
+    }
+
+    &.active {
+      background: var(--color-primary-bg);
+      color: var(--color-primary);
+      font-weight: 600;
+
+      i {
+        color: var(--color-primary);
+      }
+    }
+  }
+}
+
+/* 侧边栏整体右移，给左栏让位 */
+.app-wrapper .sidebar-container {
+  left: 72px !important;
+}
+
+.app-wrapper .main-container {
+  margin-left: 272px !important;
+}
+
+.app-wrapper.hideSidebar .main-container {
+  margin-left: 126px !important;
+}
+
+.app-wrapper .fixed-header {
+  width: calc(100% - 272px) !important;
+}
+
+.app-wrapper.hideSidebar .fixed-header {
+  width: calc(100% - 126px) !important;
+}
+
+.app-wrapper.mobile .main-container,
+.app-wrapper.mobile .fixed-header {
+  margin-left: 0 !important;
+  width: 100% !important;
+}
+
+/* ---------- 可访问性：跳过导航链接（平时隐藏，聚焦时出现） ---------- */
+.skip-to-content {
+  position: fixed;
+  left: 12px;
+  top: -48px;
+  z-index: 2000;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-size: 13px;
+  text-decoration: none;
+  transition: top var(--transition-control);
+
+  &:focus {
+    top: 12px;
+    color: #ffffff;
+  }
+}
+
+/* ---------- 加载稳定性（减少 CLS） ---------- */
+/* 列表加载完成前后高度基本一致，避免表格/分页插入时页面跳动 */
+.el-table {
+  min-height: 220px;
+
+  .el-table__empty-block {
+    min-height: 220px !important;
+  }
+}
+
+.el-pagination {
+  min-height: 46px;
+}
+
+/* 加载遮罩更轻，避免整块泛白造成“闪屏”观感 */
+.el-loading-mask {
+  background-color: rgba(255, 255, 255, 0.72);
+  transition: opacity var(--transition-control);
+}
+
+/* 图片未加载完成时不撑破容器 */
+img {
+  max-width: 100%;
+}
+
+/* ---------- 首页看板 ---------- */
+.dashboard-container .panel-group,
+.home .panel-group {
+  .card-panel {
+    border-radius: 10px;
+    border: 1px solid #eef1f5;
+    box-shadow: 0 1px 3px rgba(17, 24, 39, 0.04);
+  }
+}
