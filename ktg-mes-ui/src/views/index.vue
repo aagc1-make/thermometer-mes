@@ -1,6 +1,15 @@
 <template>
   <div class="dashboard-editor-container">
 
+    <!-- 欢迎区：红外测温枪实物图 + 蓝黑渐变 -->
+    <div class="home-hero">
+      <div class="home-hero__text">
+        <h2 class="home-hero__title">红外测温枪 MES 系统</h2>
+        <p class="home-hero__sub">主数据 · 仓储 · 生产 · 质量 · 设备 · 班组排班 —— 全流程业务闭环</p>
+      </div>
+      <div class="home-hero__tip">今日生产数据实时汇总</div>
+    </div>
+
     <panel-group @handleSetLineChartData="handleSetLineChartData" />
 
     <el-row :gutter="32" style="padding:16px 16px 0;margin-bottom:32px;">

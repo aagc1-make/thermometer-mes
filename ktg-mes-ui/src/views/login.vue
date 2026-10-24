@@ -197,8 +197,13 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100%;
-  background-image: url("../assets/images/login-background.jpg");
+  /* 红外测温枪实物图 + 蓝黑渐变遮罩（提升文字可读性） */
+  background-image:
+    linear-gradient(100deg, rgba(11, 18, 32, 0.92) 0%, rgba(24, 56, 120, 0.72) 42%, rgba(11, 18, 32, 0.55) 100%),
+    url("../assets/images/themer.png");
   background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .title {
   margin: 0px auto 30px auto;

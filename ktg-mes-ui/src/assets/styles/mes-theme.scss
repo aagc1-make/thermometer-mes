@@ -610,6 +610,46 @@ img {
   max-width: 100%;
 }
 
+/* ---------- 首页欢迎区 Hero ---------- */
+.home-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 16px 4px;
+  padding: 24px 28px;
+  border-radius: 12px;
+  color: #ffffff;
+  background-image:
+    linear-gradient(100deg, rgba(11, 18, 32, 0.92) 0%, rgba(24, 56, 120, 0.72) 46%, rgba(11, 18, 32, 0.5) 100%),
+    url('~@/assets/images/themer.png');
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 8px 24px rgba(17, 40, 84, 0.16);
+
+  &__title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: #ffffff;
+  }
+
+  &__sub {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  &__tip {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
+    padding: 6px 14px;
+    white-space: nowrap;
+  }
+}
+
 /* ---------- 首页看板 ---------- */
 .dashboard-container .panel-group,
 .home .panel-group {

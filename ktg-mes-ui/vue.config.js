@@ -68,12 +68,15 @@ module.exports = {
     },
     plugins: [
       // http://doc.ruoyi.vip/ruoyi-vue/other/faq.html#使用gzip解压缩静态文件
-      new CompressionPlugin({
+      // 仅在 production 构建时启用：dev 环境不需要 gzip，
+      // 且 CompressionPlugin 内部用 md4 摘要，Node 17+ 默认 OpenSSL3 会报
+      // "error:0308010C:digital envelope routines::unsupported"
+      ...(process.env.NODE_ENV === 'production' ? [new CompressionPlugin({
         test: /\.(js|css|html)?$/i,     // 压缩文件格式
         filename: '[path].gz[query]',   // 压缩后的文件名
         algorithm: 'gzip',              // 使用gzip压缩
         minRatio: 0.8                   // 压缩率小于1才会压缩
-      })
+      })] : [])
     ],
   },
   chainWebpack(config) {
