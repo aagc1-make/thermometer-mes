@@ -1,0 +1,597 @@
+/**
+ * 日式禅意主题（作用域限定：.zen-page / .zen-login）
+ * 只影响显式加上类名的页面，不影响其余业务页
+ * 色板：米白 #F8F6F1 / 炭灰 #2D3142 / 樱花粉 #FFB7C5 / 抹茶绿 #88D18A
+ */
+
+$zen-bg: #f8f6f1;
+$zen-bg-deep: #ece7dd;
+$zen-ink: #2d3142;
+$zen-ink-soft: #6b6f80;
+$zen-sakura: #ffb7c5;
+$zen-sakura-text: #c4657a;
+$zen-matcha: #88d18a;
+$zen-matcha-text: #4e8f58;
+$zen-card: rgba(255, 255, 255, 0.72);
+$zen-line: rgba(45, 49, 66, 0.08);
+$zen-shadow: 0 2px 14px rgba(45, 49, 66, 0.06);
+$zen-shadow-hover: 0 10px 30px rgba(45, 49, 66, 0.1);
+$zen-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+@keyframes zen-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes zen-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* ---------- 页面底板 ---------- */
+.zen-page {
+  background: $zen-bg !important;
+  color: $zen-ink;
+  font-feature-settings: "palt";
+
+  /* 水墨质感：极淡的径向笔触，代替实体纹理图 */
+  background-image:
+    radial-gradient(1200px 320px at 8% -10%, rgba(136, 209, 138, 0.1), transparent 60%),
+    radial-gradient(900px 280px at 92% -6%, rgba(255, 183, 197, 0.14), transparent 62%),
+    radial-gradient(700px 220px at 50% 0%, rgba(45, 49, 66, 0.04), transparent 70%);
+  background-repeat: no-repeat;
+}
+
+.zen-page .app-container,
+.zen-page.dashboard-editor-container {
+  background: transparent !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 28px 32px 36px !important;
+}
+
+/* ---------- 页头 ---------- */
+.zen-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.zen-head__title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: $zen-ink;
+  line-height: 1.2;
+}
+
+.zen-head__sub {
+  margin: 10px 0 0;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: $zen-ink-soft;
+}
+
+/* 右侧胶囊切换（24小时 / 7天 …） */
+.zen-seg {
+  display: inline-flex;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid $zen-line;
+  backdrop-filter: blur(8px);
+}
+
+.zen-seg__item {
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: $zen-ink-soft;
+  cursor: pointer;
+  transition: all 350ms $zen-ease;
+
+  &:hover {
+    background: rgba(45, 49, 66, 0.06);
+  }
+
+  &.is-active {
+    background: $zen-ink;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(45, 49, 66, 0.18);
+  }
+}
+
+/* ---------- KPI 卡片 ---------- */
+.zen-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.zen-card {
+  position: relative;
+  padding: 24px 24px 18px;
+  border-radius: 18px;
+  background: $zen-card;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: $zen-shadow;
+  backdrop-filter: blur(14px);
+  transition: transform 350ms $zen-ease, box-shadow 350ms $zen-ease, filter 350ms $zen-ease;
+  animation: zen-fade-up 520ms $zen-ease both;
+
+  &:hover {
+    transform: scale(1.008) translateY(-2px);
+    filter: brightness(1.02);
+    box-shadow: $zen-shadow-hover;
+  }
+}
+
+.zen-card__dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  animation: zen-breathe 4s ease-in-out infinite;
+
+  &--sakura {
+    background: rgba(255, 183, 197, 0.45);
+  }
+  &--matcha {
+    background: rgba(136, 209, 138, 0.42);
+  }
+  &--ink {
+    background: rgba(45, 49, 66, 0.12);
+  }
+  &--sand {
+    background: rgba(226, 196, 140, 0.35);
+  }
+}
+
+.zen-card__delta {
+  position: absolute;
+  top: 24px;
+  right: 22px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+
+  &--up {
+    color: $zen-matcha-text;
+  }
+  &--down {
+    color: $zen-sakura-text;
+  }
+}
+
+.zen-card__label {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: $zen-ink-soft;
+}
+
+.zen-card__value {
+  margin-top: 6px;
+  font-size: 34px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: $zen-ink;
+  font-variant-numeric: tabular-nums;
+}
+
+.zen-card__desc {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(107, 111, 128, 0.8);
+}
+
+.zen-card__spark {
+  height: 56px;
+  margin-top: 14px;
+}
+
+/* ---------- 图表卡 ---------- */
+.zen-panel {
+  padding: 20px 22px 12px;
+  border-radius: 18px;
+  background: $zen-card;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: $zen-shadow;
+  backdrop-filter: blur(14px);
+  transition: box-shadow 350ms $zen-ease;
+  animation: zen-fade-up 560ms $zen-ease both;
+
+  &:hover {
+    box-shadow: $zen-shadow-hover;
+  }
+}
+
+.zen-panel__title {
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: $zen-ink;
+  margin-bottom: 8px;
+  font-weight: 400;
+
+  &::before {
+    content: "";
+    display: inline-block;
+    width: 3px;
+    height: 12px;
+    margin-right: 8px;
+    border-radius: 2px;
+    background: rgba(45, 49, 66, 0.35);
+    vertical-align: -1px;
+  }
+}
+
+/* ---------- Element-UI 禅意化（仅限 .zen-page 内） ---------- */
+.zen-page {
+  .el-button {
+    border-radius: 999px;
+    transition: all 300ms $zen-ease;
+  }
+
+  .el-button--primary {
+    background: $zen-ink;
+    border-color: $zen-ink;
+
+    &:hover,
+    &:focus {
+      background: lighten($zen-ink, 8%);
+      border-color: lighten($zen-ink, 8%);
+    }
+  }
+
+  .el-card {
+    border-radius: 16px;
+    border-color: $zen-line;
+    box-shadow: $zen-shadow !important;
+    background: $zen-card;
+  }
+
+  .el-table {
+    background: transparent;
+
+    th.el-table__cell {
+      background: rgba(45, 49, 66, 0.03) !important;
+      color: $zen-ink-soft;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+    }
+
+    td.el-table__cell {
+      border-bottom: 1px solid rgba(45, 49, 66, 0.06);
+    }
+  }
+
+  .el-tag {
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+  }
+}
+
+/* ---------- 驾驶舱：去掉蓝色 Hero，回归禅意页头 ---------- */
+.zen-page .cockpit__head {
+  background-image: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  color: $zen-ink !important;
+  margin-bottom: 28px;
+}
+
+.zen-page .cockpit__head .cockpit__title,
+.zen-page .cockpit__head .zen-head__title {
+  color: $zen-ink !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.06em;
+}
+
+.zen-page .cockpit__head .cockpit__sub,
+.zen-page .cockpit__head .zen-head__sub {
+  color: $zen-ink-soft !important;
+}
+
+.zen-page .cockpit__head .cockpit__meta {
+  color: $zen-ink-soft !important;
+
+  .el-button {
+    border-color: rgba(45, 49, 66, 0.16) !important;
+    color: $zen-ink !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+
+    &:hover {
+      border-color: $zen-ink !important;
+      background: #fff !important;
+    }
+  }
+}
+
+/* KPI 卡与图表卡之间留白 */
+.zen-page .zen-cards {
+  margin-bottom: 24px;
+}
+
+/* ================= 全站禅意覆盖（临时停用，回退到 3 页面版本） ================= */
+@if false {
+body {
+  background: $zen-bg;
+  color: $zen-ink;
+}
+
+.app-container {
+  background: transparent !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 22px 26px 30px !important;
+}
+
+/* 按钮：胶囊 + 炭灰主色 */
+.el-button {
+  border-radius: 999px !important;
+  transition: all 300ms $zen-ease;
+  letter-spacing: 0.02em;
+}
+
+.el-button--primary {
+  background: $zen-ink !important;
+  border-color: $zen-ink !important;
+
+  &:hover,
+  &:focus {
+    background: lighten($zen-ink, 9%) !important;
+    border-color: lighten($zen-ink, 9%) !important;
+  }
+}
+
+.el-button--text {
+  color: $zen-ink-soft !important;
+
+  &:hover {
+    color: $zen-ink !important;
+  }
+}
+
+/* 输入 / 下拉 / 日期 */
+.el-input__inner,
+.el-textarea__inner {
+  border-radius: 10px !important;
+  border-color: rgba(45, 49, 66, 0.12) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  transition: border-color 300ms $zen-ease, box-shadow 300ms $zen-ease;
+
+  &:focus {
+    border-color: rgba(45, 49, 66, 0.34) !important;
+    box-shadow: 0 0 0 3px rgba(45, 49, 66, 0.05);
+  }
+}
+
+.el-form-item__label {
+  color: $zen-ink-soft;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* 表格：浅底表头 + 细线分隔 + 圆角 */
+.el-table {
+  background: transparent !important;
+  color: $zen-ink;
+
+  &::before {
+    background-color: transparent;
+  }
+
+  th.el-table__cell {
+    background: rgba(45, 49, 66, 0.035) !important;
+    color: $zen-ink-soft !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid rgba(45, 49, 66, 0.07) !important;
+  }
+
+  td.el-table__cell {
+    border-bottom: 1px solid rgba(45, 49, 66, 0.05) !important;
+  }
+
+  .el-table__row:hover > td.el-table__cell {
+    background: rgba(255, 255, 255, 0.7) !important;
+  }
+}
+
+/* 分页：胶囊页码 + 炭灰选中 */
+.el-pagination {
+  padding-top: 14px;
+
+  .el-pager li {
+    border-radius: 8px;
+    min-width: 30px;
+    transition: all 300ms $zen-ease;
+    color: $zen-ink-soft;
+
+    &.active {
+      background: $zen-ink;
+      color: #fff;
+    }
+  }
+
+  button {
+    border-radius: 8px;
+  }
+}
+
+/* 弹窗 / 抽屉 / 卡片 */
+.el-dialog {
+  border-radius: 18px !important;
+  overflow: hidden;
+
+  .el-dialog__header {
+    border-bottom: 1px solid rgba(45, 49, 66, 0.06);
+    padding: 18px 22px;
+
+    .el-dialog__title {
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      color: $zen-ink;
+    }
+  }
+
+  .el-dialog__body {
+    padding: 20px 22px;
+  }
+}
+
+.el-card {
+  border-radius: 16px !important;
+  border-color: rgba(45, 49, 66, 0.07) !important;
+  box-shadow: $zen-shadow !important;
+  background: $zen-card !important;
+}
+
+/* 标签：低饱和 */
+.el-tag {
+  border-radius: 6px !important;
+  border: none;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* 页签 */
+.el-tabs__item {
+  color: $zen-ink-soft;
+
+  &.is-active {
+    color: $zen-ink;
+    font-weight: 500;
+  }
+}
+
+.el-tabs__active-bar {
+  background-color: $zen-ink !important;
+}
+
+/* 折叠面板 / 下拉菜单 */
+.el-dropdown-menu,
+.el-select-dropdown {
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(45, 49, 66, 0.1);
+}
+
+/* 内容区白卡（原蓝色主题的 app-container 已透明，这里给业务页留白节奏） */
+.tags-view-container {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-bottom: 1px solid rgba(45, 49, 66, 0.06);
+}
+
+}
+
+/* ---------- 登录页 ---------- */
+.zen-login {
+  position: relative;
+  overflow: hidden;
+  background: $zen-bg !important;
+  /* 保证登录框水平垂直居中（页脚是 fixed，不参与 flex 布局） */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* 分栏底色：左白右淡蓝（参考登录模板的左右分区） */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image:
+      radial-gradient(700px 700px at 84% 50%, rgba(78, 134, 255, 0.14), transparent 62%),
+      radial-gradient(520px 520px at 98% 6%, rgba(47, 107, 239, 0.10), transparent 60%),
+      linear-gradient(105deg, #ffffff 0%, #ffffff 46%, #f2f7ff 58%, #e6efff 100%);
+  }
+
+  /* 右侧插画：Site Stats-amico.png（透明底） */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background-image: url('~@/assets/images/Site Stats-amico.png');
+    background-size: 38% auto;
+    background-position: right 8% center;
+    background-repeat: no-repeat;
+  }
+
+  /* 表单浮在毛玻璃之上；页脚固定回底部，避免变成 flex 项与表单并排 */
+  .login-form {
+    position: relative;
+    z-index: 2;
+    margin: 0 auto;
+  }
+
+  .el-login-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    padding: 12px 0;
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: $zen-ink-soft;
+    background: transparent;
+  }
+
+  .login-form {
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 18px 50px rgba(45, 49, 66, 0.1);
+    padding: 34px 30px;
+    animation: zen-fade-up 620ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .title {
+    color: $zen-ink !important;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+  }
+
+  .el-input__inner {
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(45, 49, 66, 0.12);
+  }
+
+  .el-button--primary {
+    border-radius: 10px;
+    background: $zen-ink;
+    border-color: $zen-ink;
+    letter-spacing: 0.1em;
+
+    &:hover {
+      background: lighten($zen-ink, 8%);
+      border-color: lighten($zen-ink, 8%);
+    }
+  }
+}

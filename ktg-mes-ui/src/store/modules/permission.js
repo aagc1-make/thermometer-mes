@@ -122,11 +122,30 @@ export function filterDynamicRoutes(routes) {
 }
 
 export const loadView = (view) => {
+  // 菜单里的 component 有两种写法：`mes/qc/iqc/index` 和 `mes/qc/batchtrace/index.vue`（带后缀），
+  // 统一归一化后再探测/加载，否则带 `.vue` 的菜单会被误判为「文件不存在」而显示 404。
+  const v = String(view || '')
+    .replace(/^\/+/, '')
+    .replace(/\.vue$/i, '')
+
+  // 防御：组件文件不存在时回退到 404，避免整次导航失败（如 iot/model/index）
+  const exists = () => {
+    try {
+      const ctx = require.context('@/views', true, /\.vue$/)
+      return ctx.keys().some(k => k === `./${v}.vue` || k === `./${v}/index.vue`)
+    } catch (e) {
+      return true
+    }
+  }
+  if (!exists()) {
+    console.warn(`[router] 组件不存在，已回退到 404：@/views/${v}`)
+    return (resolve) => require(['@/views/error/404'], resolve)
+  }
   if (process.env.NODE_ENV === 'development') {
-    return (resolve) => require([`@/views/${view}`], resolve)
+    return (resolve) => require([`@/views/${v}`], resolve)
   } else {
     // 使用 import 实现生产环境的路由懒加载
-    return () => import(`@/views/${view}`)
+    return () => import(`@/views/${v}`)
   }
 }
 

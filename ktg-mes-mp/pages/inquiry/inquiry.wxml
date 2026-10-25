@@ -1,0 +1,63 @@
+<view class="page">
+  <view class="tabs">
+    <view class="tabs__item {{status === item.key ? 'is-active' : ''}}" wx:for="{{statusTabs}}" wx:key="key" data-k="{{item.key}}" bindtap="onStatus">{{item.text}}</view>
+  </view>
+
+  <!-- 待提交：本地草稿 -->
+  <block wx:if="{{status === 'PENDING'}}">
+    <view class="card" wx:if="{{cart.length}}">
+      <view class="t-main">本次询价 · {{cart.length}} 个品项</view>
+      <view class="hr"></view>
+      <view class="line" wx:for="{{cart}}" wx:key="itemCode">
+        <view>
+          <view class="t-main">{{item.itemName}}</view>
+          <view class="t-code">{{item.itemCode}} · {{item.specification}}</view>
+        </view>
+        <view class="stepper">
+          <view class="stepper__btn" data-i="{{index}}" data-d="-1" bindtap="step">－</view>
+          <view class="stepper__num">{{item.quantity}}</view>
+          <view class="stepper__btn" data-i="{{index}}" data-d="1" bindtap="step">＋</view>
+        </view>
+      </view>
+      <view class="hr"></view>
+      <view class="t-sub">期望交期</view>
+      <picker mode="date" bindchange="onDate">
+        <view class="pick">{{expectDate || '请选择期望交期'}}</view>
+      </picker>
+      <view class="t-sub" style="margin-top:20rpx">收货地址</view>
+      <input class="pick" value="{{address}}" bindinput="onAddress" placeholder="请输入收货地址" placeholder-class="search__placeholder" />
+      <view class="t-sub" style="margin-top:20rpx">备注</view>
+      <input class="pick" value="{{remark}}" bindinput="onRemark" placeholder="选填，如包装/开票要求" placeholder-class="search__placeholder" />
+    </view>
+
+    <view class="empty" wx:else>还没有选择产品\n去「产品」页挑选后加入询价单</view>
+
+    <view class="bottom" wx:if="{{cart.length}}">
+      <view>
+        <text class="t-sub">共 {{totalQty}} 件 · 预计 {{expectDate || '待定'}}</text>
+      </view>
+      <view class="btn btn--primary" style="width:280rpx" bindtap="submit">提交询价</view>
+    </view>
+  </block>
+
+  <!-- 已提交 / 已报价 -->
+  <block wx:else>
+    <view class="card" wx:for="{{list}}" wx:key="inquiryCode" style="margin-bottom:22rpx">
+      <view class="row">
+        <text class="t-main">{{item.inquiryCode}}</text>
+        <text class="tag {{item.status === 'QUOTED' ? 'tag--fg' : 'tag--sf'}}">{{item.statusText}}</text>
+      </view>
+      <view class="hr"></view>
+      <view class="line" wx:for="{{item.lines}}" wx:for-item="l" wx:key="itemCode">
+        <text class="t-sub">{{l.itemName}} × {{l.quantity}}</text>
+        <text class="t-price" wx:if="{{l.quotePrice}}">¥{{l.quotePrice}}</text>
+      </view>
+      <view class="hr"></view>
+      <view class="row">
+        <text class="t-sub">跟进销售：{{item.sales}}</text>
+        <text class="t-price" wx:if="{{item.quoteAmount}}">合计 ¥{{item.quoteAmount}}</text>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!list.length}}">暂无单据</view>
+  </block>
+</view>

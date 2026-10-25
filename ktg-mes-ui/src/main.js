@@ -8,6 +8,7 @@ import './assets/styles/element-variables.scss'
 import '@/assets/styles/index.scss' // global css
 import '@/assets/styles/ruoyi.scss' // ruoyi css
 import '@/assets/styles/mes-theme.scss' // 红外测温枪MES 主题（最后引入，覆盖默认样式）
+import '@/assets/styles/zen.scss' // 日式禅意主题（仅 .zen-page / .zen-login 生效）
 import '../public/print-lock.css'
 
 import App from './App'
