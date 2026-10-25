@@ -1,0 +1,4 @@
+export default definePageConfig({
+  navigationBarTitleText: '帮助中心',
+  backgroundColor: '#f5f7fc'
+});

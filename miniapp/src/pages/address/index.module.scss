@@ -1,0 +1,258 @@
+@use '@/styles/variables.scss' as *;
+@use '@/styles/blocks.scss' as *;
+
+.page {
+  @include page-base;
+}
+
+.formCard {
+  @include page-card;
+  margin-top: 16rpx;
+}
+
+.formHead {
+  @include flex-between;
+  padding-bottom: 8rpx;
+}
+
+.formTitle {
+  @include section-title;
+}
+
+.close {
+  width: 48rpx;
+  height: 48rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-round;
+  @include flex-center;
+}
+
+.field {
+  @include form-field;
+}
+
+.fieldLabel {
+  flex-shrink: 0;
+  width: 150rpx;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.input {
+  @include form-input;
+}
+
+.switchRow {
+  @include flex-between;
+  margin-top: 12rpx;
+  padding: 20rpx 0 8rpx;
+}
+
+.switchLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.switch {
+  width: 88rpx;
+  height: 48rpx;
+  padding: 4rpx;
+  background: $color-border;
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+}
+
+.switchOn {
+  background: $color-primary;
+  justify-content: flex-end;
+}
+
+.switchDot {
+  width: 40rpx;
+  height: 40rpx;
+  background: $color-bg-card;
+  border-radius: $radius-round;
+  box-shadow: 0 2rpx 6rpx rgba(23, 35, 61, 0.18);
+}
+
+.switchDotOn {
+  box-shadow: 0 2rpx 6rpx rgba(43, 107, 235, 0.3);
+}
+
+.saveBtn {
+  @include primary-button;
+  margin-top: 24rpx;
+}
+
+.saveText {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+}
+
+.btnIcon {
+  margin-right: 6rpx;
+}
+
+.card {
+  @include page-card;
+}
+
+.cardHead {
+  @include flex-between;
+}
+
+.headLeft {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.pinWrap {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-lg;
+  @include flex-center;
+}
+
+.nameWrap {
+  flex: 1;
+  min-width: 0;
+  margin-left: 16rpx;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+}
+
+.name {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.defaultTag {
+  @include tag;
+  margin-left: 12rpx;
+  height: 34rpx;
+  padding: 0 12rpx;
+}
+
+.tag {
+  @include tag(#f0f3fa, $color-text-secondary);
+  margin-left: 12rpx;
+  height: 34rpx;
+  padding: 0 12rpx;
+}
+
+.tel {
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.address {
+  display: block;
+  margin-top: 20rpx;
+  font-size: $font-size-sm;
+  line-height: $line-height-normal;
+  color: $color-text-secondary;
+}
+
+.divider {
+  @include divider;
+  margin-top: 20rpx;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  margin-top: 16rpx;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  margin-right: 28rpx;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.actionIcon {
+  margin-right: 4rpx;
+}
+
+.actionText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.actionDanger {
+  color: $color-error;
+}
+
+.actionTextDanger {
+  font-size: $font-size-xs;
+  color: $color-error;
+}
+
+.useBtn {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  @include ghost-button;
+  height: 60rpx;
+  padding: 0 24rpx;
+}
+
+.useText {
+  font-size: $font-size-xs;
+  color: $color-primary;
+}
+
+.empty {
+  padding-top: 200rpx;
+  @include flex-center;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.emptyCard {
+  @include page-card;
+  margin-top: 32rpx;
+  padding: 72rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emptyTitle {
+  margin-top: 24rpx;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.emptyDesc {
+  margin-top: 12rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  text-align: center;
+}
+
+.emptyBtn {
+  margin-top: 28rpx;
+  @include primary-button;
+}
+
+.emptyBtnText {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+}

@@ -1,0 +1,179 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f7f9ff 0%, $color-bg-page 320rpx, $color-bg-page 100%);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  height: 76rpx;
+  margin: 8rpx $page-padding 24rpx;
+  padding: 0 24rpx;
+  background: #eef2fb;
+  border-radius: $radius-button;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 76rpx;
+  margin-left: 12rpx;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+// 分类胶囊
+.chips {
+  padding: 0 $page-padding;
+  @include scroll-x-container;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 56rpx;
+  margin-right: 16rpx;
+  padding: 0 24rpx;
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.chipActive {
+  background: $color-primary;
+  border-color: $color-primary;
+}
+
+.chipText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  white-space: nowrap;
+}
+
+.chipTextActive {
+  color: $color-text-white;
+  font-weight: $font-weight-medium;
+}
+
+// 排序筛选
+.filterRow {
+  display: flex;
+  align-items: center;
+  margin: 28rpx $page-padding 20rpx;
+}
+
+.sortItem {
+  display: flex;
+  align-items: center;
+  margin-right: 40rpx;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.sortText {
+  margin-right: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.sortTextActive {
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}
+
+.total {
+  flex: 1;
+  text-align: right;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+// 双列网格
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 0 $page-padding;
+}
+
+.empty {
+  padding: 64rpx 0;
+  @include flex-center;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+// 样品与试产订单
+.sample {
+  display: flex;
+  align-items: center;
+  margin: 12rpx $page-padding 0;
+  padding: 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.sampleIcon {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-lg;
+  @include flex-center;
+}
+
+.sampleInfo {
+  flex: 1;
+  min-width: 0;
+  padding: 0 16rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.sampleTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.sampleSub {
+  margin-top: 4rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.sampleLink {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.sampleLinkText {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  white-space: nowrap;
+}
+
+.bottomSpace {
+  height: 40rpx;
+}

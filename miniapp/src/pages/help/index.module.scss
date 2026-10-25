@@ -1,0 +1,203 @@
+@use '@/styles/variables.scss' as *;
+@use '@/styles/blocks.scss' as *;
+
+.page {
+  @include page-base;
+}
+
+.searchWrap {
+  padding: 16rpx $page-padding 0;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  height: 80rpx;
+  padding: 0 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-round;
+  box-shadow: 0 4rpx 16rpx rgba(23, 35, 61, 0.04);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  margin-left: 12rpx;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.searchClear {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.quickGrid {
+  display: flex;
+  margin: 24rpx $page-padding 0;
+  padding: 24rpx 12rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+}
+
+.quickItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.quickIcon {
+  width: 68rpx;
+  height: 68rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-lg;
+  @include flex-center;
+}
+
+.quickName {
+  margin-top: 12rpx;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.group {
+  margin: 28rpx $page-padding 0;
+}
+
+.groupTitle {
+  display: block;
+  margin-bottom: 12rpx;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.groupCard {
+  padding: 0 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+}
+
+.faq {
+  padding: 4rpx 0;
+}
+
+.faqDivider {
+  height: 1rpx;
+  background: $color-divider;
+}
+
+.faqHead {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+}
+
+.question {
+  flex: 1;
+  min-width: 0;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: $line-height-normal;
+}
+
+.questionActive {
+  font-weight: $font-weight-medium;
+  color: $color-primary;
+}
+
+.answer {
+  display: block;
+  margin-bottom: 24rpx;
+  padding: 18rpx 20rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-lg;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
+}
+
+.empty {
+  padding-top: 160rpx;
+  @include flex-center;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.emptyCard {
+  @include page-card;
+  margin-top: 32rpx;
+  padding: 64rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emptyTitle {
+  margin-top: 20rpx;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.emptyDesc {
+  margin-top: 10rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  text-align: center;
+}
+
+.serviceCard {
+  margin: 28rpx $page-padding 0;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #eaf1ff 0%, #f7faff 100%);
+  border-radius: $radius-2xl;
+}
+
+.serviceTitle {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.serviceDesc {
+  display: block;
+  margin-top: 8rpx;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.serviceActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20rpx;
+}
+
+.ghostBtn {
+  @include ghost-button;
+  height: 64rpx;
+  margin-right: 16rpx;
+  background: $color-bg-card;
+}
+
+.primaryBtn {
+  @include primary-button;
+  height: 64rpx;
+  padding: 0 28rpx;
+}
+
+.primaryText {
+  font-size: $font-size-xs;
+  color: $color-text-white;
+}
+
+.btnIcon {
+  margin-right: 6rpx;
+}

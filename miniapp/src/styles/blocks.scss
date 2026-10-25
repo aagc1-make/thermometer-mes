@@ -1,0 +1,111 @@
+@use './variables.scss' as *;
+
+// 企业服务类页面通用样式片段
+
+@mixin page-base {
+  min-height: 100vh;
+  padding-bottom: 60rpx;
+  background: linear-gradient(180deg, #f7f9ff 0%, $color-bg-page 320rpx, $color-bg-page 100%);
+}
+
+@mixin card {
+  padding: 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+}
+
+@mixin page-card {
+  margin: 24rpx $page-padding 0;
+  @include card;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin tag($bg: $color-primary-soft, $fg: $color-primary) {
+  display: inline-flex;
+  align-items: center;
+  height: 40rpx;
+  padding: 0 16rpx;
+  background: $bg;
+  border-radius: $radius-sm;
+  font-size: 20rpx;
+  color: $fg;
+}
+
+@mixin primary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80rpx;
+  padding: 0 40rpx;
+  background: $color-primary;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-white;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+@mixin ghost-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72rpx;
+  padding: 0 28rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-button;
+  font-size: $font-size-xs;
+  color: $color-primary;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+@mixin divider {
+  height: 1rpx;
+  background: $color-divider;
+}
+
+@mixin section-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+@mixin label {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+@mixin value {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+@mixin form-field {
+  display: flex;
+  align-items: center;
+  min-height: 88rpx;
+
+  & + & {
+    border-top: 1rpx solid $color-divider;
+  }
+}
+
+@mixin form-input {
+  flex: 1;
+  min-width: 0;
+  height: 72rpx;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  text-align: right;
+}
