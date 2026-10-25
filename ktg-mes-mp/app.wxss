@@ -1,0 +1,128 @@
+/* ===== 设计令牌（对齐 设计说明.md） ===== */
+page {
+  --primary: #2F6BEF;
+  --primary-grad: linear-gradient(135deg, #4E86FF 0%, #2A5FE0 100%);
+  --bg: #F2F6FD;
+  --card: #FFFFFF;
+  --text: #16233B;
+  --text-sub: #6E7E96;
+  --text-aux: #96A5BA;
+  --line: #E9EFF9;
+  --tag-fg-bg: #EAF1FF;
+  --tag-fg-fg: #2F6BEF;
+  --tag-sf-bg: #EFF0FF;
+  --tag-sf-fg: #5B5BD6;
+  --success: #12B76A;
+  --danger: #FF4D4F;
+
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  font-size: 25rpx;
+}
+
+.page {
+  padding: 24rpx 32rpx 140rpx;
+}
+
+/* 区块标题：16.5pt/800 */
+.section-title {
+  font-size: 33rpx;
+  font-weight: 800;
+  color: var(--text);
+  margin: 40rpx 0 22rpx;
+}
+
+/* 卡片：圆角 18pt，阴影 0 10 28 rgba(31,74,150,.07) */
+.card {
+  background: var(--card);
+  border-radius: 36rpx;
+  box-shadow: 0 20rpx 56rpx rgba(31, 74, 150, 0.07);
+  padding: 28rpx;
+}
+
+/* 胶囊按钮：高 33~38pt */
+.btn {
+  height: 72rpx;
+  line-height: 72rpx;
+  border-radius: 36rpx;
+  text-align: center;
+  font-size: 27rpx;
+  font-weight: 700;
+}
+
+.btn--primary {
+  background: var(--primary-grad);
+  color: #fff;
+}
+
+.btn--ghost {
+  background: #fff;
+  color: var(--primary);
+  border: 2rpx solid #D8E4FB;
+}
+
+/* 小尺寸按钮：卡片内 29pt */
+.btn--sm {
+  height: 58rpx;
+  line-height: 54rpx;
+  padding: 0 24rpx;
+  border-radius: 30rpx;
+  font-size: 23rpx;
+  font-weight: 700;
+}
+
+/* 标签 */
+.tag {
+  display: inline-block;
+  padding: 4rpx 14rpx;
+  border-radius: 8rpx;
+  font-size: 19rpx;
+  font-weight: 700;
+}
+
+.tag--fg {
+  background: var(--tag-fg-bg);
+  color: var(--tag-fg-fg);
+}
+
+.tag--sf {
+  background: var(--tag-sf-bg);
+  color: var(--tag-sf-fg);
+}
+
+/* 文本层级 */
+.t-main { font-size: 26rpx; font-weight: 700; color: var(--text); }
+.t-code { font-size: 21rpx; color: var(--text-aux); }
+.t-sub  { font-size: 21rpx; color: var(--text-sub); }
+.t-price { font-size: 28rpx; font-weight: 800; color: var(--primary); }
+
+/* 分割线 */
+.hr { height: 2rpx; background: var(--line); margin: 22rpx 0; }
+
+/* 搜索框：高 40pt */
+.search {
+  display: flex;
+  align-items: center;
+  height: 80rpx;
+  padding: 0 26rpx;
+  background: #fff;
+  border-radius: 40rpx;
+  box-shadow: 0 10rpx 28rpx rgba(31, 74, 150, 0.06);
+}
+
+.search__input {
+  flex: 1;
+  font-size: 25rpx;
+  color: var(--text);
+}
+
+.search__placeholder { color: var(--text-aux); }
+
+/* 空态 */
+.empty {
+  padding: 120rpx 0;
+  text-align: center;
+  color: var(--text-aux);
+  font-size: 25rpx;
+}

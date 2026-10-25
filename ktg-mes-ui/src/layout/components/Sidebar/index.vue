@@ -1,10 +1,10 @@
 <template>
     <div :class="{'has-logo':showLogo}" class="sidebar-light">
-        <logo v-if="showLogo" :collapse="isCollapse" />
+        <logo v-if="showLogo" :collapse="false" />
         <el-scrollbar class="theme-light" wrap-class="scrollbar-wrapper">
             <el-menu
                 :default-active="activeMenu"
-                :collapse="isCollapse"
+                :collapse="false"
                 :default-openeds="openeds"
                 background-color="#ffffff"
                 text-color="#303133"

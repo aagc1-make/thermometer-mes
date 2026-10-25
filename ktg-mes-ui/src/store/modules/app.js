@@ -2,7 +2,7 @@ import Cookies from 'js-cookie'
 
 const state = {
   sidebar: {
-    opened: Cookies.get('sidebarStatus') ? !!+Cookies.get('sidebarStatus') : true,
+    opened: true, // 固定展开，不提供收起功能
     withoutAnimation: false,
     hide: false
   },
@@ -12,21 +12,16 @@ const state = {
 
 const mutations = {
   TOGGLE_SIDEBAR: state => {
-    if (state.sidebar.hide) {
-      return false;
-    }
-    state.sidebar.opened = !state.sidebar.opened
+    // 已禁用收起功能：始终展开
+    state.sidebar.opened = true
     state.sidebar.withoutAnimation = false
-    if (state.sidebar.opened) {
-      Cookies.set('sidebarStatus', 1)
-    } else {
-      Cookies.set('sidebarStatus', 0)
-    }
+    Cookies.set('sidebarStatus', 1)
   },
   CLOSE_SIDEBAR: (state, withoutAnimation) => {
-    Cookies.set('sidebarStatus', 0)
-    state.sidebar.opened = false
+    // 已禁用收起功能：忽略外部收起请求（如窗口 resize）
+    state.sidebar.opened = true
     state.sidebar.withoutAnimation = withoutAnimation
+    Cookies.set('sidebarStatus', 1)
   },
   TOGGLE_DEVICE: (state, device) => {
     state.device = device

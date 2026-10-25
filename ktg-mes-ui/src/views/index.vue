@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard-editor-container">
+  <div class="dashboard-editor-container zen-page">
 
     <!-- 欢迎区：红外测温枪实物图 + 蓝黑渐变 -->
     <div class="home-hero">

@@ -1,0 +1,157 @@
+/* 首页 */
+.banner {
+  margin-top: 24rpx;
+  padding: 40rpx 36rpx;
+  border-radius: 36rpx;
+  background: linear-gradient(135deg, #4E86FF 0%, #2A5FE0 100%);
+  box-shadow: 0 20rpx 56rpx rgba(42, 95, 224, 0.25);
+  color: #fff;
+}
+
+.banner__tag {
+  display: inline-block;
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 20rpx;
+}
+
+.banner__title {
+  margin-top: 20rpx;
+  font-size: 44rpx;
+  font-weight: 800;
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
+.banner__desc {
+  margin-top: 14rpx;
+  font-size: 23rpx;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.banner__btn {
+  margin-top: 28rpx;
+  display: inline-block;
+  padding: 0 40rpx;
+  height: 68rpx;
+  line-height: 68rpx;
+  border-radius: 34rpx;
+  background: #fff;
+  color: #2A5FE0;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+/* 四宫格 */
+.grid {
+  margin-top: 24rpx;
+  display: flex;
+  background: #fff;
+  border-radius: 36rpx;
+  padding: 30rpx 10rpx;
+  box-shadow: 0 20rpx 56rpx rgba(31, 74, 150, 0.07);
+}
+
+.grid__item {
+  flex: 1;
+  text-align: center;
+}
+
+.grid__icon {
+  width: 84rpx;
+  height: 84rpx;
+  margin: 0 auto 12rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #2F6BEF;
+}
+
+.grid__text {
+  font-size: 22rpx;
+  color: #6E7E96;
+}
+
+/* 分类胶囊 */
+.tabs {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 22rpx;
+}
+
+.tabs__item {
+  padding: 12rpx 30rpx;
+  border-radius: 999rpx;
+  background: #fff;
+  font-size: 23rpx;
+  color: #6E7E96;
+  border: 2rpx solid transparent;
+}
+
+.tabs__item.is-active {
+  background: #EAF1FF;
+  color: #2F6BEF;
+  font-weight: 700;
+  border-color: #CFE0FF;
+}
+
+/* 产品卡 */
+.pcard {
+  background: #fff;
+  border-radius: 36rpx;
+  padding: 28rpx;
+  margin-bottom: 22rpx;
+  box-shadow: 0 20rpx 56rpx rgba(31, 74, 150, 0.07);
+}
+
+.pcard__head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.pcard__name {
+  font-size: 27rpx;
+  font-weight: 700;
+  color: #16233B;
+}
+
+.pcard__spec {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #6E7E96;
+}
+
+.pcard__foot {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 大批量采购 */
+.bulk {
+  margin-top: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx;
+  border-radius: 30rpx;
+  background: #EAF1FF;
+}
+
+.bulk__title {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #16233B;
+}
+
+.bulk__sub {
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  color: #6E7E96;
+}

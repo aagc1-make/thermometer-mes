@@ -100,6 +100,15 @@ export const railDomains = [
       ['日志监控', ['operlog', 'logininfor', 'online', 'job', 'druid', 'server', 'cache']],
       ['扩展功能', ['report', 'print', 'iot', 'chart', 'designer']]
     ]
+  },
+  {
+    key: 'ai',
+    title: '智能助手',
+    icon: 'el-icon-chat-dot-round',
+    roots: ['/mes/ai'],
+    groups: [
+      ['智能问答', ['chat']]
+    ]
   }
 ]
 

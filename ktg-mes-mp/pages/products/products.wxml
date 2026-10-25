@@ -1,0 +1,34 @@
+<view class="page">
+  <view class="search">
+    <input class="search__input" placeholder="搜索产品名称 / 编码" placeholder-class="search__placeholder" bindinput="onKeyword" />
+  </view>
+
+  <view class="tabs">
+    <view class="tabs__item {{category === item ? 'is-active' : ''}}" wx:for="{{categories}}" wx:key="*this" data-c="{{item}}" bindtap="onCategory">{{item}}</view>
+  </view>
+
+  <view class="sortbar">
+    <view class="sortbar__item {{sort === item ? 'is-active' : ''}}" wx:for="{{sorts}}" wx:key="*this" data-s="{{item}}" bindtap="onSort">{{item}}</view>
+    <text class="t-sub">共 {{products.length}} 款</text>
+  </view>
+
+  <view class="plist">
+    <view class="pcard" wx:for="{{products}}" wx:key="itemCode">
+      <view class="pcard__head">
+        <text class="tag {{item.itemType === '成品' ? 'tag--fg' : 'tag--sf'}}">{{item.itemType}}</text>
+        <text class="pcard__name">{{item.itemName}}</text>
+      </view>
+      <view class="t-code">{{item.itemCode}}</view>
+      <view class="pcard__spec">{{item.specification}}</view>
+      <view class="pcard__foot">
+        <text class="t-sub">起订 {{item.minOrderQty}}{{item.unitName}} · {{item.leadDays}} 天</text>
+        <view class="add" data-i="{{index}}" bindtap="addCart">＋</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card tip">
+    <view class="t-main">样件与试产</view>
+    <view class="t-sub" style="margin-top:10rpx">小批量试产（≥10 台）可按半成品报价，交期约 7 个工作日。</view>
+  </view>
+</view>

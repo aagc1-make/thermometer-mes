@@ -1,0 +1,31 @@
+.sortbar {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin: 4rpx 0 22rpx;
+}
+
+.sortbar__item {
+  font-size: 23rpx;
+  color: #96A5BA;
+}
+
+.sortbar__item.is-active {
+  color: #2F6BEF;
+  font-weight: 700;
+}
+
+.add {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4E86FF 0%, #2A5FE0 100%);
+  color: #fff;
+  text-align: center;
+  line-height: 54rpx;
+  font-size: 32rpx;
+}
+
+.tip {
+  margin-top: 30rpx;
+}
