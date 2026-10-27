@@ -431,6 +431,8 @@ export default {
     cancel() {
       this.open = false;
       this.reset();
+      // 弹窗内可能新增/删除了生产任务，关闭时刷新列表与"待排产"高亮
+      this.getList();
     },
     // 表单重置
     reset() {
