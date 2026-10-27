@@ -85,6 +85,8 @@ public class ArrivalQualityLinkageService {
         }
         if (created) {
             menuNoticeService.markUnread(MenuLinkageNoticePaths.IQC);
+        // 待检任务工作台同步点亮，便于统一入口查看所有待检草稿
+        menuNoticeService.markUnread(MenuLinkageNoticePaths.PENDING_INSPECT);
         }
         return result;
     }

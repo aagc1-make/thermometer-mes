@@ -83,6 +83,8 @@ public class SalesQualityLinkageService {
         }
         if (created) {
             menuNoticeService.markUnread(MenuLinkageNoticePaths.OQC);
+        // 待检任务工作台同步点亮，便于统一入口查看所有待检草稿
+        menuNoticeService.markUnread(MenuLinkageNoticePaths.PENDING_INSPECT);
         }
         return result;
     }

@@ -11,6 +11,8 @@ import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ItemRecptTxBean;
 import com.ktg.mes.wm.service.*;
 import com.ktg.mes.linkage.FormLinkagePolicy;
+import com.ktg.mes.linkage.MenuLinkageNoticePaths;
+import com.ktg.mes.linkage.MenuLinkageNoticeService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,6 +61,9 @@ public class WmItemRecptController extends BaseController
 
     @Autowired
     private FormLinkagePolicy formLinkagePolicy;
+
+    @Autowired
+    private MenuLinkageNoticeService menuLinkageNoticeService;
 
     @Autowired
     private IWmWarehouseService wmWarehouseService;
@@ -199,7 +204,17 @@ public class WmItemRecptController extends BaseController
             }
         }
 
-        return toAjax(wmItemRecptService.updateWmItemRecpt(wmItemRecpt));
+        int rows = wmItemRecptService.updateWmItemRecpt(wmItemRecpt);
+        // 上架完成、进入"待执行入库"时，再次点亮采购入库菜单，
+        // 提醒仓管员这批货还没真正过账（保存/上架 ≠ 入库）。
+        if (rows > 0 && UserConstants.ORDER_STATUS_APPROVED.equals(wmItemRecpt.getStatus())) {
+            try {
+                menuLinkageNoticeService.markUnread(MenuLinkageNoticePaths.ITEM_RECPT);
+            } catch (Exception ignore) {
+                // 提醒失败不影响主流程
+            }
+        }
+        return toAjax(rows);
     }
 
     /**
