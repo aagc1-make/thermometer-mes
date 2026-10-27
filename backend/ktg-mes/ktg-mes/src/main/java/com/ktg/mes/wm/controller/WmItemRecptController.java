@@ -13,6 +13,7 @@ import com.ktg.mes.wm.service.*;
 import com.ktg.mes.linkage.FormLinkagePolicy;
 import com.ktg.mes.linkage.MenuLinkageNoticePaths;
 import com.ktg.mes.linkage.MenuLinkageNoticeService;
+import com.ktg.mes.linkage.ProductionNextStepLinkageService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +65,9 @@ public class WmItemRecptController extends BaseController
 
     @Autowired
     private MenuLinkageNoticeService menuLinkageNoticeService;
+
+    @Autowired
+    private ProductionNextStepLinkageService productionNextStepLinkageService;
 
     @Autowired
     private IWmWarehouseService wmWarehouseService;
@@ -258,11 +262,12 @@ public class WmItemRecptController extends BaseController
             wmArrivalNoticeService.updateWmArrivalNotice(notice);
         }
 
-        // 原料已真正入库：提示下一步「生产领料」。
-        // 仅对联动生成的入库单（attr1=AUTO:…）提示，避免手工补录的单据刷出无关提醒。
+        // 原料已真正入库：若存在"已确认/已下达"的工单，才提示下一步「生产领料」。
+        // 只对联动生成的入库单（attr1=AUTO:…）提示，且必须真的有待领料的工单，
+        // 避免出现"菜单亮蓝点但列表为空"的误导。
         if (recpt.getAttr1() != null && recpt.getAttr1().startsWith("AUTO:")) {
             try {
-                menuLinkageNoticeService.markUnread(MenuLinkageNoticePaths.ISSUE);
+                productionNextStepLinkageService.remindIssueIfWorkorderReady();
             } catch (Exception ignore) {
                 // 提醒失败不影响过账结果
             }

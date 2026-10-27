@@ -12,6 +12,7 @@ import com.ktg.mes.wm.domain.tx.IssueTxBean;
 import com.ktg.mes.wm.service.*;
 import com.ktg.mes.linkage.MenuLinkageNoticePaths;
 import com.ktg.mes.linkage.MenuLinkageNoticeService;
+import com.ktg.mes.linkage.ProductionNextStepLinkageService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,9 @@ public class WmIssueHeaderController extends BaseController
 
     @Autowired
     private MenuLinkageNoticeService menuLinkageNoticeService;
+
+    @Autowired
+    private ProductionNextStepLinkageService productionNextStepLinkageService;
 
     @Autowired
     private IWmIssueHeaderService wmIssueHeaderService;
@@ -204,9 +208,9 @@ public class WmIssueHeaderController extends BaseController
         header.setStatus(UserConstants.ORDER_STATUS_FINISHED);
         wmIssueHeaderService.updateWmIssueHeader(header);
 
-        // 料已领到线边仓：提示下一步「生产报工」
+        // 料已领到线边仓：只有该工单已排产（存在工序任务）时才提示下一步「生产报工」
         try {
-            menuLinkageNoticeService.markUnread(MenuLinkageNoticePaths.FEEDBACK);
+            productionNextStepLinkageService.remindFeedbackIfTaskReady(header.getWorkorderId());
         } catch (Exception ignore) {
             // 提醒失败不影响领料结果
         }
