@@ -21,7 +21,9 @@ public class MenuLinkageNoticeService {
                     MenuLinkageNoticePaths.PRODUCT_SALES,
                     MenuLinkageNoticePaths.OQC,
                     MenuLinkageNoticePaths.PRODUCT_RECPT,
-                    MenuLinkageNoticePaths.PENDING_INSPECT)));
+                    MenuLinkageNoticePaths.PENDING_INSPECT,
+                    MenuLinkageNoticePaths.ISSUE,
+                    MenuLinkageNoticePaths.FEEDBACK)));
 
     private final MenuLinkageNoticeMapper mapper;
 

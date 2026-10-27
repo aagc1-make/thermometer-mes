@@ -10,6 +10,8 @@ import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.IssueTxBean;
 import com.ktg.mes.wm.service.*;
+import com.ktg.mes.linkage.MenuLinkageNoticePaths;
+import com.ktg.mes.linkage.MenuLinkageNoticeService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +44,9 @@ public class WmIssueHeaderController extends BaseController
 {
     @Autowired
     private PostingLockMapper postingLockMapper;
+
+    @Autowired
+    private MenuLinkageNoticeService menuLinkageNoticeService;
 
     @Autowired
     private IWmIssueHeaderService wmIssueHeaderService;
@@ -198,6 +203,13 @@ public class WmIssueHeaderController extends BaseController
         //更新单据状态
         header.setStatus(UserConstants.ORDER_STATUS_FINISHED);
         wmIssueHeaderService.updateWmIssueHeader(header);
+
+        // 料已领到线边仓：提示下一步「生产报工」
+        try {
+            menuLinkageNoticeService.markUnread(MenuLinkageNoticePaths.FEEDBACK);
+        } catch (Exception ignore) {
+            // 提醒失败不影响领料结果
+        }
         return AjaxResult.success();
     }
 

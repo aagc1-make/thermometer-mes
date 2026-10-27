@@ -12,6 +12,10 @@ public final class MenuLinkageNoticePaths {
     public static final String PRODUCT_RECPT = "/mes/wm/productrecpt";
     /** 待检任务：IQC/IPQC/OQC 草稿的统一工作台 */
     public static final String PENDING_INSPECT = "/mes/qc/pendinginspect";
+    /** 生产领料：原料入库后提示可以领料 */
+    public static final String ISSUE = "/mes/wm/issue";
+    /** 生产报工：领料执行后提示可以报工 */
+    public static final String FEEDBACK = "/mes/pro/feedback";
 
     private MenuLinkageNoticePaths() {
     }

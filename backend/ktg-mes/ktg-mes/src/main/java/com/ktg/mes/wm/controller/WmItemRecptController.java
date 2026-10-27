@@ -258,6 +258,16 @@ public class WmItemRecptController extends BaseController
             wmArrivalNoticeService.updateWmArrivalNotice(notice);
         }
 
+        // 原料已真正入库：提示下一步「生产领料」。
+        // 仅对联动生成的入库单（attr1=AUTO:…）提示，避免手工补录的单据刷出无关提醒。
+        if (recpt.getAttr1() != null && recpt.getAttr1().startsWith("AUTO:")) {
+            try {
+                menuLinkageNoticeService.markUnread(MenuLinkageNoticePaths.ISSUE);
+            } catch (Exception ignore) {
+                // 提醒失败不影响过账结果
+            }
+        }
+
         return AjaxResult.success();
     }
 
