@@ -3,7 +3,9 @@ package com.ktg.mes.linkage;
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.exception.ServiceException;
 import com.ktg.common.utils.DateUtils;
+import com.ktg.mes.md.domain.MdItem;
 import com.ktg.mes.md.domain.MdProductBom;
+import com.ktg.mes.md.service.IMdItemService;
 import com.ktg.mes.md.service.IMdProductBomService;
 import com.ktg.mes.pro.domain.ProWorkorder;
 import com.ktg.mes.pro.domain.ProWorkorderBom;
@@ -37,6 +39,7 @@ public class IssueDraftLinkageService {
     private final IProWorkorderService workorderService;
     private final IProWorkorderBomService workorderBomService;
     private final IMdProductBomService productBomService;
+    private final IMdItemService mdItemService;
     private final AutoCodeUtil autoCodeUtil;
     private final MenuLinkageNoticeService menuNoticeService;
 
@@ -45,6 +48,7 @@ public class IssueDraftLinkageService {
                                     IProWorkorderService workorderService,
                                     IProWorkorderBomService workorderBomService,
                                     IMdProductBomService productBomService,
+                                    IMdItemService mdItemService,
                                     AutoCodeUtil autoCodeUtil,
                                     MenuLinkageNoticeService menuNoticeService) {
         this.issueHeaderService = issueHeaderService;
@@ -52,6 +56,7 @@ public class IssueDraftLinkageService {
         this.workorderService = workorderService;
         this.workorderBomService = workorderBomService;
         this.productBomService = productBomService;
+        this.mdItemService = mdItemService;
         this.autoCodeUtil = autoCodeUtil;
         this.menuNoticeService = menuNoticeService;
     }
@@ -117,6 +122,11 @@ public class IssueDraftLinkageService {
         BigDecimal planQty = workorder.getQuantity() == null ? BigDecimal.ONE : workorder.getQuantity();
         if (!useProductBom) {
             for (ProWorkorderBom bom : boms) {
+                // 半成品（PRODUCT 行）不通过领料发放：它们由本工单的生产流程产出、
+                // 在总装工序按"工序投料配置"消耗，若放进领料草稿会因原料仓无货而卡住。
+                if ("PRODUCT".equalsIgnoreCase(bom.getItemOrProduct())) {
+                    continue;
+                }
                 BigDecimal quantity = bom.getQuantity();
                 if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
                     continue;
@@ -137,6 +147,10 @@ public class IssueDraftLinkageService {
             }
         } else {
             for (MdProductBom bom : productBoms) {
+                // 同上：半成品不通过领料发放
+                if (isProductItem(bom.getBomItemId())) {
+                    continue;
+                }
                 BigDecimal perUnit = bom.getQuantity();
                 if (perUnit == null || perUnit.compareTo(BigDecimal.ZERO) <= 0) {
                     continue;
@@ -164,5 +178,18 @@ public class IssueDraftLinkageService {
 
         menuNoticeService.markUnread(MenuLinkageNoticePaths.ISSUE);
         return header;
+    }
+
+    /** 判断某个物料是否为自制产品（半成品/成品），这类物料不走领料发放 */
+    private boolean isProductItem(Long itemId) {
+        if (itemId == null) {
+            return false;
+        }
+        try {
+            MdItem item = mdItemService.selectMdItemById(itemId);
+            return item != null && "PRODUCT".equalsIgnoreCase(item.getItemOrProduct());
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
