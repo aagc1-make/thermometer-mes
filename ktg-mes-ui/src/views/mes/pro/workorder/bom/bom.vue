@@ -3,6 +3,18 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
+          v-if="canGenerateSub"
+          type="primary"
+          plain
+          icon="el-icon-plus"
+          size="mini"
+          :disabled="selectedProductRows.length === 0"
+          @click="handleBatchAddSub"
+          v-hasPermi="['mes:pro:workorder:edit']"
+        >批量生成工单（{{ selectedProductRows.length }}）</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
           type="warning"
           plain
           icon="el-icon-download"
@@ -145,6 +157,21 @@ export default {
       optType: undefined,
       workorder: undefined,
   },
+  computed: {
+    /** 当前工单已确认且为自产工单时，才允许从 BOM 行生成半成品子工单 */
+    canGenerateSub() {
+      const wo = this.workorder || {};
+      return wo.status === 'CONFIRMED' && wo.workorderType === 'SELF';
+    },
+    /** 已勾选且类型为"产品"（半成品）的行；只有这些行能生成子工单 */
+    selectedProductRows() {
+      const ids = this.ids || [];
+      if (!ids.length) return [];
+      return (this.workorderbomList || []).filter(
+        row => ids.indexOf(row.lineId) !== -1 && row.itemOrProduct === 'PRODUCT'
+      );
+    }
+  },
   mounted() {
     this.getList();
   },
@@ -235,7 +262,6 @@ export default {
       });
     },
     handleAddSubWorkorder(row){
-      debugger;
       var temp = JSON.parse(JSON.stringify(this.workorder));
       temp.workorderCode = null;
       temp.workorderName = row.itemName + "【"+row.quantity+"】"+row.unitOfMeasure;
@@ -246,6 +272,15 @@ export default {
       temp.quantity = row.quantity;
       temp.status = 'PREPARE';
       this.$emit('handleAddSub',temp);
+    },
+    /** 批量生成半成品子工单：把勾选的"产品"行交给父组件一次性创建 */
+    handleBatchAddSub() {
+      const rows = this.selectedProductRows;
+      if (!rows.length) {
+        this.$modal.msgWarning('请先勾选类型为"产品"的半成品行');
+        return;
+      }
+      this.$emit('handleAddSubBatch', rows);
     },
     /** 导出按钮操作 */
     handleExport() {

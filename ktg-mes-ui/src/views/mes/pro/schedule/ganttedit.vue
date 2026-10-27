@@ -101,11 +101,9 @@ export default {
             });
         },
         handleUpdate(){
-            debugger;
             if(this.changedTaskIds.length>0){
                 this.reset();
                 this.changedTaskIds.forEach(id => {
-                    debugger;                    
                     let nTask = this.tasks.data.filter(task => task.id == id)[0];
                     if(nTask.id.startsWith("MO")){
                         return; //如果是工单改变，不进行保存。
@@ -121,7 +119,6 @@ export default {
                         console.log("update success:"+id);
                         this.$modal.msgSuccess("保存成功");
                     },err =>{
-                        debugger;
                         console.log("update failed:"+err.msg);
                         this.$modal.msgSuccess("保存失败");
                     });

@@ -376,7 +376,7 @@
       </el-form>
       <el-tabs type="border-card" v-if="form.workorderId != null" v-model="activeName" @tab-click="handleClickTab">
         <el-tab-pane label="BOM组成" name="bom">
-          <Workorderbom ref="bomlist" :optType="optType" :workorder="form" @handleAddSub="handleSubAdd" ></Workorderbom>
+          <Workorderbom ref="bomlist" :optType="optType" :workorder="form" @handleAddSub="handleSubAdd" @handleAddSubBatch="handleSubAddBatch" ></Workorderbom>
         </el-tab-pane>
         <el-tab-pane label="物料需求" name="item">
           <WorkorderItemList ref="itemlist"  :workorder="form" :itemStatus="itemStatus"></WorkorderItemList>
@@ -635,6 +635,46 @@ export default {
       this.title = "添加生产工单";
       this.optType="add";
     },
+    /**
+     * 从 BOM 行批量生成半成品子工单。
+     * 与单行"生成工单"的区别：不弹窗逐张填，直接按 BOM 行批量创建草稿工单，
+     * 每张自动取一个工单编号，创建完成后刷新列表。
+     */
+    handleSubAddBatch(rows) {
+      const base = this.form
+      if (!base || !base.workorderId) {
+        this.$modal.msgWarning('请先保存当前工单，再生成半成品工单')
+        return
+      }
+      const created = []
+      const chain = rows.reduce((prev, row) => prev.then(() =>
+        genCode('WORKORDER_CODE').then(code => {
+          const temp = JSON.parse(JSON.stringify(base))
+          temp.workorderId = null
+          temp.workorderCode = code
+          temp.workorderName = row.itemName + '【' + row.quantity + '】' + (row.unitName || row.unitOfMeasure || '')
+          temp.productId = row.itemId
+          temp.productCode = row.itemCode
+          temp.productName = row.itemName
+          temp.unitOfMeasure = row.unitOfMeasure
+          temp.unitName = row.unitName
+          temp.quantity = row.quantity
+          temp.status = 'PREPARE'
+          temp.parentId = base.workorderId
+          return addWorkorder(temp).then(() => { created.push(code) })
+        })
+      ), Promise.resolve())
+
+      chain.then(() => {
+        this.$modal.msgSuccess('已生成 ' + created.length + ' 张半成品工单：' + created.join('、'))
+        this.getList()
+        if (this.$refs['bomlist']) {
+          this.$refs['bomlist'].getList()
+        }
+      }).catch(() => {
+        this.$modal.msgError('批量生成工单失败，请查看后端日志')
+      })
+    },
     /** 新增按钮操作 */
     handleAdd(row) {
       this.reset();
@@ -784,7 +824,6 @@ export default {
     },
     //供应商选择弹出框
     onVendorSelected(obj){
-      debugger;
       if(obj != undefined && obj != null){
         this.form.vendorId = obj.vendorId;
         this.form.vendorCode = obj.vendorCode;

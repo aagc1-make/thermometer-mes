@@ -177,7 +177,6 @@ export default {
   methods: {
     /** 查询产品制程物料BOM列表 */
     getList() {
-      debugger;
       this.loading = true;
       listRouteproductbom(this.queryParams).then(response => {
         this.routeproductbomList = response.rows;
