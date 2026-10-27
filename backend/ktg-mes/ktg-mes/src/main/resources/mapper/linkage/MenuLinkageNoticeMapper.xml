@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ktg.mes.linkage.MenuLinkageNoticeMapper">
+
+    <insert id="upsertUnread">
+        INSERT INTO sys_menu_linkage_notice
+            (menu_path, unread_flag, trigger_count, last_trigger_time, read_time, create_time, update_time)
+        VALUES
+            (#{menuPath}, 'Y', 1, NOW(), NULL, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+            unread_flag = 'Y',
+            trigger_count = trigger_count + 1,
+            last_trigger_time = NOW(),
+            read_time = NULL,
+            update_time = NOW()
+    </insert>
+
+    <select id="selectUnreadPaths" resultType="java.lang.String">
+        SELECT menu_path
+        FROM sys_menu_linkage_notice
+        WHERE unread_flag = 'Y'
+        ORDER BY last_trigger_time DESC
+    </select>
+
+    <update id="markRead">
+        UPDATE sys_menu_linkage_notice
+        SET unread_flag = 'N',
+            read_time = NOW(),
+            update_time = NOW()
+        WHERE menu_path = #{menuPath}
+          AND unread_flag = 'Y'
+    </update>
+
+</mapper>

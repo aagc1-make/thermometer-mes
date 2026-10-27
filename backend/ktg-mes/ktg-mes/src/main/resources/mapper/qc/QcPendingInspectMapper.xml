@@ -11,6 +11,9 @@
         <result property="recordTime"    column="record_time"    />
         <result property="qcType"    column="qc_type"    />
         <result property="qcDetailType"    column="qc_detail_type"    />
+        <result property="qcId" column="qc_id" />
+        <result property="qcCode" column="qc_code" />
+        <result property="qcStatus" column="qc_status" />
         <result property="itemId"    column="item_id"    />
         <result property="itemCode"    column="item_code"    />
         <result property="itemName"    column="item_name"    />
@@ -49,7 +52,25 @@
     </resultMap>
 
     <select id="selectQcPendingList" parameterType="QcPendingInspect" resultMap="QcPendingInspectResult">
-        SELECT *
+        SELECT t.*,
+               CASE
+                   WHEN t.qc_type = 'IQC' THEN (SELECT q.iqc_id FROM qc_iqc q WHERE q.source_doc_type = t.source_doc_type AND q.source_line_id = t.source_doc_line_id ORDER BY q.iqc_id DESC LIMIT 1)
+                   WHEN t.qc_type = 'PQC' THEN (SELECT q.ipqc_id FROM qc_ipqc q WHERE q.source_doc_type = t.source_doc_type AND q.source_line_id = t.source_doc_line_id ORDER BY q.ipqc_id DESC LIMIT 1)
+                   WHEN t.qc_type = 'OQC' THEN (SELECT q.oqc_id FROM qc_oqc q WHERE q.source_doc_type = t.source_doc_type AND q.source_line_id = t.source_doc_line_id ORDER BY q.oqc_id DESC LIMIT 1)
+                   ELSE NULL
+               END AS qc_id,
+               CASE
+                   WHEN t.qc_type = 'IQC' THEN (SELECT q.iqc_code FROM qc_iqc q WHERE q.source_doc_type = t.source_doc_type AND q.source_line_id = t.source_doc_line_id ORDER BY q.iqc_id DESC LIMIT 1)
+                   WHEN t.qc_type = 'PQC' THEN (SELECT q.ipqc_code FROM qc_ipqc q WHERE q.source_doc_type = t.source_doc_type AND q.source_line_id = t.source_doc_line_id ORDER BY q.ipqc_id DESC LIMIT 1)
+                   WHEN t.qc_type = 'OQC' THEN (SELECT q.oqc_code FROM qc_oqc q WHERE q.source_doc_type = t.source_doc_type AND q.source_line_id = t.source_doc_line_id ORDER BY q.oqc_id DESC LIMIT 1)
+                   ELSE NULL
+               END AS qc_code,
+               CASE
+                   WHEN t.qc_type = 'IQC' THEN (SELECT q.status FROM qc_iqc q WHERE q.source_doc_type = t.source_doc_type AND q.source_line_id = t.source_doc_line_id ORDER BY q.iqc_id DESC LIMIT 1)
+                   WHEN t.qc_type = 'PQC' THEN (SELECT q.status FROM qc_ipqc q WHERE q.source_doc_type = t.source_doc_type AND q.source_line_id = t.source_doc_line_id ORDER BY q.ipqc_id DESC LIMIT 1)
+                   WHEN t.qc_type = 'OQC' THEN (SELECT q.status FROM qc_oqc q WHERE q.source_doc_type = t.source_doc_type AND q.source_line_id = t.source_doc_line_id ORDER BY q.oqc_id DESC LIMIT 1)
+                   ELSE NULL
+               END AS qc_status
         FROM
             (
                 SELECT wor.recpt_id as source_doc_id,

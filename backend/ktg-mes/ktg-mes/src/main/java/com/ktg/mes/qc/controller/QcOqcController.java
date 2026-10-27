@@ -11,6 +11,7 @@ import com.ktg.mes.qc.domain.*;
 import com.ktg.mes.qc.service.IQcOqcLineService;
 import com.ktg.mes.qc.service.IQcTemplateIndexService;
 import com.ktg.mes.qc.service.IQcTemplateProductService;
+import com.ktg.mes.linkage.FormLinkagePolicy;
 import com.ktg.mes.wm.domain.WmProductSales;
 import com.ktg.mes.wm.domain.WmProductSalesLine;
 import com.ktg.mes.wm.service.IWmProductSalesLineService;
@@ -62,6 +63,9 @@ public class QcOqcController extends BaseController
 
     @Autowired
     private IWmProductSalesLineService wmProductSalesLineService;
+
+    @Autowired
+    private FormLinkagePolicy formLinkagePolicy;
 
     /**
      * 查询出货检验单列表
@@ -126,9 +130,8 @@ public class QcOqcController extends BaseController
             qcOqc.setQuantityCheck(qcOqc.getQuantityOut());
         }
 
-        if(qcOqc.getQuantityCheck().compareTo(qcOqc.getQuantityUnqualified().add(qcOqc.getQuantityQualified()))!=0){
-            return AjaxResult.error("质检数量必须等于合格数量+不合格数量!");
-        }
+        formLinkagePolicy.assertQualityQuantities(qcOqc.getQuantityCheck(),
+                qcOqc.getQuantityQualified(), qcOqc.getQuantityUnqualified());
 
 
         //根据来源单据初始化其他头信息
@@ -189,7 +192,19 @@ public class QcOqcController extends BaseController
         //设置检测人
         qcOqc.setInspector(getUsername());
 
-        // ===== 2. 完成：统一事务编排（并发条件更新 + 质量回写 + 主单汇总）=====
+        // ===== 合并决议 =====
+        // 入口校验采用队友分支的统一策略（检测量缺省取出库量、数量守恒、完成防重）；
+        // 完成动作仍走我方 completeOqc（并发条件更新 + 来源归属校验 + 放行量缩减 + 主单汇总）。
+        QcOqc persisted = qcOqcService.selectQcOqcByOqcId(qcOqc.getOqcId());
+        formLinkagePolicy.assertQualityCompletionAllowed(
+                persisted == null ? null : persisted.getStatus(), qcOqc.getStatus());
+        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())){
+            if(qcOqc.getQuantityCheck() == null){
+                qcOqc.setQuantityCheck(qcOqc.getQuantityOut());
+            }
+            formLinkagePolicy.assertQualityQuantities(qcOqc.getQuantityCheck(),
+                    qcOqc.getQuantityQualified(), qcOqc.getQuantityUnqualified());
+        }
         if(UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())){
             qcOqcService.completeOqc(qcOqc);
             return AjaxResult.success("出货检验已完成");

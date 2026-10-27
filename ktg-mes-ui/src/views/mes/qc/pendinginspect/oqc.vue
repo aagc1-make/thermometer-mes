@@ -227,6 +227,11 @@ export default {
   },
   created() {
     this.reset();
+    if (this.$route.params.qcId) {
+      getOqc(this.$route.params.qcId).then(response => {
+        this.form = response.data;
+      });
+    }
   },
   methods: {
     // 取消按钮

@@ -10,6 +10,7 @@ import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ItemRecptTxBean;
 import com.ktg.mes.wm.service.*;
+import com.ktg.mes.linkage.FormLinkagePolicy;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +53,12 @@ public class WmItemRecptController extends BaseController
 
     @Autowired
     private IWmArrivalNoticeService wmArrivalNoticeService;
+
+    @Autowired
+    private IWmArrivalNoticeLineService wmArrivalNoticeLineService;
+
+    @Autowired
+    private FormLinkagePolicy formLinkagePolicy;
 
     @Autowired
     private IWmWarehouseService wmWarehouseService;
@@ -211,6 +218,13 @@ public class WmItemRecptController extends BaseController
 
 
         WmItemRecpt recpt = wmItemRecptService.selectWmItemRecptByRecptId(recptId);
+
+        WmArrivalNoticeLine sourceParam = new WmArrivalNoticeLine();
+        sourceParam.setNoticeId(recpt == null ? null : recpt.getNoticeId());
+        List<WmArrivalNoticeLine> sourceLines = recpt != null && recpt.getNoticeId() != null
+                ? wmArrivalNoticeLineService.selectWmArrivalNoticeLineList(sourceParam)
+                : java.util.Collections.emptyList();
+        formLinkagePolicy.assertPurchaseReceiptExecutable(recpt, sourceLines);
 
         //构造Transaction事务，并执行库存更新逻辑
         List<ItemRecptTxBean> beans = wmItemRecptService.getTxBeans(recptId);
