@@ -32,7 +32,7 @@
           <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
         </el-form-item>
       </el-form>
-  
+
       <el-table v-loading="loading" :data="pendingList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="来源单据编号" align="center" prop="sourceDocCode" />        
@@ -50,6 +50,11 @@
         <el-table-column label="物资名称" align="center" prop="itemName" />
         <el-table-column label="待检数量" align="center" prop="quantityCheck" />
         <el-table-column label="单位" align="center" prop="unitName" />
+        <el-table-column label="质检草稿" align="center" prop="qcCode">
+          <template slot-scope="scope">
+            <span>{{ scope.row.qcCode || '待生成' }}</span>
+          </template>
+        </el-table-column>
 
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template slot-scope="scope">
@@ -190,4 +195,4 @@
     }
   };
   </script>
-  
+

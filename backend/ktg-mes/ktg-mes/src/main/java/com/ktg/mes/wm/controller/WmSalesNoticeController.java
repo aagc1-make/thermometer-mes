@@ -4,6 +4,10 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.constant.UserConstants;
+import com.ktg.mes.linkage.SalesNoticeLinkageService;
+import com.ktg.mes.wm.domain.WmSalesNoticeLine;
+import com.ktg.mes.wm.service.IWmSalesNoticeLineService;
+import org.springframework.util.CollectionUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +41,12 @@ public class WmSalesNoticeController extends BaseController
 {
     @Autowired
     private IWmSalesNoticeService wmSalesNoticeService;
+
+    @Autowired
+    private IWmSalesNoticeLineService wmSalesNoticeLineService;
+
+    @Autowired
+    private SalesNoticeLinkageService salesNoticeLinkageService;
 
     /**
      * 查询发货通知单列表
@@ -90,9 +100,23 @@ public class WmSalesNoticeController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:wm:salesnotice:edit')")
     @Log(title = "发货通知单", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody WmSalesNotice wmSalesNotice)
     {
-        return toAjax(wmSalesNoticeService.updateWmSalesNotice(wmSalesNotice));
+        List<WmSalesNoticeLine> lines = null;
+        if(UserConstants.ORDER_STATUS_CONFIRMED.equals(wmSalesNotice.getStatus())){
+            WmSalesNoticeLine param = new WmSalesNoticeLine();
+            param.setNoticeId(wmSalesNotice.getNoticeId());
+            lines = wmSalesNoticeLineService.selectWmSalesNoticeLineList(param);
+            if(CollectionUtils.isEmpty(lines)){
+                return AjaxResult.error("请添加发货通知明细");
+            }
+        }
+        int rows = wmSalesNoticeService.updateWmSalesNotice(wmSalesNotice);
+        if(rows > 0 && UserConstants.ORDER_STATUS_CONFIRMED.equals(wmSalesNotice.getStatus())){
+            salesNoticeLinkageService.createDraft(wmSalesNotice, lines, getUsername());
+        }
+        return toAjax(rows);
     }
 
     /**

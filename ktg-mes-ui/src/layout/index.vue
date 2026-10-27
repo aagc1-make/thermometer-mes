@@ -6,7 +6,7 @@
     <rail />
     <sidebar v-if="!sidebar.hide" class="sidebar-container" />
     <div :class="{hasTagsView:needTagsView,sidebarHide:sidebar.hide}" class="main-container">
-      <div :class="{'fixed-header':fixedHeader}">
+      <div class="fixed-header">
         <navbar />
         <tags-view v-if="needTagsView" />
       </div>
@@ -26,6 +26,11 @@ import ResizeMixin from './mixin/ResizeHandler'
 import { mapState } from 'vuex'
 import variables from '@/assets/styles/variables.scss'
 
+const {
+  MENU_NOTICE_POLL_INTERVAL,
+  isMenuPathUnread
+} = require('@/utils/menuLinkageNotice')
+
 export default {
   name: 'Layout',
   components: {
@@ -38,19 +43,23 @@ export default {
     TagsView
   },
   mixins: [ResizeMixin],
+  data() {
+    return {
+      menuNoticeTimer: null
+    }
+  },
   computed: {
     ...mapState({
       theme: state => state.settings.theme,
       sideTheme: state => state.settings.sideTheme,
       sidebar: state => state.app.sidebar,
       device: state => state.app.device,
-      needTagsView: state => state.settings.tagsView,
-      fixedHeader: state => state.settings.fixedHeader
+      needTagsView: state => state.settings.tagsView
     }),
     classObj() {
       return {
-        hideSidebar: !this.sidebar.opened,
-        openSidebar: this.sidebar.opened,
+        hideSidebar: this.device === 'mobile' && !this.sidebar.opened,
+        openSidebar: this.device !== 'mobile' || this.sidebar.opened,
         withoutAnimation: this.sidebar.withoutAnimation,
         mobile: this.device === 'mobile'
       }
@@ -59,7 +68,31 @@ export default {
       return variables;
     }
   },
+  watch: {
+    '$route.path'(path) {
+      this.clearCurrentMenuNotice(path)
+    }
+  },
+  mounted() {
+    this.$store.dispatch('refreshMenuLinkageNotices')
+      .then(() => this.clearCurrentMenuNotice(this.$route.path))
+      .catch(() => {})
+    this.menuNoticeTimer = window.setInterval(() => {
+      this.$store.dispatch('refreshMenuLinkageNotices').catch(() => {})
+    }, MENU_NOTICE_POLL_INTERVAL)
+  },
+  beforeDestroy() {
+    if (this.menuNoticeTimer) {
+      window.clearInterval(this.menuNoticeTimer)
+      this.menuNoticeTimer = null
+    }
+  },
   methods: {
+    clearCurrentMenuNotice(path) {
+      const unread = this.$store.getters.unreadMenuPaths || []
+      if (!isMenuPathUnread(unread, path)) return
+      this.$store.dispatch('markMenuLinkageNoticeRead', path).catch(() => {})
+    },
     // 跳过导航：把焦点移到主内容区，方便读屏/键盘用户
     skipToContent() {
       const el = document.getElementById('main-content')
@@ -102,13 +135,9 @@ export default {
     position: fixed;
     top: 0;
     right: 0;
+    left: 0;
     z-index: 9;
-    width: calc(100% - #{$base-sidebar-width});
-    transition: width 0.28s;
-  }
-
-  .hideSidebar .fixed-header {
-    width: calc(100% - 54px);
+    width: 100%;
   }
 
   .sidebarHide .fixed-header {

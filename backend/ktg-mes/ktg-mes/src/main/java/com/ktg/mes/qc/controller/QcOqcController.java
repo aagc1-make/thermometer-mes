@@ -11,6 +11,7 @@ import com.ktg.mes.qc.domain.*;
 import com.ktg.mes.qc.service.IQcOqcLineService;
 import com.ktg.mes.qc.service.IQcTemplateIndexService;
 import com.ktg.mes.qc.service.IQcTemplateProductService;
+import com.ktg.mes.linkage.FormLinkagePolicy;
 import com.ktg.mes.wm.domain.WmProductSales;
 import com.ktg.mes.wm.domain.WmProductSalesLine;
 import com.ktg.mes.wm.service.IWmProductSalesLineService;
@@ -62,6 +63,9 @@ public class QcOqcController extends BaseController
 
     @Autowired
     private IWmProductSalesLineService wmProductSalesLineService;
+
+    @Autowired
+    private FormLinkagePolicy formLinkagePolicy;
 
     /**
      * 查询出货检验单列表
@@ -126,9 +130,8 @@ public class QcOqcController extends BaseController
             qcOqc.setQuantityCheck(qcOqc.getQuantityOut());
         }
 
-        if(qcOqc.getQuantityCheck().compareTo(qcOqc.getQuantityUnqualified().add(qcOqc.getQuantityQualified()))!=0){
-            return AjaxResult.error("质检数量必须等于合格数量+不合格数量!");
-        }
+        formLinkagePolicy.assertQualityQuantities(qcOqc.getQuantityCheck(),
+                qcOqc.getQuantityQualified(), qcOqc.getQuantityUnqualified());
 
 
         //根据来源单据初始化其他头信息
@@ -157,6 +160,7 @@ public class QcOqcController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('mes:qc:oqc:edit')")
     @Log(title = "出货检验单", businessType = BusinessType.UPDATE)
+    @Transactional
     @PutMapping
     public AjaxResult edit(@RequestBody QcOqc qcOqc)
     {
@@ -175,6 +179,17 @@ public class QcOqcController extends BaseController
         }
         //设置检测人
         qcOqc.setInspector(getUsername());
+
+        QcOqc persisted = qcOqcService.selectQcOqcByOqcId(qcOqc.getOqcId());
+        formLinkagePolicy.assertQualityCompletionAllowed(
+                persisted == null ? null : persisted.getStatus(), qcOqc.getStatus());
+        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())){
+            if(qcOqc.getQuantityCheck() == null){
+                qcOqc.setQuantityCheck(qcOqc.getQuantityOut());
+            }
+            formLinkagePolicy.assertQualityQuantities(qcOqc.getQuantityCheck(),
+                    qcOqc.getQuantityQualified(), qcOqc.getQuantityUnqualified());
+        }
 
         //完成时更新销售出库单行的质检状态和质检单号。再检查所有出库单行状态，如果有NG的则直接更新销售出库单状态为CANCELED; 如果全是OK，则更新出库单状态为UNSHIPPING(待填写发运单）
         if(UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())){

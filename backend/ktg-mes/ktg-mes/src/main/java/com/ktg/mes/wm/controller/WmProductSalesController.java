@@ -10,6 +10,8 @@ import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ProductSalesTxBean;
 import com.ktg.mes.wm.service.*;
+import com.ktg.mes.linkage.FormLinkagePolicy;
+import com.ktg.mes.linkage.SalesQualityLinkageService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +53,12 @@ public class WmProductSalesController extends BaseController
 
     @Autowired
     private IStorageCoreService storageCoreService;
+
+    @Autowired
+    private SalesQualityLinkageService salesQualityLinkageService;
+
+    @Autowired
+    private FormLinkagePolicy formLinkagePolicy;
 
     /**
      * 查询销售出库单列表
@@ -126,6 +134,7 @@ public class WmProductSalesController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:wm:productsales:edit')")
     @Log(title = "销售出库单", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody WmProductSales wmProductSales)
     {
         if(UserConstants.NOT_UNIQUE.equals(wmProductSalesService.checkUnique(wmProductSales))){
@@ -149,18 +158,24 @@ public class WmProductSalesController extends BaseController
         }
 
         //向待填写运单状态提交时，检查行是否有需要进行出货检验的，如果有。则将状态更改为待检验;如果是在UNSHIPPING状态下保存，则行的质量状态肯定不为空的。
+        boolean createOqcDrafts = false;
         if(UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING.equals(wmProductSales.getStatus())){
             for(WmProductSalesLine line : lines){
                 if(UserConstants.YES.equals(line.getOqcCheck()) && StringUtils.isEmpty(line.getQualityStatus())){
                     wmProductSales.setStatus(UserConstants.PRODUCT_SALES_STATUS_UNCHECK);
                     line.setQualityStatus(UserConstants.QUALITY_STATUS_NOTTEST);
                     wmProductSalesLineService.updateWmProductSalesLine(line);
+                    createOqcDrafts = true;
                 }
             }
         }
 
         wmProductSales.setUpdateBy(getUsername());
-        return toAjax(wmProductSalesService.updateWmProductSales(wmProductSales));
+        int rows = wmProductSalesService.updateWmProductSales(wmProductSales);
+        if(rows > 0 && createOqcDrafts){
+            salesQualityLinkageService.createDrafts(wmProductSales, lines, getUsername());
+        }
+        return toAjax(rows);
     }
 
     /**
@@ -202,6 +217,8 @@ public class WmProductSalesController extends BaseController
         if(CollectionUtil.isEmpty(lines)){
             return AjaxResult.error("出库物资不能为空");
         }
+
+        formLinkagePolicy.assertSalesExecutable(sales, lines);
 
         List<ProductSalesTxBean> beans = wmProductSalesService.getTxBeans(salesId);
         storageCoreService.processProductSales(beans);

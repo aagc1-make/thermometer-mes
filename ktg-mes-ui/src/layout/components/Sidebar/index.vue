@@ -37,7 +37,7 @@ export default {
     components: { SidebarItem, Logo },
     computed: {
         ...mapState(["settings"]),
-        ...mapGetters(["sidebarRouters", "sidebar"]),
+        ...mapGetters(["sidebarRouters", "sidebar", "device"]),
         activeMenu() {
             const route = this.$route;
             const { meta, path } = route;
@@ -114,7 +114,7 @@ export default {
             return variables;
         },
         isCollapse() {
-            return !this.sidebar.opened;
+            return this.device === 'mobile' ? !this.sidebar.opened : false;
         },
         // 分组样式：默认展开当前域下的全部母目录（渲染后的分组节点），呈现「分组标题 + 组内菜单」
         openeds() {

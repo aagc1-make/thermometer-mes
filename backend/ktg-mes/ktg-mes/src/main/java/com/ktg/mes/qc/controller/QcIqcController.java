@@ -10,6 +10,8 @@ import com.ktg.common.utils.StringUtils;
 import com.ktg.common.utils.bean.BeanUtils;
 import com.ktg.mes.pro.domain.ProFeedback;
 import com.ktg.mes.pro.service.IProFeedbackService;
+import com.ktg.mes.linkage.FormLinkagePolicy;
+import com.ktg.mes.linkage.PurchaseReceiptLinkageService;
 import com.ktg.mes.qc.domain.*;
 import com.ktg.mes.qc.service.*;
 import com.ktg.mes.wm.domain.WmArrivalNoticeLine;
@@ -72,6 +74,12 @@ public class QcIqcController extends BaseController
     @Autowired
     private IWmOutsourceRecptService wmOutsourceRecptService;
 
+    @Autowired
+    private PurchaseReceiptLinkageService purchaseReceiptLinkageService;
+
+    @Autowired
+    private FormLinkagePolicy formLinkagePolicy;
+
 
     /**
      * 查询来料检验单列表
@@ -130,14 +138,8 @@ public class QcIqcController extends BaseController
         }
 
         //检测数量效验
-        if((qcIqc.getQuantityUnqualified() == null || qcIqc.getQuantityUnqualified().compareTo(BigDecimal.ZERO) <= 0)&&
-                (qcIqc.getQuantityQualified() == null || qcIqc.getQuantityQualified().compareTo(BigDecimal.ZERO) <= 0)){
-            return AjaxResult.error("请填写合格品/不合格品数量！");
-        }
-
-        if(qcIqc.getQuantityCheck().compareTo(qcIqc.getQuantityUnqualified().add(qcIqc.getQuantityQualified())) !=0){
-            return AjaxResult.error("检测数量与合格品/不合格品数量总数不匹配！");
-        }
+        formLinkagePolicy.assertQualityQuantities(qcIqc.getQuantityCheck(),
+                qcIqc.getQuantityQualified(), qcIqc.getQuantityUnqualified());
 
         qcIqc.setInspector(getUsername());
         qcIqcService.insertQcIqc(qcIqc);
@@ -169,15 +171,15 @@ public class QcIqcController extends BaseController
         }
         qcIqc.setInspector(getUsername());
 
-        //检测数量效验
-        qcIqc.setQuantityCheck(qcIqc.getQuantityRecived()); //用到货数量更新检测数量；检测有定性和定量两种，默认为定量模式，在定性模式下需要在入库单处过滤未通过的到货通知单。
-        if((qcIqc.getQuantityUnqualified() == null || qcIqc.getQuantityUnqualified().compareTo(BigDecimal.ZERO) <= 0)&&
-                (qcIqc.getQuantityQualified() == null || qcIqc.getQuantityQualified().compareTo(BigDecimal.ZERO) <= 0)){
-            return AjaxResult.error("请填写合格品/不合格品数量！");
-        }
+        QcIqc persisted = qcIqcService.selectQcIqcByIqcId(qcIqc.getIqcId());
+        formLinkagePolicy.assertQualityCompletionAllowed(
+                persisted == null ? null : persisted.getStatus(), qcIqc.getStatus());
 
-        if(qcIqc.getQuantityCheck().compareTo(qcIqc.getQuantityUnqualified().add(qcIqc.getQuantityQualified())) !=0){
-            return AjaxResult.error("检测数量与合格品/不合格品数量总数不匹配！");
+        //草稿允许暂存；只有完成检验时才校验数量守恒。
+        qcIqc.setQuantityCheck(qcIqc.getQuantityRecived());
+        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcIqc.getStatus())){
+            formLinkagePolicy.assertQualityQuantities(qcIqc.getQuantityCheck(),
+                    qcIqc.getQuantityQualified(), qcIqc.getQuantityUnqualified());
         }
 
         //如果是完成状态，则根据来源单据更新其对应的检测单
@@ -195,6 +197,14 @@ public class QcIqcController extends BaseController
                         wmArrivalNoticeLineService.updateWmArrivalNoticeLine(line);
                         //根据行的检测情况更新到货通知单的状态
                         wmArrivalNoticeService.updateStatus(qcIqc.getSourceDocId());
+
+                        WmArrivalNoticeLine lineParam = new WmArrivalNoticeLine();
+                        lineParam.setNoticeId(qcIqc.getSourceDocId());
+                        List<WmArrivalNoticeLine> noticeLines =
+                                wmArrivalNoticeLineService.selectWmArrivalNoticeLineList(lineParam);
+                        purchaseReceiptLinkageService.createDraftWhenReady(
+                                wmArrivalNoticeService.selectWmArrivalNoticeByNoticeId(qcIqc.getSourceDocId()),
+                                noticeLines, getUsername());
                     }
                 }else if(UserConstants.SOURCE_DOC_TYPE_OUTSOURCE_RECPT.equals(qcIqc.getSourceDocType())){
                     //外协入库单，这里需要根据检验结果对入库单行进行拆分，并更新入库单状态
