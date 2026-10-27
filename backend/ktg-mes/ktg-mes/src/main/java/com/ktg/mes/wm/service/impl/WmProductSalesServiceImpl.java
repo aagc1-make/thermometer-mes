@@ -6,14 +6,18 @@ import java.util.stream.Collectors;
 
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.core.domain.AjaxResult;
+import com.ktg.common.exception.ServiceException;
 import com.ktg.common.utils.DateUtils;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.WmProductSalesLine;
 import com.ktg.mes.wm.domain.tx.ProductSalesTxBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.ktg.mes.wm.mapper.WmProductSalesMapper;
+import com.ktg.mes.wm.mapper.WmProductSalesLineMapper;
 import com.ktg.mes.wm.domain.WmProductSales;
+import com.ktg.mes.wm.service.IWmProductSalesLineService;
 import com.ktg.mes.wm.service.IWmProductSalesService;
 
 /**
@@ -27,6 +31,69 @@ public class WmProductSalesServiceImpl implements IWmProductSalesService
 {
     @Autowired
     private WmProductSalesMapper wmProductSalesMapper;
+
+    @Autowired
+    private WmProductSalesLineMapper wmProductSalesLineMapper;
+
+    @Autowired
+    private IWmProductSalesLineService wmProductSalesLineService;
+
+    /**
+     * 提交待检（阶段1复审修复①）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int submitForInspection(Long salesId)
+    {
+        if (salesId == null) {
+            throw new ServiceException("销售单ID不能为空");
+        }
+        WmProductSales sales = wmProductSalesMapper.selectWmProductSalesBySalesId(salesId);
+        if (sales == null) {
+            throw new ServiceException("销售单不存在");
+        }
+        String status = sales.getStatus();
+        // 允许从草稿/待提交/待拣货/待发运进入待检；已在待检或已执行则拒绝
+        if (!UserConstants.ORDER_STATUS_PREPARE.equals(status)
+                && !UserConstants.ORDER_STATUS_APPROVING.equals(status)
+                && !UserConstants.PRODUCT_SALES_STATUS_UNSTOCK.equals(status)
+                && !UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING.equals(status)) {
+            throw new ServiceException("当前单据状态不允许提交待检，请刷新后重试");
+        }
+        WmProductSalesLine param = new WmProductSalesLine();
+        param.setSalesId(salesId);
+        List<WmProductSalesLine> lines = wmProductSalesLineMapper.selectWmProductSalesLineList(param);
+        if (lines == null || lines.isEmpty()) {
+            throw new ServiceException("出库物资不能为空");
+        }
+        boolean needCheck = false;
+        for (WmProductSalesLine line : lines) {
+            if (line.getQuantitySales() == null
+                    || line.getQuantitySales().signum() <= 0) {
+                throw new ServiceException("出库数量必须大于0");
+            }
+            if (UserConstants.YES.equals(line.getOqcCheck())
+                    && StringUtils.isEmpty(line.getQualityStatus())) {
+                // 只写"待检"标记，走受控回写通道，避免触发草稿态校验
+                WmProductSalesLine pending = new WmProductSalesLine();
+                pending.setLineId(line.getLineId());
+                pending.setQualityStatus(UserConstants.QUALITY_STATUS_NOTTEST);
+                pending.setUpdateBy(sales.getUpdateBy());
+                wmProductSalesLineService.writeBackOqcResult(pending);
+                needCheck = true;
+            } else if (UserConstants.YES.equals(line.getOqcCheck())
+                    && UserConstants.QUALITY_STATUS_NOTTEST.equals(line.getQualityStatus())) {
+                needCheck = true;
+            }
+        }
+        if (needCheck) {
+            sales.setStatus(UserConstants.PRODUCT_SALES_STATUS_UNCHECK);
+            wmProductSalesMapper.updateWmProductSales(sales);
+            return 1;
+        }
+        // 全部免检：不进入待检，直接结束（状态由调用方按现有规则推进）
+        return 0;
+    }
 
     /**
      * 查询销售出库单

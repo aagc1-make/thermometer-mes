@@ -112,6 +112,8 @@ public class WmProductSalesLineController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody WmProductSalesLine wmProductSalesLine)
     {
+        // 状态保护、字段白名单、已检行冻结已下沉到 Service（PC/移动端共用）
+        wmProductSalesLine.setUpdateBy(getUsername());
         return toAjax(wmProductSalesLineService.updateWmProductSalesLine(wmProductSalesLine));
     }
 

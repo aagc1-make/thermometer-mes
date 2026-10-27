@@ -158,10 +158,23 @@ public class QcOqcController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:qc:oqc:edit')")
     @Log(title = "出货检验单", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional(rollbackFor = Exception.class)
     public AjaxResult edit(@RequestBody QcOqc qcOqc)
     {
         if(UserConstants.NOT_UNIQUE.equals(qcOqcService.checkOqcCodeUnique(qcOqc))){
             return AjaxResult.error("出货单编号已存在!");
+        }
+
+        // ===== 1. 校验阶段：所有失败都在写入之前返回，避免"已完成但未回写" =====
+        if (qcOqc.getOqcId() == null) {
+            return AjaxResult.error("出货检验单ID不能为空");
+        }
+        QcOqc existing = qcOqcService.selectQcOqcByOqcId(qcOqc.getOqcId());
+        if (existing == null) {
+            return AjaxResult.error("出货检验单不存在");
+        }
+        if (UserConstants.ORDER_STATUS_FINISHED.equals(existing.getStatus())) {
+            return AjaxResult.error("该出货检验单已完成，不能重复完成或修改，请走作废/重检流程");
         }
 
         //自动获取对应的检测模板
@@ -176,49 +189,10 @@ public class QcOqcController extends BaseController
         //设置检测人
         qcOqc.setInspector(getUsername());
 
-        //完成时更新销售出库单行的质检状态和质检单号。再检查所有出库单行状态，如果有NG的则直接更新销售出库单状态为CANCELED; 如果全是OK，则更新出库单状态为UNSHIPPING(待填写发运单）
+        // ===== 2. 完成：统一事务编排（并发条件更新 + 质量回写 + 主单汇总）=====
         if(UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())){
-            if(StringUtils.isNotNull(qcOqc.getSourceDocId())){
-                WmProductSalesLine line =  wmProductSalesLineService.selectWmProductSalesLineByLineId(qcOqc.getSourceLineId());
-                if(StringUtils.isNotNull(line)){
-                    if(UserConstants.QUALITY_CHECK_RESULT_ACCEPT.equals(qcOqc.getCheckResult())){
-                        line.setQualityStatus(UserConstants.QUALITY_STATUS_PASS);
-                    }else{
-                        line.setQualityStatus(UserConstants.QUALITY_STATUS_NOTGOOD);
-                    }
-                    line.setOqcId(qcOqc.getOqcId());
-                    line.setOqcCode(qcOqc.getOqcCode());
-                    wmProductSalesLineService.updateWmProductSalesLine(line);
-                }
-
-                //检查所有出库单行状态
-                WmProductSales sales = wmProductSalesService.selectWmProductSalesBySalesId(qcOqc.getSourceDocId());
-                WmProductSalesLine lineParam = new WmProductSalesLine();
-                lineParam.setSalesId(qcOqc.getSourceDocId());
-                List<WmProductSalesLine> lines = wmProductSalesLineService.selectWmProductSalesLineList(lineParam);
-
-                boolean allOk = true;
-                if(CollectionUtils.isNotEmpty(lines)){
-                    for (WmProductSalesLine item: lines
-                         ) {
-                        if(UserConstants.QUALITY_STATUS_NOTGOOD.equals(item.getQualityStatus())){
-                            //有NG的行，更新销售单状态为CANCELED
-                            sales.setStatus(UserConstants.PRODUCT_SALES_STATUS_CANCELED);
-                            wmProductSalesService.updateWmProductSales(sales);
-                            allOk = false;
-                        }
-
-                        if(UserConstants.QUALITY_STATUS_NOTTEST.equals(item.getQualityStatus())){
-                            allOk = false;
-                        }
-                    }
-                    if(allOk){
-                        //全部OK，更新销售单状态为待填写发运单
-                        sales.setStatus(UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING);
-                        wmProductSalesService.updateWmProductSales(sales);
-                    }
-                }
-            }
+            qcOqcService.completeOqc(qcOqc);
+            return AjaxResult.success("出货检验已完成");
         }
         return toAjax(qcOqcService.updateQcOqc(qcOqc));
     }

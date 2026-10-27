@@ -164,15 +164,12 @@ public class WmProductSalesMobController extends BaseController {
             }
         }
 
-        //向待填写运单状态提交时，检查行是否有需要进行出货检验的，如果有。则将状态更改为待检验;如果是在UNSHIPPING状态下保存，则行的质量状态肯定不为空的。
+        // 阶段1复审修复①④：提交待检统一下沉到 Service；返回 0 表示全免检，直接推进待发运
         if(UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING.equals(wmProductSales.getStatus())){
-            for(WmProductSalesLine line : lines){
-                if(UserConstants.YES.equals(line.getOqcCheck()) && StringUtils.isEmpty(line.getQualityStatus())){
-                    wmProductSales.setStatus(UserConstants.PRODUCT_SALES_STATUS_UNCHECK);
-                    line.setQualityStatus(UserConstants.QUALITY_STATUS_NOTTEST);
-                    wmProductSalesLineService.updateWmProductSalesLine(line);
-                }
-            }
+            int submit = wmProductSalesService.submitForInspection(wmProductSales.getSalesId());
+            wmProductSales.setStatus(submit == 1
+                    ? UserConstants.PRODUCT_SALES_STATUS_UNCHECK
+                    : UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING);
         }
 
         wmProductSales.setUpdateBy(getUsername());
