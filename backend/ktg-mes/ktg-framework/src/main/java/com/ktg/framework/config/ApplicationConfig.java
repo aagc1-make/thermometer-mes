@@ -16,7 +16,9 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 // 表示通过aop框架暴露该代理对象,AopContext能够访问
 @EnableAspectJAutoProxy(exposeProxy = true)
 // 指定要扫描的Mapper类的包的路径
-@MapperScan("com.ktg.**.mapper")
+// 合并队友分支后补充 com.ktg.mes.linkage：MenuLinkageNoticeMapper 位于该包下，
+// 原扫描规则只覆盖 *.mapper，会导致启动时报找不到 Mapper Bean。
+@MapperScan({"com.ktg.**.mapper", "com.ktg.mes.linkage"})
 public class ApplicationConfig
 {
     /**
