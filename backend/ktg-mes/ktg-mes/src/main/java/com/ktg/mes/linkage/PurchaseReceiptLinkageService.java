@@ -2,6 +2,9 @@ package com.ktg.mes.linkage;
 
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.DateUtils;
+import com.ktg.common.utils.StringUtils;
+import com.ktg.mes.qc.domain.QcIqc;
+import com.ktg.mes.qc.service.IQcIqcService;
 import com.ktg.mes.wm.domain.WmArrivalNotice;
 import com.ktg.mes.wm.domain.WmArrivalNoticeLine;
 import com.ktg.mes.wm.domain.WmBatch;
@@ -26,17 +29,20 @@ public class PurchaseReceiptLinkageService {
     private final IWmBatchService batchService;
     private final AutoCodeUtil autoCodeUtil;
     private final MenuLinkageNoticeService menuNoticeService;
+    private final IQcIqcService iqcService;
 
     public PurchaseReceiptLinkageService(IWmItemRecptService receiptService,
                                          IWmItemRecptLineService receiptLineService,
                                          IWmBatchService batchService,
                                          AutoCodeUtil autoCodeUtil,
-                                         MenuLinkageNoticeService menuNoticeService) {
+                                         MenuLinkageNoticeService menuNoticeService,
+                                         IQcIqcService iqcService) {
         this.receiptService = receiptService;
         this.receiptLineService = receiptLineService;
         this.batchService = batchService;
         this.autoCodeUtil = autoCodeUtil;
         this.menuNoticeService = menuNoticeService;
+        this.iqcService = iqcService;
     }
 
     @Transactional
@@ -46,9 +52,23 @@ public class PurchaseReceiptLinkageService {
         if (notice == null || sourceLines == null || sourceLines.isEmpty()) {
             return null;
         }
+        // 兼容历史数据：早期完成 IQC 时因状态判断缺陷没有回写到货行（iqc_id 为空），
+        // 这里以 qc_iqc 表为准补一次判断——只要该来源行存在"已完成且合格量>0"的检验单，
+        // 就视为已检，不再让整单一直卡在"等待检验"。
         for (WmArrivalNoticeLine line : sourceLines) {
-            if (UserConstants.YES.equals(line.getIqcCheck()) && line.getIqcId() == null) {
-                return null;
+            if (!UserConstants.YES.equals(line.getIqcCheck())) {
+                continue;
+            }
+            if (line.getIqcId() == null) {
+                QcIqc completed = findCompletedIqc(line.getLineId());
+                if (completed == null) {
+                    return null;
+                }
+                line.setIqcId(completed.getIqcId());
+                line.setIqcCode(completed.getIqcCode());
+                if (line.getQuantityQuanlified() == null) {
+                    line.setQuantityQuanlified(completed.getQuantityQualified());
+                }
             }
         }
 
@@ -86,6 +106,31 @@ public class PurchaseReceiptLinkageService {
         }
         menuNoticeService.markUnread(MenuLinkageNoticePaths.ITEM_RECPT);
         return receipt;
+    }
+
+    /**
+     * 按来源到货行查已完成且有合格量的来料检验单（用于兼容未回写的历史数据）。
+     */
+    private QcIqc findCompletedIqc(Long arrivalLineId) {
+        if (arrivalLineId == null || iqcService == null) {
+            return null;
+        }
+        QcIqc query = new QcIqc();
+        query.setSourceDocType(UserConstants.SOURCE_DOC_TYPE_ARRIVALNOTICE);
+        query.setSourceLineId(arrivalLineId);
+        List<QcIqc> list = iqcService.selectQcIqcList(query);
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+        for (QcIqc iqc : list) {
+            boolean completed = UserConstants.ORDER_STATUS_CONFIRMED.equals(iqc.getStatus())
+                    || UserConstants.ORDER_STATUS_FINISHED.equals(iqc.getStatus());
+            if (completed && iqc.getQuantityQualified() != null
+                    && iqc.getQuantityQualified().compareTo(BigDecimal.ZERO) > 0) {
+                return iqc;
+            }
+        }
+        return null;
     }
 
     private WmItemRecptLine buildReceiptLine(WmItemRecpt receipt,
