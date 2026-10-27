@@ -11,6 +11,7 @@ import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.pro.domain.*;
 import com.ktg.mes.pro.service.*;
+import com.ktg.mes.linkage.IssueDraftLinkageService;
 import com.ktg.mes.md.domain.MdWorkstation;
 import com.ktg.mes.md.service.IMdWorkstationService;
 import com.ktg.system.strategy.AutoCodeUtil;
@@ -44,6 +45,9 @@ public class ProTaskController extends BaseController
 {
     @Autowired
     private IProTaskService proTaskService;
+
+    @Autowired
+    private IssueDraftLinkageService issueDraftLinkageService;
 
     @Autowired
     private IProWorkorderService proWorkorderService;
@@ -266,7 +270,19 @@ public class ProTaskController extends BaseController
 
 
 
-        return toAjax(proTaskService.insertProTask(proTask));
+        int rows = proTaskService.insertProTask(proTask);
+
+        // 排产完成 → 按工单 BOM 幂等生成生产领料草稿，并点亮「生产领料」菜单。
+        // 提醒/建草稿失败不阻断排产本身。
+        if (rows > 0) {
+            try {
+                issueDraftLinkageService.createDraftIfNeeded(proTask.getWorkorderId(), getUsername());
+            } catch (Exception e) {
+                logger.warn("排产自动生成领料草稿失败：workorderId={}, 原因={}",
+                        proTask.getWorkorderId(), e.getMessage());
+            }
+        }
+        return toAjax(rows);
     }
 
     /**
