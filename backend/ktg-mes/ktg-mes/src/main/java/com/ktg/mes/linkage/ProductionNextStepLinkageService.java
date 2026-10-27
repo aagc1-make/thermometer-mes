@@ -1,9 +1,12 @@
 package com.ktg.mes.linkage;
 
+import com.ktg.common.constant.UserConstants;
 import com.ktg.mes.pro.domain.ProTask;
 import com.ktg.mes.pro.domain.ProWorkorder;
 import com.ktg.mes.pro.service.IProTaskService;
 import com.ktg.mes.pro.service.IProWorkorderService;
+import com.ktg.mes.wm.domain.WmIssueHeader;
+import com.ktg.mes.wm.service.IWmIssueHeaderService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,34 +14,60 @@ import java.util.List;
 /**
  * 生产侧"下一步该做什么"的提醒判断。
  *
- * 设计原则：只有目标菜单里真的有活可干时才点亮，避免出现"亮着蓝点但列表为空"的误导。
+ * 设计原则：**目标菜单里必须真的有可处理的单据**才点亮，
+ * 避免出现"亮着蓝点但列表为空"的误导。
  */
 @Service
 public class ProductionNextStepLinkageService {
 
     private final IProWorkorderService workorderService;
     private final IProTaskService taskService;
+    private final IWmIssueHeaderService issueHeaderService;
+    private final IssueDraftLinkageService issueDraftLinkageService;
     private final MenuLinkageNoticeService menuNoticeService;
 
     public ProductionNextStepLinkageService(IProWorkorderService workorderService,
                                             IProTaskService taskService,
+                                            IWmIssueHeaderService issueHeaderService,
+                                            IssueDraftLinkageService issueDraftLinkageService,
                                             MenuLinkageNoticeService menuNoticeService) {
         this.workorderService = workorderService;
         this.taskService = taskService;
+        this.issueHeaderService = issueHeaderService;
+        this.issueDraftLinkageService = issueDraftLinkageService;
         this.menuNoticeService = menuNoticeService;
     }
 
     /**
-     * 原料入库后：只有存在"已确认/已下达"的工单时才提示去领料。
+     * 原料入库后调用：为"已确认但还没有领料单"的工单补建领料草稿，
+     * 确有草稿存在时才点亮「生产领料」。
+     *
+     * 这样蓝点亮起时，列表里一定有单可处理（不会再出现"点进去是空的"）。
+     *
+     * @return 是否存在可处理的领料草稿
      */
-    public void remindIssueIfWorkorderReady() {
+    public boolean ensureIssueDraftReady(String operator) {
         ProWorkorder query = new ProWorkorder();
-        query.setStatus(com.ktg.common.constant.UserConstants.ORDER_STATUS_CONFIRMED);
+        query.setStatus(UserConstants.ORDER_STATUS_CONFIRMED);
         List<ProWorkorder> workorders = workorderService.selectProWorkorderList(query);
         if (workorders == null || workorders.isEmpty()) {
-            return;
+            return false;
         }
-        menuNoticeService.markUnread(MenuLinkageNoticePaths.ISSUE);
+        boolean hasDraft = false;
+        for (ProWorkorder wo : workorders) {
+            try {
+                WmIssueHeader draft = issueDraftLinkageService.createDraftIfNeeded(wo.getWorkorderId(), operator);
+                if (draft != null && UserConstants.ORDER_STATUS_PREPARE.equals(draft.getStatus())) {
+                    hasDraft = true;
+                }
+            } catch (Exception ignore) {
+                // 单个工单建草稿失败不影响其它工单
+            }
+        }
+        if (hasDraft) {
+            menuNoticeService.markUnread(MenuLinkageNoticePaths.ISSUE);
+        }
+        return hasDraft;
     }
 
     /**

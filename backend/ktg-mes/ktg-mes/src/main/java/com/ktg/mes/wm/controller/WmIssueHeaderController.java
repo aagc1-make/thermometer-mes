@@ -208,7 +208,12 @@ public class WmIssueHeaderController extends BaseController
         header.setStatus(UserConstants.ORDER_STATUS_FINISHED);
         wmIssueHeaderService.updateWmIssueHeader(header);
 
-        // 料已领到线边仓：只有该工单已排产（存在工序任务）时才提示下一步「生产报工」
+        // 领料已过账：先清掉「生产领料」上的待办蓝点，再按排产情况提示「生产报工」
+        try {
+            menuLinkageNoticeService.markRead(MenuLinkageNoticePaths.ISSUE);
+        } catch (Exception ignore) {
+            // 忽略提醒异常
+        }
         try {
             productionNextStepLinkageService.remindFeedbackIfTaskReady(header.getWorkorderId());
         } catch (Exception ignore) {

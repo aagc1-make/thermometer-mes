@@ -262,15 +262,17 @@ public class WmItemRecptController extends BaseController
             wmArrivalNoticeService.updateWmArrivalNotice(notice);
         }
 
-        // 原料已真正入库：若存在"已确认/已下达"的工单，才提示下一步「生产领料」。
-        // 只对联动生成的入库单（attr1=AUTO:…）提示，且必须真的有待领料的工单，
-        // 避免出现"菜单亮蓝点但列表为空"的误导。
-        if (recpt.getAttr1() != null && recpt.getAttr1().startsWith("AUTO:")) {
-            try {
-                productionNextStepLinkageService.remindIssueIfWorkorderReady();
-            } catch (Exception ignore) {
-                // 提醒失败不影响过账结果
-            }
+        // 入库已过账：先清掉「采购入库」上的待办蓝点（这一步已经完成），
+        // 再为已确认工单准备领料草稿；只有确实生成/存在草稿时才点亮「生产领料」。
+        try {
+            menuLinkageNoticeService.markRead(MenuLinkageNoticePaths.ITEM_RECPT);
+        } catch (Exception ignore) {
+            // 忽略提醒异常
+        }
+        try {
+            productionNextStepLinkageService.ensureIssueDraftReady(getUsername());
+        } catch (Exception ignore) {
+            // 忽略提醒异常
         }
 
         return AjaxResult.success();
