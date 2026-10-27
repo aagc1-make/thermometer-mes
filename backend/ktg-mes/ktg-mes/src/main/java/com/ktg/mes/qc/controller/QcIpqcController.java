@@ -1,5 +1,6 @@
 package com.ktg.mes.qc.controller;
 
+import com.ktg.mes.wm.mapper.PostingLockMapper;
 import java.math.BigDecimal;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -50,6 +51,9 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/qc/ipqc")
 public class QcIpqcController extends BaseController
 {
+    @Autowired
+    private PostingLockMapper postingLockMapper;
+
     @Autowired
     private IQcIpqcService qcIpqcService;
 
@@ -198,6 +202,22 @@ public class QcIpqcController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody QcIpqc qcIpqc)
     {
+        String previousStatus = postingLockMapper.ipqc(qcIpqc.getIpqcId());
+        if (previousStatus == null || UserConstants.ORDER_STATUS_FINISHED.equals(previousStatus)) {
+            return AjaxResult.error("检验单不存在或已完成，不能重复处理");
+        }
+        QcIpqc saved = qcIpqcService.selectQcIpqcByIpqcId(qcIpqc.getIpqcId());
+        // 来源关联以已保存的检验单为准，不接受客户端变更后指向其他产出。
+        qcIpqc.setSourceDocId(saved.getSourceDocId());
+        qcIpqc.setSourceDocCode(saved.getSourceDocCode());
+        qcIpqc.setSourceDocType(saved.getSourceDocType());
+        qcIpqc.setSourceLineId(saved.getSourceLineId());
+        if (qcIpqc.getQuantityQualified() == null) qcIpqc.setQuantityQualified(BigDecimal.ZERO);
+        if (qcIpqc.getQuantityUnqualified() == null) qcIpqc.setQuantityUnqualified(BigDecimal.ZERO);
+        if (qcIpqc.getQuantityCheck() == null || qcIpqc.getQuantityQualified().signum() < 0 || qcIpqc.getQuantityUnqualified().signum() < 0) {
+            return AjaxResult.error("检验数量不能为空且合格/不合格数量不能为负");
+        }
+
         if(UserConstants.NOT_UNIQUE.equals(qcIpqcService.checkIpqcCodeUnique(qcIpqc))){
             return AjaxResult.error("检测单编码已存在！");
         }
@@ -254,9 +274,19 @@ public class QcIpqcController extends BaseController
                 //3.执行产品产出，更新产品产出单状态为FINISHED
                 //4.更新报工单的状态为FINISHED
 
+                String produceStatus = postingLockMapper.produce(qcIpqc.getSourceDocId());
+                if (produceStatus == null || UserConstants.ORDER_STATUS_FINISHED.equals(produceStatus)) {
+                    return AjaxResult.error("来源产出单不存在或已完成，请核对检验来源");
+                }
                 WmProductProduce produce = productProduceService.selectWmProductProduceByRecordId(qcIpqc.getSourceDocId());
                 ProFeedback feedback =  proFeedbackService.selectProFeedbackByRecordId(produce.getFeedbackId());
                 WmProductProduceLine line = productProduceLineService.selectWmProductProduceLineByLineId(qcIpqc.getSourceLineId());
+
+                if (line == null || !produce.getRecordId().equals(line.getRecordId()) || feedback == null
+                        || line.getQuantityProduce().compareTo(qcIpqc.getQuantityCheck()) != 0) {
+                    return AjaxResult.error("检验来源行或检验数量与产品产出不一致");
+                }
+                postingLockMapper.feedback(feedback.getRecordId());
 
                 WmWarehouse warehouse = wmWarehouseMapper.selectWmWarehouseByWarehouseCode(UserConstants.VIRTUAL_WH);
                 WmStorageLocation location = wmStorageLocationMapper.selectWmStorageLocationByLocationCode(UserConstants.VIRTUAL_WS);
@@ -323,6 +353,9 @@ public class QcIpqcController extends BaseController
                         feedback.setQuantityMaterialScrap(qcIpqc.getQuantityMaterialScrap());
                         feedback.setQuantityOtherScrap(qcIpqc.getQuantityOtherScrap());
                     }
+                    feedback.setQuantityQualified(qcIpqc.getQuantityQualified());
+                    feedback.setQuantityUnquanlified(qcIpqc.getQuantityUnqualified());
+                    feedback.setQuantityUncheck(BigDecimal.ZERO);
                     feedback.setStatus(UserConstants.FEEDBACK_STATUS_FINISHED);
                     proFeedbackService.updateProFeedback(feedback);
                 }
@@ -340,6 +373,13 @@ public class QcIpqcController extends BaseController
 	@DeleteMapping("/{ipqcIds}")
     public AjaxResult remove(@PathVariable Long[] ipqcIds)
     {
+        java.util.Arrays.sort(ipqcIds);
+        for (Long id : ipqcIds) {
+            if (!UserConstants.ORDER_STATUS_PREPARE.equals(postingLockMapper.ipqc(id))) {
+                return AjaxResult.error("只能删除草稿状态的单据");
+            }
+        }
+
         for (Long ipqcId: ipqcIds
              ) {
             QcIpqc ipqc = qcIpqcService.selectQcIpqcByIpqcId(ipqcId);
@@ -383,7 +423,7 @@ public class QcIpqcController extends BaseController
                 line.setThresholdMin(index.getThresholdMin());
                 line.setCrQuantity(new BigDecimal(0L));
                 line.setMajQuantity(new BigDecimal(0L));
-                line.setMajQuantity(new BigDecimal(0L));
+                line.setMinQuantity(new BigDecimal(0L));
                 qcIpqcLineService.insertQcIpqcLine(line);
             }
         }

@@ -1,5 +1,6 @@
 package com.ktg.mes.wm.controller.mobile;
 
+import com.ktg.mes.wm.mapper.PostingLockMapper;
 import cn.hutool.core.collection.CollUtil;
 import com.ktg.common.annotation.Log;
 import com.ktg.common.constant.UserConstants;
@@ -28,6 +29,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/mobile/wm/productrecpt")
 public class WmProductRecptMobController extends BaseController {
+
+    @Autowired
+    private PostingLockMapper postingLockMapper;
 
     @Autowired
     private IWmProductRecptService wmProductRecptService;
@@ -105,8 +109,14 @@ public class WmProductRecptMobController extends BaseController {
     @PreAuthorize("@ss.hasPermi('mes:wm:productrecpt:edit')")
     @Log(title = "产品入库记录", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody WmProductRecpt wmProductRecpt)
     {
+        String previousStatus = postingLockMapper.productRecpt(wmProductRecpt.getRecptId());
+        if (previousStatus == null || "FINISHED".equals(previousStatus) || "FINISHED".equals(wmProductRecpt.getStatus())) {
+            return AjaxResult.error("已执行单据不能修改，完成状态只能通过执行操作产生");
+        }
+
         if(UserConstants.NOT_UNIQUE.equals(wmProductRecptService.checkUnique(wmProductRecpt))){
             return AjaxResult.error("入库单编号已存在！");
         }
@@ -151,6 +161,11 @@ public class WmProductRecptMobController extends BaseController {
     @Transactional
     @PutMapping("/{recptId}")
     public AjaxResult execute(@PathVariable Long recptId){
+        String previousStatus = postingLockMapper.productRecpt(recptId);
+        if (!"APPROVED".equals(previousStatus)) {
+            return AjaxResult.error("单据不存在、已执行或尚未到可执行状态，请刷新后重试");
+        }
+
         WmProductRecpt recpt = wmProductRecptService.selectWmProductRecptByRecptId(recptId);
 
         //单据有效性

@@ -33,6 +33,9 @@ import java.util.List;
 public class QCIpqcMobController extends BaseController {
 
     @Autowired
+    private com.ktg.mes.qc.controller.QcIpqcController qcIpqcController;
+
+    @Autowired
     private IQcIpqcService qcIpqcService;
 
     @Autowired
@@ -141,54 +144,7 @@ public class QCIpqcMobController extends BaseController {
     @PutMapping
     public AjaxResult edit(@RequestBody QcIpqc qcIpqc)
     {
-        if(UserConstants.NOT_UNIQUE.equals(qcIpqcService.checkIpqcCodeUnique(qcIpqc))){
-            return AjaxResult.error("检测单编码已存在！");
-        }
-
-
-        //根据工单获取产品信息
-        ProWorkorder workorder = proWorkorderService.selectProWorkorderByWorkorderId(qcIpqc.getWorkorderId());
-        qcIpqc.setWorkorderId(workorder.getWorkorderId());
-        qcIpqc.setWorkorderCode(workorder.getWorkorderCode());
-        qcIpqc.setWorkorderName(workorder.getWorkorderName());
-        qcIpqc.setItemId(workorder.getProductId());
-        qcIpqc.setItemCode(workorder.getProductCode());
-        qcIpqc.setItemName(workorder.getProductName());
-        qcIpqc.setSpecification(workorder.getProductSpc());
-        qcIpqc.setUnitOfMeasure(workorder.getUnitOfMeasure());
-
-        //查询工序相关信息
-        List<QcIpqc> infos = qcIpqcService.getProcessInfo(qcIpqc);
-        if(!CollectionUtils.isEmpty(infos)&&infos.size() ==1){
-            qcIpqc.setProcessId(infos.get(0).getProcessId());
-            qcIpqc.setProcessCode(infos.get(0).getProcessCode());
-            qcIpqc.setProcessName(infos.get(0).getProcessName());
-        }
-
-        //根据产品和检测类型获取检测模板
-        QcTemplate param = new QcTemplate();
-        param.setQcTypes(qcIpqc.getIpqcType());
-        param.setItemId(workorder.getProductId());
-        QcTemplate template = qcTemplateService.selectQcTemplateByProductAndQcType(param);
-        if(StringUtils.isNotNull(template)){
-            qcIpqc.setTemplateId(template.getTemplateId());
-        }else{
-            return AjaxResult.error("当前工单生产的产品未配置此类型的检验模板！");
-        }
-
-        //如果是完成单据则根据单据上的来源单据，更新对应的关联单据信息
-        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcIpqc.getStatus())){
-            //如果来源是生产报工单
-            ProFeedback feedback =  proFeedbackService.selectProFeedbackByRecordId(qcIpqc.getSourceDocId());
-            if(StringUtils.isNotNull(feedback)){
-                feedback.setQuantityQualified(qcIpqc.getQuantityQualified());
-                feedback.setQuantityUnquanlified(qcIpqc.getQuantityUnqualified());
-                feedback.setQuantityUncheck(BigDecimal.ZERO);
-                proFeedbackService.updateProFeedback(feedback);
-            }
-        }
-
-        return toAjax(qcIpqcService.updateQcIpqc(qcIpqc));
+        return qcIpqcController.edit(qcIpqc);
     }
 
     /**
@@ -199,22 +155,7 @@ public class QCIpqcMobController extends BaseController {
     @DeleteMapping("/{ipqcIds}")
     public AjaxResult remove(@PathVariable Long[] ipqcIds)
     {
-        for (Long ipqcId: ipqcIds
-        ) {
-            QcIpqc ipqc = qcIpqcService.selectQcIpqcByIpqcId(ipqcId);
-            if(!UserConstants.ORDER_STATUS_PREPARE.equals(ipqc.getStatus())){
-                return AjaxResult.error("只能删除草稿状态的单据!");
-            }
-
-            qcIpqcLineService.deleteByIpqcId(ipqcId); //删除对应的行信息
-            QcDefectRecord p2 = new QcDefectRecord();
-            p2.setQcId(ipqcId);
-            qcDefectRecordService.deleteByQcIdAndType(p2);//删除对应的缺陷记录
-
-            //TODO: 删除对应的质检值记录
-        }
-
-        return toAjax(qcIpqcService.deleteQcIpqcByIpqcIds(ipqcIds));
+        return qcIpqcController.remove(ipqcIds);
     }
 
 

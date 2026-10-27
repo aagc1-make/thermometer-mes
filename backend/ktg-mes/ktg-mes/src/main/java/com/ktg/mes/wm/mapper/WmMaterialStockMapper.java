@@ -24,6 +24,8 @@ public interface WmMaterialStockMapper
 
     public WmMaterialStock loadMaterialStock(WmMaterialStock stock);
 
+    public WmMaterialStock loadMaterialStockForUpdate(WmMaterialStock stock);
+
     /**
      * 查询库存记录列表
      * 

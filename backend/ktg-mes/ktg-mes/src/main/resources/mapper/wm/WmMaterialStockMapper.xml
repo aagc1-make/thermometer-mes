@@ -145,6 +145,26 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         and 1=1 limit 1
     </select>
 
+    <select id="loadMaterialStockForUpdate" parameterType="WmMaterialStock" resultMap="WmMaterialStockResult">
+        <include refid="selectWmMaterialStockVo"/>
+        <where>
+            <if test="itemId != null "> and item_id = #{itemId}</if>
+            <if test="unitOfMeasure != null  and unitOfMeasure != ''"> and unit_of_measure = #{unitOfMeasure}</if>
+            <choose>
+                <when test="batchCode != null and batchCode != ''">
+                    and batch_code = #{batchCode}
+                </when>
+                <otherwise>
+                    and batch_code is null
+                </otherwise>
+            </choose>
+            <if test="warehouseId != null "> and warehouse_id = #{warehouseId}</if>
+            <if test="locationId != null "> and location_id = #{locationId}</if>
+            <if test="areaId != null "> and area_id = #{areaId}</if>
+        </where>
+        and 1=1 limit 1 for update
+    </select>
+
     <insert id="insertWmMaterialStock" parameterType="WmMaterialStock" useGeneratedKeys="true" keyProperty="materialStockId">
         insert into wm_material_stock
         <trim prefix="(" suffix=")" suffixOverrides=",">

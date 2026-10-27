@@ -1,5 +1,6 @@
 package com.ktg.mes.wm.controller;
 
+import com.ktg.mes.wm.mapper.PostingLockMapper;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
@@ -39,6 +40,9 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/wm/issueheader")
 public class WmIssueHeaderController extends BaseController
 {
+    @Autowired
+    private PostingLockMapper postingLockMapper;
+
     @Autowired
     private IWmIssueHeaderService wmIssueHeaderService;
 
@@ -107,8 +111,14 @@ public class WmIssueHeaderController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:wm:issueheader:edit')")
     @Log(title = "生产领料单头", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody WmIssueHeader wmIssueHeader)
     {
+        String previousStatus = postingLockMapper.issue(wmIssueHeader.getIssueId());
+        if (previousStatus == null || "FINISHED".equals(previousStatus) || "FINISHED".equals(wmIssueHeader.getStatus())) {
+            return AjaxResult.error("已执行单据不能修改，完成状态只能通过执行操作产生");
+        }
+
         if(UserConstants.NOT_UNIQUE.equals(wmIssueHeaderService.checkIssueCodeUnique(wmIssueHeader))){
             return AjaxResult.error("领料单编号已存在");
         }
@@ -167,6 +177,11 @@ public class WmIssueHeaderController extends BaseController
     @Transactional
     @PutMapping("/{issueId}")
     public AjaxResult execute(@PathVariable Long issueId){
+        String previousStatus = postingLockMapper.issue(issueId);
+        if (!"APPROVED".equals(previousStatus)) {
+            return AjaxResult.error("单据不存在、已执行或尚未到可执行状态，请刷新后重试");
+        }
+
         WmIssueHeader header = wmIssueHeaderService.selectWmIssueHeaderByIssueId(issueId);
         WmIssueLine param = new WmIssueLine();
         param.setIssueId(issueId);

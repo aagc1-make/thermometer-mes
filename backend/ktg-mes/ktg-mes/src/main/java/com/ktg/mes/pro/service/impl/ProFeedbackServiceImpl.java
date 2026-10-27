@@ -101,15 +101,8 @@ public class ProFeedbackServiceImpl implements IProFeedbackService
      * 使用当前报工单关联的产品产出单上的合格品、不合格品数量更新任务的合格品、不合格品数量
      */
     @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
     public void updateProTaskAndWorkorderByFeedback(ProFeedback feedback) {
-
-        ProWorkorder workorder = proWorkorderMapper.selectProWorkorderByWorkorderId(feedback.getWorkorderId());
-
-        ProTask task = proTaskMapper.selectProTaskByTaskId(feedback.getTaskId());
-
-        //更新生产任务的生产数量(此处不良品计入生产总数）
-        BigDecimal quantityProduced = task.getQuantityProduced()==null? new BigDecimal(0):task.getQuantityProduced();
-        task.setQuantityProduced(quantityProduced.add(feedback.getQuantityFeedback()));
 
         BigDecimal quantityQuanlify = BigDecimal.ZERO;
         BigDecimal quantityUnquanlify = BigDecimal.ZERO;
@@ -128,15 +121,10 @@ public class ProFeedbackServiceImpl implements IProFeedbackService
             }
         }
 
-        task.setQuantityQuanlify(task.getQuantityQuanlify().add(quantityQuanlify));
-        task.setQuantityUnquanlify(task.getQuantityUnquanlify().add(quantityUnquanlify));
-        proTaskMapper.updateProTask(task);
+        BigDecimal produced = feedback.getQuantityFeedback() == null ? BigDecimal.ZERO : feedback.getQuantityFeedback();
+        proTaskMapper.incrementProduced(feedback.getTaskId(), produced, quantityQuanlify, quantityUnquanlify);
+        proWorkorderMapper.incrementProduced(feedback.getWorkorderId(), produced);
 
-        //更新生产工单的生产数量;这里不良品也计入生产数量
-        BigDecimal produced = workorder.getQuantityProduced() == null?new BigDecimal(0):workorder.getQuantityProduced();
-        BigDecimal feedBackQuantity = feedback.getQuantityFeedback() ==null?new BigDecimal(0):feedback.getQuantityFeedback();
-        workorder.setQuantityProduced( produced.add(feedBackQuantity));
-        proWorkorderMapper.updateProWorkorder(workorder);
     }
 
     /**

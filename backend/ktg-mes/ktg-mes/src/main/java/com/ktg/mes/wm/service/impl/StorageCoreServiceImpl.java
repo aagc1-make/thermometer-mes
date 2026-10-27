@@ -12,12 +12,14 @@ import com.ktg.mes.wm.domain.tx.*;
 import com.ktg.mes.wm.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
 
 
 @Component
+@Transactional(rollbackFor = Exception.class)
 public class StorageCoreServiceImpl implements IStorageCoreService {
 
     @Autowired
@@ -302,6 +304,8 @@ public class StorageCoreServiceImpl implements IStorageCoreService {
         String transactionType = UserConstants.TRANSACTION_TYPE_PRODUCT_PRODUCE;
         for(int i=0;i<lines.size();i++){
             ProductProductTxBean line = lines.get(i);
+            // 合格/不合格拆分可能含零数量行，不产生零数量库存流水。
+            if (line.getTransactionQuantity() != null && line.getTransactionQuantity().signum() == 0) continue;
             WmTransaction transaction = new WmTransaction();
             transaction.setTransactionType(transactionType);
             BeanUtils.copyBeanProp(transaction,line);

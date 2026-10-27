@@ -1,5 +1,6 @@
 package com.ktg.mes.wm.controller.mobile;
 
+import com.ktg.mes.wm.mapper.PostingLockMapper;
 import cn.hutool.core.collection.CollectionUtil;
 import com.ktg.common.annotation.Log;
 import com.ktg.common.constant.UserConstants;
@@ -29,6 +30,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/mobile/wm/productsales")
 public class WmProductSalesMobController extends BaseController {
+    @Autowired
+    private PostingLockMapper postingLockMapper;
+
     @Autowired
     private IWmProductSalesService wmProductSalesService;
 
@@ -125,8 +129,14 @@ public class WmProductSalesMobController extends BaseController {
     @PreAuthorize("@ss.hasPermi('mes:wm:productsales:edit')")
     @Log(title = "销售出库单", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody WmProductSales wmProductSales)
     {
+        String previousStatus = postingLockMapper.productSales(wmProductSales.getSalesId());
+        if (previousStatus == null || "FINISHED".equals(previousStatus) || "FINISHED".equals(wmProductSales.getStatus())) {
+            return AjaxResult.error("已执行单据不能修改，完成状态只能通过执行操作产生");
+        }
+
         if(UserConstants.NOT_UNIQUE.equals(wmProductSalesService.checkUnique(wmProductSales))){
             return AjaxResult.error("出库单编号已存在！");
         }
@@ -201,6 +211,11 @@ public class WmProductSalesMobController extends BaseController {
     @Transactional
     @PutMapping("/{salesId}")
     public AjaxResult execute(@PathVariable Long salesId){
+        String previousStatus = postingLockMapper.productSales(salesId);
+        if (!"UNEXECUTE".equals(previousStatus)) {
+            return AjaxResult.error("单据不存在、已执行或尚未到可执行状态，请刷新后重试");
+        }
+
         WmProductSales sales = wmProductSalesService.selectWmProductSalesBySalesId(salesId);
 
         WmProductSalesLine param = new WmProductSalesLine();
@@ -208,6 +223,16 @@ public class WmProductSalesMobController extends BaseController {
         List<WmProductSalesLine> lines = wmProductSalesLineService.selectWmProductSalesLineList(param);
         if(CollectionUtil.isEmpty(lines)){
             return AjaxResult.error("出库物资不能为空");
+        }
+
+        for (WmProductSalesLine line : lines) {
+            if (line.getQuantitySales() == null || line.getQuantitySales().signum() <= 0
+                    || !UserConstants.EQUAL_TO.equals(wmProductSalesDetailService.checkQuantity(line.getLineId()))) {
+                return AjaxResult.error("出库数量必须大于零且与拣货明细一致");
+            }
+            if (UserConstants.YES.equals(line.getOqcCheck()) && !UserConstants.QUALITY_STATUS_PASS.equals(line.getQualityStatus())) {
+                return AjaxResult.error("出货检验尚未合格放行，不能执行出库");
+            }
         }
 
         List<ProductSalesTxBean> beans = wmProductSalesService.getTxBeans(salesId);

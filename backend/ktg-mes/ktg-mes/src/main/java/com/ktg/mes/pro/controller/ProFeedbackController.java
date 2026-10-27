@@ -1,5 +1,6 @@
 package com.ktg.mes.pro.controller;
 
+import com.ktg.mes.wm.mapper.PostingLockMapper;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
@@ -52,6 +53,9 @@ import com.ktg.common.core.page.TableDataInfo;
 public class ProFeedbackController extends BaseController
 {
     @Autowired
+    private PostingLockMapper postingLockMapper;
+
+    @Autowired
     private IProFeedbackService proFeedbackService;
 
     @Autowired
@@ -93,6 +97,7 @@ public class ProFeedbackController extends BaseController
     /**
      * 查询生产报工记录列表
      */
+    @PreAuthorize("@ss.hasPermi('mes:pro:feedback:list')")
     @GetMapping("/list")
     public TableDataInfo list(ProFeedback proFeedback)
     {
@@ -183,8 +188,17 @@ public class ProFeedbackController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:pro:feedback:edit')")
     @Log(title = "生产报工记录", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody ProFeedback proFeedback)
     {
+        String oldStatus = postingLockMapper.feedback(proFeedback.getRecordId());
+        if (!UserConstants.FEEDBACK_STATUS_PREPARE.equals(oldStatus) && !UserConstants.FEEDBACK_STATUS_APPROVING.equals(oldStatus)) {
+            return AjaxResult.error("仅未执行的报工单可以修改");
+        }
+        if (UserConstants.FEEDBACK_STATUS_FINISHED.equals(proFeedback.getStatus()) || UserConstants.FEEDBACK_STATUS_UNCHECK.equals(proFeedback.getStatus())) {
+            return AjaxResult.error("请通过执行报工更新生产状态");
+        }
+
         MdWorkstation workstation = mdWorkstationService.selectMdWorkstationByWorkstationId(proFeedback.getWorkstationId());
         if(StringUtils.isNotNull(workstation)){
             proFeedback.setProcessId(workstation.getProcessId());
@@ -235,8 +249,14 @@ public class ProFeedbackController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:pro:feedback:remove')")
     @Log(title = "生产报工记录", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{recordIds}")
+    @Transactional
     public AjaxResult remove(@PathVariable Long[] recordIds)
     {
+        java.util.Arrays.sort(recordIds);
+        for (Long id : recordIds) {
+            if (!UserConstants.FEEDBACK_STATUS_PREPARE.equals(postingLockMapper.feedback(id))) return AjaxResult.error("只能删除草稿报工单");
+        }
+
         return toAjax(proFeedbackService.deleteProFeedbackByRecordIds(recordIds));
     }
 
@@ -265,8 +285,12 @@ public class ProFeedbackController extends BaseController
             return AjaxResult.error("请先保存单据");
         }
 
+        String previousStatus = postingLockMapper.feedback(recordId);
+        if (!UserConstants.FEEDBACK_STATUS_PREPARE.equals(previousStatus) && !UserConstants.FEEDBACK_STATUS_APPROVING.equals(previousStatus)) {
+            return AjaxResult.error("报工单不存在、已执行或正在等待检验，不能重复执行");
+        }
         ProFeedback feedback= proFeedbackService.selectProFeedbackByRecordId(recordId);
-        if(feedback.getQuantityFeedback().compareTo(BigDecimal.ZERO) !=1){
+        if(feedback.getQuantityFeedback() == null || feedback.getQuantityFeedback().compareTo(BigDecimal.ZERO) !=1){
             return AjaxResult.error("报工数量必须大于0");
         }
 
@@ -280,6 +304,19 @@ public class ProFeedbackController extends BaseController
         //仍旧有待检数量时不能执行
         if(StringUtils.isNotNull(feedback.getQuantityUncheck()) && feedback.getQuantityUncheck().compareTo(BigDecimal.ZERO) >0){
             return  AjaxResult.error("当前报工单未完成检验（待检数量大于0），无法执行报工！");
+        }
+
+        ProRouteProcess rule = new ProRouteProcess();
+        rule.setRouteId(feedback.getRouteId());
+        rule.setProcessId(feedback.getProcessId());
+        List<ProRouteProcess> rules = proRouteProcessService.selectProRouteProcessList(rule);
+        if (rules.size() != 1) return AjaxResult.error("工艺工序配置不存在或不唯一");
+        feedback.setIsCheck(rules.get(0).getIsCheck());
+        if (!UserConstants.YES.equals(feedback.getIsCheck()) && (feedback.getQuantityQualified() == null
+                || feedback.getQuantityUnquanlified() == null || feedback.getQuantityQualified().signum() < 0
+                || feedback.getQuantityUnquanlified().signum() < 0
+                || feedback.getQuantityQualified().add(feedback.getQuantityUnquanlified()).compareTo(feedback.getQuantityFeedback()) != 0)) {
+            return AjaxResult.error("合格与不合格数量必须非负且合计等于报工数量");
         }
 
         //根据当前工序的物料BOM配置，进行物料消耗
