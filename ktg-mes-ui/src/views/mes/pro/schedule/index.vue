@@ -86,6 +86,7 @@
       :data="workorderList"
       row-key="workorderId"
       default-expand-all
+      :row-class-name="rowClassName"
       :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
     >
       <el-table-column label="工单编码" width="180" prop="workorderCode" >
@@ -274,7 +275,7 @@
 
 <script>
 import { listWorkorder, getWorkorder, delWorkorder, addWorkorder, updateWorkorder } from "@/api/mes/pro/workorder";
-import {listGanttTaskList} from "@/api/mes/pro/protask";
+import {listGanttTaskList, listProtask} from "@/api/mes/pro/protask";
 import { listProductprocess } from "@/api/mes/pro/routeprocess";
 import ProTask from "./proTask.vue";
 import GanttChar from "./ganttx.vue";
@@ -307,6 +308,8 @@ export default {
       multiple: true,
       // 生产工单表格数据
       workorderList: [],
+      // 已排产的工单 ID 集合（用于高亮"待排产"的工单行）
+      scheduledWorkorderIds: [],
       // 生产工单树选项
       workorderOptions: [],
       //当前生产工单中产品对应的工序列表
@@ -361,7 +364,28 @@ export default {
         this.workorderList = this.handleTree(response.rows, "workorderId", "parentId");
         this.total = response.total;
         this.loading = false;
+        this.loadScheduledWorkorderIds();
       });
+    },
+    /** 拉取已有生产任务的工单 ID，用于区分"待排产"行 */
+    loadScheduledWorkorderIds() {
+      listProtask({ pageNum: 1, pageSize: 1000 }).then(response => {
+        const ids = (response.rows || []).map(item => item.workorderId);
+        this.scheduledWorkorderIds = [...new Set(ids)];
+      }).catch(() => {
+        this.scheduledWorkorderIds = [];
+      });
+    },
+    /**
+     * 待排产行高亮：工单已确认（CONFIRMED）但还没有任何生产任务。
+     * 排产保存后重新拉取，高亮随之消失。
+     */
+    isUnscheduled(row) {
+      if (!row || row.status !== 'CONFIRMED') return false;
+      return this.scheduledWorkorderIds.indexOf(row.workorderId) === -1;
+    },
+    rowClassName({ row }) {
+      return this.isUnscheduled(row) ? 'row-unscheduled' : '';
     },
     handleOpenGantt(){
       this.$router.push({ path: '/mes/pro/schedule/ganttedit'})
@@ -614,5 +638,18 @@ export default {
   overflow: hidden;
   position: relative;
   height: 100%;
+}
+
+/* 待排产工单行：已确认但还没有生产任务，闪烁提醒计划员去排产 */
+::v-deep .el-table .row-unscheduled > td {
+  background-color: #fff8e1 !important;
+  animation: unscheduled-flash 1.6s ease-in-out infinite;
+}
+::v-deep .el-table .row-unscheduled:hover > td {
+  background-color: #fff1c9 !important;
+}
+@keyframes unscheduled-flash {
+  0%, 100% { background-color: #fff8e1; }
+  50% { background-color: #ffe9a8; }
 }
 </style>
