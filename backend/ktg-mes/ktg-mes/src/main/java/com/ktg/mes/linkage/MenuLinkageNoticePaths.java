@@ -16,6 +16,8 @@ public final class MenuLinkageNoticePaths {
     public static final String ISSUE = "/mes/wm/issue";
     /** 生产报工：领料执行后提示可以报工 */
     public static final String FEEDBACK = "/mes/pro/feedback";
+    /** 生产排产：工单确认后提示去排产 */
+    public static final String SCHEDULE = "/mes/pro/proschedule";
 
     private MenuLinkageNoticePaths() {
     }

@@ -12,6 +12,7 @@ import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.pro.domain.*;
 import com.ktg.mes.pro.service.*;
 import com.ktg.mes.linkage.IssueDraftLinkageService;
+import com.ktg.mes.linkage.ProductionNextStepLinkageService;
 import com.ktg.mes.md.domain.MdWorkstation;
 import com.ktg.mes.md.service.IMdWorkstationService;
 import com.ktg.system.strategy.AutoCodeUtil;
@@ -48,6 +49,9 @@ public class ProTaskController extends BaseController
 
     @Autowired
     private IssueDraftLinkageService issueDraftLinkageService;
+
+    @Autowired
+    private ProductionNextStepLinkageService productionNextStepLinkageService;
 
     @Autowired
     private IProWorkorderService proWorkorderService;
@@ -280,6 +284,12 @@ public class ProTaskController extends BaseController
             } catch (Exception e) {
                 logger.warn("排产自动生成领料草稿失败：workorderId={}, 原因={}",
                         proTask.getWorkorderId(), e.getMessage());
+            }
+            // 所有已确认工单都排完了就清掉「生产排产」蓝点
+            try {
+                productionNextStepLinkageService.clearScheduleIfAllScheduled();
+            } catch (Exception ignore) {
+                // 忽略提醒异常
             }
         }
         return toAjax(rows);

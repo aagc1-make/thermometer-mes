@@ -13,6 +13,7 @@ import com.ktg.mes.md.domain.MdItemBatchConfig;
 import com.ktg.mes.md.domain.MdProductBom;
 import com.ktg.mes.md.service.IMdItemBatchConfigService;
 import com.ktg.mes.md.service.IMdProductBomService;
+import com.ktg.mes.linkage.ProductionNextStepLinkageService;
 import com.ktg.mes.pro.domain.ProTask;
 import com.ktg.mes.pro.domain.ProWorkorder;
 import com.ktg.mes.pro.domain.ProWorkorderBom;
@@ -56,6 +57,9 @@ public class ProWorkorderController extends BaseController
 
     @Autowired
     private IProTaskService proTaskService;
+
+    @Autowired
+    private ProductionNextStepLinkageService productionNextStepLinkageService;
 
     @Autowired
     private WmBarCodeUtil wmBarCodeUtil;
@@ -164,6 +168,15 @@ public class ProWorkorderController extends BaseController
                     workorder.getQuantity().compareTo(proWorkorder.getQuantity())!=0){
                 removeBomLine(proWorkorder.getWorkorderId());
                 generateBomLine(proWorkorder.getWorkorderId());
+            }
+        }
+
+        // 工单确认（已下达）后：若还没排产，点亮「生产排产」，让计划员知道下一步动作
+        if (ret > 0 && UserConstants.ORDER_STATUS_CONFIRMED.equals(proWorkorder.getStatus())) {
+            try {
+                productionNextStepLinkageService.remindScheduleIfNoTask(proWorkorder.getWorkorderId());
+            } catch (Exception ignore) {
+                // 提醒失败不影响工单保存
             }
         }
 

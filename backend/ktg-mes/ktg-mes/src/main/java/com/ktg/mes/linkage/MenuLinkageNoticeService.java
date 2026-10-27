@@ -23,7 +23,8 @@ public class MenuLinkageNoticeService {
                     MenuLinkageNoticePaths.PRODUCT_RECPT,
                     MenuLinkageNoticePaths.PENDING_INSPECT,
                     MenuLinkageNoticePaths.ISSUE,
-                    MenuLinkageNoticePaths.FEEDBACK)));
+                    MenuLinkageNoticePaths.FEEDBACK,
+                    MenuLinkageNoticePaths.SCHEDULE)));
 
     private final MenuLinkageNoticeMapper mapper;
 

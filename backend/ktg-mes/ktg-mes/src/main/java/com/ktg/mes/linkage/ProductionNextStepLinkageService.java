@@ -71,6 +71,43 @@ public class ProductionNextStepLinkageService {
     }
 
     /**
+     * 工单确认后调用：该工单还没有排产任务时，点亮「生产排产」。
+     */
+    public void remindScheduleIfNoTask(Long workorderId) {
+        if (workorderId == null) {
+            return;
+        }
+        if (hasTask(workorderId)) {
+            return;
+        }
+        menuNoticeService.markUnread(MenuLinkageNoticePaths.SCHEDULE);
+    }
+
+    /**
+     * 排产保存后调用：如果所有"已确认"的工单都已经有任务，就清掉「生产排产」的蓝点。
+     */
+    public void clearScheduleIfAllScheduled() {
+        ProWorkorder query = new ProWorkorder();
+        query.setStatus(UserConstants.ORDER_STATUS_CONFIRMED);
+        List<ProWorkorder> workorders = workorderService.selectProWorkorderList(query);
+        if (workorders != null) {
+            for (ProWorkorder wo : workorders) {
+                if (!hasTask(wo.getWorkorderId())) {
+                    return; // 还有工单没排产，保留蓝点
+                }
+            }
+        }
+        menuNoticeService.markRead(MenuLinkageNoticePaths.SCHEDULE);
+    }
+
+    private boolean hasTask(Long workorderId) {
+        ProTask query = new ProTask();
+        query.setWorkorderId(workorderId);
+        List<ProTask> tasks = taskService.selectProTaskList(query);
+        return tasks != null && !tasks.isEmpty();
+    }
+
+    /**
      * 领料后：只有该工单确实已经排产（存在工序任务）时才提示去报工。
      */
     public void remindFeedbackIfTaskReady(Long workorderId) {
