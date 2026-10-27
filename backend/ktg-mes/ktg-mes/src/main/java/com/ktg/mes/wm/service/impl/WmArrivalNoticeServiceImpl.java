@@ -62,9 +62,13 @@ public class WmArrivalNoticeServiceImpl implements IWmArrivalNoticeService
     @Override
     public String checkRnCodeUnique(WmArrivalNotice wmArrivalNotice) {
         WmArrivalNotice notice = wmArrivalNoticeMapper.checkRnCodeUnique(wmArrivalNotice);
-        Long noticeId = notice == null? -1L:notice.getNoticeId();
-        if(StringUtils.isNotNull(notice) && notice.getNoticeId().longValue() != noticeId.longValue()){
-            return UserConstants.NOT_UNIQUE;
+        if (StringUtils.isNotNull(notice)) {
+            // 联动优化（审阅 P2-10）：原实现用查询结果自身的 ID 与自身比较，永远相等，
+            // 无法识别“另一张单占用了同一单号”。应把库里那条单的 ID 与请求对象的 ID 比较。
+            Long requestId = wmArrivalNotice.getNoticeId();
+            if (requestId == null || !notice.getNoticeId().equals(requestId)) {
+                return UserConstants.NOT_UNIQUE;
+            }
         }
         return UserConstants.UNIQUE;
     }
