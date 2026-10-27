@@ -27,8 +27,7 @@ import { mapState } from 'vuex'
 import variables from '@/assets/styles/variables.scss'
 
 const {
-  MENU_NOTICE_POLL_INTERVAL,
-  isMenuPathUnread
+  MENU_NOTICE_POLL_INTERVAL
 } = require('@/utils/menuLinkageNotice')
 
 export default {
@@ -70,13 +69,13 @@ export default {
   },
   watch: {
     '$route.path'(path) {
-      this.clearCurrentMenuNotice(path)
+      // 说明：不再"进入即清除"，改为"点击菜单项时清除"（见 SidebarItem.handleMenuOpen）。
+      // 原因：左栏点击域会跳该域首页，若进入即清除，蓝点会瞬间被自己点掉，用户看不到提示。
+      this.touchMenuNotice(path)
     }
   },
   mounted() {
-    this.$store.dispatch('refreshMenuLinkageNotices')
-      .then(() => this.clearCurrentMenuNotice(this.$route.path))
-      .catch(() => {})
+    this.$store.dispatch('refreshMenuLinkageNotices').catch(() => {})
     this.menuNoticeTimer = window.setInterval(() => {
       this.$store.dispatch('refreshMenuLinkageNotices').catch(() => {})
     }, MENU_NOTICE_POLL_INTERVAL)
@@ -88,11 +87,8 @@ export default {
     }
   },
   methods: {
-    clearCurrentMenuNotice(path) {
-      const unread = this.$store.getters.unreadMenuPaths || []
-      if (!isMenuPathUnread(unread, path)) return
-      this.$store.dispatch('markMenuLinkageNoticeRead', path).catch(() => {})
-    },
+    // 保留占位：蓝点清除统一由菜单点击触发，避免与侧边栏重复发 PUT 请求
+    touchMenuNotice() {},
     // 跳过导航：把焦点移到主内容区，方便读屏/键盘用户
     skipToContent() {
       const el = document.getElementById('main-content')

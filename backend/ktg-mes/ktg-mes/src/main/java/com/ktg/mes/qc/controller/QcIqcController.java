@@ -177,13 +177,17 @@ public class QcIqcController extends BaseController
 
         //草稿允许暂存；只有完成检验时才校验数量守恒。
         qcIqc.setQuantityCheck(qcIqc.getQuantityRecived());
-        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcIqc.getStatus())){
+        // 来料检验的"完成"在页面用的是 CONFIRMED（检验确认），
+        // 原逻辑只判断 FINISHED，导致完成时不回写到货行、也不触发采购入库草稿。
+        boolean iqcCompleted = UserConstants.ORDER_STATUS_FINISHED.equals(qcIqc.getStatus())
+                || UserConstants.ORDER_STATUS_CONFIRMED.equals(qcIqc.getStatus());
+        if(iqcCompleted){
             formLinkagePolicy.assertQualityQuantities(qcIqc.getQuantityCheck(),
                     qcIqc.getQuantityQualified(), qcIqc.getQuantityUnqualified());
         }
 
         //如果是完成状态，则根据来源单据更新其对应的检测单
-        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcIqc.getStatus())){
+        if(iqcCompleted){
             if(StringUtils.isNotNull(qcIqc.getSourceDocCode())){
 
                 if(UserConstants.SOURCE_DOC_TYPE_ARRIVALNOTICE.equals(qcIqc.getSourceDocType())){

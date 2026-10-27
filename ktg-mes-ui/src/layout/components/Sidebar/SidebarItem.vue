@@ -45,7 +45,6 @@ import AppLink from './Link'
 import FixiOSBug from './FixiOSBug'
 
 const {
-  normalizeMenuPath,
   isMenuPathUnread,
   hasUnreadRouteTree
 } = require('@/utils/menuLinkageNotice')
@@ -104,8 +103,8 @@ export default {
     handleMenuOpen(menuPath) {
       const value = typeof menuPath === 'object' ? menuPath.path : menuPath
       if (!this.isUnreadPath(value)) return
-      // 导航到其他菜单时交给路由监听在成功进入后清除；重复点击当前菜单则立即清除。
-      if (normalizeMenuPath(this.$route.path) !== normalizeMenuPath(value)) return
+      // 只要用户点了这个菜单项就清除蓝点（不再以"是否当前路由"为前提，
+      // 也不再依赖路由监听，避免同一毫秒内发出两次 PUT 触发"请勿重复提交"）
       this.$store.dispatch('markMenuLinkageNoticeRead', value).catch(() => {})
     },
     hasOneShowingChild(children = [], parent) {

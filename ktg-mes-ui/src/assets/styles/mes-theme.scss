@@ -498,6 +498,7 @@ body {
   overflow-y: auto;
 
   .rail-item {
+    position: relative;
     width: 60px;
     padding: 8px 0 6px;
     margin-bottom: 4px;
@@ -509,6 +510,19 @@ body {
     cursor: pointer;
     color: #5b6472;
     transition: background-color var(--transition-control), color var(--transition-control);
+
+    // 联动提醒蓝点：该域下有未读的自动生成任务时显示
+    &__dot {
+      position: absolute;
+      top: 6px;
+      right: 12px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2563eb;
+      box-shadow: 0 0 0 2px #ffffff;
+      animation: rail-dot-pulse 1.8s ease-in-out infinite;
+    }
 
     i {
       font-size: 19px;
@@ -536,6 +550,11 @@ body {
       }
     }
   }
+}
+
+@keyframes rail-dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.72; }
 }
 
 /* 侧边栏整体右移，给左栏让位 */

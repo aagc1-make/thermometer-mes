@@ -8,12 +8,13 @@
       :title="d.title"
       role="button"
       tabindex="0"
-      :aria-label="d.title"
+      :aria-label="hasUnread(d) ? d.title + '（有新任务）' : d.title"
       @click="go(d)"
       @keyup.enter="go(d)"
     >
       <i :class="d.icon" aria-hidden="true"></i>
       <span class="rail-item__text">{{ d.title }}</span>
+      <span v-if="hasUnread(d)" class="rail-item__dot" aria-hidden="true"></span>
     </div>
   </div>
 </template>
@@ -29,9 +30,29 @@ export default {
     },
     activeKey() {
       return findDomainByPath(this.$route.path).key
+    },
+    unreadMenuPaths() {
+      return this.$store.getters.unreadMenuPaths || []
     }
   },
   methods: {
+    /**
+     * 该业务域下是否有未读的联动提醒。
+     * 菜单里的未读路径是叶子绝对路径（如 /mes/qc/iqc），
+     * 这里按域的 roots 做前缀匹配，让"质量/仓储"这类一级域也能亮蓝点。
+     */
+    hasUnread(domain) {
+      const unread = this.unreadMenuPaths
+      if (!unread.length) return false
+      const roots = (domain && domain.roots) || []
+      return unread.some(path => {
+        const p = String(path || '')
+        return roots.some(root => {
+          const r = String(root || '')
+          return r && (p === r || p.indexOf(r + '/') === 0)
+        })
+      })
+    },
     go(domain) {
       const target = this.firstPath(domain)
       if (target) {
