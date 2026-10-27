@@ -13,6 +13,7 @@ import com.ktg.mes.pro.domain.ProFeedback;
 import com.ktg.mes.pro.domain.ProWorkorder;
 import com.ktg.mes.pro.service.IProFeedbackService;
 import com.ktg.mes.pro.service.IProWorkorderService;
+import com.ktg.mes.linkage.FormLinkagePolicy;
 import com.ktg.mes.qc.domain.*;
 import com.ktg.mes.qc.service.*;
 import com.ktg.mes.wm.domain.*;
@@ -93,6 +94,9 @@ public class QcIpqcController extends BaseController
     @Autowired
     private WmStorageAreaMapper wmStorageAreaMapper;
 
+    @Autowired
+    private FormLinkagePolicy formLinkagePolicy;
+
 
     /**
      * 查询过程检验单列表
@@ -172,15 +176,8 @@ public class QcIpqcController extends BaseController
             return AjaxResult.error("当前工单生产的产品未配置此类型的检验模板！");
         }
 
-        //检测数量效验
-        if((qcIpqc.getQuantityUnqualified() == null || qcIpqc.getQuantityUnqualified().compareTo(BigDecimal.ZERO) <= 0)&&
-                (qcIpqc.getQuantityQualified() == null || qcIpqc.getQuantityQualified().compareTo(BigDecimal.ZERO) <= 0)){
-            return AjaxResult.error("请填写合格品/不合格品数量！");
-        }
-
-        if(qcIpqc.getQuantityCheck().compareTo(qcIpqc.getQuantityQualified().add(qcIpqc.getQuantityUnqualified()))!=0){
-            return AjaxResult.error("检测数量与合格品/不合格品总和数量不匹配！");
-        }
+        formLinkagePolicy.assertQualityQuantities(qcIpqc.getQuantityCheck(),
+                qcIpqc.getQuantityQualified(), qcIpqc.getQuantityUnqualified());
 
         //先保存
         qcIpqcService.insertQcIpqc(qcIpqc);
@@ -255,14 +252,12 @@ public class QcIpqcController extends BaseController
             return AjaxResult.error("当前工单生产的产品未配置此类型的检验模板！");
         }
 
-        //检测数量效验
-        if((qcIpqc.getQuantityUnqualified() == null || qcIpqc.getQuantityUnqualified().compareTo(BigDecimal.ZERO) <= 0)&&
-                (qcIpqc.getQuantityQualified() == null || qcIpqc.getQuantityQualified().compareTo(BigDecimal.ZERO) <= 0)){
-            return AjaxResult.error("请填写合格品/不合格品数量！");
-        }
-
-        if(qcIpqc.getQuantityCheck().compareTo(qcIpqc.getQuantityQualified().add(qcIpqc.getQuantityUnqualified()))!=0){
-            return AjaxResult.error("检测数量与合格品/不合格品总和数量不匹配！");
+        QcIpqc persisted = qcIpqcService.selectQcIpqcByIpqcId(qcIpqc.getIpqcId());
+        formLinkagePolicy.assertQualityCompletionAllowed(
+                persisted == null ? null : persisted.getStatus(), qcIpqc.getStatus());
+        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcIpqc.getStatus())){
+            formLinkagePolicy.assertQualityQuantities(qcIpqc.getQuantityCheck(),
+                    qcIpqc.getQuantityQualified(), qcIpqc.getQuantityUnqualified());
         }
 
         //如果是完成单据则根据单据上的来源单据，更新对应的关联检验单信息

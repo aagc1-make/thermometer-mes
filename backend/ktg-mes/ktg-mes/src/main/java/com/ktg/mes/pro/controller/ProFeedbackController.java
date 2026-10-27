@@ -18,6 +18,8 @@ import com.ktg.mes.pro.domain.*;
 import com.ktg.mes.pro.service.IProRouteProcessService;
 import com.ktg.mes.pro.service.IProTaskService;
 import com.ktg.mes.pro.service.IProWorkorderService;
+import com.ktg.mes.linkage.ProductionQualityLinkageService;
+import com.ktg.mes.linkage.FormLinkagePolicy;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ItemConsumeTxBean;
 import com.ktg.mes.wm.domain.tx.ProductProductTxBean;
@@ -87,6 +89,15 @@ public class ProFeedbackController extends BaseController
 
     @Autowired
     private IWmProductProduceService wmProductProduceService;
+
+    @Autowired
+    private IWmProductProduceLineService wmProductProduceLineService;
+
+    @Autowired
+    private ProductionQualityLinkageService productionQualityLinkageService;
+
+    @Autowired
+    private FormLinkagePolicy formLinkagePolicy;
 
     @Autowired
     private IStorageCoreService storageCoreService;
@@ -290,6 +301,11 @@ public class ProFeedbackController extends BaseController
             return AjaxResult.error("报工单不存在、已执行或正在等待检验，不能重复执行");
         }
         ProFeedback feedback= proFeedbackService.selectProFeedbackByRecordId(recordId);
+        if(feedback == null){
+            return AjaxResult.error("报工单不存在");
+        }
+        // 合并队友分支：统一放行策略，待检/完成/取消状态禁止重复执行
+        formLinkagePolicy.assertFeedbackExecutable(feedback.getStatus());
         if(feedback.getQuantityFeedback() == null || feedback.getQuantityFeedback().compareTo(BigDecimal.ZERO) !=1){
             return AjaxResult.error("报工数量必须大于0");
         }
@@ -336,6 +352,18 @@ public class ProFeedbackController extends BaseController
             if(UserConstants.YES.equals(feedback.getIsCheck())){
                 feedback.setStatus(UserConstants.FEEDBACK_STATUS_UNCHECK); //待检测状态
                 proFeedbackService.updateProFeedback(feedback);
+
+                WmProductProduceLine lineParam = new WmProductProduceLine();
+                lineParam.setRecordId(productRecord.getRecordId());
+                List<WmProductProduceLine> produceLines =
+                        wmProductProduceLineService.selectWmProductProduceLineList(lineParam);
+                if(CollectionUtil.isEmpty(produceLines)){
+                    return AjaxResult.error("未生成待检产品产出行");
+                }
+                for(WmProductProduceLine produceLine : produceLines){
+                    productionQualityLinkageService.createDraft(
+                            feedback, productRecord, produceLine, getUsername());
+                }
 
                 return AjaxResult.success("报工成功，请等待质量检验完成！");
             }else{

@@ -1,5 +1,5 @@
 /**
- * 红外测温枪 MES —— 10 台整机全流程演示脚本
+ * 红外测温枪 MES —— 生产 10 台、销售 6 台、结存 4 台全流程演示脚本
  *
  * 依次执行：采购到货 → 来料检验(IQC) → 采购入库 → 生产工单 → 排产 →
  *          生产领料 → 生产报工 → 过程检验(IPQC) → 成品入库 → 出货检验(OQC) → 销售出库
@@ -570,7 +570,7 @@ async function sales(qty) {
 
 // ---------- 主流程 ----------
 (async () => {
-  console.log('=== 红外测温枪 MES 10 台全流程演示 ===\n');
+  console.log('=== 红外测温枪 MES 全流程演示（生产 10 台 / 销售 6 台 / 结存 4 台）===\n');
   await login();
 
   // A. 采购到货 + IQC + 采购入库
@@ -641,7 +641,7 @@ async function sales(qty) {
     // 否则该工序报工时会因消耗数量为 0 报“事务数量必须大于0”
     line('manual', 10), line('box', 10)
   ]);
-  log('整机结构件领料完成');
+  log('整机结构件与包装材料领料完成');
 
   // E. 报工 + 过程检验
   await feedback(woEc, byProcess(tEc, PROCESS.op10), 10, 'N', 10, 0);
@@ -666,7 +666,7 @@ async function sales(qty) {
 
   // F. 成品入库 + 销售出库
   await productIn(woFg, 10);
-  await sales(10);
+  await sales(6);
 
   // G. 结果核对：单据数量 + 库存结存 + 批次贯穿链路
   console.log('\n=== 单据核对 ===');
@@ -677,7 +677,7 @@ async function sales(qty) {
   const saleList = await rows('/mes/wm/productsales/list', {});
   console.log(`  销售出库单 ${saleList.length} 张`);
 
-  console.log('\n=== 库存结存（10 台全流程执行后应全部结零）===');
+  console.log('\n=== 库存结存（整机入库 10 台、销售 6 台后，成品仓应结存 4 台）===');
   for (const code of ['TG-EL-001', 'TG-EL-002', 'TG-ST-001', 'TG-FG-001']) {
     const ss = await rows('/mes/wm/wmstock/list', { itemCode: code });
     const desc = ss.map(s => `${s.warehouseName}:${Number(s.quantityOnhand)}`).join(' | ');

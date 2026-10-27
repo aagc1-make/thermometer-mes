@@ -20,6 +20,13 @@ public class QcPendingInspect extends BaseEntity {
 
     private String qcDetailType;
 
+    /** 已自动生成的质检草稿；为空时才允许走人工新增兼容流程。 */
+    private Long qcId;
+
+    private String qcCode;
+
+    private String qcStatus;
+
     private Long itemId;
 
     private String itemCode;
@@ -136,6 +143,30 @@ public class QcPendingInspect extends BaseEntity {
 
     public void setQcDetailType(String qcDetailType) {
         this.qcDetailType = qcDetailType;
+    }
+
+    public Long getQcId() {
+        return qcId;
+    }
+
+    public void setQcId(Long qcId) {
+        this.qcId = qcId;
+    }
+
+    public String getQcCode() {
+        return qcCode;
+    }
+
+    public void setQcCode(String qcCode) {
+        this.qcCode = qcCode;
+    }
+
+    public String getQcStatus() {
+        return qcStatus;
+    }
+
+    public void setQcStatus(String qcStatus) {
+        this.qcStatus = qcStatus;
     }
 
     public Long getItemId() {

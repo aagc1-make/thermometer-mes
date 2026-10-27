@@ -7,6 +7,7 @@ import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.qc.domain.QcTemplate;
 import com.ktg.mes.qc.service.IQcTemplateService;
+import com.ktg.mes.linkage.ArrivalQualityLinkageService;
 import com.ktg.mes.wm.domain.WmArrivalNoticeLine;
 import com.ktg.mes.wm.service.IWmArrivalNoticeLineService;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -48,6 +49,9 @@ public class WmArrivalNoticeController extends BaseController
 
     @Autowired
     private IQcTemplateService qcTemplateService;
+
+    @Autowired
+    private ArrivalQualityLinkageService arrivalQualityLinkageService;
 
     /**
      * 查询到货通知单列表
@@ -105,6 +109,7 @@ public class WmArrivalNoticeController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:wm:arrivalnotice:edit')")
     @Log(title = "到货通知单", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody WmArrivalNotice wmArrivalNotice)
     {
         if(UserConstants.NOT_UNIQUE.equals(wmArrivalNoticeService.checkRnCodeUnique(wmArrivalNotice))){
@@ -112,11 +117,13 @@ public class WmArrivalNoticeController extends BaseController
         }
 
         //提交时判断通知单行上的物料
+        List<WmArrivalNoticeLine> lines = null;
+        boolean createIqcDrafts = false;
         if(UserConstants.ORDER_STATUS_APPROVING.equals(wmArrivalNotice.getStatus())){
             //到货内容检查
             WmArrivalNoticeLine param = new WmArrivalNoticeLine();
             param.setNoticeId(wmArrivalNotice.getNoticeId());
-            List<WmArrivalNoticeLine> lines = wmArrivalNoticeLineService.selectWmArrivalNoticeLineList(param);
+            lines = wmArrivalNoticeLineService.selectWmArrivalNoticeLineList(param);
             if(CollectionUtils.isEmpty(lines)){
                 return AjaxResult.error("请添加到货物资！");
             }
@@ -131,9 +138,15 @@ public class WmArrivalNoticeController extends BaseController
             }
             if(!needCheck){
                 wmArrivalNotice.setStatus(UserConstants.ORDER_STATUS_APPROVED);
+            }else{
+                createIqcDrafts = true;
             }
         }
-        return toAjax(wmArrivalNoticeService.updateWmArrivalNotice(wmArrivalNotice));
+        int rows = wmArrivalNoticeService.updateWmArrivalNotice(wmArrivalNotice);
+        if(rows > 0 && createIqcDrafts){
+            arrivalQualityLinkageService.createDrafts(wmArrivalNotice, lines, getUsername());
+        }
+        return toAjax(rows);
     }
 
     /**

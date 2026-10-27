@@ -11,6 +11,8 @@ import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ProductSalesTxBean;
 import com.ktg.mes.wm.service.*;
+import com.ktg.mes.linkage.FormLinkagePolicy;
+import com.ktg.mes.linkage.SalesQualityLinkageService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +57,12 @@ public class WmProductSalesController extends BaseController
 
     @Autowired
     private IStorageCoreService storageCoreService;
+
+    @Autowired
+    private SalesQualityLinkageService salesQualityLinkageService;
+
+    @Autowired
+    private FormLinkagePolicy formLinkagePolicy;
 
     /**
      * 查询销售出库单列表
@@ -158,17 +166,23 @@ public class WmProductSalesController extends BaseController
             }
         }
 
-        //向待填写运单状态提交时，检查行是否有需要进行出货检验的，如果有则把单据推进到待检验。
-        //阶段1复审修复①④：编排下沉 Service；返回 0 表示全免检，应直接推进到待发运。
+        // 合并决议：状态推进走我方 submitForInspection（原子、行状态走受控回写），
+        // 建 OQC 草稿用队友分支的 salesQualityLinkageService（我方原本没有该能力）。
+        boolean createOqcDrafts = false;
         if(UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING.equals(wmProductSales.getStatus())){
             int submit = wmProductSalesService.submitForInspection(wmProductSales.getSalesId());
             wmProductSales.setStatus(submit == 1
                     ? UserConstants.PRODUCT_SALES_STATUS_UNCHECK
                     : UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING);
+            createOqcDrafts = submit == 1;
         }
 
         wmProductSales.setUpdateBy(getUsername());
-        return toAjax(wmProductSalesService.updateWmProductSales(wmProductSales));
+        int rows = wmProductSalesService.updateWmProductSales(wmProductSales);
+        if(rows > 0 && createOqcDrafts){
+            salesQualityLinkageService.createDrafts(wmProductSales, lines, getUsername());
+        }
+        return toAjax(rows);
     }
 
     /**
@@ -216,6 +230,8 @@ public class WmProductSalesController extends BaseController
             return AjaxResult.error("出库物资不能为空");
         }
 
+        // 合并决议：两套校验都保留——队友的状态/质量放行策略 + 我方的数量一致性校验
+        formLinkagePolicy.assertSalesExecutable(sales, lines);
         for (WmProductSalesLine line : lines) {
             if (line.getQuantitySales() == null || line.getQuantitySales().signum() <= 0
                     || !UserConstants.EQUAL_TO.equals(wmProductSalesDetailService.checkQuantity(line.getLineId()))) {

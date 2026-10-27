@@ -1,16 +1,29 @@
 <template>
   <div v-if="!item.hidden">
     <template v-if="!isSingleChildGroup && hasOneShowingChild(item.children,item) && (!onlyOneChild.children||onlyOneChild.noShowingChildren)&&!item.alwaysShow">
-      <app-link v-if="onlyOneChild.meta" :to="resolvePath(onlyOneChild.path, onlyOneChild.query)">
+      <app-link
+        v-if="onlyOneChild.meta"
+        :to="resolvePath(onlyOneChild.path, onlyOneChild.query)"
+        @click.native="handleMenuOpen(resolvePath(onlyOneChild.path))"
+      >
         <el-menu-item :index="resolvePath(onlyOneChild.path)" :class="{'submenu-title-noDropdown':!isNest}">
-          <item :icon="onlyOneChild.meta.icon||(item.meta&&item.meta.icon)" :title="onlyOneChild.meta.title" />
+          <item
+            :icon="onlyOneChild.meta.icon||(item.meta&&item.meta.icon)"
+            :title="onlyOneChild.meta.title"
+            :show-dot="isUnreadPath(resolvePath(onlyOneChild.path))"
+          />
         </el-menu-item>
       </app-link>
     </template>
 
     <el-submenu v-else ref="subMenu" :index="resolvePath(item.path)" popper-append-to-body>
       <template slot="title">
-        <item v-if="item.meta" :icon="item.meta && item.meta.icon" :title="item.meta.title" />
+        <item
+          v-if="item.meta"
+          :icon="item.meta && item.meta.icon"
+          :title="item.meta.title"
+          :show-dot="hasUnreadChild"
+        />
       </template>
       <sidebar-item
         v-for="child in item.children"
@@ -30,6 +43,12 @@ import { isExternal } from '@/utils/validate'
 import Item from './Item'
 import AppLink from './Link'
 import FixiOSBug from './FixiOSBug'
+
+const {
+  normalizeMenuPath,
+  isMenuPathUnread,
+  hasUnreadRouteTree
+} = require('@/utils/menuLinkageNotice')
 
 export default {
   name: 'SidebarItem',
@@ -55,6 +74,12 @@ export default {
     return {}
   },
   computed: {
+    unreadMenuPaths() {
+      return this.$store.getters.unreadMenuPaths || []
+    },
+    hasUnreadChild() {
+      return hasUnreadRouteTree(this.item.children, this.basePath, this.unreadMenuPaths)
+    },
     /**
      * 一级目录即使只有 1 个可见子菜单，也强制按「分组标题 + 子菜单」渲染。
      * 依如下规则判定：
@@ -72,6 +97,17 @@ export default {
     }
   },
   methods: {
+    isUnreadPath(menuPath) {
+      const value = typeof menuPath === 'object' ? menuPath.path : menuPath
+      return isMenuPathUnread(this.unreadMenuPaths, value)
+    },
+    handleMenuOpen(menuPath) {
+      const value = typeof menuPath === 'object' ? menuPath.path : menuPath
+      if (!this.isUnreadPath(value)) return
+      // 导航到其他菜单时交给路由监听在成功进入后清除；重复点击当前菜单则立即清除。
+      if (normalizeMenuPath(this.$route.path) !== normalizeMenuPath(value)) return
+      this.$store.dispatch('markMenuLinkageNoticeRead', value).catch(() => {})
+    },
     hasOneShowingChild(children = [], parent) {
       if (!children) {
         children = [];
