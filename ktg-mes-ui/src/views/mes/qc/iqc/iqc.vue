@@ -409,7 +409,7 @@ import VendorSelect from "@/components/vendorSelect/single.vue";
 import IqcLine from "./iqcline.vue";
 import QCResutl from "../qcresult/index.vue";
 import {genCode} from "@/api/system/autocode/rule"
-import {getReport,getReport2} from "@/api/mes/report/report"
+// 报表服务未部署，viewReport 只做提示，无需再引入报表接口（避免打包无用依赖）
 export default {
   name: "Iqc",
   dicts: ['mes_qc_result','mes_order_status'],
@@ -730,14 +730,10 @@ export default {
       }
     },
     viewReport(){
-      var reportName = "Test";
-      getReport2(reportName).then(res=>{
-        debugger;
-        let blob = new Blob([res],{type:'application/pdf'});
-        let href = URL.createObjectURL(blob);
-        console.log(href);
-        window.open(`/pdf/web/viewer.html?file=${encodeURIComponent(href)}`);
-      });
+      // 说明：后端 jasperreports 依赖已注释、也没有 /jasper-report 控制器，
+      // 直接调用会返回 404 并在页面弹出"系统接口 404 异常"。
+      // 这里改为明确提示，避免误导用户以为单据有问题。
+      this.$modal.msgWarning('报表服务未部署（jasperreports 依赖未启用），暂不支持在线预览');
     }
   }
 };
