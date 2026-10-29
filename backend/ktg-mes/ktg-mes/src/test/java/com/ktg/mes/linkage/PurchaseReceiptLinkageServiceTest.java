@@ -42,7 +42,9 @@ class PurchaseReceiptLinkageServiceTest {
         autoCodeUtil = mock(AutoCodeUtil.class);
         menuNoticeService = mock(MenuLinkageNoticeService.class);
         linkageService = new PurchaseReceiptLinkageService(
-                receiptService, receiptLineService, batchService, autoCodeUtil, menuNoticeService);
+                receiptService, receiptLineService, batchService, autoCodeUtil, menuNoticeService,
+                com.ktg.mes.qc.service.IQcIqcService.class.cast(
+                        mock(com.ktg.mes.qc.service.IQcIqcService.class)));
     }
 
     @Test

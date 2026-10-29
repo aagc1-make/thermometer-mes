@@ -88,6 +88,7 @@ public class DvCheckRecordController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('mes:dv:checkrecord:add')")
     @Log(title = "设备点检记录", businessType = BusinessType.INSERT)
+    @Transactional
     @PostMapping
     public AjaxResult add(@RequestBody DvCheckRecord dvCheckRecord)
     {
@@ -108,6 +109,8 @@ public class DvCheckRecordController extends BaseController
                     line.setSubjectContent(subject.getSubjectContent());
                     line.setSubjectStandard(subject.getSubjectStandard());
                     line.setCheckStatus(UserConstants.YES);
+                    // 原实现只构造了行对象却没有落库，导致点检记录永远没有明细
+                    dvCheckRecordLineService.insertDvCheckRecordLine(line);
                 }
             }
         }
@@ -150,6 +153,8 @@ public class DvCheckRecordController extends BaseController
                     line.setSubjectContent(subject.getSubjectContent());
                     line.setSubjectStandard(subject.getSubjectStandard());
                     line.setCheckStatus(UserConstants.YES);
+                    // 同上：换方案重建明细时必须真正插入，否则 delete 之后记录会变成“无明细”
+                    dvCheckRecordLineService.insertDvCheckRecordLine(line);
                 }
             }
         }

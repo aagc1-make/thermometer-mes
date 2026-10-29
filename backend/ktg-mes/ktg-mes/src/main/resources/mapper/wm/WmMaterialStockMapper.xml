@@ -119,6 +119,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
     </select>
     
+    <select id="lockMaterialStockById" parameterType="Long" resultMap="WmMaterialStockResult">
+        <include refid="selectWmMaterialStockVo"/> where material_stock_id = #{materialStockId} for update
+    </select>
     <select id="selectWmMaterialStockByMaterialStockId" parameterType="Long" resultMap="WmMaterialStockResult">
         <include refid="selectWmMaterialStockVo"/>
         where material_stock_id = #{materialStockId}

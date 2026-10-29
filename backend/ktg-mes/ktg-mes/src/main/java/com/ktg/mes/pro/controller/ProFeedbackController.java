@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.ktg.common.constant.UserConstants;
+import com.ktg.common.exception.ServiceException;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.md.domain.MdProductBom;
 import com.ktg.mes.md.domain.MdWorkstation;
@@ -19,6 +20,7 @@ import com.ktg.mes.pro.service.IProRouteProcessService;
 import com.ktg.mes.pro.service.IProTaskService;
 import com.ktg.mes.pro.service.IProWorkorderService;
 import com.ktg.mes.linkage.ProductionQualityLinkageService;
+import com.ktg.mes.linkage.ProductReceiptLinkageService;
 import com.ktg.mes.linkage.FormLinkagePolicy;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ItemConsumeTxBean;
@@ -98,6 +100,9 @@ public class ProFeedbackController extends BaseController
 
     @Autowired
     private FormLinkagePolicy formLinkagePolicy;
+
+    @Autowired
+    private ProductReceiptLinkageService productReceiptLinkageService;
 
     @Autowired
     private IStorageCoreService storageCoreService;
@@ -358,7 +363,8 @@ public class ProFeedbackController extends BaseController
                 List<WmProductProduceLine> produceLines =
                         wmProductProduceLineService.selectWmProductProduceLineList(lineParam);
                 if(CollectionUtil.isEmpty(produceLines)){
-                    return AjaxResult.error("未生成待检产品产出行");
+                    // 此时消耗单已扣减线边库存：必须抛异常回滚，不能返回错误后提交半成品数据。
+                    throw new ServiceException("未生成待检产品产出行，报工已回滚");
                 }
                 for(WmProductProduceLine produceLine : produceLines){
                     productionQualityLinkageService.createDraft(
@@ -371,12 +377,18 @@ public class ProFeedbackController extends BaseController
                 wmProductProduceService.executeProductProduce(productRecord);
                 //更新生产任务和生产工单的进度
                 proFeedbackService.updateProTaskAndWorkorderByFeedback(feedback);
+                //工单完工后：为整机工单幂等生成产品入库草稿（半成品子工单不建）
+                productReceiptLinkageService.ensureDraftForFinishedWorkorder(feedback.getWorkorderId(), getUsername());
             }
         }
 
         //更新报工单的状态
         feedback.setStatus(UserConstants.FEEDBACK_STATUS_FINISHED);
         proFeedbackService.updateProFeedback(feedback);
+
+        // 非关键工序（如包装入库 9409）执行完成后，在同一业务流程末尾触发产品入库草稿；
+        // 幂等，且 ProductReceiptLinkageService 会校验“终末工序 FINISHED 报工”这一放行证据才建单。
+        productReceiptLinkageService.ensureDraftForFinishedWorkorder(feedback.getWorkorderId(), getUsername());
 
         return AjaxResult.success();
     }

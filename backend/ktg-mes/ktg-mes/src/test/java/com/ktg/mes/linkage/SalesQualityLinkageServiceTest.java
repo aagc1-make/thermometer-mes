@@ -10,6 +10,7 @@ import com.ktg.mes.qc.service.IQcTemplateIndexService;
 import com.ktg.mes.qc.service.IQcTemplateProductService;
 import com.ktg.mes.wm.domain.WmProductSales;
 import com.ktg.mes.wm.domain.WmProductSalesLine;
+import com.ktg.mes.wm.service.IWmProductSalesService;
 import com.ktg.system.strategy.AutoCodeUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ class SalesQualityLinkageServiceTest {
     private IQcOqcLineService oqcLineService;
     private AutoCodeUtil autoCodeUtil;
     private MenuLinkageNoticeService menuNoticeService;
+    private IWmProductSalesService productSalesService;
     private SalesQualityLinkageService linkageService;
 
     @BeforeEach
@@ -43,8 +45,9 @@ class SalesQualityLinkageServiceTest {
         oqcLineService = mock(IQcOqcLineService.class);
         autoCodeUtil = mock(AutoCodeUtil.class);
         menuNoticeService = mock(MenuLinkageNoticeService.class);
+        productSalesService = mock(IWmProductSalesService.class);
         linkageService = new SalesQualityLinkageService(oqcService, templateProductService,
-                templateIndexService, oqcLineService, autoCodeUtil, menuNoticeService);
+                templateIndexService, oqcLineService, autoCodeUtil, menuNoticeService, productSalesService);
     }
 
     @Test

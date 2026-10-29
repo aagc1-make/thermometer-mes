@@ -10,6 +10,7 @@ import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.IssueTxBean;
 import com.ktg.mes.wm.service.*;
+import com.ktg.mes.wm.service.impl.IssueExecuteValidator;
 import com.ktg.mes.linkage.MenuLinkageNoticePaths;
 import com.ktg.mes.linkage.MenuLinkageNoticeService;
 import com.ktg.mes.linkage.ProductionNextStepLinkageService;
@@ -43,6 +44,9 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/wm/issueheader")
 public class WmIssueHeaderController extends BaseController
 {
+    @Autowired
+    private IssueExecuteValidator issueExecuteValidator;
+
     @Autowired
     private PostingLockMapper postingLockMapper;
 
@@ -191,12 +195,19 @@ public class WmIssueHeaderController extends BaseController
             return AjaxResult.error("单据不存在、已执行或尚未到可执行状态，请刷新后重试");
         }
 
+        postingLockMapper.inventory();
         WmIssueHeader header = wmIssueHeaderService.selectWmIssueHeaderByIssueId(issueId);
         WmIssueLine param = new WmIssueLine();
         param.setIssueId(issueId);
         List<WmIssueLine> lines = wmIssueLineService.selectWmIssueLineList(param);
         if(CollUtil.isEmpty(lines)){
             return AjaxResult.error("请指定领出的物资");
+        }
+
+        // 逐行校验拣货明细（数量、物料、库存），不通过则直接返回业务提示，不写库存/流水/状态
+        String validateError = issueExecuteValidator.validate(lines);
+        if (validateError != null) {
+            return AjaxResult.error(validateError);
         }
 
         List<IssueTxBean> beans = wmIssueHeaderService.getTxBeans(issueId);

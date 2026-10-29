@@ -7,6 +7,7 @@ import com.ktg.mes.wm.domain.WmSalesNotice;
 import com.ktg.mes.wm.domain.WmSalesNoticeLine;
 import com.ktg.mes.wm.service.IWmProductSalesLineService;
 import com.ktg.mes.wm.service.IWmProductSalesService;
+import com.ktg.mes.wm.service.IWmSalesNoticeService;
 import com.ktg.system.strategy.AutoCodeUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,21 +22,32 @@ public class SalesNoticeLinkageService {
     private final IWmProductSalesLineService salesLineService;
     private final AutoCodeUtil autoCodeUtil;
     private final MenuLinkageNoticeService menuNoticeService;
+    private final IWmSalesNoticeService salesNoticeService;
 
     public SalesNoticeLinkageService(IWmProductSalesService salesService,
                                      IWmProductSalesLineService salesLineService,
                                      AutoCodeUtil autoCodeUtil,
-                                     MenuLinkageNoticeService menuNoticeService) {
+                                     MenuLinkageNoticeService menuNoticeService,
+                                     IWmSalesNoticeService salesNoticeService) {
         this.salesService = salesService;
         this.salesLineService = salesLineService;
         this.autoCodeUtil = autoCodeUtil;
         this.menuNoticeService = menuNoticeService;
+        this.salesNoticeService = salesNoticeService;
     }
 
     @Transactional
     public WmProductSales createDraft(WmSalesNotice notice,
                                       List<WmSalesNoticeLine> sourceLines,
                                       String operator) {
+        // 来源快照以库为准：确认接口的请求体通常只带 noticeId + status，
+        // 客户/收货信息等冗余字段为空；用持久化的发货通知覆盖，避免销售草稿 client_code 为空。
+        if (notice.getNoticeId() != null) {
+            WmSalesNotice persisted = salesNoticeService.selectWmSalesNoticeByNoticeId(notice.getNoticeId());
+            if (persisted != null) {
+                notice = persisted;
+            }
+        }
         WmProductSales query = new WmProductSales();
         query.setNoticeId(notice.getNoticeId());
         List<WmProductSales> existing = salesService.selectWmProductSalesList(query);

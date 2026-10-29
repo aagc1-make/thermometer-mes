@@ -9,6 +9,7 @@ import com.ktg.common.core.domain.AjaxResult;
 import com.ktg.common.core.page.TableDataInfo;
 import com.ktg.common.enums.BusinessType;
 import com.ktg.common.utils.StringUtils;
+import com.ktg.mes.linkage.SalesQualityLinkageService;
 import com.ktg.mes.md.domain.MdClient;
 import com.ktg.mes.md.service.IMdClientService;
 import com.ktg.mes.wm.domain.*;
@@ -50,6 +51,9 @@ public class WmProductSalesMobController extends BaseController {
 
     @Autowired
     private AutoCodeUtil autoCodeUtil;
+
+    @Autowired
+    private SalesQualityLinkageService salesQualityLinkageService;
 
     /**
      * 查询销售出库单列表
@@ -165,15 +169,23 @@ public class WmProductSalesMobController extends BaseController {
         }
 
         // 阶段1复审修复①④：提交待检统一下沉到 Service；返回 0 表示全免检，直接推进待发运
+        // 修复：移动端与 PC 端共享业务规则 —— 提交待检(UNSHIPPING→UNCHECK)后同样自动生成 OQC 草稿，
+        // 不能只靠 PC 端 WmProductSalesController 触发。
+        boolean createOqcDrafts = false;
         if(UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING.equals(wmProductSales.getStatus())){
             int submit = wmProductSalesService.submitForInspection(wmProductSales.getSalesId());
             wmProductSales.setStatus(submit == 1
                     ? UserConstants.PRODUCT_SALES_STATUS_UNCHECK
                     : UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING);
+            createOqcDrafts = submit == 1;
         }
 
         wmProductSales.setUpdateBy(getUsername());
-        return toAjax(wmProductSalesService.updateWmProductSales(wmProductSales));
+        int rows = wmProductSalesService.updateWmProductSales(wmProductSales);
+        if(rows > 0 && createOqcDrafts){
+            salesQualityLinkageService.createDrafts(wmProductSales, lines, getUsername());
+        }
+        return toAjax(rows);
     }
 
     /**

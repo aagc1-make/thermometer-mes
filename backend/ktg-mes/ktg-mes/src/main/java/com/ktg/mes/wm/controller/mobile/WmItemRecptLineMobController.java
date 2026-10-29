@@ -31,6 +31,9 @@ public class WmItemRecptLineMobController extends BaseController {
     @Autowired
     private IWmBatchService wmBatchService;
 
+    @Autowired
+    private com.ktg.mes.wm.service.impl.ItemRecptWorkflowService itemRecptWorkflowService;
+
     /**
      * 查询物料入库单行列表
      */
@@ -62,6 +65,7 @@ public class WmItemRecptLineMobController extends BaseController {
     @ApiOperation("新增采购入库单明细信息接口")
     @PreAuthorize("@ss.hasPermi('mes:wm:itemrecpt:add')")
     @Log(title = "物料入库单行", businessType = BusinessType.INSERT)
+    @org.springframework.transaction.annotation.Transactional
     @PostMapping
     public AjaxResult add(@RequestBody WmItemRecptLine wmItemRecptLine)
     {
@@ -69,6 +73,11 @@ public class WmItemRecptLineMobController extends BaseController {
         if(BigDecimal.ZERO.compareTo(wmItemRecptLine.getQuantityRecived()) >= 0){
             return AjaxResult.error("到货数量必须大于0!");
         }
+
+        // 与 PC 共用同一套保护：只有草稿可维护、检验要求与检验单以来源到货行为准、数量不得超过来源可处理量
+        itemRecptWorkflowService.assertLineMutable(wmItemRecptLine.getRecptId());
+        WmArrivalNoticeLine sourceLine = itemRecptWorkflowService.bindSourceLine(wmItemRecptLine);
+        itemRecptWorkflowService.assertLineQuantityWithinSource(wmItemRecptLine, sourceLine, null);
 
         WmItemRecpt wmItemRecpt = wmItemRecptService.selectWmItemRecptByRecptId(wmItemRecptLine.getRecptId());
 
@@ -106,6 +115,7 @@ public class WmItemRecptLineMobController extends BaseController {
     @ApiOperation("修改采购入库单明细信息接口")
     @PreAuthorize("@ss.hasPermi('mes:wm:itemrecpt:edit')")
     @Log(title = "物料入库单行", businessType = BusinessType.UPDATE)
+    @org.springframework.transaction.annotation.Transactional
     @PutMapping
     public AjaxResult edit(@RequestBody WmItemRecptLine wmItemRecptLine)
     {
@@ -113,6 +123,10 @@ public class WmItemRecptLineMobController extends BaseController {
         if(BigDecimal.ZERO.compareTo(wmItemRecptLine.getQuantityRecived()) >= 0){
             return AjaxResult.error("到货数量必须大于0!");
         }
+
+        itemRecptWorkflowService.assertLineMutable(wmItemRecptLine.getRecptId());
+        WmArrivalNoticeLine sourceLine = itemRecptWorkflowService.bindSourceLine(wmItemRecptLine);
+        itemRecptWorkflowService.assertLineQuantityWithinSource(wmItemRecptLine, sourceLine, wmItemRecptLine.getLineId());
 
         WmItemRecpt wmItemRecpt = wmItemRecptService.selectWmItemRecptByRecptId(wmItemRecptLine.getRecptId());
 
@@ -151,9 +165,17 @@ public class WmItemRecptLineMobController extends BaseController {
     @ApiOperation("删除采购入库单明细信息接口")
     @PreAuthorize("@ss.hasPermi('mes:wm:itemrecpt:remove')")
     @Log(title = "物料入库单行", businessType = BusinessType.DELETE)
+    @org.springframework.transaction.annotation.Transactional
     @DeleteMapping("/{lineIds}")
     public AjaxResult remove(@PathVariable Long[] lineIds)
     {
+        for (Long lineId : lineIds) {
+            WmItemRecptLine line = wmItemRecptLineService.selectWmItemRecptLineByLineId(lineId);
+            if (line == null) {
+                return AjaxResult.error("入库行不存在");
+            }
+            itemRecptWorkflowService.assertLineMutable(line.getRecptId());
+        }
         return toAjax(wmItemRecptLineService.deleteWmItemRecptLineByLineIds(lineIds));
     }
 

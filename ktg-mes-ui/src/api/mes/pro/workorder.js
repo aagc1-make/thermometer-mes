@@ -35,6 +35,15 @@ export function addWorkorder(data) {
   })
 }
 
+// 从父工单的 BOM 行批量生成半成品子工单（服务端整批原子 + 幂等）
+export function submitSubWorkorderBatch(data) {
+  return request({
+    url: '/mes/pro/workorder/subBatch',
+    method: 'post',
+    data: data
+  })
+}
+
 // 修改生产工单
 export function updateWorkorder(data) {
   return request({

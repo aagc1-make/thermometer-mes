@@ -14,6 +14,7 @@ import com.ktg.mes.pro.domain.ProWorkorder;
 import com.ktg.mes.pro.service.IProFeedbackService;
 import com.ktg.mes.pro.service.IProWorkorderService;
 import com.ktg.mes.linkage.FormLinkagePolicy;
+import com.ktg.mes.linkage.ProductReceiptLinkageService;
 import com.ktg.mes.qc.domain.*;
 import com.ktg.mes.qc.service.*;
 import com.ktg.mes.wm.domain.*;
@@ -96,6 +97,9 @@ public class QcIpqcController extends BaseController
 
     @Autowired
     private FormLinkagePolicy formLinkagePolicy;
+
+    @Autowired
+    private ProductReceiptLinkageService productReceiptLinkageService;
 
 
     /**
@@ -209,6 +213,16 @@ public class QcIpqcController extends BaseController
         qcIpqc.setSourceDocCode(saved.getSourceDocCode());
         qcIpqc.setSourceDocType(saved.getSourceDocType());
         qcIpqc.setSourceLineId(saved.getSourceLineId());
+        // 工单与检验类型以已保存记录为准：请求携带不同值视为来源篡改，直接拒绝；
+        // 请求未携带时用库中值补齐，避免最小请求体 NPE。
+        if (qcIpqc.getWorkorderId() != null && saved.getWorkorderId() != null
+                && !qcIpqc.getWorkorderId().equals(saved.getWorkorderId())) {
+            return AjaxResult.error("检验单的工单不允许通过普通接口修改");
+        }
+        qcIpqc.setWorkorderId(saved.getWorkorderId());
+        if (saved.getIpqcType() != null) {
+            qcIpqc.setIpqcType(saved.getIpqcType());
+        }
         if (qcIpqc.getQuantityQualified() == null) qcIpqc.setQuantityQualified(BigDecimal.ZERO);
         if (qcIpqc.getQuantityUnqualified() == null) qcIpqc.setQuantityUnqualified(BigDecimal.ZERO);
         if (qcIpqc.getQuantityCheck() == null || qcIpqc.getQuantityQualified().signum() < 0 || qcIpqc.getQuantityUnqualified().signum() < 0) {
@@ -340,6 +354,8 @@ public class QcIpqcController extends BaseController
 
                 //更新生产任务和工单的进度
                 proFeedbackService.updateProTaskAndWorkorderByFeedback(feedback);
+                //工单完工后：为整机工单幂等生成产品入库草稿（半成品子工单不建）
+                productReceiptLinkageService.ensureDraftForFinishedWorkorder(feedback.getWorkorderId(), getUsername());
 
                 //更新报工单状态为FINISHED，根据工废和料废数量更新报工单上的工废和料废数量
                 if(StringUtils.isNotNull(feedback)){

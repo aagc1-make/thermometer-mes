@@ -68,7 +68,17 @@ public class WmTransactionServiceImpl implements IWmTransactionService
         initStock(wmTransaction,stock); //用库存事务来初始化一个MSD对象
         batchCheck(wmTransaction); //针对入库事务，根据物资批次管理属性，检查批次号参数是否传递
         checkAreaMixingRule(wmTransaction); //针对入库事务，检查库位混放规则
-        WmMaterialStock ms =wmMaterialStockMapper.loadMaterialStockForUpdate(stock); //用MSD对象查询库存现有量，看是否已经存在相应的记录；如果存在则只对数量进行更新，不存在则需要新增MSD。
+        boolean issueOut = "ISSUE".equals(wmTransaction.getSourceDocType())
+                && UserConstants.TRANSACTION_TYPE_ITEM_ISSUE_OUT.equals(wmTransaction.getTransactionType())
+                && Integer.valueOf(-1).equals(wmTransaction.getTransactionFlag());
+        WmMaterialStock ms;
+        if (issueOut && wmTransaction.getMaterialStockId() != null) {
+            // 领料只能扣减拣货明细引用的库存行，不能按维度重新选择另一条重复库存。
+            ms = wmMaterialStockMapper.lockMaterialStockById(wmTransaction.getMaterialStockId());
+            if (ms == null) throw new BussinessException("来源库存不存在，请刷新后重试");
+        } else {
+            ms = wmMaterialStockMapper.loadMaterialStockForUpdate(stock);
+        }
         checkFrozen(ms,stock); //冻结检测
 
 
@@ -76,7 +86,7 @@ public class WmTransactionServiceImpl implements IWmTransactionService
         if(StringUtils.isNotNull(ms)){
             //MS已存在
             BigDecimal resultQuantity =ms.getQuantityOnhand().add(quantity);
-            if(wmTransaction.isStorageCheckFlag() && resultQuantity.compareTo(new BigDecimal(0))<0){
+            if((issueOut || wmTransaction.isStorageCheckFlag()) && resultQuantity.compareTo(new BigDecimal(0))<0){
                 throw new BussinessException("库存数量不足！");
             }
             stock.setQuantityOnhand(resultQuantity);
@@ -88,7 +98,7 @@ public class WmTransactionServiceImpl implements IWmTransactionService
 
             //TODO:需要为库存增加一个效验逻辑：同一个库位上不能放不同批次和属性的物资
 
-            if (wmTransaction.isStorageCheckFlag() && quantity.signum() < 0) {
+            if ((issueOut || wmTransaction.isStorageCheckFlag()) && quantity.signum() < 0) {
                 throw new BussinessException("库存数量不足！");
             }
             stock.setQuantityOnhand(quantity);

@@ -14,6 +14,10 @@ public interface PostingLockMapper {
     String itemRecpt(Long id);
     @Select("select status from wm_issue_header where issue_id=#{id} for update")
     String issue(Long id);
+    @Select("select issue_id from wm_issue_detail where detail_id=#{id} for update")
+    Long issueIdForDetail(Long id);
+    @Select("select issue_id from wm_issue_line where line_id=#{id} for update")
+    Long issueIdForLine(Long id);
     @Select("select status from pro_feedback where record_id=#{id} for update")
     String feedback(Long id);
     @Select("select status from qc_ipqc where ipqc_id=#{id} for update")
@@ -24,6 +28,10 @@ public interface PostingLockMapper {
     String workorder(Long id);
     @Select("select status from pro_task where task_id=#{id} for update")
     String task(Long id);
+    @Select("select status from qc_iqc where iqc_id=#{id} for update")
+    String iqc(Long id);
+    @Select("select status from wm_arrival_notice where notice_id=#{id} for update")
+    String arrivalNotice(Long id);
     // 固定顺序串行化库存过账，包括尚不存在的库存行，避免跨实例创建重复余额行。
     @Select("select warehouse_id from wm_warehouse order by warehouse_id for update")
     List<Long> inventory();

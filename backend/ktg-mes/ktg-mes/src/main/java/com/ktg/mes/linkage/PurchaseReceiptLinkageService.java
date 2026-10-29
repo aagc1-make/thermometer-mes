@@ -2,7 +2,6 @@ package com.ktg.mes.linkage;
 
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.DateUtils;
-import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.qc.domain.QcIqc;
 import com.ktg.mes.qc.service.IQcIqcService;
 import com.ktg.mes.wm.domain.WmArrivalNotice;
@@ -14,13 +13,25 @@ import com.ktg.mes.wm.service.IWmBatchService;
 import com.ktg.mes.wm.service.IWmItemRecptLineService;
 import com.ktg.mes.wm.service.IWmItemRecptService;
 import com.ktg.system.strategy.AutoCodeUtil;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
-/** IQC 全部完成后，为同一到货通知单幂等生成一张采购入库草稿。 */
+/**
+ * IQC 全部完成后，为同一到货通知单幂等生成一张采购入库草稿。
+ *
+ * <p>规则：</p>
+ * <ul>
+ *   <li>同一到货通知只生成一张草稿（数据库 linkage_key 唯一约束兜底，并发时返回已存在的草稿）；</li>
+ *   <li>只有合格量 &gt; 0 的来源行才写入草稿明细，NG 行不入库；</li>
+ *   <li>全 NG 时不生成没有可入库行的空草稿；</li>
+ *   <li>草稿状态为 PREPARE，仍需仓管员分配库位/批次并执行，保存不等于过账。</li>
+ * </ul>
+ */
 @Service
 public class PurchaseReceiptLinkageService {
 
@@ -72,11 +83,23 @@ public class PurchaseReceiptLinkageService {
             }
         }
 
-        WmItemRecpt query = new WmItemRecpt();
-        query.setNoticeId(notice.getNoticeId());
-        List<WmItemRecpt> existing = receiptService.selectWmItemRecptList(query);
-        if (existing != null && !existing.isEmpty()) {
-            return existing.get(0);
+        WmItemRecpt existing = findExisting(notice.getNoticeId());
+        if (existing != null) {
+            return existing;
+        }
+
+        // 先确定可入库明细：只有合格量 > 0 的行才进入草稿，全 NG 则整单不建。
+        List<WmItemRecptLine> draftLines = new ArrayList<>();
+        for (WmArrivalNoticeLine sourceLine : sourceLines) {
+            BigDecimal quantity = UserConstants.YES.equals(sourceLine.getIqcCheck())
+                    ? sourceLine.getQuantityQuanlified() : sourceLine.getQuantityArrival();
+            if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            draftLines.add(buildReceiptLine(notice, sourceLine, quantity, operator));
+        }
+        if (draftLines.isEmpty()) {
+            return null;
         }
 
         WmItemRecpt receipt = new WmItemRecpt();
@@ -93,19 +116,37 @@ public class PurchaseReceiptLinkageService {
         receipt.setStatus(UserConstants.ORDER_STATUS_PREPARE);
         receipt.setAttr1("AUTO:ITEM_RECPT:ARRIVAL_NOTICE:" + notice.getNoticeId());
         receipt.setCreateBy(operator);
-        receiptService.insertWmItemRecpt(receipt);
-
-        for (WmArrivalNoticeLine sourceLine : sourceLines) {
-            BigDecimal quantity = UserConstants.YES.equals(sourceLine.getIqcCheck())
-                    ? sourceLine.getQuantityQuanlified() : sourceLine.getQuantityArrival();
-            if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
-                continue;
+        try {
+            receiptService.insertWmItemRecpt(receipt);
+        } catch (DuplicateKeyException concurrent) {
+            // 并发提交：唯一约束保证只落一张，返回已存在的那张。
+            WmItemRecpt winner = findExisting(notice.getNoticeId());
+            if (winner != null) {
+                return winner;
             }
-            WmItemRecptLine line = buildReceiptLine(receipt, notice, sourceLine, quantity, operator);
+            throw concurrent;
+        }
+
+        for (WmItemRecptLine line : draftLines) {
+            line.setRecptId(receipt.getRecptId());
             receiptLineService.insertWmItemRecptLine(line);
         }
-        menuNoticeService.markUnread(MenuLinkageNoticePaths.ITEM_RECPT);
+        try {
+            menuNoticeService.markUnread(MenuLinkageNoticePaths.ITEM_RECPT);
+        } catch (Exception ignore) {
+            // 提醒失败不影响已生成的入库草稿
+        }
         return receipt;
+    }
+
+    private WmItemRecpt findExisting(Long noticeId) {
+        WmItemRecpt query = new WmItemRecpt();
+        query.setNoticeId(noticeId);
+        List<WmItemRecpt> existing = receiptService.selectWmItemRecptList(query);
+        if (existing == null || existing.isEmpty()) {
+            return null;
+        }
+        return existing.get(0);
     }
 
     /**
@@ -133,13 +174,11 @@ public class PurchaseReceiptLinkageService {
         return null;
     }
 
-    private WmItemRecptLine buildReceiptLine(WmItemRecpt receipt,
-                                             WmArrivalNotice notice,
+    private WmItemRecptLine buildReceiptLine(WmArrivalNotice notice,
                                              WmArrivalNoticeLine source,
                                              BigDecimal quantity,
                                              String operator) {
         WmItemRecptLine line = new WmItemRecptLine();
-        line.setRecptId(receipt.getRecptId());
         line.setNoticeLineId(source.getLineId());
         line.setItemId(source.getItemId());
         line.setItemCode(source.getItemCode());
@@ -151,6 +190,8 @@ public class PurchaseReceiptLinkageService {
         line.setIqcCheck(source.getIqcCheck());
         line.setIqcId(source.getIqcId());
         line.setIqcCode(source.getIqcCode());
+        // 明细级幂等键：同一来源行只能生成一条入库明细。
+        line.setAttr1("AUTO:ITEM_RECPT_LINE:ARRIVAL_LINE:" + source.getLineId());
         line.setCreateBy(operator);
 
         WmBatch batchQuery = new WmBatch();

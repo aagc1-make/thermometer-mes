@@ -12,6 +12,7 @@ import com.ktg.mes.qc.service.IQcTemplateIndexService;
 import com.ktg.mes.qc.service.IQcTemplateProductService;
 import com.ktg.mes.wm.domain.WmArrivalNotice;
 import com.ktg.mes.wm.domain.WmArrivalNoticeLine;
+import com.ktg.mes.wm.service.IWmArrivalNoticeService;
 import com.ktg.system.strategy.AutoCodeUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,19 +32,22 @@ public class ArrivalQualityLinkageService {
     private final IQcIqcLineService iqcLineService;
     private final AutoCodeUtil autoCodeUtil;
     private final MenuLinkageNoticeService menuNoticeService;
+    private final IWmArrivalNoticeService arrivalNoticeService;
 
     public ArrivalQualityLinkageService(IQcIqcService iqcService,
                                         IQcTemplateProductService templateProductService,
                                         IQcTemplateIndexService templateIndexService,
                                         IQcIqcLineService iqcLineService,
                                         AutoCodeUtil autoCodeUtil,
-                                        MenuLinkageNoticeService menuNoticeService) {
+                                        MenuLinkageNoticeService menuNoticeService,
+                                        IWmArrivalNoticeService arrivalNoticeService) {
         this.iqcService = iqcService;
         this.templateProductService = templateProductService;
         this.templateIndexService = templateIndexService;
         this.iqcLineService = iqcLineService;
         this.autoCodeUtil = autoCodeUtil;
         this.menuNoticeService = menuNoticeService;
+        this.arrivalNoticeService = arrivalNoticeService;
     }
 
     @Transactional
@@ -52,6 +56,14 @@ public class ArrivalQualityLinkageService {
                                     String operator) {
         if (notice == null || lines == null || lines.isEmpty()) {
             return Collections.emptyList();
+        }
+        // 来源快照以库为准：请求对象可能不带 vendor_code 等冗余字段，
+        // 用持久化的到货通知覆盖，避免生成 vendor_code 为空的 IQC 草稿导致插入失败。
+        if (notice.getNoticeId() != null) {
+            WmArrivalNotice persisted = arrivalNoticeService.selectWmArrivalNoticeByNoticeId(notice.getNoticeId());
+            if (persisted != null) {
+                notice = persisted;
+            }
         }
         List<QcIqc> result = new ArrayList<>();
         boolean created = false;

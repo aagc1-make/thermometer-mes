@@ -392,7 +392,7 @@
 </template>
 
 <script>
-import { listWorkorder, getWorkorder, delWorkorder, addWorkorder, updateWorkorder ,dofinish ,doCancel} from "@/api/mes/pro/workorder";
+import { listWorkorder, getWorkorder, delWorkorder, addWorkorder, updateWorkorder ,dofinish ,doCancel, submitSubWorkorderBatch} from "@/api/mes/pro/workorder";
 import Workorderbom from "./bom/bom.vue";
 import WorkorderItemList from "./items/item.vue";
 import ItemSelect  from "@/components/itemSelect/single.vue";
@@ -637,8 +637,7 @@ export default {
     },
     /**
      * 从 BOM 行批量生成半成品子工单。
-     * 与单行"生成工单"的区别：不弹窗逐张填，直接按 BOM 行批量创建草稿工单，
-     * 每张自动取一个工单编号，创建完成后刷新列表。
+     * 服务端一次事务完成：整批原子、按“父工单 + BOM 行”幂等，重复点击不会重复生成。
      */
     handleSubAddBatch(rows) {
       const base = this.form
@@ -646,34 +645,24 @@ export default {
         this.$modal.msgWarning('请先保存当前工单，再生成半成品工单')
         return
       }
-      const created = []
-      const chain = rows.reduce((prev, row) => prev.then(() =>
-        genCode('WORKORDER_CODE').then(code => {
-          const temp = JSON.parse(JSON.stringify(base))
-          temp.workorderId = null
-          temp.workorderCode = code
-          temp.workorderName = row.itemName + '【' + row.quantity + '】' + (row.unitName || row.unitOfMeasure || '')
-          temp.productId = row.itemId
-          temp.productCode = row.itemCode
-          temp.productName = row.itemName
-          temp.unitOfMeasure = row.unitOfMeasure
-          temp.unitName = row.unitName
-          temp.quantity = row.quantity
-          temp.status = 'PREPARE'
-          temp.parentId = base.workorderId
-          return addWorkorder(temp).then(() => { created.push(code) })
-        })
-      ), Promise.resolve())
-
-      chain.then(() => {
-        this.$modal.msgSuccess('已生成 ' + created.length + ' 张半成品工单：' + created.join('、'))
+      const bomLineIds = (rows || []).map(row => row.lineId).filter(id => id != null)
+      if (bomLineIds.length === 0) {
+        this.$modal.msgWarning('请选择已保存的 BOM 行')
+        return
+      }
+      this.$modal.confirm('确认为所选 ' + bomLineIds.length + ' 行 BOM 生成半成品子工单？').then(() => {
+        return submitSubWorkorderBatch({parentId: base.workorderId, bomLineIds: bomLineIds})
+      }).then(response => {
+        const data = response.data || {}
+        const codes = data.workorderCodes || []
+        this.$modal.msgSuccess('已生成 ' + (data.createdCount || 0) + ' 张半成品工单'
+          + (data.skippedCount ? '，跳过已存在 ' + data.skippedCount + ' 张' : '')
+          + (codes.length ? '：' + codes.join('、') : ''))
         this.getList()
         if (this.$refs['bomlist']) {
           this.$refs['bomlist'].getList()
         }
-      }).catch(() => {
-        this.$modal.msgError('批量生成工单失败，请查看后端日志')
-      })
+      }).catch(() => {})
     },
     /** 新增按钮操作 */
     handleAdd(row) {

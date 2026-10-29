@@ -48,6 +48,9 @@ public class WmProductRecptMobController extends BaseController {
     @Autowired
     private AutoCodeUtil autoCodeUtil;
 
+    @Autowired
+    private com.ktg.mes.wm.service.impl.ProductReceiptGuardService productReceiptGuardService;
+
     /**
      * 查询产品入库录列表
      */
@@ -82,6 +85,10 @@ public class WmProductRecptMobController extends BaseController {
     @PostMapping
     public AjaxResult add(@RequestBody WmProductRecpt wmProductRecpt)
     {
+        // 与 PC 一致：产品入库必须关联生产工单来源，无来源成品入库走杂项入库/盘点调整。
+        if (wmProductRecpt.getWorkorderId() == null || wmProductRecpt.getWorkorderId() == 0L) {
+            return AjaxResult.error("产品入库必须关联生产工单来源；无来源的成品入库请走杂项入库或盘点调整");
+        }
         if(StringUtils.isNotNull(wmProductRecpt.getRecptCode())){
             if(UserConstants.NOT_UNIQUE.equals(wmProductRecptService.checkUnique(wmProductRecpt))){
                 return AjaxResult.error("入库单编号已存在！");
@@ -119,6 +126,24 @@ public class WmProductRecptMobController extends BaseController {
 
         if(UserConstants.NOT_UNIQUE.equals(wmProductRecptService.checkUnique(wmProductRecpt))){
             return AjaxResult.error("入库单编号已存在！");
+        }
+
+        // 来源快照冻结：与 PC 端一致，来源工单/物料/自动单幂等键不允许通过普通编辑改指。
+        WmProductRecpt persisted = wmProductRecptService.selectWmProductRecptByRecptId(wmProductRecpt.getRecptId());
+        if (persisted != null) {
+            if (persisted.getWorkorderId() != null && wmProductRecpt.getWorkorderId() != null
+                    && !persisted.getWorkorderId().equals(wmProductRecpt.getWorkorderId())) {
+                return AjaxResult.error("产品入库单的来源工单不允许通过普通编辑修改，如需更换请撤销后重建");
+            }
+            if (persisted.getItemId() != null && wmProductRecpt.getItemId() != null
+                    && !persisted.getItemId().equals(wmProductRecpt.getItemId())) {
+                return AjaxResult.error("产品入库单的物料不允许通过普通编辑修改，如需更换请撤销后重建");
+            }
+            if (persisted.getAttr1() != null && persisted.getAttr1().startsWith("AUTO:")
+                    && wmProductRecpt.getAttr1() != null
+                    && !persisted.getAttr1().equals(wmProductRecpt.getAttr1())) {
+                return AjaxResult.error("自动生成的产品入库单不允许修改来源标识");
+            }
         }
 
         if(StringUtils.isNotNull(wmProductRecpt.getWorkorderId())){
@@ -173,6 +198,11 @@ public class WmProductRecptMobController extends BaseController {
             return AjaxResult.error("无效单据");
         }
 
+        // 与 PC 一致：无来源产品入库默认拒绝
+        if (recpt.getWorkorderId() == null || recpt.getWorkorderId() == 0L) {
+            return AjaxResult.error("产品入库缺少可靠工单来源，禁止过账；无来源成品请走杂项入库或盘点调整");
+        }
+
         //先检查单据状态
         if(UserConstants.ORDER_STATUS_FINISHED.equals(recpt.getStatus())){
             return AjaxResult.error("当前单据已提交!");
@@ -185,6 +215,10 @@ public class WmProductRecptMobController extends BaseController {
         if(CollUtil.isEmpty(lines)){
             return AjaxResult.error("请添加要入库的产品");
         }
+
+        // 与 PC 端一致：锁工单 + 来源/数量/包装放行校验，移动端不能绕过
+        postingLockMapper.workorder(recpt.getWorkorderId());
+        productReceiptGuardService.assertWithinSource(recpt, lines);
 
         List<ProductRecptTxBean> beans = wmProductRecptService.getTxBean(recptId);
         storageCoreService.processProductRecpt(beans);
