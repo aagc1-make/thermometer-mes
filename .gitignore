@@ -58,3 +58,9 @@ runtime/
 start-all.bat
 stop-all.bat
 tools/redis/
+
+# ===== 小程序（Taro）构建缓存与产物 =====
+miniapp/.pai/
+miniapp/.swc/
+miniapp/.temp/
+miniapp/dist/
