@@ -136,7 +136,7 @@ const InquiryPage: React.FC = () => {
           {record.items.map((item) => (
             <View key={item.productId} className={styles.recordItem}>
               <View className={styles.recordThumb}>
-                <ProductArt art={item.art} size={96} />
+                <ProductArt art={item.art} itemCode={item.code} size={96} />
               </View>
               <View className={styles.recordInfo}>
                 <Text className={styles.recordName}>{item.name}</Text>
@@ -197,7 +197,7 @@ const InquiryPage: React.FC = () => {
                   {items.map((item) => (
                     <View key={item.productId} className={styles.itemRow}>
                       <View className={styles.itemThumb}>
-                        <ProductArt art={item.art} size={96} />
+                        <ProductArt art={item.art} itemCode={item.code} size={96} />
                       </View>
                       <View className={styles.itemInfo}>
                         <Text className={styles.itemName}>{item.name}</Text>

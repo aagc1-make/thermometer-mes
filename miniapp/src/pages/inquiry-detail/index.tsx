@@ -90,7 +90,7 @@ const InquiryDetailPage: React.FC = () => {
         {record.items.map((item) => (
           <View key={`${record.id}-${item.productId}-${item.code}`} className={styles.itemRow}>
             <View className={styles.thumb}>
-              <ProductArt art={item.art} size={96} />
+              <ProductArt art={item.art} itemCode={item.code} size={96} />
             </View>
             <View className={styles.info}>
               <Text className={styles.name}>{item.name}</Text>

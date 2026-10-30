@@ -14,7 +14,8 @@ export default defineAppConfig({
     'pages/delivery/index',
     'pages/statement/index',
     'pages/help/index',
-    'pages/sales/index'
+    'pages/sales/index',
+    'pages/login/index'
   ],
   window: {
     backgroundTextStyle: 'light',

@@ -1,20 +1,24 @@
 import React from 'react';
-import { View, Text } from '@tarojs/components';
+import { View, Text, Image } from '@tarojs/components';
 import classnames from 'classnames';
 import type { ProductArt as ProductArtType } from '@/types';
+import { productImage } from './images';
 import styles from './index.module.scss';
 
 interface ProductArtProps {
   art: ProductArtType;
+  /** 物料编码：有实拍图时优先显示图片，缺图回退纯 CSS 示意图 */
+  itemCode?: string;
   /** 缩略图基准尺寸（rpx），用于换算内部文字大小 */
   size?: number;
   className?: string;
 }
 
 /**
- * 产品示意图（纯 CSS 绘制，避免依赖外部图片资源）
+ * 产品示意图（优先实拍图，缺图时纯 CSS 绘制，避免依赖外部图片资源）
  */
-const ProductArt: React.FC<ProductArtProps> = ({ art, size = 128, className }) => {
+const ProductArt: React.FC<ProductArtProps> = ({ art, itemCode, size = 128, className }) => {
+  const photo = productImage(itemCode);
   const renderArt = () => {
     switch (art) {
       case 'thermometer':
@@ -119,7 +123,11 @@ const ProductArt: React.FC<ProductArtProps> = ({ art, size = 128, className }) =
       className={classnames(styles.art, className)}
       style={{ fontSize: `${Math.round(size * 0.16)}rpx` }}
     >
-      {renderArt()}
+      {photo ? (
+        <Image className={styles.photo} src={photo} mode="aspectFit" />
+      ) : (
+        renderArt()
+      )}
     </View>
   );
 };

@@ -38,6 +38,27 @@ export function clearToken(): void {
   Taro.removeStorageSync(TOKEN_KEY);
 }
 
+/** 令牌失效时跳转登录页；同一时间只跳一次，且不重复跳转 */
+let redirecting = false;
+
+function redirectToLogin(): void {
+  if (redirecting) {
+    return;
+  }
+  const pages = Taro.getCurrentPages();
+  const current = pages.length ? pages[pages.length - 1] : null;
+  if (current && current.route && current.route.indexOf('pages/login') === 0) {
+    return;
+  }
+  redirecting = true;
+  Taro.reLaunch({
+    url: '/pages/login/index',
+    complete: () => {
+      redirecting = false;
+    }
+  });
+}
+
 /**
  * 统一请求封装，自动携带 JWT
  */
@@ -63,6 +84,12 @@ export async function request<T>(options: RequestOptions): Promise<T> {
     });
 
     const body = res.data;
+    if (res.statusCode === 401) {
+      console.warn('[Api] 登录态失效', url);
+      clearToken();
+      redirectToLogin();
+      throw new Error(body?.msg || '登录已过期，请重新登录');
+    }
     if (res.statusCode >= 400) {
       console.error('[Api] 请求失败', url, res.statusCode, body);
       throw new Error(body?.msg || `请求失败（${res.statusCode}）`);

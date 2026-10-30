@@ -16,7 +16,7 @@ const ProductTile: React.FC<ProductTileProps> = ({ product, onAdd, onClick }) =>
   return (
     <View className={styles.card} onClick={() => onClick(product)}>
       <View className={styles.thumb}>
-        <ProductArt art={product.art} size={200} />
+        <ProductArt art={product.art} itemCode={product.code} size={200} />
       </View>
       <Text className={styles.tag}>{product.categoryName}</Text>
       <Text className={styles.name}>{product.name}</Text>

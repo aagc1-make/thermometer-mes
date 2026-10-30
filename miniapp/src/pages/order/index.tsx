@@ -115,7 +115,7 @@ const OrderPage: React.FC = () => {
             {order.lines.slice(0, 2).map((line) => (
               <View key={`${order.orderNo}-${line.itemCode}-${line.lineNo}`} className={styles.lineRow}>
                 <View className={styles.thumb}>
-                  <ProductArt art={line.art || 'thermometer'} size={88} />
+                  <ProductArt art={line.art || 'thermometer'} itemCode={line.itemCode} size={88} />
                 </View>
                 <View className={styles.lineInfo}>
                   <Text className={styles.lineName}>{line.itemName}</Text>

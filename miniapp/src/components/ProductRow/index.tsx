@@ -16,7 +16,7 @@ const ProductRow: React.FC<ProductRowProps> = ({ product, onAdd, onClick }) => {
   return (
     <View className={styles.card} onClick={() => onClick(product)}>
       <View className={styles.thumb}>
-        <ProductArt art={product.art} size={128} />
+        <ProductArt art={product.art} itemCode={product.code} size={128} />
       </View>
       <View className={styles.info}>
         <Text className={styles.tag}>{product.categoryName}</Text>

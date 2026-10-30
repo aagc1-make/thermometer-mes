@@ -50,7 +50,7 @@ const ProductDetailPage: React.FC = () => {
 
       <View className={styles.heroCard}>
         <View className={styles.heroArt}>
-          <ProductArt art={product.art} size={320} />
+          <ProductArt art={product.art} itemCode={product.code} size={320} />
         </View>
         <View className={styles.tag}>
           <Text className={styles.tagText}>{product.categoryName}</Text>

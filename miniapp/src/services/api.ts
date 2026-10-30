@@ -258,6 +258,41 @@ function normalizeSales(row: Record<string, unknown>): SalesInfo {
   };
 }
 
+// ==================== 登录 ====================
+
+export interface LoginAccount {
+  accountId: number;
+  clientId: number;
+  username: string;
+  displayName: string;
+}
+
+export interface LoginResult {
+  token: string;
+  expiresIn: number;
+  account: LoginAccount;
+}
+
+/** 小程序账号登录：由独立后端签发令牌，后续请求自动携带 Authorization */
+export async function login(username: string, password: string): Promise<LoginResult> {
+  const row = await request<Record<string, unknown>>({
+    url: '/api/v1/auth/login',
+    method: 'POST',
+    data: { username, password }
+  });
+  const account = (row.account || {}) as Record<string, unknown>;
+  return {
+    token: text(row.token),
+    expiresIn: num(row.expiresIn),
+    account: {
+      accountId: num(account.accountId),
+      clientId: num(account.clientId),
+      username: text(account.username),
+      displayName: text(account.displayName)
+    }
+  };
+}
+
 // ==================== 产品目录 ====================
 
 /** 产品目录：优先独立后端 /api/v1/catalog/products，失败时回落到本地演示数据 */

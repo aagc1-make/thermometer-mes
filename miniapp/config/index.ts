@@ -19,7 +19,10 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
     plugins: ['@tarojs/plugin-html'],
     defineConstants: {},
     copy: {
-      patterns: [],
+      patterns: [
+        // 产品实拍图原样拷贝到产物，供 <Image src="/assets/products/xxx.jpg"> 使用
+        { from: 'src/assets/products/', to: 'dist/assets/products/' },
+      ],
       options: {},
     },
     framework: 'react',
