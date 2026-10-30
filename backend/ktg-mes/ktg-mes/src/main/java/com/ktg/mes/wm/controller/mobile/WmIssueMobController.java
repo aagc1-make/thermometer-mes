@@ -30,6 +30,10 @@ import java.util.List;
 @RequestMapping("/mobile/wm/issueheader")
 public class WmIssueMobController extends BaseController {
     @Autowired
+    private com.ktg.mes.wm.mapper.PostingLockMapper postingLockMapper;
+    @Autowired
+    private com.ktg.mes.wm.service.impl.IssueExecuteValidator issueExecuteValidator;
+    @Autowired
     private IWmIssueHeaderService wmIssueHeaderService;
 
     @Autowired
@@ -110,8 +114,13 @@ public class WmIssueMobController extends BaseController {
     @PreAuthorize("@ss.hasPermi('mes:wm:issueheader:edit')")
     @Log(title = "生产领料单头", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional(rollbackFor = Exception.class)
     public AjaxResult edit(@RequestBody WmIssueHeader wmIssueHeader)
     {
+        String previousStatus = postingLockMapper.issue(wmIssueHeader.getIssueId());
+        if (previousStatus == null || "FINISHED".equals(previousStatus) || "FINISHED".equals(wmIssueHeader.getStatus())) {
+            return AjaxResult.error("已执行单据不能修改，完成状态只能通过执行操作产生");
+        }
         if(UserConstants.NOT_UNIQUE.equals(wmIssueHeaderService.checkIssueCodeUnique(wmIssueHeader))){
             return AjaxResult.error("领料单编号已存在");
         }
@@ -179,7 +188,11 @@ public class WmIssueMobController extends BaseController {
     @Transactional
     @PutMapping("/{issueId}")
     public AjaxResult execute(@PathVariable Long issueId){
-
+        String previousStatus = postingLockMapper.issue(issueId);
+        if (!UserConstants.ORDER_STATUS_APPROVED.equals(previousStatus)) {
+            return AjaxResult.error("单据不存在、已执行或尚未到可执行状态，请刷新后重试");
+        }
+        postingLockMapper.inventory();
         WmIssueHeader header = wmIssueHeaderService.selectWmIssueHeaderByIssueId(issueId);
 
         //单据有效性
@@ -200,6 +213,10 @@ public class WmIssueMobController extends BaseController {
             return AjaxResult.error("请指定领出的物资");
         }
 
+        String validateError = issueExecuteValidator.validate(lines);
+        if (validateError != null) {
+            return AjaxResult.error(validateError);
+        }
         List<IssueTxBean> beans = wmIssueHeaderService.getTxBeans(issueId);
 
         //调用库存核心

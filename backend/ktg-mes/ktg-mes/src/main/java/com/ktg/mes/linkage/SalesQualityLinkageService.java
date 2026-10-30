@@ -12,6 +12,7 @@ import com.ktg.mes.qc.service.IQcTemplateIndexService;
 import com.ktg.mes.qc.service.IQcTemplateProductService;
 import com.ktg.mes.wm.domain.WmProductSales;
 import com.ktg.mes.wm.domain.WmProductSalesLine;
+import com.ktg.mes.wm.service.IWmProductSalesService;
 import com.ktg.system.strategy.AutoCodeUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,19 +32,22 @@ public class SalesQualityLinkageService {
     private final IQcOqcLineService oqcLineService;
     private final AutoCodeUtil autoCodeUtil;
     private final MenuLinkageNoticeService menuNoticeService;
+    private final IWmProductSalesService productSalesService;
 
     public SalesQualityLinkageService(IQcOqcService oqcService,
                                       IQcTemplateProductService templateProductService,
                                       IQcTemplateIndexService templateIndexService,
                                       IQcOqcLineService oqcLineService,
                                       AutoCodeUtil autoCodeUtil,
-                                      MenuLinkageNoticeService menuNoticeService) {
+                                      MenuLinkageNoticeService menuNoticeService,
+                                      IWmProductSalesService productSalesService) {
         this.oqcService = oqcService;
         this.templateProductService = templateProductService;
         this.templateIndexService = templateIndexService;
         this.oqcLineService = oqcLineService;
         this.autoCodeUtil = autoCodeUtil;
         this.menuNoticeService = menuNoticeService;
+        this.productSalesService = productSalesService;
     }
 
     @Transactional
@@ -52,6 +56,14 @@ public class SalesQualityLinkageService {
                                     String operator) {
         if (sales == null || lines == null || lines.isEmpty()) {
             return Collections.emptyList();
+        }
+        // 来源快照以库为准：PC/移动端提交待检时请求体往往只带 salesId + status，
+        // 客户、销售单号等冗余字段为空；用持久化的销售单覆盖，避免 OQC 草稿 client_id 为空导致插入失败。
+        if (sales.getSalesId() != null) {
+            WmProductSales persisted = productSalesService.selectWmProductSalesBySalesId(sales.getSalesId());
+            if (persisted != null) {
+                sales = persisted;
+            }
         }
         List<QcOqc> result = new ArrayList<>();
         boolean created = false;
@@ -83,6 +95,8 @@ public class SalesQualityLinkageService {
         }
         if (created) {
             menuNoticeService.markUnread(MenuLinkageNoticePaths.OQC);
+        // 待检任务工作台同步点亮，便于统一入口查看所有待检草稿
+        menuNoticeService.markUnread(MenuLinkageNoticePaths.PENDING_INSPECT);
         }
         return result;
     }

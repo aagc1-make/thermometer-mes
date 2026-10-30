@@ -52,6 +52,27 @@ public interface IQcOqcService
     public int updateQcOqc(QcOqc qcOqc);
 
     /**
+     * 带旧状态条件的"完成"操作（阶段1复审修复③）
+     *
+     * 用一条 UPDATE ... WHERE status &lt;&gt; 'FINISHED' 决定唯一成功者，
+     * 并发提交时只有一个请求能拿到 1 行受影响，其余返回 0。
+     *
+     * @param oqcId 出货检验单主键
+     * @return 受影响行数（1=本次完成成功，0=已被其他请求完成）
+     */
+    public int finishOqcIfPending(Long oqcId);
+
+    /**
+     * 出货检验完成的统一事务编排（PC / 移动端共用）
+     *
+     * 内含：并发条件更新、销售行质量回写、销售主单状态汇总、检验单更新。
+     * 失败抛 ServiceException 触发整体回滚，不会留下"已完成但未回写"的数据。
+     *
+     * @param qcOqc 出货检验单（至少含 oqcId、sourceDocId、sourceLineId、checkResult、oqcCode）
+     */
+    public void completeOqc(QcOqc qcOqc);
+
+    /**
      * 根据缺陷记录更新头上的缺陷数量和缺陷比率
      * @param oqcId
      * @return

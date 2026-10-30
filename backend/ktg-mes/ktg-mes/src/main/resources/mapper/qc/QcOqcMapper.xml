@@ -277,4 +277,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{oqcId}
         </foreach>
     </delete>
+
+    <!-- 阶段1复审修复③：带旧状态条件的完成，保证并发下只有一个请求成功 -->
+    <update id="finishOqcIfPending" parameterType="java.lang.Long">
+        update qc_oqc
+        set status = 'FINISHED', update_time = sysdate()
+        where oqc_id = #{oqcId}
+          and (status is null or status &lt;&gt; 'FINISHED')
+    </update>
 </mapper>

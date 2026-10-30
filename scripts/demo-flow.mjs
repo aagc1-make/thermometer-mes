@@ -99,6 +99,30 @@ const ROUTE = { ec: 9451, hd: 9452, fg: 9453 };
 const VENDOR = { elec: 9761, struct: 9762, pack: 9763 };
 const CLIENT = 9751;
 
+// ---------- 批次贯穿链路采集（路线C：证明同一批物料走完全流程）----------
+const chain = {
+  startedAt: new Date().toISOString(),
+  arrivalNotices: [],
+  iqcCodes: [],
+  receiptCode: null,
+  rawBatches: [],
+  issueCode: null,
+  issuedBatches: [],
+  feedbackCodes: [],
+  ipqcCodes: [],
+  fgRecptCode: null,
+  salesCode: null,
+  oqcCodes: []
+};
+function chainAdd(key, value) {
+  if (!(key in chain)) return;
+  if (Array.isArray(chain[key])) {
+    if (value != null && value !== '' && !chain[key].includes(value)) chain[key].push(value);
+  } else if (value != null) {
+    chain[key] = value;
+  }
+}
+
 const ITEMS = {
   pcba:  { code: 'TG-EL-001', name: '主控PCBA', spec: 'TG-MAIN-V1.2 主控板（已贴片）', unit: 'PCS', unitName: '个' },
   sensor:{ code: 'TG-EL-002', name: '红外传感器模块', spec: 'MLX90614 兼容 TO-39 红外测温传感器', unit: 'PCS', unitName: '个' },
@@ -236,6 +260,17 @@ async function purchaseIn(notice, areaId, locId) {
   head.status = 'APPROVED';
   await put('/mes/wm/itemrecpt', head, '入库单提交待执行');
   await put(`/mes/wm/itemrecpt/${recpt.recptId}`, undefined, '执行采购入库（过账）');
+
+  // 采集本次入库形成的原料批次（用于后续领料断言）
+  chainAdd('receiptCode', recptCode);
+  for (const rl of recptLines) {
+    const ss = await rows('/mes/wm/wmstock/list', { itemId: rl.itemId, warehouseCode: 'WH-RAW' });
+    for (const s of ss) {
+      if (s.batchCode && Number(s.quantityOnhand) > 0) {
+        chainAdd('rawBatches', `${rl.itemCode}|${s.batchCode}`);
+      }
+    }
+  }
   return recpt;
 }
 
@@ -306,8 +341,34 @@ async function issueMaterial(wo, task, lines) {
   for (const il of ilLines) {
     const stocks = await rows('/mes/wm/wmstock/list', { itemId: il.itemId, warehouseCode: 'WH-RAW' });
     if (!stocks.length) throw new Error(`原料仓无库存：${il.itemCode}`);
-    const st = stocks.find(s => Number(s.quantityOnhand) >= Number(il.quantityIssued));
-    if (!st) throw new Error(`原料仓库存不足：${il.itemCode}`);
+
+    // 【路线C】优先扣减本次采购入库形成的批次，保证同一批物料贯穿全流程；
+    // 若本次批次数量不足或无该批次，才回退到其他批次（历史库存）。
+    const expected = chain.rawBatches
+      .filter(b => b.startsWith(il.itemCode + '|'))
+      .map(b => b.split('|')[1]);
+    const enough = s => Number(s.quantityOnhand) >= Number(il.quantityIssued);
+    let st = stocks.find(s => expected.includes(s.batchCode) && enough(s));
+    let batchSource = st ? '本次入库批次' : null;
+
+    if (!st) {
+      // 本次批次不够（或没有），尝试把本次批次与其他批次合并满足数量——仍优先本次批次
+      st = stocks.find(s => enough(s) && expected.includes(s.batchCode)) ||
+           stocks.filter(enough).sort((a, b) => Number(b.quantityOnhand) - Number(a.quantityOnhand))[0];
+      batchSource = st ? (expected.includes(st.batchCode) ? '本次入库批次' : '历史库存批次（回退）') : null;
+    }
+    if (!st) throw new Error(`原料仓库存不足：${il.itemCode}（需要 ${il.quantityIssued}）`);
+
+    // 批次贯穿断言：本次入库存在该物料批次时，领料必须用本次批次
+    if (expected.length && !expected.includes(st.batchCode)) {
+      throw new Error(
+        `批次未贯穿：${il.itemCode} 需要的本次批次 [${expected.join(', ')}] 数量不足，` +
+        `当前最大可用批次为 ${st.batchCode}(${Number(st.quantityOnhand)})。` +
+        `请先清空该物料历史库存，或减少本次领料数量后重跑。`
+      );
+    }
+    chainAdd('issuedBatches', `${il.itemCode}|${st.batchCode}`);
+    console.log(`      领料取批次 ${il.itemCode} / ${st.batchCode}（${batchSource}，结存 ${Number(st.quantityOnhand)}）`);
     await post('/mes/wm/issuedetail', {
       issueId: issue.issueId, lineId: il.lineId,
       materialStockId: st.materialStockId, itemId: il.itemId, itemCode: il.itemCode, itemName: il.itemName,
@@ -576,6 +637,8 @@ async function sales(qty) {
 
   await issueMaterial(woFg, byProcess(tFg, PROCESS.op50), [
     line('top', 10), line('bottom', 10), line('screw', 10), line('foam', 10),
+    // 包装入库(TG-OP90) 的投料配置要求消耗说明书与彩盒，必须一并领到线边仓，
+    // 否则该工序报工时会因消耗数量为 0 报“事务数量必须大于0”
     line('manual', 10), line('box', 10)
   ]);
   log('整机结构件与包装材料领料完成');
@@ -605,7 +668,7 @@ async function sales(qty) {
   await productIn(woFg, 10);
   await sales(6);
 
-  // G. 结果核对：单据数量 + 库存结存
+  // G. 结果核对：单据数量 + 库存结存 + 批次贯穿链路
   console.log('\n=== 单据核对 ===');
   const woList = await rows('/mes/pro/workorder/list', { productId: ITEM.fg });
   for (const w of woList) console.log(`  工单 ${w.workorderCode} 计划 ${w.quantity} 已生产 ${w.quantityProduced} 状态 ${w.status}`);
@@ -620,6 +683,47 @@ async function sales(qty) {
     const desc = ss.map(s => `${s.warehouseName}:${Number(s.quantityOnhand)}`).join(' | ');
     console.log(`  ${code}: ${desc || '无结存（已全部消耗/发货）'}`);
   }
+  // H. 批次贯穿链路输出（路线C：证明同一批物料走完全流程）
+  console.log('\n=== 批次贯穿链路 ===');
+  console.log(`  采购入库单   ${chain.receiptCode || '-'}`);
+  console.log(`  原料批次     ${chain.rawBatches.join(' , ') || '-'}`);
+  console.log(`  领料单       ${chain.issueCode || '-'}`);
+  console.log(`  领料批次     ${chain.issuedBatches.join(' , ') || '-'}`);
+  console.log(`  报工单       ${chain.feedbackCodes.slice(0, 3).join(' , ')}${chain.feedbackCodes.length > 3 ? ' …' : ''}`);
+  console.log(`  过程检验     ${chain.ipqcCodes.join(' , ') || '-'}`);
+  console.log(`  成品入库单   ${chain.fgRecptCode || '-'}`);
+  console.log(`  出货检验     ${chain.oqcCodes.join(' , ') || '-'}`);
+  console.log(`  销售出库单   ${chain.salesCode || '-'}`);
+
+  // 批次一致性结论
+  const rawSet = new Set(chain.rawBatches);
+  const bad = chain.issuedBatches.filter(b => !rawSet.has(b));
+  if (bad.length) {
+    console.log(`  ❌ 批次未贯穿：${bad.join(' , ')}`);
+  } else if (chain.issuedBatches.length) {
+    console.log(`  ✅ 批次贯穿校验通过：领料批次全部来自本次采购入库`);
+  } else {
+    console.log(`  ⚠️ 本次没有领料记录，无法校验批次贯穿`);
+  }
+
+  // 守恒校验：同一物料跨仓合计 = 原料仓剩余 + 线边 + 成品（结零说明全消耗/全发货）
+  console.log('\n=== 跨仓守恒校验 ===');
+  for (const code of ['TG-EL-001', 'TG-EL-002', 'TG-ST-001', 'TG-FG-001']) {
+    const ss = await rows('/mes/wm/wmstock/list', { itemCode: code });
+    const total = ss.reduce((v, s) => v + Number(s.quantityOnhand || 0), 0);
+    console.log(`  ${code}: 跨仓合计 ${Math.round(total * 100) / 100}${Math.abs(total) < 0.001 ? '（已结零，账实相符）' : '（有结存，可继续演示出库）'}`);
+  }
+
+  // 落盘，供答辩时照着讲
+  try {
+    const fs = await import('node:fs');
+    const out = { ...chain, finishedAt: new Date().toISOString(), batchConsistent: bad.length === 0 };
+    fs.writeFileSync(new URL('./last-demo-chain.json', import.meta.url), JSON.stringify(out, null, 2), 'utf8');
+    console.log('\n  链路已写入 scripts/last-demo-chain.json');
+  } catch (e) {
+    console.log('\n  链路落盘失败（不影响流程）：' + e.message);
+  }
+
   console.log('\n=== 全流程执行完成 ===');
 })().catch(e => {
   console.error('\n' + e.message);

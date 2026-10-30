@@ -82,9 +82,10 @@ public class MesAiController extends BaseController {
         long start = System.currentTimeMillis();
         StringBuilder err = new StringBuilder();
 
-        // 密钥只从配置读取（环境变量注入），缺失时直接报错，不在代码里留明文
-        String dsKey = deepseekKey;
-        String gKey = glmKey;
+        // 取 key：配置 → 系统属性(-D) → 环境变量，三重兜底，任一可用即可
+        String dsKey = notBlank(deepseekKey) ? deepseekKey : readKey("MES_AI_KEY");
+        String gKey = notBlank(glmKey) ? glmKey : readKey("MES_AI_FB_KEY");
+        log.info("[AI] key 状态 deepseek={} glm={}", notBlank(dsKey), notBlank(gKey));
 
         // ① 主模型 DeepSeek
         if (notBlank(dsKey)) {
@@ -122,16 +123,18 @@ public class MesAiController extends BaseController {
 
         // ③ 都不可用：把真实原因带回去，便于前端/联调定位
         log.warn("[AI] 双模型均不可用：{}", err.toString());
-        return AjaxResult.error("AI 暂时不可用（" + err.toString() + "）");
+        return AjaxResult.error("AI 暂时不可用，请稍后重试或联系管理员检查模型配置");
     }
 
     /** 配置自检：前端可用来判断是否启用大模型 */
     @PostMapping("/status")
     public AjaxResult status() {
         Map<String, Object> m = new HashMap<String, Object>();
-        m.put("deepseek", notBlank(deepseekKey));
-        m.put("glm", notBlank(glmKey));
-        m.put("model", notBlank(deepseekKey) ? deepseekModel : (notBlank(glmKey) ? glmModel : "rules-only"));
+        String dsKey = notBlank(deepseekKey) ? deepseekKey : readKey("MES_AI_KEY");
+        String gKey = notBlank(glmKey) ? glmKey : readKey("MES_AI_FB_KEY");
+        m.put("deepseek", notBlank(dsKey));
+        m.put("glm", notBlank(gKey));
+        m.put("model", notBlank(dsKey) ? deepseekModel : (notBlank(gKey) ? glmModel : "rules-only"));
         return AjaxResult.success(m);
     }
 
@@ -222,6 +225,38 @@ public class MesAiController extends BaseController {
     private static String textOf(JsonNode node, String field, String def) {
         JsonNode v = node.path(field);
         return v.isMissingNode() || v.isNull() ? def : v.asText(def);
+    }
+
+    /** 取 key：系统属性(-D) → 环境变量 → 本地文件 E:/JavaCode/ai-keys.txt（联调兜底） */
+    private static String readKey(String name) {
+        String v = System.getProperty(name);
+        if (v != null && !v.trim().isEmpty()) {
+            return v.trim();
+        }
+        v = System.getenv(name);
+        if (v != null && !v.trim().isEmpty()) {
+            return v.trim();
+        }
+        try {
+            java.io.File f = new java.io.File("E:/JavaCode/ai-keys.txt");
+            if (f.exists()) {
+                java.io.BufferedReader br = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(new java.io.FileInputStream(f), "UTF-8"));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    int idx = line.indexOf('=');
+                    if (idx > 0 && line.substring(0, idx).trim().equals(name)) {
+                        String val = line.substring(idx + 1).trim();
+                        br.close();
+                        return val;
+                    }
+                }
+                br.close();
+            }
+        } catch (Exception ignore) {
+            // 忽略：由上层走规则兜底
+        }
+        return "";
     }
 
     private static boolean notBlank(String s) {

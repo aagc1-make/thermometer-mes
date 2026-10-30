@@ -44,6 +44,12 @@ public class WmItemRecptLineController extends BaseController
     @Autowired
     private IWmBatchService wmBatchService;
 
+    @Autowired
+    private com.ktg.mes.wm.service.impl.ItemRecptWorkflowService itemRecptWorkflowService;
+
+    @Autowired
+    private com.ktg.mes.wm.mapper.ReceiptGuardMapper receiptGuardMapper;
+
 
     /**
      * 查询物料入库单行列表
@@ -106,6 +112,11 @@ public class WmItemRecptLineController extends BaseController
             return AjaxResult.error("到货数量必须大于0!");
         }
 
+        //入库行只能在草稿状态维护，且检验要求/检验单以来源到货行为准，避免伪造 IQC。
+        itemRecptWorkflowService.assertLineMutable(wmItemRecptLine.getRecptId());
+        WmArrivalNoticeLine sourceLine = itemRecptWorkflowService.bindSourceLine(wmItemRecptLine);
+        assertLineQuantityAgainstSource(wmItemRecptLine, sourceLine, 0L);
+
         WmItemRecpt wmItemRecpt = wmItemRecptService.selectWmItemRecptByRecptId(wmItemRecptLine.getRecptId());
 
         //自动生成批次号
@@ -152,6 +163,10 @@ public class WmItemRecptLineController extends BaseController
             return AjaxResult.error("到货数量必须大于0!");
         }
 
+        itemRecptWorkflowService.assertLineMutable(wmItemRecptLine.getRecptId());
+        WmArrivalNoticeLine sourceLine = itemRecptWorkflowService.bindSourceLine(wmItemRecptLine);
+        assertLineQuantityAgainstSource(wmItemRecptLine, sourceLine, wmItemRecptLine.getLineId());
+
         WmItemRecpt wmItemRecpt = wmItemRecptService.selectWmItemRecptByRecptId(wmItemRecptLine.getRecptId());
 
         //自动生成批次号
@@ -192,6 +207,22 @@ public class WmItemRecptLineController extends BaseController
 	@DeleteMapping("/{lineIds}")
     public AjaxResult remove(@PathVariable Long[] lineIds)
     {
+        for (Long lineId : lineIds) {
+            WmItemRecptLine line = wmItemRecptLineService.selectWmItemRecptLineByLineId(lineId);
+            if (line == null) {
+                return AjaxResult.error("入库行不存在");
+            }
+            itemRecptWorkflowService.assertLineMutable(line.getRecptId());
+        }
         return toAjax(wmItemRecptLineService.deleteWmItemRecptLineByLineIds(lineIds));
+    }
+
+    /**
+     * 入库行数量不得超过来源到货行的可入库数量（需检行以合格量为准，检验未完成时先按到货量控制草稿）。
+     */
+    private void assertLineQuantityAgainstSource(WmItemRecptLine line,
+                                                  WmArrivalNoticeLine source,
+                                                  Long excludeLineId) {
+        itemRecptWorkflowService.assertLineQuantityWithinSource(line, source, excludeLineId);
     }
 }

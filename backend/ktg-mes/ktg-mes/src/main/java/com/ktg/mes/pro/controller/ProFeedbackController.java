@@ -1,5 +1,6 @@
 package com.ktg.mes.pro.controller;
 
+import com.ktg.mes.wm.mapper.PostingLockMapper;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
@@ -7,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.ktg.common.constant.UserConstants;
+import com.ktg.common.exception.ServiceException;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.md.domain.MdProductBom;
 import com.ktg.mes.md.domain.MdWorkstation;
@@ -18,6 +20,7 @@ import com.ktg.mes.pro.service.IProRouteProcessService;
 import com.ktg.mes.pro.service.IProTaskService;
 import com.ktg.mes.pro.service.IProWorkorderService;
 import com.ktg.mes.linkage.ProductionQualityLinkageService;
+import com.ktg.mes.linkage.ProductReceiptLinkageService;
 import com.ktg.mes.linkage.FormLinkagePolicy;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ItemConsumeTxBean;
@@ -53,6 +56,9 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/pro/feedback")
 public class ProFeedbackController extends BaseController
 {
+    @Autowired
+    private PostingLockMapper postingLockMapper;
+
     @Autowired
     private IProFeedbackService proFeedbackService;
 
@@ -96,6 +102,9 @@ public class ProFeedbackController extends BaseController
     private FormLinkagePolicy formLinkagePolicy;
 
     @Autowired
+    private ProductReceiptLinkageService productReceiptLinkageService;
+
+    @Autowired
     private IStorageCoreService storageCoreService;
 
     @Autowired
@@ -104,6 +113,7 @@ public class ProFeedbackController extends BaseController
     /**
      * 查询生产报工记录列表
      */
+    @PreAuthorize("@ss.hasPermi('mes:pro:feedback:list')")
     @GetMapping("/list")
     public TableDataInfo list(ProFeedback proFeedback)
     {
@@ -194,8 +204,17 @@ public class ProFeedbackController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:pro:feedback:edit')")
     @Log(title = "生产报工记录", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody ProFeedback proFeedback)
     {
+        String oldStatus = postingLockMapper.feedback(proFeedback.getRecordId());
+        if (!UserConstants.FEEDBACK_STATUS_PREPARE.equals(oldStatus) && !UserConstants.FEEDBACK_STATUS_APPROVING.equals(oldStatus)) {
+            return AjaxResult.error("仅未执行的报工单可以修改");
+        }
+        if (UserConstants.FEEDBACK_STATUS_FINISHED.equals(proFeedback.getStatus()) || UserConstants.FEEDBACK_STATUS_UNCHECK.equals(proFeedback.getStatus())) {
+            return AjaxResult.error("请通过执行报工更新生产状态");
+        }
+
         MdWorkstation workstation = mdWorkstationService.selectMdWorkstationByWorkstationId(proFeedback.getWorkstationId());
         if(StringUtils.isNotNull(workstation)){
             proFeedback.setProcessId(workstation.getProcessId());
@@ -246,8 +265,14 @@ public class ProFeedbackController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:pro:feedback:remove')")
     @Log(title = "生产报工记录", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{recordIds}")
+    @Transactional
     public AjaxResult remove(@PathVariable Long[] recordIds)
     {
+        java.util.Arrays.sort(recordIds);
+        for (Long id : recordIds) {
+            if (!UserConstants.FEEDBACK_STATUS_PREPARE.equals(postingLockMapper.feedback(id))) return AjaxResult.error("只能删除草稿报工单");
+        }
+
         return toAjax(proFeedbackService.deleteProFeedbackByRecordIds(recordIds));
     }
 
@@ -276,12 +301,17 @@ public class ProFeedbackController extends BaseController
             return AjaxResult.error("请先保存单据");
         }
 
+        String previousStatus = postingLockMapper.feedback(recordId);
+        if (!UserConstants.FEEDBACK_STATUS_PREPARE.equals(previousStatus) && !UserConstants.FEEDBACK_STATUS_APPROVING.equals(previousStatus)) {
+            return AjaxResult.error("报工单不存在、已执行或正在等待检验，不能重复执行");
+        }
         ProFeedback feedback= proFeedbackService.selectProFeedbackByRecordId(recordId);
         if(feedback == null){
             return AjaxResult.error("报工单不存在");
         }
+        // 合并队友分支：统一放行策略，待检/完成/取消状态禁止重复执行
         formLinkagePolicy.assertFeedbackExecutable(feedback.getStatus());
-        if(feedback.getQuantityFeedback().compareTo(BigDecimal.ZERO) !=1){
+        if(feedback.getQuantityFeedback() == null || feedback.getQuantityFeedback().compareTo(BigDecimal.ZERO) !=1){
             return AjaxResult.error("报工数量必须大于0");
         }
 
@@ -295,6 +325,19 @@ public class ProFeedbackController extends BaseController
         //仍旧有待检数量时不能执行
         if(StringUtils.isNotNull(feedback.getQuantityUncheck()) && feedback.getQuantityUncheck().compareTo(BigDecimal.ZERO) >0){
             return  AjaxResult.error("当前报工单未完成检验（待检数量大于0），无法执行报工！");
+        }
+
+        ProRouteProcess rule = new ProRouteProcess();
+        rule.setRouteId(feedback.getRouteId());
+        rule.setProcessId(feedback.getProcessId());
+        List<ProRouteProcess> rules = proRouteProcessService.selectProRouteProcessList(rule);
+        if (rules.size() != 1) return AjaxResult.error("工艺工序配置不存在或不唯一");
+        feedback.setIsCheck(rules.get(0).getIsCheck());
+        if (!UserConstants.YES.equals(feedback.getIsCheck()) && (feedback.getQuantityQualified() == null
+                || feedback.getQuantityUnquanlified() == null || feedback.getQuantityQualified().signum() < 0
+                || feedback.getQuantityUnquanlified().signum() < 0
+                || feedback.getQuantityQualified().add(feedback.getQuantityUnquanlified()).compareTo(feedback.getQuantityFeedback()) != 0)) {
+            return AjaxResult.error("合格与不合格数量必须非负且合计等于报工数量");
         }
 
         //根据当前工序的物料BOM配置，进行物料消耗
@@ -320,7 +363,8 @@ public class ProFeedbackController extends BaseController
                 List<WmProductProduceLine> produceLines =
                         wmProductProduceLineService.selectWmProductProduceLineList(lineParam);
                 if(CollectionUtil.isEmpty(produceLines)){
-                    return AjaxResult.error("未生成待检产品产出行");
+                    // 此时消耗单已扣减线边库存：必须抛异常回滚，不能返回错误后提交半成品数据。
+                    throw new ServiceException("未生成待检产品产出行，报工已回滚");
                 }
                 for(WmProductProduceLine produceLine : produceLines){
                     productionQualityLinkageService.createDraft(
@@ -333,12 +377,18 @@ public class ProFeedbackController extends BaseController
                 wmProductProduceService.executeProductProduce(productRecord);
                 //更新生产任务和生产工单的进度
                 proFeedbackService.updateProTaskAndWorkorderByFeedback(feedback);
+                //工单完工后：为整机工单幂等生成产品入库草稿（半成品子工单不建）
+                productReceiptLinkageService.ensureDraftForFinishedWorkorder(feedback.getWorkorderId(), getUsername());
             }
         }
 
         //更新报工单的状态
         feedback.setStatus(UserConstants.FEEDBACK_STATUS_FINISHED);
         proFeedbackService.updateProFeedback(feedback);
+
+        // 非关键工序（如包装入库 9409）执行完成后，在同一业务流程末尾触发产品入库草稿；
+        // 幂等，且 ProductReceiptLinkageService 会校验“终末工序 FINISHED 报工”这一放行证据才建单。
+        productReceiptLinkageService.ensureDraftForFinishedWorkorder(feedback.getWorkorderId(), getUsername());
 
         return AjaxResult.success();
     }

@@ -135,15 +135,22 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading"  stripe :data="iqcList" @selection-change="handleSelectionChange">
+    <el-table
+      v-loading="loading"
+      stripe
+      :data="iqcList"
+      :row-class-name="rowClassName"
+      @selection-change="handleSelectionChange"
+    >
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="来料检验单编号" width="140px" align="center" prop="iqcCode" >
+      <el-table-column label="来料检验单编号" width="160px" align="center" prop="iqcCode" >
         <template slot-scope="scope">
           <el-button
             type="text"
             @click="handleView(scope.row)"
             v-hasPermi="['mes:qc:iqc:query']"
           >{{scope.row.iqcCode}}</el-button>
+          <span v-if="isAutoPending(scope.row)" class="auto-pending-dot" title="联动自动生成，待检验" />
         </template>
       </el-table-column>
       <el-table-column label="来料检验单名称" align="center" prop="iqcName" :show-overflow-tooltip="true"/>
@@ -409,7 +416,7 @@ import VendorSelect from "@/components/vendorSelect/single.vue";
 import IqcLine from "./iqcline.vue";
 import QCResutl from "../qcresult/index.vue";
 import {genCode} from "@/api/system/autocode/rule"
-import {getReport,getReport2} from "@/api/mes/report/report"
+// 报表服务未部署，viewReport 只做提示，无需再引入报表接口（避免打包无用依赖）
 export default {
   name: "Iqc",
   dicts: ['mes_qc_result','mes_order_status'],
@@ -730,15 +737,57 @@ export default {
       }
     },
     viewReport(){
-      var reportName = "Test";
-      getReport2(reportName).then(res=>{
-        debugger;
-        let blob = new Blob([res],{type:'application/pdf'});
-        let href = URL.createObjectURL(blob);
-        console.log(href);
-        window.open(`/pdf/web/viewer.html?file=${encodeURIComponent(href)}`);
-      });
+      // 说明：后端 jasperreports 依赖已注释、也没有 /jasper-report 控制器，
+      // 直接调用会返回 404 并在页面弹出"系统接口 404 异常"。
+      // 这里改为明确提示，避免误导用户以为单据有问题。
+      this.$modal.msgWarning('报表服务未部署（jasperreports 依赖未启用），暂不支持在线预览');
+    },
+    /**
+     * 是否为"联动自动生成、尚未检验"的单据：
+     * linkage 建单时会把来源写进 attr1（AUTO:IQC:...），状态为 PREPARE。
+     * 这类行闪烁高亮，提示质检员优先处理；完成检验后自动恢复正常样式。
+     */
+    isAutoPending(row) {
+      if (!row) return false
+      const attr = String(row.attr1 || '')
+      return attr.indexOf('AUTO:') === 0 && row.status === 'PREPARE'
+    },
+    rowClassName({ row }) {
+      return this.isAutoPending(row) ? 'row-auto-pending' : ''
     }
   }
 };
 </script>
+
+<style scoped>
+/* 联动自动生成、尚未检验的行：闪烁高亮，提醒质检员优先处理 */
+::v-deep .el-table .row-auto-pending > td {
+  background-color: #fff8e1 !important;
+  animation: auto-pending-flash 1.6s ease-in-out infinite;
+}
+
+::v-deep .el-table .row-auto-pending:hover > td {
+  background-color: #fff1c9 !important;
+}
+
+.auto-pending-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #2563eb;
+  vertical-align: middle;
+  animation: auto-pending-dot 1.6s ease-in-out infinite;
+}
+
+@keyframes auto-pending-flash {
+  0%, 100% { background-color: #fff8e1; }
+  50% { background-color: #ffe9a8; }
+}
+
+@keyframes auto-pending-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+</style>

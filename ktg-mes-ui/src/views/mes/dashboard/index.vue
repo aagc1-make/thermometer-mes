@@ -28,21 +28,21 @@
         <div class="zen-card__dot zen-card__dot--matcha"></div>
         <div class="zen-card__label">报工合格率</div>
         <div class="zen-card__value">{{ kpi.rate }}%</div>
-        <div class="zen-card__desc">合格数 / 报工总数</div>
+        <div class="zen-card__desc">已完成报工合格数 / 已完成报工总数</div>
       </div>
       <div class="zen-card">
         <span class="zen-card__delta zen-card__delta--up">{{ kpi.stockWh }} 个仓库</span>
         <div class="zen-card__dot zen-card__dot--sand"></div>
         <div class="zen-card__label">库存总量</div>
         <div class="zen-card__value">{{ kpi.stock }}</div>
-        <div class="zen-card__desc">原料仓 + 线边库 + 成品仓</div>
+        <div class="zen-card__desc">各仓库存按计量单位分别统计</div>
       </div>
       <div class="zen-card">
         <span class="zen-card__delta" :class="kpi.machRate >= 80 ? 'zen-card__delta--up' : 'zen-card__delta--down'">
           {{ kpi.machRun }}/{{ kpi.machTotal }} 台运行
         </span>
         <div class="zen-card__dot zen-card__dot--sakura"></div>
-        <div class="zen-card__label">设备稼动率</div>
+        <div class="zen-card__label">设备运行占比</div>
         <div class="zen-card__value">{{ kpi.machRate }}%</div>
         <div class="zen-card__desc">生产中台数 / 设备总数</div>
       </div>
@@ -63,7 +63,7 @@
       </el-col>
       <el-col :xs="24" :md="12" class="cockpit__cell">
         <div class="cockpit__card zen-panel">
-          <div class="cockpit__card-title zen-panel__title">库存水位（按仓库）</div>
+          <div class="cockpit__card-title zen-panel__title">库存水位（按仓库与单位）</div>
           <div ref="chartStock" class="cockpit__chart"></div>
           <div class="cockpit__warn" v-if="stockWarnings.length">
             <i class="el-icon-warning-outline"></i>
@@ -197,8 +197,19 @@ export default {
     Object.values(this.charts).forEach(c => c && c.dispose())
   },
   methods: {
-    get(url, params) {
-      return request({ url, method: 'get', params: Object.assign({ pageNum: 1, pageSize: 500 }, params) })
+    async get(url, params = {}) {
+      const rows = []
+      let pageNum = 1
+      let total = 0
+      do {
+        const result = await request({ url, method: 'get', params: Object.assign({}, params, { pageNum, pageSize: 500 }) })
+        const page = result.rows || []
+        total = result.total == null ? rows.length + page.length : Number(result.total)
+        if (!page.length && rows.length < total) throw new Error('数据分页发生变化，请重试查询')
+        rows.push(...page)
+        pageNum++
+      } while (rows.length < total)
+      return { rows, total }
     },
     resize() {
       Object.values(this.charts).forEach(c => c && c.resize())
@@ -210,6 +221,7 @@ export default {
       this.charts.machinery = echarts.init(this.$refs.chartMachinery)
     },
     async loadAll() {
+      if (this.loading) return
       this.loading = true
       try {
         await Promise.all([this.loadWorkorder(), this.loadStock(), this.loadMachinery(), this.loadTrend(), this.loadKpi()])
@@ -220,7 +232,7 @@ export default {
         this.loading = false
       }
     },
-    // ⑤ KPI 四卡：工单总数 / 报工合格率 / 库存总量 / 设备稼动率
+    // ⑤ KPI 四卡：工单总数 / 报工合格率 / 库存总量 / 设备运行占比
     async loadKpi() {
       const [wo, fb, st, mc] = await Promise.all([
         this.get('/mes/pro/workorder/list'),
@@ -229,16 +241,19 @@ export default {
         this.get('/mes/dv/machinery/list')
       ])
       const woRows = wo.rows || []
-      const fbRows = fb.rows || []
+      const fbRows = (fb.rows || []).filter(r => r.status === 'FINISHED')
       const stRows = st.rows || []
       const mcRows = mc.rows || []
-      const targets = ['原料仓', '线边库', '成品仓']
+      const targets = [...new Set(stRows.map(r => r.warehouseCode || r.warehouseName))]
 
       const fbTotal = fbRows.reduce((s, r) => s + Number(r.quantityFeedback || 0), 0)
       const fbQualified = fbRows.reduce((s, r) => s + Number(r.quantityQualified || 0), 0)
-      const stockSum = stRows
-        .filter(r => targets.indexOf(r.warehouseName || '') > -1)
-        .reduce((s, r) => s + Number(r.quantityOnhand || 0), 0)
+      const stockByUnit = {}
+      stRows.forEach(r => {
+        const unit = r.unitName || r.unitOfMeasure || '单位未配置'
+        stockByUnit[unit] = (stockByUnit[unit] || 0) + Number(r.quantityOnhand || 0)
+      })
+      const stockSummary = Object.keys(stockByUnit).map(u => `${Math.round(stockByUnit[u] * 10000) / 10000} ${u}`).join(' / ') || '0'
       const machRun = mcRows.filter(r => r.status === 'WORKING').length
 
       this.kpi = {
@@ -246,7 +261,7 @@ export default {
         woDone: woRows.filter(r => r.status === 'FINISHED').length,
         rate: fbTotal > 0 ? Math.round((fbQualified / fbTotal) * 1000) / 10 : 0,
         unq: Math.max(0, Math.round((fbTotal - fbQualified) * 100) / 100),
-        stock: Math.round(stockSum * 100) / 100,
+        stock: stockSummary,
         stockWh: targets.length,
         machRun,
         machTotal: mcRows.length,
@@ -318,22 +333,16 @@ export default {
     async loadStock() {
       const res = await this.get('/mes/wm/wmstock/list')
       const rows = res.rows || []
-      const targets = ['原料仓', '线边库', '成品仓']
-      const byWh = { '原料仓': 0, '线边库': 0, '成品仓': 0 }
+      const byWh = {}
       const zero = []
       rows.forEach(r => {
-        const wh = r.warehouseName || ''
+        const wh = r.warehouseCode === 'XBK_VIRTUAL' ? '生产线边库' : (r.warehouseName || r.warehouseCode || '未配置仓库')
+        const key = `${wh}（${r.unitName || r.unitOfMeasure || '单位未配置'}）`
         const qty = Number(r.quantityOnhand || 0)
-        if (targets.indexOf(wh) > -1) {
-          byWh[wh] += qty
-        } else if (qty < 0) {
-          // 虚拟线边仓：内部过账仓，负数属正常，不计入水位
-          return
-        }
-        if (qty <= 0 && r.itemName && targets.indexOf(wh) > -1 && zero.indexOf(r.itemName) === -1) {
-          zero.push(r.itemName)
-        }
+        byWh[key] = (byWh[key] || 0) + qty
+        if (qty <= 0 && r.itemName && !zero.includes(r.itemName)) zero.push(r.itemName)
       })
+      const targets = Object.keys(byWh)
       this.stockWarnings = zero
 
       // 安全库存预警：结存 < min_stock 即预警，并给出建议补货量（安全线 × 2 - 当前结存）
@@ -404,10 +413,10 @@ export default {
         }]
       }, true)
     },
-    // ④ 产量趋势：近 7 天报工合格数（以「最新报工日期」为锚点，兼容演示数据的未来日期）
+    // ④ 产量趋势：截至今天近14天的已完成报工合格数
     async loadTrend() {
       const res = await this.get('/mes/pro/feedback/list')
-      const rows = res.rows || []
+      const rows = (res.rows || []).filter(r => r.status === 'FINISHED')
       const sum = {}
       let latest = 0
       rows.forEach(r => {
@@ -417,7 +426,7 @@ export default {
         const ts = new Date(t.replace(/-/g, '/')).getTime()
         if (ts > latest) latest = ts
       })
-      const anchor = Math.max(latest, Date.now())
+      const anchor = Date.now()
       const days = []
       const p = n => String(n).padStart(2, '0')
       for (let i = 13; i >= 0; i--) {

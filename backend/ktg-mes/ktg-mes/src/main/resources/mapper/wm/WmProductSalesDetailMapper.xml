@@ -67,6 +67,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="areaCode != null  and areaCode != ''"> and area_code = #{areaCode}</if>
             <if test="areaName != null  and areaName != ''"> and area_name like concat('%', #{areaName}, '%')</if>
         </where>
+        <!-- 第8轮复审：显式规定拣货明细的保留顺序。
+             出货检验缩减数量时按此顺序保留（先拣出的先保留），
+             不再依赖数据库默认返回顺序，保证结果可复现。 -->
+        order by detail_id asc
     </select>
     
     <select id="selectWmProductSalesDetailByDetailId" parameterType="Long" resultMap="WmProductSalesDetailResult">

@@ -35,6 +35,9 @@ import java.util.List;
 public class ProFeedBackMobController extends BaseController {
 
     @Autowired
+    private com.ktg.mes.pro.controller.ProFeedbackController proFeedbackController;
+
+    @Autowired
     private IProFeedbackService proFeedbackService;
 
     @Autowired
@@ -168,40 +171,7 @@ public class ProFeedBackMobController extends BaseController {
     @PutMapping
     public AjaxResult edit(@RequestBody ProFeedback proFeedback)
     {
-        MdWorkstation workstation = mdWorkstationService.selectMdWorkstationByWorkstationId(proFeedback.getWorkstationId());
-        if(StringUtils.isNotNull(workstation)){
-            proFeedback.setProcessId(workstation.getProcessId());
-            proFeedback.setProcessCode(workstation.getProcessCode());
-            proFeedback.setProcessName(workstation.getProcessName());
-        }else {
-            return AjaxResult.error("当前生产任务对应的工作站不存在！");
-        }
-
-        //检查对应的工艺路线和工序配置
-        if(StringUtils.isNotNull(proFeedback.getRouteId())&& StringUtils.isNotNull(proFeedback.getProcessId())){
-            ProRouteProcess param = new ProRouteProcess();
-            param.setRouteId(proFeedback.getRouteId());
-            param.setProcessId(proFeedback.getProcessId());
-            List<ProRouteProcess> processes = proRouteProcessService.selectProRouteProcessList(param);
-            if(CollectionUtil.isEmpty(processes)){
-                return AjaxResult.error("未找到生产任务对应的工艺工序配置！");
-            }
-        }else {
-            return AjaxResult.error("当前生产任务对应的工艺工序配置无效！");
-        }
-
-        //检查数量
-        if(UserConstants.YES.equals(proFeedback.getIsCheck())){
-            if(!StringUtils.isNotNull(proFeedback.getQuantityFeedback()) || proFeedback.getQuantityFeedback().compareTo(BigDecimal.ZERO) <= 0 ){
-                return AjaxResult.error("报工数量必须大于0!");
-            }
-        }else {
-            if(!StringUtils.isNotNull(proFeedback.getQuantityQualified()) || !StringUtils.isNotNull(proFeedback.getQuantityUnquanlified()) || proFeedback.getQuantityQualified().add(proFeedback.getQuantityUnquanlified()).compareTo(BigDecimal.ZERO) <= 0){
-                return AjaxResult.error("请输入合格品和不良品数量！");
-            }
-        }
-
-        return toAjax(proFeedbackService.updateProFeedback(proFeedback));
+        return proFeedbackController.edit(proFeedback);
     }
 
     /**
@@ -213,6 +183,6 @@ public class ProFeedBackMobController extends BaseController {
     @DeleteMapping("/{recordIds}")
     public AjaxResult remove(@PathVariable Long[] recordIds)
     {
-        return toAjax(proFeedbackService.deleteProFeedbackByRecordIds(recordIds));
+        return proFeedbackController.remove(recordIds);
     }
 }

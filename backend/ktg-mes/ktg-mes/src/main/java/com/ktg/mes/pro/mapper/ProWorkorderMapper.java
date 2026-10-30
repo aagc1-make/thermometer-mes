@@ -12,6 +12,10 @@ import java.util.List;
  */
 public interface ProWorkorderMapper
 {
+    @org.apache.ibatis.annotations.Update("update pro_workorder set quantity_produced=coalesce(quantity_produced,0)+#{produced} where workorder_id=#{id}")
+    int incrementProduced(@org.apache.ibatis.annotations.Param("id") Long id,
+                          @org.apache.ibatis.annotations.Param("produced") java.math.BigDecimal produced);
+
     /**
      * 查询生产工单
      *

@@ -142,7 +142,7 @@ public class WmTransaction extends BaseEntity
      * 是否检查库存量
      * 如果设置为True则库存不允许为负
      */
-    private boolean storageCheckFlag;
+    private boolean storageCheckFlag = true;
 
     /** 预留字段1 */
     @Excel(name = "预留字段1")

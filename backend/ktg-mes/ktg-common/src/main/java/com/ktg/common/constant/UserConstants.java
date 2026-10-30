@@ -115,8 +115,9 @@ public class UserConstants
     public static final String ITEMRECPT_CODE ="ITEMRECPT_CODE"; //物料采购入库
     public static final String WM_RTVENDOR_CODE ="WM_RTVENDOR_CODE";//退回供应商
     public static final String ISSUE_CODE ="ISSUE_CODE"; //生产领料
+    public static final String WORKORDER_CODE ="WORKORDER_CODE"; //生产工单
     public static final String RTISSUE_CODE ="RTISSUE_CODE"; //生产退料
-    public static final String PRODUCTRECPT_CODE ="WM_SALES_NOTICE_CODE"; //产品入库
+    public static final String PRODUCTRECPT_CODE ="PRODUCTRECPT_CODE"; //产品入库（原值误写为 WM_SALES_NOTICE_CODE，会用发货通知规则生成单号）
     public static final String SALES_NOTICE_CODE ="WM_SALES_NOTICE_CODE"; //发货通知
     public static final String PRODUCTSALSE_CODE ="PRODUCTSALSE_CODE"; //销售出库
     public static final String RTSALSE_CODE ="WM_RTSALSE_CODE"; //销售退货

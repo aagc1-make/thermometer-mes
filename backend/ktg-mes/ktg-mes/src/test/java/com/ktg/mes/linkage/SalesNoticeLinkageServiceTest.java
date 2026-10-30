@@ -7,6 +7,7 @@ import com.ktg.mes.wm.domain.WmSalesNotice;
 import com.ktg.mes.wm.domain.WmSalesNoticeLine;
 import com.ktg.mes.wm.service.IWmProductSalesLineService;
 import com.ktg.mes.wm.service.IWmProductSalesService;
+import com.ktg.mes.wm.service.IWmSalesNoticeService;
 import com.ktg.system.strategy.AutoCodeUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ class SalesNoticeLinkageServiceTest {
     private IWmProductSalesLineService salesLineService;
     private AutoCodeUtil autoCodeUtil;
     private MenuLinkageNoticeService menuNoticeService;
+    private IWmSalesNoticeService salesNoticeService;
     private SalesNoticeLinkageService linkageService;
 
     @BeforeEach
@@ -36,8 +38,9 @@ class SalesNoticeLinkageServiceTest {
         salesLineService = mock(IWmProductSalesLineService.class);
         autoCodeUtil = mock(AutoCodeUtil.class);
         menuNoticeService = mock(MenuLinkageNoticeService.class);
+        salesNoticeService = mock(IWmSalesNoticeService.class);
         linkageService = new SalesNoticeLinkageService(
-                salesService, salesLineService, autoCodeUtil, menuNoticeService);
+                salesService, salesLineService, autoCodeUtil, menuNoticeService, salesNoticeService);
     }
 
     @Test

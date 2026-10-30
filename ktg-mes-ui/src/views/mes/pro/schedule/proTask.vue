@@ -263,7 +263,6 @@ export default {
     },
     //计算结束时间
     calculateEndTime(){
-      debugger;
       if(this.form.startTime !=null && this.form.duration !=null){
           let parts = this.form.startTime.split(' ');
           let startDate = new Date(parts[0]);
@@ -376,7 +375,6 @@ export default {
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          debugger;
           if (this.form.taskId != null) {
             updateProtask(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
@@ -413,7 +411,6 @@ export default {
       this.$refs.wsSelect.showFlag = true;
     },
     onWorkstationSelected(row){
-      debugger;
       if(row != undefined && row != null){
         this.form.workstationId = row.workstationId;
         this.form.workstationCode = row.workstationCode;

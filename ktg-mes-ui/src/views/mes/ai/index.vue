@@ -27,6 +27,7 @@
               <el-table-column prop="itemCode" label="物料" width="130" />
               <el-table-column prop="itemName" label="名称" show-overflow-tooltip />
               <el-table-column prop="batchCode" label="批次" width="120" />
+              <el-table-column prop="warehouseName" label="仓库" width="110" />
               <el-table-column prop="inQty" label="入库" width="80" align="right" />
               <el-table-column prop="outQty" label="出库" width="80" align="right" />
               <el-table-column prop="endQty" label="结存" width="80" align="right" />
@@ -91,8 +92,19 @@ export default {
     }
   },
   methods: {
-    get(url, params) {
-      return request({ url, method: 'get', params: Object.assign({ pageNum: 1, pageSize: 500 }, params) })
+    async get(url, params = {}) {
+      const rows = []
+      let pageNum = 1
+      let total = 0
+      do {
+        const result = await request({ url, method: 'get', params: Object.assign({}, params, { pageNum, pageSize: 500 }) })
+        const page = result.rows || []
+        total = result.total == null ? rows.length + page.length : Number(result.total)
+        if (!page.length && rows.length < total) throw new Error('数据分页发生变化，请重试查询')
+        rows.push(...page)
+        pageNum++
+      } while (rows.length < total)
+      return { rows, total }
     },
     p2(n) { const p = x => String(x).padStart(2, '0'); return `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}` },
     reset() {
@@ -103,7 +115,7 @@ export default {
 
     async send(text) {
       const q = (text || this.input || '').trim()
-      if (!q) return
+      if (!q || this.loading) return
       this.input = ''
       this.push({ role: 'user', type: 'text', text: q })
       this.loading = true
@@ -123,7 +135,9 @@ export default {
       let m = q.match(/(\d{1,2})\s*月/)
       if (m) {
         const mon = Number(m[1]) - 1
-        const y = now.getMonth() < mon ? now.getFullYear() - 1 : now.getFullYear()
+        if (mon < 0 || mon > 11) throw new Error('月份应在 1 到 12 之间')
+        const year = q.match(/(20\d{2})\s*年/)
+        const y = year ? Number(year[1]) : (now.getMonth() < mon ? now.getFullYear() - 1 : now.getFullYear())
         return { from: this.p2(new Date(y, mon, 1)), to: this.p2(new Date(y, mon + 1, 0)), label: `${m[1]} 月` }
       }
       if (q.includes('本月') || q.includes('这个月') || q.includes('当月')) {
@@ -135,7 +149,7 @@ export default {
       m = q.match(/近\s*(\d+)\s*天/)
       if (m) {
         const d = Number(m[1])
-        return { from: this.p2(new Date(Date.now() - d * 86400000)), to: this.p2(now), label: `近 ${d} 天` }
+        return { from: this.p2(new Date(Date.now() - (d - 1) * 86400000)), to: this.p2(now), label: `近 ${d} 天` }
       }
       return { from: this.p2(new Date(now.getFullYear(), now.getMonth(), 1)), to: this.p2(new Date(now.getFullYear(), now.getMonth() + 1, 0)), label: '本月' }
     },
@@ -144,7 +158,7 @@ export default {
       const res = await this.get('/mes/md/mditem/list')
       const rows = res.rows || []
       const hit = rows.filter(i => (q.includes(i.itemName) || (i.itemCode && q.includes(i.itemCode))))
-      if (hit.length) return { item: hit[0], rows }
+      if (hit.length) return { item: hit[0], items: hit, rows }
       // 模糊：材质/半成品关键词
       const fuzzy = rows.filter(i => {
         if (q.includes('电控') && i.itemName && i.itemName.indexOf('电控') > -1) return true
@@ -155,11 +169,12 @@ export default {
         if (q.includes('整机') && i.itemCode === 'TG-FG-001') return true
         return false
       })
-      return { item: fuzzy[0] || null, rows, fuzzy }
+      return { item: fuzzy[0] || null, items: fuzzy, rows, fuzzy }
     },
 
     /** 规则引擎：命中直接走确定性查询（0 成本，覆盖常见问法） */
     matchRule(q) {
+      if (/低于|安全库存|预警|缺料/.test(q)) return 'queryAlert'
       if (/库存|盘点|结存|还有多少/.test(q)) return 'queryStock'
       if (/入库|采购|到货|收货/.test(q)) return 'queryFlowIn'
       if (/出库|领料|发货|销售/.test(q)) return 'queryFlowOut'
@@ -209,7 +224,8 @@ export default {
       // ② 规则未命中：请大模型解析槽位
       const slots = await this.askLlm(q)
       if (slots && slots.metric && slots.metric !== 'unknown') {
-        const fn = this.metricMethod(slots.metric, q)
+        const resolved = [q, slots.timeText, slots.category, slots.warehouse].filter(Boolean).join(' ')
+        const fn = this.metricMethod(slots.metric, resolved)
         if (fn) {
           const ok = await fn()
           if (ok !== false) {
@@ -234,7 +250,11 @@ export default {
     /* ---------- ① 盘点：期初 / 入库 / 出库 / 期末 + 批次明细 ---------- */
     async queryStock(q) {
       const t = this.parseTime(q)
-      const { item, rows, fuzzy } = await this.matchItem(q)
+      const { item, items, rows, fuzzy } = await this.matchItem(q)
+      if (items && items.length > 1) {
+        this.push({ role: 'bot', type: 'ask', text: '匹配到多个物料，请明确要盘点的物料（不同物料单位不能直接相加）：', options: items.map(i => `盘点 ${t.from.slice(0, 4)}年${t.from.slice(5, 7)}月 ${i.itemName} 的库存`) })
+        return
+      }
       if (!item) {
         this.push({
           role: 'bot', type: 'ask',
@@ -243,36 +263,65 @@ export default {
         })
         return
       }
-      // 期间流水
-      const tx = await this.get('/mes/wm/transaction/list', { itemCode: item.itemCode, beginTime: t.from, endTime: t.to })
-      const txRows = tx.rows || []
-      let inQty = 0, outQty = 0
+      const [tx, stock] = await Promise.all([
+        this.get('/mes/wm/transaction/list', { itemId: item.itemId, itemCode: item.itemCode }),
+        this.get('/mes/wm/wmstock/list', { itemId: item.itemId, itemCode: item.itemCode })
+      ])
+      const warehouse = this.warehouseFilter(q, [...(tx.rows || []), ...(stock.rows || [])])
+      const txRows = (tx.rows || []).filter(warehouse)
       const byBatch = {}
+      const group = r => {
+        const key = [r.itemCode, r.batchCode || '', r.warehouseCode || r.warehouseId || ''].join('|')
+        if (!byBatch[key]) byBatch[key] = { itemCode: r.itemCode, itemName: r.itemName, batchCode: r.batchCode || '无批次', warehouseName: r.warehouseName, inQty: 0, outQty: 0, endQty: 0 }
+        return byBatch[key]
+      }
+      ;(stock.rows || []).filter(warehouse).forEach(r => { group(r).endQty += Number(r.quantityOnhand || 0) })
+      // 当前余额减去查询期末之后的已过账流水，保留初始化期初余额。
       txRows.forEach(r => {
+        const day = String(r.transactionDate || '').slice(0, 10)
         const qty = Number(r.transactionQuantity || 0)
-        const key = r.batchCode || '无批次'
-        if (!byBatch[key]) byBatch[key] = { itemCode: r.itemCode, itemName: r.itemName, batchCode: key, inQty: 0, outQty: 0 }
-        if (Number(qty) >= 0) { byBatch[key].inQty += qty; inQty += qty } else { byBatch[key].outQty += Math.abs(qty); outQty += Math.abs(qty) }
+        const batch = group(r)
+        if (day > t.to) batch.endQty -= qty
+        if (day >= t.from && day <= t.to) {
+          if (qty >= 0) batch.inQty += qty
+          else batch.outQty -= qty
+        }
       })
-      const endQty = inQty - outQty
-      const lines = Object.keys(byBatch).map(k => Object.assign({}, byBatch[k], { endQty: Math.round((byBatch[k].inQty - byBatch[k].outQty) * 100) / 100 }))
-      this.push({
-        role: 'bot', type: 'stock',
-        title: `${t.label} · ${item.itemName}（${item.itemCode}）库存盘点`,
-        begin: 0, inQty: Math.round(inQty * 100) / 100, outQty: Math.round(outQty * 100) / 100, end: Math.round(endQty * 100) / 100,
-        lines,
-        source: `数据来源：wm_transaction${t.from} ~ ${t.to}，共 ${txRows.length} 条流水（可在「库存流水」页手工核对）`
-      })
+      const round = n => Math.round(n * 10000) / 10000
+      const lines = Object.values(byBatch).map(r => Object.assign({}, r, { inQty: round(r.inQty), outQty: round(r.outQty), endQty: round(r.endQty) }))
+      const inQty = lines.reduce((v, r) => v + r.inQty, 0)
+      const outQty = lines.reduce((v, r) => v + r.outQty, 0)
+      const endQty = lines.reduce((v, r) => v + r.endQty, 0)
+      this.push({ role: 'bot', type: 'stock', title: `${t.label} · ${item.itemName}（${item.itemCode}）库存盘点`,
+        begin: round(endQty - inQty + outQty), inQty: round(inQty), outQty: round(outQty), end: round(endQty), lines,
+        source: `数据来源：库存现有量及完整库存流水，${t.from} ~ ${t.to}；按仓库与批次核对，单位：${item.unitName || item.unitOfMeasure || '同物料单位'}` })
+    },
+
+    warehouseFilter(q, rows) {
+      const names = [...new Set(rows.map(r => r.warehouseName).filter(Boolean))]
+      const name = names.sort((a, b) => b.length - a.length).find(n => q.includes(n))
+      const code = rows.map(r => r.warehouseCode).filter(Boolean).find(c => q.includes(c))
+      if (!name && !code && /[\u4e00-\u9fa5A-Za-z0-9_-]+(?:仓库|仓|库)/.test(q.replace(/库存|入库|出库|结存/g, ''))) {
+        throw new Error('未找到指定仓库，请使用仓库的完整名称或编码')
+      }
+      return r => (!name || r.warehouseName === name) && (!code || r.warehouseCode === code)
     },
 
     /* ---------- ② 出入库汇总 ---------- */
     async queryFlow(q, dir) {
       const t = this.parseTime(q)
-      const { item } = await this.matchItem(q)
-      const params = { beginTime: t.from, endTime: t.to }
-      if (item) params.itemCode = item.itemCode
+      const { item, items } = await this.matchItem(q)
+      const selected = items || (item ? [item] : [])
+      const params = { params: { beginTime: t.from + ' 00:00:00', endTime: t.to + ' 23:59:59' } }
+      if (selected.length === 1) params.itemCode = selected[0].itemCode
+      const doc = q.match(/(?:单号|单据|采购单|出库单|入库单)[：:\s]*([A-Za-z][A-Za-z0-9_-]*\d[A-Za-z0-9_-]*)/)
+      if (doc) params.sourceDocCode = doc[1]
       const tx = await this.get('/mes/wm/transaction/list', params)
-      const rows = (tx.rows || []).filter(r => {
+      const warehouse = this.warehouseFilter(q, tx.rows || [])
+      const types = /采购|到货|收货/.test(q) ? ['ITEM_RECPT'] : /领料/.test(q) ? ['ITEM_ISSUE_OUT'] : /销售|发货/.test(q) ? ['PRODUCT_SALES'] : null
+      const rows = (tx.rows || []).filter(warehouse).filter(r => {
+        if (selected.length && !selected.some(i => i.itemCode === r.itemCode)) return false
+        if (types && !types.includes(r.transactionType) && !types.includes(r.sourceDocType)) return false
         const qty = Number(r.transactionQuantity || 0)
         return dir === 'IN' ? qty > 0 : qty < 0
       })
@@ -286,7 +335,7 @@ export default {
       const list = Object.keys(byItem).map(k => Object.assign({}, byItem[k], { qty: Math.round(byItem[k].qty * 100) / 100 })).sort((a, b) => b.qty - a.qty)
       this.push({
         role: 'bot', type: 'list',
-        title: `${t.label}${item ? ' · ' + item.itemName : ''}${dir === 'IN' ? '入库' : '出库'}汇总`,
+        title: `${t.label}${selected.length ? ' · ' + selected.map(i => i.itemName).join('、') : ''}${dir === 'IN' ? '入库' : '出库'}汇总`,
         columns: [
           { prop: 'itemCode', label: '物料编码', width: 130 },
           { prop: 'itemName', label: '物料名称' },
@@ -299,9 +348,11 @@ export default {
     },
 
     /* ---------- ③ 工单进度 ---------- */
-    async queryWorkorder() {
-      const res = await this.get('/mes/pro/workorder/list')
-      const rows = res.rows || []
+    async queryWorkorder(q = '') {
+      const doc = q.match(/(?:工单号?|单号)[：:\s]*([A-Za-z][A-Za-z0-9_-]*\d[A-Za-z0-9_-]*)/)
+      const res = await this.get('/mes/pro/workorder/list', doc ? { workorderCode: doc[1] } : {})
+      const range = /\d\s*月|本月|上月|这个月|上个月|近\s*\d+\s*天/.test(q) ? this.parseTime(q) : null
+      const rows = (res.rows || []).filter(r => (!doc || r.workorderCode === doc[1]) && (!range || (String(r.createTime || '').slice(0, 10) >= range.from && String(r.createTime || '').slice(0, 10) <= range.to)))
       const today = new Date().setHours(0, 0, 0, 0)
       const list = rows.map(r => {
         const plan = Number(r.quantity || 0), done = Number(r.quantityProduced || 0)
@@ -310,12 +361,12 @@ export default {
         return {
           workorderCode: r.workorderCode, productName: r.productName,
           plan, done, percent,
-          lag: r.status !== 'FINISHED' && req > 0 && req < today ? '已超期' : '正常'
+          lag: r.status !== 'FINISHED' && r.status !== 'CANCELED' && req > 0 && req < today ? '已超期' : '正常'
         }
       }).sort((a, b) => a.percent - b.percent).slice(0, 10)
       this.push({
         role: 'bot', type: 'list',
-        title: '工单进度（进度最落后的 10 张）',
+        title: doc ? `工单 ${doc[1]} 进度` : '工单进度（按完成比例升序，最多 10 张）',
         columns: [
           { prop: 'workorderCode', label: '工单号', width: 150 },
           { prop: 'productName', label: '产品' },
@@ -363,15 +414,15 @@ export default {
       const t = this.parseTime(q)
       const res = await this.get('/mes/qc/ipqc/list')
       const rows = (res.rows || []).filter(r => {
-        const d = String(r.createTime || '').slice(0, 10)
-        return d >= t.from && d <= t.to
+        const d = String(r.inspectDate || '').slice(0, 10)
+        return r.status === 'FINISHED' && d >= t.from && d <= t.to
       })
       const total = rows.reduce((s, r) => s + Number(r.quantityCheck || 0), 0)
       const bad = rows.reduce((s, r) => s + Number(r.quantityUnqualified || 0), 0)
       const rate = total > 0 ? Math.round((total - bad) / total * 1000) / 10 : 0
       this.push({
         role: 'bot', type: 'list',
-        title: `${t.label}过程检验统计：检验 ${total} 件，不合格 ${bad} 件，合格率 ${rate}%`,
+        title: `${t.label}过程检验统计：检验 ${total} 件，不合格 ${bad} 件，合格率 ${total > 0 ? rate + '%' : '暂无可统计结果'}`,
         columns: [
           { prop: 'ipqcCode', label: '检验单', width: 140 },
           { prop: 'processName', label: '工序' },

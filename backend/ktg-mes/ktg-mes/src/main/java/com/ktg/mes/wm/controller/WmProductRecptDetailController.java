@@ -44,6 +44,9 @@ public class WmProductRecptDetailController extends BaseController
     private IWmProductRecptDetailService wmProductRecptDetailService;
 
     @Autowired
+    private com.ktg.mes.wm.service.IWmProductRecptService wmProductRecptService;
+
+    @Autowired
     private IWmWarehouseService wmWarehouseService;
 
     @Autowired
@@ -136,6 +139,10 @@ public class WmProductRecptDetailController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody WmProductRecptDetail wmProductRecptDetail)
     {
+        // 已执行/已取消单据的明细不可再改，避免改小/删除已过账明细释放累计上限。
+        if (!detailMutable(wmProductRecptDetail.getRecptId())) {
+            return AjaxResult.error("已执行或已取消的产品入库单不允许修改明细");
+        }
         //根据明细行上的仓库、库区、库位ID设置对应的编号和名称
         if(StringUtils.isNotNull(wmProductRecptDetail.getWarehouseId())){
             WmWarehouse warehouse = wmWarehouseService.selectWmWarehouseByWarehouseId(wmProductRecptDetail.getWarehouseId());
@@ -165,6 +172,26 @@ public class WmProductRecptDetailController extends BaseController
 	@DeleteMapping("/{detailIds}")
     public AjaxResult remove(@PathVariable Long[] detailIds)
     {
+        for (Long detailId : detailIds) {
+            WmProductRecptDetail detail = wmProductRecptDetailService.selectWmProductRecptDetailByDetailId(detailId);
+            if (detail != null && !detailMutable(detail.getRecptId())) {
+                return AjaxResult.error("已执行或已取消的产品入库单不允许删除明细");
+            }
+        }
         return toAjax(wmProductRecptDetailService.deleteWmProductRecptDetailByDetailIds(detailIds));
+    }
+
+    /** 明细只能在单据未执行/未取消时维护。 */
+    private boolean detailMutable(Long recptId) {
+        if (recptId == null) {
+            return true;
+        }
+        com.ktg.mes.wm.domain.WmProductRecpt recpt = wmProductRecptService.selectWmProductRecptByRecptId(recptId);
+        if (recpt == null) {
+            return true;
+        }
+        String status = recpt.getStatus();
+        return !com.ktg.common.constant.UserConstants.ORDER_STATUS_FINISHED.equals(status)
+                && !com.ktg.common.constant.UserConstants.ORDER_STATUS_CANCELED.equals(status);
     }
 }

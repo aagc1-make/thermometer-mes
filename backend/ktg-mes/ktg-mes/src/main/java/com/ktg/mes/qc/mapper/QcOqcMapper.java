@@ -51,6 +51,14 @@ public interface QcOqcMapper
     public int updateQcOqc(QcOqc qcOqc);
 
     /**
+     * 带旧状态条件的完成操作（并发下只允许一个请求成功）
+     *
+     * @param oqcId 出货检验单主键
+     * @return 受影响行数
+     */
+    public int finishOqcIfPending(Long oqcId);
+
+    /**
      * 根据缺陷记录更新头上的缺陷数量和缺陷比率
      * @param oqc
      * @return

@@ -103,6 +103,8 @@ public class ProductionQualityLinkageService {
         ipqcService.insertQcIpqc(draft);
         createInspectionLines(draft);
         menuNoticeService.markUnread(MenuLinkageNoticePaths.IPQC);
+        // 待检任务工作台同步点亮，便于统一入口查看所有待检草稿
+        menuNoticeService.markUnread(MenuLinkageNoticePaths.PENDING_INSPECT);
         return draft;
     }
 

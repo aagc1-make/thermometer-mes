@@ -7,12 +7,18 @@ import com.ktg.common.core.controller.BaseController;
 import com.ktg.common.core.domain.AjaxResult;
 import com.ktg.common.core.page.TableDataInfo;
 import com.ktg.common.enums.BusinessType;
+import com.ktg.common.exception.ServiceException;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.common.utils.poi.ExcelUtil;
 import com.ktg.mes.md.domain.MdItemBatchConfig;
 import com.ktg.mes.md.domain.MdProductBom;
 import com.ktg.mes.md.service.IMdItemBatchConfigService;
 import com.ktg.mes.md.service.IMdProductBomService;
+import com.ktg.mes.linkage.ProductionNextStepLinkageService;
+import com.ktg.mes.linkage.ProductReceiptLinkageService;
+import com.ktg.mes.pro.controller.vo.SubWorkorderBatchRequest;
+import com.ktg.mes.wm.mapper.ReceiptGuardMapper;
+import com.ktg.system.strategy.AutoCodeUtil;
 import com.ktg.mes.pro.domain.ProTask;
 import com.ktg.mes.pro.domain.ProWorkorder;
 import com.ktg.mes.pro.domain.ProWorkorderBom;
@@ -58,7 +64,19 @@ public class ProWorkorderController extends BaseController
     private IProTaskService proTaskService;
 
     @Autowired
+    private ProductionNextStepLinkageService productionNextStepLinkageService;
+
+    @Autowired
+    private ProductReceiptLinkageService productReceiptLinkageService;
+
+    @Autowired
     private WmBarCodeUtil wmBarCodeUtil;
+
+    @Autowired
+    private AutoCodeUtil autoCodeUtil;
+
+    @Autowired
+    private ReceiptGuardMapper receiptGuardMapper;
 
     /**
      * 查询生产工单列表
@@ -137,6 +155,106 @@ public class ProWorkorderController extends BaseController
     }
 
     /**
+     * 从父工单的 BOM 行批量生成半成品子工单。
+     *
+     * <p>服务端语义：</p>
+     * <ul>
+     *   <li>整批原子：任一行校验失败或建单失败，整批回滚，不会留下半批子工单；</li>
+     *   <li>幂等：以“父工单 + 来源 BOM 行”为键，重复点击/并发/重试不会重复生成；</li>
+     *   <li>校验：父工单存在且未完工/取消，BOM 行确实属于该父工单；</li>
+     *   <li>权限：沿用生产工单新增权限。</li>
+     * </ul>
+     */
+    @PreAuthorize("@ss.hasPermi('mes:pro:workorder:add')")
+    @Log(title = "生产工单-批量生成半成品工单", businessType = BusinessType.INSERT)
+    @Transactional
+    @PostMapping("/subBatch")
+    public AjaxResult addSubBatch(@RequestBody SubWorkorderBatchRequest request)
+    {
+        if(request == null || request.getParentId() == null){
+            return AjaxResult.error("请先保存父工单");
+        }
+        if(request.getBomLineIds() == null || request.getBomLineIds().isEmpty()){
+            return AjaxResult.error("请选择要生成子工单的 BOM 行");
+        }
+        ProWorkorder parent = proWorkorderService.selectProWorkorderByWorkorderId(request.getParentId());
+        if(parent == null){
+            return AjaxResult.error("父工单不存在");
+        }
+        if(UserConstants.ORDER_STATUS_FINISHED.equals(parent.getStatus())
+                || UserConstants.ORDER_STATUS_CANCELED.equals(parent.getStatus())){
+            return AjaxResult.error("已完工或已取消的工单不能生成半成品子工单");
+        }
+
+        ProWorkorderBom bomQuery = new ProWorkorderBom();
+        bomQuery.setWorkorderId(request.getParentId());
+        List<ProWorkorderBom> boms = proWorkorderBomService.selectProWorkorderBomList(bomQuery);
+        Map<Long, ProWorkorderBom> bomById = new HashMap<>();
+        if(boms != null){
+            for (ProWorkorderBom bom : boms) {
+                bomById.put(bom.getLineId(), bom);
+            }
+        }
+
+        List<Long> createdIds = new ArrayList<>();
+        List<String> createdCodes = new ArrayList<>();
+        int skipped = 0;
+        for (Long bomLineId : new LinkedHashSet<>(request.getBomLineIds())) {
+            if(bomLineId == null){
+                continue;
+            }
+            ProWorkorderBom bom = bomById.get(bomLineId);
+            if(bom == null){
+                // 抛异常触发整批回滚：要么全部生成，要么一张都不生成。
+                throw new ServiceException("BOM 行[" + bomLineId + "]不属于当前工单，已拒绝整批生成");
+            }
+            String linkageKey = "AUTO:SUB_WORKORDER:" + request.getParentId() + ":" + bomLineId;
+            if(receiptGuardMapper.countSubWorkorder(linkageKey) > 0){
+                skipped++;
+                continue;
+            }
+            ProWorkorder child = new ProWorkorder();
+            child.setWorkorderCode(autoCodeUtil.genSerialCode(UserConstants.WORKORDER_CODE, ""));
+            child.setWorkorderName(bom.getItemName() + "【" + bom.getQuantity() + "】"
+                    + (bom.getUnitName() != null ? bom.getUnitName() : ""));
+            child.setProductId(bom.getItemId());
+            child.setProductCode(bom.getItemCode());
+            child.setProductName(bom.getItemName());
+            child.setProductSpc(bom.getItemSpc());
+            child.setUnitOfMeasure(bom.getUnitOfMeasure());
+            child.setUnitName(bom.getUnitName());
+            child.setQuantity(bom.getQuantity());
+            child.setParentId(request.getParentId());
+            child.setAncestors((parent.getAncestors() == null ? "0" : parent.getAncestors())
+                    + "," + request.getParentId());
+            child.setStatus(UserConstants.ORDER_STATUS_PREPARE);
+            child.setOrderSource("SUB_WORKORDER");
+            child.setSourceCode(parent.getWorkorderCode());
+            child.setAttr1(linkageKey);
+            child.setCreateBy(getUsername());
+            try {
+                proWorkorderService.insertProWorkorder(child);
+            } catch (org.springframework.dao.DuplicateKeyException concurrent) {
+                // 并发双击：唯一约束保证只生成一次
+                skipped++;
+                continue;
+            }
+            generateBomLine(child.getWorkorderId());
+            wmBarCodeUtil.generateBarCode(UserConstants.BARCODE_TYPE_WORKORDER,
+                    child.getWorkorderId(), child.getWorkorderCode(), child.getWorkorderName());
+            createdIds.add(child.getWorkorderId());
+            createdCodes.add(child.getWorkorderCode());
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("workorderIds", createdIds);
+        data.put("workorderCodes", createdCodes);
+        data.put("createdCount", createdIds.size());
+        data.put("skippedCount", skipped);
+        return AjaxResult.success(data);
+    }
+
+    /**
      * 修改生产工单
      */
     @PreAuthorize("@ss.hasPermi('mes:pro:workorder:edit')")
@@ -164,6 +282,15 @@ public class ProWorkorderController extends BaseController
                     workorder.getQuantity().compareTo(proWorkorder.getQuantity())!=0){
                 removeBomLine(proWorkorder.getWorkorderId());
                 generateBomLine(proWorkorder.getWorkorderId());
+            }
+        }
+
+        // 工单确认（已下达）后：若还没排产，点亮「生产排产」，让计划员知道下一步动作
+        if (ret > 0 && UserConstants.ORDER_STATUS_CONFIRMED.equals(proWorkorder.getStatus())) {
+            try {
+                productionNextStepLinkageService.remindScheduleIfNoTask(proWorkorder.getWorkorderId());
+            } catch (Exception ignore) {
+                // 提醒失败不影响工单保存
             }
         }
 
@@ -313,24 +440,33 @@ public class ProWorkorderController extends BaseController
     @PutMapping("/finish/{workorderId}")
     public AjaxResult dofinish(@PathVariable Long workorderId){
         ProWorkorder workorder = proWorkorderService.selectProWorkorderByWorkorderId(workorderId);
-
-        //将此工单下所有的生产任务状态设置为已完成
-        ProTask param = new ProTask();
-        param.setWorkorderId(workorderId);
-        List<ProTask> tasks = proTaskService.selectProTaskList(param);
-        if(!CollectionUtils.isEmpty(tasks)){
-            for (ProTask task:tasks
-                 ) {
-                task.setStatus(UserConstants.ORDER_STATUS_FINISHED);
-                task.setFinishDate(new Date());
-                proTaskService.updateProTask(task);
-            }
+        if (workorder == null) {
+            return AjaxResult.error("工单不存在");
         }
 
+        // 修复：不再把所有任务直接置 FINISHED（那会伪造工序/报工完成）。
+        // 手工完工只关闭工单本身；产品入库草稿由 ProductReceiptLinkageService
+        // 依据“终末工序(包装)真实报工完成”的证据决定是否生成。
         workorder.setStatus(UserConstants.ORDER_STATUS_FINISHED); //更新工单的状态
         workorder.setFinishDate(new Date());
         proWorkorderService.updateProWorkorder(workorder);
+        //手工完工同样触发产品入库草稿（与报工/IPQC 完工口径一致，幂等）
+        productReceiptLinkageService.ensureDraftForFinishedWorkorder(workorderId, getUsername());
         return AjaxResult.success();
+    }
+
+    /**
+     * 领料草稿对账（幂等重试/补偿入口）：
+     * 为“已确认、已排产但还没有领料草稿”的工单逐张补建草稿。重复调用不重复建单（唯一键兜底）。
+     */
+    @PreAuthorize("@ss.hasPermi('mes:pro:workorder:edit')")
+    @Log(title = "生产工单-对账领料草稿", businessType = BusinessType.UPDATE)
+    @PostMapping("/reconcileIssueDrafts")
+    public AjaxResult reconcileIssueDrafts() {
+        com.ktg.mes.linkage.IssueDraftReconcileResult result =
+                productionNextStepLinkageService.ensureIssueDraftReady(null, getUsername());
+        // 部分失败通过 result.failed / failedWorkorderIds 明确体现，调用方据此判断是否需要重试
+        return AjaxResult.success(result);
     }
 
     /**

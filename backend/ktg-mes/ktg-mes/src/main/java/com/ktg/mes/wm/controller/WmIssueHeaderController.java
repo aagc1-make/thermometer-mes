@@ -1,5 +1,6 @@
 package com.ktg.mes.wm.controller;
 
+import com.ktg.mes.wm.mapper.PostingLockMapper;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
@@ -9,6 +10,10 @@ import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.IssueTxBean;
 import com.ktg.mes.wm.service.*;
+import com.ktg.mes.wm.service.impl.IssueExecuteValidator;
+import com.ktg.mes.linkage.MenuLinkageNoticePaths;
+import com.ktg.mes.linkage.MenuLinkageNoticeService;
+import com.ktg.mes.linkage.ProductionNextStepLinkageService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +44,18 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/wm/issueheader")
 public class WmIssueHeaderController extends BaseController
 {
+    @Autowired
+    private IssueExecuteValidator issueExecuteValidator;
+
+    @Autowired
+    private PostingLockMapper postingLockMapper;
+
+    @Autowired
+    private MenuLinkageNoticeService menuLinkageNoticeService;
+
+    @Autowired
+    private ProductionNextStepLinkageService productionNextStepLinkageService;
+
     @Autowired
     private IWmIssueHeaderService wmIssueHeaderService;
 
@@ -107,8 +124,14 @@ public class WmIssueHeaderController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:wm:issueheader:edit')")
     @Log(title = "生产领料单头", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody WmIssueHeader wmIssueHeader)
     {
+        String previousStatus = postingLockMapper.issue(wmIssueHeader.getIssueId());
+        if (previousStatus == null || "FINISHED".equals(previousStatus) || "FINISHED".equals(wmIssueHeader.getStatus())) {
+            return AjaxResult.error("已执行单据不能修改，完成状态只能通过执行操作产生");
+        }
+
         if(UserConstants.NOT_UNIQUE.equals(wmIssueHeaderService.checkIssueCodeUnique(wmIssueHeader))){
             return AjaxResult.error("领料单编号已存在");
         }
@@ -167,12 +190,24 @@ public class WmIssueHeaderController extends BaseController
     @Transactional
     @PutMapping("/{issueId}")
     public AjaxResult execute(@PathVariable Long issueId){
+        String previousStatus = postingLockMapper.issue(issueId);
+        if (!"APPROVED".equals(previousStatus)) {
+            return AjaxResult.error("单据不存在、已执行或尚未到可执行状态，请刷新后重试");
+        }
+
+        postingLockMapper.inventory();
         WmIssueHeader header = wmIssueHeaderService.selectWmIssueHeaderByIssueId(issueId);
         WmIssueLine param = new WmIssueLine();
         param.setIssueId(issueId);
         List<WmIssueLine> lines = wmIssueLineService.selectWmIssueLineList(param);
         if(CollUtil.isEmpty(lines)){
             return AjaxResult.error("请指定领出的物资");
+        }
+
+        // 逐行校验拣货明细（数量、物料、库存），不通过则直接返回业务提示，不写库存/流水/状态
+        String validateError = issueExecuteValidator.validate(lines);
+        if (validateError != null) {
+            return AjaxResult.error(validateError);
         }
 
         List<IssueTxBean> beans = wmIssueHeaderService.getTxBeans(issueId);
@@ -183,6 +218,18 @@ public class WmIssueHeaderController extends BaseController
         //更新单据状态
         header.setStatus(UserConstants.ORDER_STATUS_FINISHED);
         wmIssueHeaderService.updateWmIssueHeader(header);
+
+        // 领料已过账：先清掉「生产领料」上的待办蓝点，再按排产情况提示「生产报工」
+        try {
+            menuLinkageNoticeService.markRead(MenuLinkageNoticePaths.ISSUE);
+        } catch (Exception ignore) {
+            // 忽略提醒异常
+        }
+        try {
+            productionNextStepLinkageService.remindFeedbackIfTaskReady(header.getWorkorderId());
+        } catch (Exception ignore) {
+            // 提醒失败不影响领料结果
+        }
         return AjaxResult.success();
     }
 

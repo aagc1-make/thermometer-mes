@@ -376,7 +376,7 @@
       </el-form>
       <el-tabs type="border-card" v-if="form.workorderId != null" v-model="activeName" @tab-click="handleClickTab">
         <el-tab-pane label="BOM组成" name="bom">
-          <Workorderbom ref="bomlist" :optType="optType" :workorder="form" @handleAddSub="handleSubAdd" ></Workorderbom>
+          <Workorderbom ref="bomlist" :optType="optType" :workorder="form" @handleAddSub="handleSubAdd" @handleAddSubBatch="handleSubAddBatch" ></Workorderbom>
         </el-tab-pane>
         <el-tab-pane label="物料需求" name="item">
           <WorkorderItemList ref="itemlist"  :workorder="form" :itemStatus="itemStatus"></WorkorderItemList>
@@ -392,7 +392,7 @@
 </template>
 
 <script>
-import { listWorkorder, getWorkorder, delWorkorder, addWorkorder, updateWorkorder ,dofinish ,doCancel} from "@/api/mes/pro/workorder";
+import { listWorkorder, getWorkorder, delWorkorder, addWorkorder, updateWorkorder ,dofinish ,doCancel, submitSubWorkorderBatch} from "@/api/mes/pro/workorder";
 import Workorderbom from "./bom/bom.vue";
 import WorkorderItemList from "./items/item.vue";
 import ItemSelect  from "@/components/itemSelect/single.vue";
@@ -635,6 +635,35 @@ export default {
       this.title = "添加生产工单";
       this.optType="add";
     },
+    /**
+     * 从 BOM 行批量生成半成品子工单。
+     * 服务端一次事务完成：整批原子、按“父工单 + BOM 行”幂等，重复点击不会重复生成。
+     */
+    handleSubAddBatch(rows) {
+      const base = this.form
+      if (!base || !base.workorderId) {
+        this.$modal.msgWarning('请先保存当前工单，再生成半成品工单')
+        return
+      }
+      const bomLineIds = (rows || []).map(row => row.lineId).filter(id => id != null)
+      if (bomLineIds.length === 0) {
+        this.$modal.msgWarning('请选择已保存的 BOM 行')
+        return
+      }
+      this.$modal.confirm('确认为所选 ' + bomLineIds.length + ' 行 BOM 生成半成品子工单？').then(() => {
+        return submitSubWorkorderBatch({parentId: base.workorderId, bomLineIds: bomLineIds})
+      }).then(response => {
+        const data = response.data || {}
+        const codes = data.workorderCodes || []
+        this.$modal.msgSuccess('已生成 ' + (data.createdCount || 0) + ' 张半成品工单'
+          + (data.skippedCount ? '，跳过已存在 ' + data.skippedCount + ' 张' : '')
+          + (codes.length ? '：' + codes.join('、') : ''))
+        this.getList()
+        if (this.$refs['bomlist']) {
+          this.$refs['bomlist'].getList()
+        }
+      }).catch(() => {})
+    },
     /** 新增按钮操作 */
     handleAdd(row) {
       this.reset();
@@ -784,7 +813,6 @@ export default {
     },
     //供应商选择弹出框
     onVendorSelected(obj){
-      debugger;
       if(obj != undefined && obj != null){
         this.form.vendorId = obj.vendorId;
         this.form.vendorCode = obj.vendorCode;

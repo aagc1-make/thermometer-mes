@@ -93,7 +93,12 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="itemrecptList" @selection-change="handleSelectionChange">
+    <el-table
+      v-loading="loading"
+      :data="itemrecptList"
+      :row-class-name="rowClassName"
+      @selection-change="handleSelectionChange"
+    >
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="入库单编号" align="center" width="180px" prop="recptCode" >
         <template slot-scope="scope">
@@ -653,6 +658,18 @@ export default {
       }else{
         this.form.recptCode = null;
       }
+    },
+    /**
+     * 联动自动生成、尚未执行入库的草稿行：闪烁高亮。
+     * linkage 建单时 attr1 = AUTO:ITEM_RECPT:ARRIVAL_NOTICE:{noticeId}，状态 PREPARE。
+     * 执行入库（FINISHED）后高亮自动消失。
+     */
+    isAutoPending(row) {
+      if (!row) return false
+      return String(row.attr1 || '').indexOf('AUTO:') === 0 && row.status === 'PREPARE'
+    },
+    rowClassName({ row }) {
+      return this.isAutoPending(row) ? 'row-auto-pending' : ''
     }
   }
 };
@@ -661,5 +678,18 @@ export default {
 .collapse-title {
   flex: 0 1 54%;
   order: 1;
+}
+
+/* 联动自动生成、待执行入库的草稿行：闪烁提示仓管员优先处理 */
+::v-deep .el-table .row-auto-pending > td {
+  background-color: #fff8e1 !important;
+  animation: auto-pending-flash 1.6s ease-in-out infinite;
+}
+::v-deep .el-table .row-auto-pending:hover > td {
+  background-color: #fff1c9 !important;
+}
+@keyframes auto-pending-flash {
+  0%, 100% { background-color: #fff8e1; }
+  50% { background-color: #ffe9a8; }
 }
 </style>

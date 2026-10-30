@@ -1,6 +1,9 @@
 package com.ktg.mes.wm.controller;
 
+import com.ktg.mes.wm.mapper.PostingLockMapper;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.collection.CollUtil;
@@ -40,6 +43,9 @@ import com.ktg.common.core.page.TableDataInfo;
 public class WmProductRecptController extends BaseController
 {
     @Autowired
+    private PostingLockMapper postingLockMapper;
+
+    @Autowired
     private IWmProductRecptService wmProductRecptService;
 
     @Autowired
@@ -50,6 +56,12 @@ public class WmProductRecptController extends BaseController
 
     @Autowired
     private IStorageCoreService storageCoreService;
+
+    @Autowired
+    private com.ktg.mes.wm.mapper.ProductReceiptGuardMapper productReceiptGuardMapper;
+
+    @Autowired
+    private com.ktg.mes.wm.service.impl.ProductReceiptGuardService productReceiptGuardService;
 
     /**
      * 查询产品入库录列表
@@ -112,6 +124,11 @@ public class WmProductRecptController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmProductRecpt wmProductRecpt)
     {
+        // 产品入库必须有可靠来源：需求口径为“真实、已放行、尚未入库的合格产出”，
+        // 无工单来源的手工/历史成品入库不属于产品入库业务（应走杂项入库/盘点调整）。
+        if (wmProductRecpt.getWorkorderId() == null || wmProductRecpt.getWorkorderId() == 0L) {
+            return AjaxResult.error("产品入库必须关联生产工单来源；无来源的成品入库请走杂项入库或盘点调整");
+        }
         if(UserConstants.NOT_UNIQUE.equals(wmProductRecptService.checkUnique(wmProductRecpt))){
             return AjaxResult.error("入库单编号已存在！");
         }
@@ -126,10 +143,35 @@ public class WmProductRecptController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:wm:productrecpt:edit')")
     @Log(title = "产品入库记录", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody WmProductRecpt wmProductRecpt)
     {
+        String previousStatus = postingLockMapper.productRecpt(wmProductRecpt.getRecptId());
+        if (previousStatus == null || "FINISHED".equals(previousStatus) || "FINISHED".equals(wmProductRecpt.getStatus())) {
+            return AjaxResult.error("已执行单据不能修改，完成状态只能通过执行操作产生");
+        }
+
         if(UserConstants.NOT_UNIQUE.equals(wmProductRecptService.checkUnique(wmProductRecpt))){
             return AjaxResult.error("入库单编号已存在！");
+        }
+
+        // 来源快照冻结：来源工单/成品物料一经生成不允许通过普通编辑改指到别的工单或物料，
+        // 否则可换到产出更多的工单来绕过执行时的来源上限校验。
+        WmProductRecpt persisted = wmProductRecptService.selectWmProductRecptByRecptId(wmProductRecpt.getRecptId());
+        if (persisted != null) {
+            if (persisted.getWorkorderId() != null && wmProductRecpt.getWorkorderId() != null
+                    && !persisted.getWorkorderId().equals(wmProductRecpt.getWorkorderId())) {
+                return AjaxResult.error("产品入库单的来源工单不允许通过普通编辑修改，如需更换请撤销后重建");
+            }
+            if (persisted.getItemId() != null && wmProductRecpt.getItemId() != null
+                    && !persisted.getItemId().equals(wmProductRecpt.getItemId())) {
+                return AjaxResult.error("产品入库单的物料不允许通过普通编辑修改，如需更换请撤销后重建");
+            }
+            if (persisted.getAttr1() != null && persisted.getAttr1().startsWith("AUTO:")
+                    && wmProductRecpt.getAttr1() != null
+                    && !persisted.getAttr1().equals(wmProductRecpt.getAttr1())) {
+                return AjaxResult.error("自动生成的产品入库单不允许修改来源标识");
+            }
         }
 
         //行不能为空校验
@@ -177,7 +219,20 @@ public class WmProductRecptController extends BaseController
     @Transactional
     @PutMapping("/{recptId}")
     public AjaxResult execute(@PathVariable Long recptId){
+        String previousStatus = postingLockMapper.productRecpt(recptId);
+        if (!"APPROVED".equals(previousStatus)) {
+            return AjaxResult.error("单据不存在、已执行或尚未到可执行状态，请刷新后重试");
+        }
+
         WmProductRecpt recpt = wmProductRecptService.selectWmProductRecptByRecptId(recptId);
+        if (recpt == null) {
+            return AjaxResult.error("入库单不存在");
+        }
+        // 无来源产品入库默认拒绝：产品入库必须以已放行合格产出为来源，
+        // 不允许无工单的单据过账（否则可凭空增加成品库存并造成线边库负库存）。
+        if (recpt.getWorkorderId() == null || recpt.getWorkorderId() == 0L) {
+            return AjaxResult.error("产品入库缺少可靠工单来源，禁止过账；无来源成品请走杂项入库或盘点调整");
+        }
 
         WmProductRecptLine param = new WmProductRecptLine();
         param.setRecptId(recptId);
@@ -185,6 +240,12 @@ public class WmProductRecptController extends BaseController
         if(CollUtil.isEmpty(lines)){
             return AjaxResult.error("请添加要入库的产品");
         }
+
+        // 锁定工单这一共同资源：不同产品入库单并发过账时串行，避免超量
+        postingLockMapper.workorder(recpt.getWorkorderId());
+
+        // 按来源校验（不依赖 attr1，改 attr1 无法绕过）
+        productReceiptGuardService.assertWithinSource(recpt, lines);
 
         List<ProductRecptTxBean> beans = wmProductRecptService.getTxBean(recptId);
         storageCoreService.processProductRecpt(beans);
@@ -194,5 +255,6 @@ public class WmProductRecptController extends BaseController
 
         return AjaxResult.success();
     }
+
 
 }

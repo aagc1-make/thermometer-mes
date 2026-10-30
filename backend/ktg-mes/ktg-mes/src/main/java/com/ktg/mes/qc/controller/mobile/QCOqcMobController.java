@@ -112,10 +112,23 @@ public class QCOqcMobController extends BaseController {
     @PreAuthorize("@ss.hasPermi('mes:qc:oqc:edit')")
     @Log(title = "出货检验单", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional(rollbackFor = Exception.class)
     public AjaxResult edit(@RequestBody QcOqc qcOqc)
     {
         if(UserConstants.NOT_UNIQUE.equals(qcOqcService.checkOqcCodeUnique(qcOqc))){
             return AjaxResult.error("出货单编号已存在!");
+        }
+
+        // ===== 1. 校验阶段：失败一律在写入前返回 =====
+        if (qcOqc.getOqcId() == null) {
+            return AjaxResult.error("出货检验单ID不能为空");
+        }
+        QcOqc existing = qcOqcService.selectQcOqcByOqcId(qcOqc.getOqcId());
+        if (existing == null) {
+            return AjaxResult.error("出货检验单不存在");
+        }
+        if (UserConstants.ORDER_STATUS_FINISHED.equals(existing.getStatus())) {
+            return AjaxResult.error("该出货检验单已完成，不能重复完成或修改，请走作废/重检流程");
         }
 
         //自动获取对应的检测模板
@@ -130,15 +143,10 @@ public class QCOqcMobController extends BaseController {
         //设置检测人
         qcOqc.setInspector(getUsername());
 
+        // ===== 2. 完成：与 PC 共用同一事务编排（含并发防重与合格判定）=====
         if(UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())){
-            if(StringUtils.isNotNull(qcOqc.getSourceDocCode())){
-                WmProductSalesLine line =  wmProductSalesLineService.selectWmProductSalesLineByLineId(qcOqc.getSourceLineId());
-                if(StringUtils.isNotNull(line)){
-                    line.setOqcId(qcOqc.getOqcId());
-                    line.setOqcCode(qcOqc.getOqcCode());
-                    wmProductSalesLineService.updateWmProductSalesLine(line);
-                }
-            }
+            qcOqcService.completeOqc(qcOqc);
+            return AjaxResult.success("出货检验已完成");
         }
         return toAjax(qcOqcService.updateQcOqc(qcOqc));
     }

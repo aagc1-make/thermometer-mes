@@ -129,7 +129,13 @@ public class WmSalesNoticeController extends BaseController
     public AjaxResult remove(@PathVariable Long[] noticeIds)
     {
         for (Long noticeId : noticeIds){
-            if(UserConstants.ORDER_STATUS_PREPARE.equals(wmSalesNoticeService.selectWmSalesNoticeByNoticeId(noticeId).getStatus())){
+            WmSalesNotice notice = wmSalesNoticeService.selectWmSalesNoticeByNoticeId(noticeId);
+            if (notice == null) {
+                continue;
+            }
+            // 联动优化（审阅 P2-10）：原判断对 PREPARE 直接报错，条件与提示相反。
+            // 正确语义：只有草稿(PREPARE)允许删除，非草稿一律拒绝并回滚。
+            if (!UserConstants.ORDER_STATUS_PREPARE.equals(notice.getStatus())) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return AjaxResult.error("只能删除草稿状态的单据！");
             }

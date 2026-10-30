@@ -179,7 +179,6 @@ export default {
       let t = this.$props.tasks;
       let c = this.$props.ids;
       gantt.attachEvent("onAfterTaskUpdate",function(id,obj){
-        debugger;
         let tt = t.data.filter( item=> item.id == id);
         tt=obj;  
         c.push(id);              

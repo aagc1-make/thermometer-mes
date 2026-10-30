@@ -10,6 +10,7 @@ import com.ktg.mes.qc.service.IQcTemplateIndexService;
 import com.ktg.mes.qc.service.IQcTemplateProductService;
 import com.ktg.mes.wm.domain.WmArrivalNotice;
 import com.ktg.mes.wm.domain.WmArrivalNoticeLine;
+import com.ktg.mes.wm.service.IWmArrivalNoticeService;
 import com.ktg.system.strategy.AutoCodeUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ class ArrivalQualityLinkageServiceTest {
     private IQcIqcLineService iqcLineService;
     private AutoCodeUtil autoCodeUtil;
     private MenuLinkageNoticeService menuNoticeService;
+    private IWmArrivalNoticeService arrivalNoticeService;
     private ArrivalQualityLinkageService linkageService;
 
     @BeforeEach
@@ -43,8 +45,9 @@ class ArrivalQualityLinkageServiceTest {
         iqcLineService = mock(IQcIqcLineService.class);
         autoCodeUtil = mock(AutoCodeUtil.class);
         menuNoticeService = mock(MenuLinkageNoticeService.class);
+        arrivalNoticeService = mock(IWmArrivalNoticeService.class);
         linkageService = new ArrivalQualityLinkageService(iqcService, templateProductService,
-                templateIndexService, iqcLineService, autoCodeUtil, menuNoticeService);
+                templateIndexService, iqcLineService, autoCodeUtil, menuNoticeService, arrivalNoticeService);
     }
 
     @Test

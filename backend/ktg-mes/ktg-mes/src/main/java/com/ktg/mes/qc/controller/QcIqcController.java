@@ -80,6 +80,9 @@ public class QcIqcController extends BaseController
     @Autowired
     private FormLinkagePolicy formLinkagePolicy;
 
+    @Autowired
+    private com.ktg.mes.qc.service.impl.QcIqcCompletionService qcIqcCompletionService;
+
 
     /**
      * 查询来料检验单列表
@@ -137,9 +140,16 @@ public class QcIqcController extends BaseController
             return AjaxResult.error("当前产品未配置检测模板！");
         }
 
-        //检测数量效验
-        formLinkagePolicy.assertQualityQuantities(qcIqc.getQuantityCheck(),
-                qcIqc.getQuantityQualified(), qcIqc.getQuantityUnqualified());
+        //检测数量效验：草稿阶段允许暂存，不预填合格；完成时的数量守恒由共享服务校验。
+        if(qcIqc.getQuantityQualified() == null){
+            qcIqc.setQuantityQualified(BigDecimal.ZERO);
+        }
+        if(qcIqc.getQuantityUnqualified() == null){
+            qcIqc.setQuantityUnqualified(BigDecimal.ZERO);
+        }
+        if(qcIqc.getStatus() == null){
+            qcIqc.setStatus(UserConstants.ORDER_STATUS_PREPARE);
+        }
 
         qcIqc.setInspector(getUsername());
         qcIqcService.insertQcIqc(qcIqc);
@@ -157,88 +167,10 @@ public class QcIqcController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody QcIqc qcIqc)
     {
-        if(UserConstants.NOT_UNIQUE.equals(qcIqcService.checkIqcCodeUnique(qcIqc))){
-            return AjaxResult.error("单据编号已存在！");
-        }
-
-        QcTemplateProduct param = new QcTemplateProduct();
-        param.setItemId(qcIqc.getItemId());
-        List<QcTemplateProduct> templates = qcTemplateProductService.selectQcTemplateProductList(param);
-        if(CollUtil.isNotEmpty(templates)){
-            qcIqc.setTemplateId(templates.get(0).getTemplateId());
-        }else{
-            return AjaxResult.error("当前产品未配置检测模板！");
-        }
         qcIqc.setInspector(getUsername());
-
-        QcIqc persisted = qcIqcService.selectQcIqcByIqcId(qcIqc.getIqcId());
-        formLinkagePolicy.assertQualityCompletionAllowed(
-                persisted == null ? null : persisted.getStatus(), qcIqc.getStatus());
-
-        //草稿允许暂存；只有完成检验时才校验数量守恒。
-        qcIqc.setQuantityCheck(qcIqc.getQuantityRecived());
-        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcIqc.getStatus())){
-            formLinkagePolicy.assertQualityQuantities(qcIqc.getQuantityCheck(),
-                    qcIqc.getQuantityQualified(), qcIqc.getQuantityUnqualified());
-        }
-
-        //如果是完成状态，则根据来源单据更新其对应的检测单
-        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcIqc.getStatus())){
-            if(StringUtils.isNotNull(qcIqc.getSourceDocCode())){
-
-                if(UserConstants.SOURCE_DOC_TYPE_ARRIVALNOTICE.equals(qcIqc.getSourceDocType())){
-                    //到货通知单
-                    WmArrivalNoticeLine line = wmArrivalNoticeLineService.selectWmArrivalNoticeLineByLineId(qcIqc.getSourceLineId());
-
-                    if(StringUtils.isNotNull(line)){
-                        line.setIqcCode(qcIqc.getIqcCode());
-                        line.setIqcId(qcIqc.getIqcId());
-                        line.setQuantityQuanlified(qcIqc.getQuantityQualified());
-                        wmArrivalNoticeLineService.updateWmArrivalNoticeLine(line);
-                        //根据行的检测情况更新到货通知单的状态
-                        wmArrivalNoticeService.updateStatus(qcIqc.getSourceDocId());
-
-                        WmArrivalNoticeLine lineParam = new WmArrivalNoticeLine();
-                        lineParam.setNoticeId(qcIqc.getSourceDocId());
-                        List<WmArrivalNoticeLine> noticeLines =
-                                wmArrivalNoticeLineService.selectWmArrivalNoticeLineList(lineParam);
-                        purchaseReceiptLinkageService.createDraftWhenReady(
-                                wmArrivalNoticeService.selectWmArrivalNoticeByNoticeId(qcIqc.getSourceDocId()),
-                                noticeLines, getUsername());
-                    }
-                }else if(UserConstants.SOURCE_DOC_TYPE_OUTSOURCE_RECPT.equals(qcIqc.getSourceDocType())){
-                    //外协入库单，这里需要根据检验结果对入库单行进行拆分，并更新入库单状态
-                    WmOutsourceRecptLine line = wmOutsourceRecptLineService.selectWmOutsourceRecptLineByLineId(qcIqc.getSourceLineId());
-                    WmOutsourceRecpt recpt = wmOutsourceRecptService.selectWmOutsourceRecptByRecptId(qcIqc.getSourceDocId());
-
-                    if(qcIqc.getQuantityQualified().compareTo(BigDecimal.ZERO) > 0){
-                        line.setIqcCode(qcIqc.getIqcCode());
-                        line.setIqcId(qcIqc.getIqcId());
-                        line.setQuantityRecived(qcIqc.getQuantityQualified());
-                        line.setQualityStatus(UserConstants.QUALITY_STATUS_PASS);
-                        wmOutsourceRecptLineService.updateWmOutsourceRecptLine(line);
-                    }
-
-                    if(qcIqc.getQuantityUnqualified().compareTo(BigDecimal.ZERO) > 0){
-                        WmOutsourceRecptLine unqualifiedLine = new WmOutsourceRecptLine();
-                        BeanUtils.copyBeanProp(unqualifiedLine,line);
-                        unqualifiedLine.setLineId(null);
-                        unqualifiedLine.setIqcCode(qcIqc.getIqcCode());
-                        unqualifiedLine.setIqcId(qcIqc.getIqcId());
-                        unqualifiedLine.setQuantityRecived(qcIqc.getQuantityUnqualified());
-                        unqualifiedLine.setQualityStatus(UserConstants.QUALITY_STATUS_NOTGOOD);
-                        wmOutsourceRecptLineService.insertWmOutsourceRecptLine(unqualifiedLine);
-                    }
-
-                    recpt.setStatus(UserConstants.OUTSOURCE_RECPT_STATUS_UNSTOCK);
-                    wmOutsourceRecptService.updateWmOutsourceRecpt(recpt);
-                }else{
-                    return AjaxResult.error("来源单据类型错误！");
-                }
-            }
-        }
-
-        return toAjax(qcIqcService.updateQcIqc(qcIqc));
+        // 来源校验、数量守恒、判定一致性、并发幂等、回写与下游草稿统一由共享服务完成。
+        qcIqcCompletionService.save(qcIqc, getUsername());
+        return AjaxResult.success();
     }
 
     /**

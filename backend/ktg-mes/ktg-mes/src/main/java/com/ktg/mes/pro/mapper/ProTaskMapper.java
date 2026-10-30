@@ -11,6 +11,12 @@ import com.ktg.mes.pro.domain.ProTask;
  */
 public interface ProTaskMapper 
 {
+    @org.apache.ibatis.annotations.Update("update pro_task set quantity_produced=coalesce(quantity_produced,0)+#{produced}, quantity_quanlify=coalesce(quantity_quanlify,0)+#{qualified}, quantity_unquanlify=coalesce(quantity_unquanlify,0)+#{rejected} where task_id=#{id}")
+    int incrementProduced(@org.apache.ibatis.annotations.Param("id") Long id,
+                          @org.apache.ibatis.annotations.Param("produced") java.math.BigDecimal produced,
+                          @org.apache.ibatis.annotations.Param("qualified") java.math.BigDecimal qualified,
+                          @org.apache.ibatis.annotations.Param("rejected") java.math.BigDecimal rejected);
+
     /**
      * 查询生产任务
      * 

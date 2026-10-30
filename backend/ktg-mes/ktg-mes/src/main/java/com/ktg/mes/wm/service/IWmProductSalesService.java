@@ -62,6 +62,17 @@ public interface IWmProductSalesService
     public int updateWmProductSales(WmProductSales wmProductSales);
 
     /**
+     * 提交待检（阶段1复审修复①）
+     *
+     * 专用业务方法：原子地校验状态、逐行标记待检、并把主单推进到 UNCHECK。
+     * 不走通用 edit，避免"父单已离开草稿"时被草稿保护误拦。
+     *
+     * @param salesId 销售出库单主键
+     * @return 结果（1 表示已提交待检，0 表示无需检验已直接放行）
+     */
+    public int submitForInspection(Long salesId);
+
+    /**
      * 批量删除销售出库单
      * 
      * @param salesIds 需要删除的销售出库单主键集合

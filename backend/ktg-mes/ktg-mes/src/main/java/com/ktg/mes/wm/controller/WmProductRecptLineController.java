@@ -43,6 +43,9 @@ public class WmProductRecptLineController extends BaseController
     private IWmProductRecptLineService wmProductRecptLineService;
 
     @Autowired
+    private com.ktg.mes.wm.service.IWmProductRecptService wmProductRecptService;
+
+    @Autowired
     private IWmWarehouseService wmWarehouseService;
 
     @Autowired
@@ -121,6 +124,10 @@ public class WmProductRecptLineController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody WmProductRecptLine wmProductRecptLine)
     {
+        // 已执行/已取消单据的行不可再改：否则可把已过账行的数量改小/删除，释放累计入库上限。
+        if (!lineMutable(wmProductRecptLine.getRecptId())) {
+            return AjaxResult.error("已执行或已取消的产品入库单不允许修改行");
+        }
         return toAjax(wmProductRecptLineService.updateWmProductRecptLine(wmProductRecptLine));
     }
 
@@ -132,6 +139,26 @@ public class WmProductRecptLineController extends BaseController
 	@DeleteMapping("/{lineIds}")
     public AjaxResult remove(@PathVariable Long[] lineIds)
     {
+        for (Long lineId : lineIds) {
+            WmProductRecptLine line = wmProductRecptLineService.selectWmProductRecptLineByLineId(lineId);
+            if (line != null && !lineMutable(line.getRecptId())) {
+                return AjaxResult.error("已执行或已取消的产品入库单不允许删除行");
+            }
+        }
         return toAjax(wmProductRecptLineService.deleteWmProductRecptLineByLineIds(lineIds));
+    }
+
+    /** 行只能在单据未执行/未取消时维护。 */
+    private boolean lineMutable(Long recptId) {
+        if (recptId == null) {
+            return true;
+        }
+        com.ktg.mes.wm.domain.WmProductRecpt recpt = wmProductRecptService.selectWmProductRecptByRecptId(recptId);
+        if (recpt == null) {
+            return true;
+        }
+        String status = recpt.getStatus();
+        return !com.ktg.common.constant.UserConstants.ORDER_STATUS_FINISHED.equals(status)
+                && !com.ktg.common.constant.UserConstants.ORDER_STATUS_CANCELED.equals(status);
     }
 }

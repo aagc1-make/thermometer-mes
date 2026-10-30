@@ -1,5 +1,6 @@
 package com.ktg.mes.wm.controller.mobile;
 
+import com.ktg.mes.wm.mapper.PostingLockMapper;
 import cn.hutool.core.collection.CollectionUtil;
 import com.ktg.common.annotation.Log;
 import com.ktg.common.constant.UserConstants;
@@ -8,6 +9,7 @@ import com.ktg.common.core.domain.AjaxResult;
 import com.ktg.common.core.page.TableDataInfo;
 import com.ktg.common.enums.BusinessType;
 import com.ktg.common.utils.StringUtils;
+import com.ktg.mes.linkage.SalesQualityLinkageService;
 import com.ktg.mes.md.domain.MdClient;
 import com.ktg.mes.md.service.IMdClientService;
 import com.ktg.mes.wm.domain.*;
@@ -30,6 +32,9 @@ import java.util.List;
 @RequestMapping("/mobile/wm/productsales")
 public class WmProductSalesMobController extends BaseController {
     @Autowired
+    private PostingLockMapper postingLockMapper;
+
+    @Autowired
     private IWmProductSalesService wmProductSalesService;
 
     @Autowired
@@ -46,6 +51,9 @@ public class WmProductSalesMobController extends BaseController {
 
     @Autowired
     private AutoCodeUtil autoCodeUtil;
+
+    @Autowired
+    private SalesQualityLinkageService salesQualityLinkageService;
 
     /**
      * 查询销售出库单列表
@@ -125,8 +133,14 @@ public class WmProductSalesMobController extends BaseController {
     @PreAuthorize("@ss.hasPermi('mes:wm:productsales:edit')")
     @Log(title = "销售出库单", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody WmProductSales wmProductSales)
     {
+        String previousStatus = postingLockMapper.productSales(wmProductSales.getSalesId());
+        if (previousStatus == null || "FINISHED".equals(previousStatus) || "FINISHED".equals(wmProductSales.getStatus())) {
+            return AjaxResult.error("已执行单据不能修改，完成状态只能通过执行操作产生");
+        }
+
         if(UserConstants.NOT_UNIQUE.equals(wmProductSalesService.checkUnique(wmProductSales))){
             return AjaxResult.error("出库单编号已存在！");
         }
@@ -154,19 +168,24 @@ public class WmProductSalesMobController extends BaseController {
             }
         }
 
-        //向待填写运单状态提交时，检查行是否有需要进行出货检验的，如果有。则将状态更改为待检验;如果是在UNSHIPPING状态下保存，则行的质量状态肯定不为空的。
+        // 阶段1复审修复①④：提交待检统一下沉到 Service；返回 0 表示全免检，直接推进待发运
+        // 修复：移动端与 PC 端共享业务规则 —— 提交待检(UNSHIPPING→UNCHECK)后同样自动生成 OQC 草稿，
+        // 不能只靠 PC 端 WmProductSalesController 触发。
+        boolean createOqcDrafts = false;
         if(UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING.equals(wmProductSales.getStatus())){
-            for(WmProductSalesLine line : lines){
-                if(UserConstants.YES.equals(line.getOqcCheck()) && StringUtils.isEmpty(line.getQualityStatus())){
-                    wmProductSales.setStatus(UserConstants.PRODUCT_SALES_STATUS_UNCHECK);
-                    line.setQualityStatus(UserConstants.QUALITY_STATUS_NOTTEST);
-                    wmProductSalesLineService.updateWmProductSalesLine(line);
-                }
-            }
+            int submit = wmProductSalesService.submitForInspection(wmProductSales.getSalesId());
+            wmProductSales.setStatus(submit == 1
+                    ? UserConstants.PRODUCT_SALES_STATUS_UNCHECK
+                    : UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING);
+            createOqcDrafts = submit == 1;
         }
 
         wmProductSales.setUpdateBy(getUsername());
-        return toAjax(wmProductSalesService.updateWmProductSales(wmProductSales));
+        int rows = wmProductSalesService.updateWmProductSales(wmProductSales);
+        if(rows > 0 && createOqcDrafts){
+            salesQualityLinkageService.createDrafts(wmProductSales, lines, getUsername());
+        }
+        return toAjax(rows);
     }
 
     /**
@@ -201,6 +220,11 @@ public class WmProductSalesMobController extends BaseController {
     @Transactional
     @PutMapping("/{salesId}")
     public AjaxResult execute(@PathVariable Long salesId){
+        String previousStatus = postingLockMapper.productSales(salesId);
+        if (!"UNEXECUTE".equals(previousStatus)) {
+            return AjaxResult.error("单据不存在、已执行或尚未到可执行状态，请刷新后重试");
+        }
+
         WmProductSales sales = wmProductSalesService.selectWmProductSalesBySalesId(salesId);
 
         WmProductSalesLine param = new WmProductSalesLine();
@@ -208,6 +232,16 @@ public class WmProductSalesMobController extends BaseController {
         List<WmProductSalesLine> lines = wmProductSalesLineService.selectWmProductSalesLineList(param);
         if(CollectionUtil.isEmpty(lines)){
             return AjaxResult.error("出库物资不能为空");
+        }
+
+        for (WmProductSalesLine line : lines) {
+            if (line.getQuantitySales() == null || line.getQuantitySales().signum() <= 0
+                    || !UserConstants.EQUAL_TO.equals(wmProductSalesDetailService.checkQuantity(line.getLineId()))) {
+                return AjaxResult.error("出库数量必须大于零且与拣货明细一致");
+            }
+            if (UserConstants.YES.equals(line.getOqcCheck()) && !UserConstants.QUALITY_STATUS_PASS.equals(line.getQualityStatus())) {
+                return AjaxResult.error("出货检验尚未合格放行，不能执行出库");
+            }
         }
 
         List<ProductSalesTxBean> beans = wmProductSalesService.getTxBeans(salesId);

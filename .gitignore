@@ -27,10 +27,6 @@ Thumbs.db
 .git-nested-backup/
 .tmp-*/
 
-# ===== WorkBuddy 运行数据（不上传） =====
-runtime/
-.workbuddy/
-
 # ===== 调研/答辩资料（不上传）=====
 ktg-mes-前端呈现调研.md
 ktg-mes-市场调研.md
@@ -41,3 +37,12 @@ ktg-mes-市场调研.md
 # ===== 密钥/本地配置（防止误传）=====
 **/application-local.yml
 *ai-key*.txt
+
+# ===== 本地数据库备份与演示产物（体积大/可再生成，不上传）=====
+backup_before_reset.sql
+backup_*.sql
+scripts/last-demo-chain.json
+
+# ===== WorkBuddy 运行数据（不上传） =====
+runtime/
+.workbuddy/

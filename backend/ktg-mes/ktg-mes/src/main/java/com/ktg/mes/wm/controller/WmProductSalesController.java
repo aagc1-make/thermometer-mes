@@ -1,5 +1,6 @@
 package com.ktg.mes.wm.controller;
 
+import com.ktg.mes.wm.mapper.PostingLockMapper;
 import java.math.BigDecimal;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -42,6 +43,9 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/wm/productsales")
 public class WmProductSalesController extends BaseController
 {
+    @Autowired
+    private PostingLockMapper postingLockMapper;
+
     @Autowired
     private IWmProductSalesService wmProductSalesService;
 
@@ -137,6 +141,11 @@ public class WmProductSalesController extends BaseController
     @Transactional
     public AjaxResult edit(@RequestBody WmProductSales wmProductSales)
     {
+        String previousStatus = postingLockMapper.productSales(wmProductSales.getSalesId());
+        if (previousStatus == null || "FINISHED".equals(previousStatus) || "FINISHED".equals(wmProductSales.getStatus())) {
+            return AjaxResult.error("已执行单据不能修改，完成状态只能通过执行操作产生");
+        }
+
         if(UserConstants.NOT_UNIQUE.equals(wmProductSalesService.checkUnique(wmProductSales))){
             return AjaxResult.error("出库单编号已存在！");
         }
@@ -157,17 +166,15 @@ public class WmProductSalesController extends BaseController
             }
         }
 
-        //向待填写运单状态提交时，检查行是否有需要进行出货检验的，如果有。则将状态更改为待检验;如果是在UNSHIPPING状态下保存，则行的质量状态肯定不为空的。
+        // 合并决议：状态推进走我方 submitForInspection（原子、行状态走受控回写），
+        // 建 OQC 草稿用队友分支的 salesQualityLinkageService（我方原本没有该能力）。
         boolean createOqcDrafts = false;
         if(UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING.equals(wmProductSales.getStatus())){
-            for(WmProductSalesLine line : lines){
-                if(UserConstants.YES.equals(line.getOqcCheck()) && StringUtils.isEmpty(line.getQualityStatus())){
-                    wmProductSales.setStatus(UserConstants.PRODUCT_SALES_STATUS_UNCHECK);
-                    line.setQualityStatus(UserConstants.QUALITY_STATUS_NOTTEST);
-                    wmProductSalesLineService.updateWmProductSalesLine(line);
-                    createOqcDrafts = true;
-                }
-            }
+            int submit = wmProductSalesService.submitForInspection(wmProductSales.getSalesId());
+            wmProductSales.setStatus(submit == 1
+                    ? UserConstants.PRODUCT_SALES_STATUS_UNCHECK
+                    : UserConstants.PRODUCT_SALES_STATUS_UNSHIPPING);
+            createOqcDrafts = submit == 1;
         }
 
         wmProductSales.setUpdateBy(getUsername());
@@ -209,6 +216,11 @@ public class WmProductSalesController extends BaseController
     @Transactional
     @PutMapping("/{salesId}")
     public AjaxResult execute(@PathVariable Long salesId){
+        String previousStatus = postingLockMapper.productSales(salesId);
+        if (!"UNEXECUTE".equals(previousStatus)) {
+            return AjaxResult.error("单据不存在、已执行或尚未到可执行状态，请刷新后重试");
+        }
+
         WmProductSales sales = wmProductSalesService.selectWmProductSalesBySalesId(salesId);
 
         WmProductSalesLine param = new WmProductSalesLine();
@@ -218,7 +230,17 @@ public class WmProductSalesController extends BaseController
             return AjaxResult.error("出库物资不能为空");
         }
 
+        // 合并决议：两套校验都保留——队友的状态/质量放行策略 + 我方的数量一致性校验
         formLinkagePolicy.assertSalesExecutable(sales, lines);
+        for (WmProductSalesLine line : lines) {
+            if (line.getQuantitySales() == null || line.getQuantitySales().signum() <= 0
+                    || !UserConstants.EQUAL_TO.equals(wmProductSalesDetailService.checkQuantity(line.getLineId()))) {
+                return AjaxResult.error("出库数量必须大于零且与拣货明细一致");
+            }
+            if (UserConstants.YES.equals(line.getOqcCheck()) && !UserConstants.QUALITY_STATUS_PASS.equals(line.getQualityStatus())) {
+                return AjaxResult.error("出货检验尚未合格放行，不能执行出库");
+            }
+        }
 
         List<ProductSalesTxBean> beans = wmProductSalesService.getTxBeans(salesId);
         storageCoreService.processProductSales(beans);

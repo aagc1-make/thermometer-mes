@@ -238,6 +238,10 @@ public class WmItemConsumeServiceImpl implements IWmItemConsumeService
                 BigDecimal quantityToConsume = line.getQuantityConsume();
 
                 for(WmMaterialStock stock : stocks){
+                    // 跳过零/负库存行：否则会生成 0 数量消耗明细，过账时触发“事务数量必须大于0”。
+                    if(stock.getQuantityOnhand() == null || stock.getQuantityOnhand().signum() <= 0){
+                        continue;
+                    }
                     if(stock.getQuantityOnhand().compareTo(quantityToConsume) >= 0){
                         //线边库中当前批次有足够的库存，则消耗掉该批次的物料
                         WmItemConsumeDetail detail = new WmItemConsumeDetail();

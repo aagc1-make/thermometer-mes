@@ -85,7 +85,12 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="productsalesList" @selection-change="handleSelectionChange">
+    <el-table
+      v-loading="loading"
+      :data="productsalesList"
+      :row-class-name="rowClassName"
+      @selection-change="handleSelectionChange"
+    >
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="出库单编号" width="150px" align="center" prop="salesCode" >
         <template slot-scope="scope">
@@ -725,7 +730,32 @@ export default {
       }else{
         this.form.salesCode = null;
       }
+    },
+    /**
+     * 发货通知联动生成、尚未执行的销售出库草稿行：闪烁高亮。
+     * linkage 建单时 attr1 = AUTO:PRODUCT_SALES:SALES_NOTICE:{noticeId}，状态 PREPARE。
+     */
+    isAutoPending(row) {
+      if (!row) return false
+      return String(row.attr1 || '').indexOf('AUTO:') === 0 && row.status === 'PREPARE'
+    },
+    rowClassName({ row }) {
+      return this.isAutoPending(row) ? 'row-auto-pending' : ''
     }
   }
 };
 </script>
+
+<style scoped>
+::v-deep .el-table .row-auto-pending > td {
+  background-color: #fff8e1 !important;
+  animation: auto-pending-flash 1.6s ease-in-out infinite;
+}
+::v-deep .el-table .row-auto-pending:hover > td {
+  background-color: #fff1c9 !important;
+}
+@keyframes auto-pending-flash {
+  0%, 100% { background-color: #fff8e1; }
+  50% { background-color: #ffe9a8; }
+}
+</style>

@@ -1,5 +1,6 @@
 package com.ktg.mes.wm.controller;
 
+import com.ktg.mes.wm.mapper.PostingLockMapper;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
@@ -9,7 +10,11 @@ import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ItemRecptTxBean;
 import com.ktg.mes.wm.service.*;
+import com.ktg.mes.wm.service.impl.ItemRecptWorkflowService;
 import com.ktg.mes.linkage.FormLinkagePolicy;
+import com.ktg.mes.linkage.MenuLinkageNoticePaths;
+import com.ktg.mes.linkage.MenuLinkageNoticeService;
+import com.ktg.mes.linkage.ProductionNextStepLinkageService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +44,12 @@ import com.ktg.common.core.page.TableDataInfo;
 public class WmItemRecptController extends BaseController
 {
     @Autowired
+    private PostingLockMapper postingLockMapper;
+
+    @Autowired
+    private ItemRecptWorkflowService itemRecptWorkflowService;
+
+    @Autowired
     private IWmItemRecptService wmItemRecptService;
 
     @Autowired
@@ -55,6 +66,12 @@ public class WmItemRecptController extends BaseController
 
     @Autowired
     private FormLinkagePolicy formLinkagePolicy;
+
+    @Autowired
+    private MenuLinkageNoticeService menuLinkageNoticeService;
+
+    @Autowired
+    private ProductionNextStepLinkageService productionNextStepLinkageService;
 
     @Autowired
     private IWmWarehouseService wmWarehouseService;
@@ -127,17 +144,9 @@ public class WmItemRecptController extends BaseController
     @Log(title = "物料入库单", businessType = BusinessType.UPDATE)
     @PutMapping("/confirm")
     public AjaxResult confirm(@RequestBody WmItemRecpt wmItemRecpt){
-        //检查有没有入库单行
-        WmItemRecptLine param = new WmItemRecptLine();
-        param.setRecptId(wmItemRecpt.getRecptId());
-        List<WmItemRecptLine> lines = wmItemRecptLineService.selectWmItemRecptLineList(param);
-        if(CollUtil.isEmpty(lines)){
-            return AjaxResult.error("请添加入库单行");
-        }
-
-        wmItemRecpt.setStatus(UserConstants.ORDER_STATUS_CONFIRMED);
-
-        return toAjax(wmItemRecptService.updateWmItemRecpt(wmItemRecpt));
+        // 编制确认只允许 草稿 → 已确认，并且必须在数据库行锁内校验真实状态。
+        itemRecptWorkflowService.confirm(wmItemRecpt.getRecptId(), getUsername());
+        return AjaxResult.success();
     }
 
 
@@ -147,49 +156,16 @@ public class WmItemRecptController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:wm:itemrecpt:edit')")
     @Log(title = "物料入库单", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional
     public AjaxResult edit(@RequestBody WmItemRecpt wmItemRecpt)
     {
         if(UserConstants.NOT_UNIQUE.equals(wmItemRecptService.checkRecptCodeUnique(wmItemRecpt))){
             return  AjaxResult.error("编号已存在！");
         }
 
-        //如果是提交到待上架状态，则检查是否有对应的入库单行
-        if(UserConstants.ORDER_STATUS_APPROVING.equals(wmItemRecpt.getStatus())){
-            //检查有没有入库单行
-            WmItemRecptLine param = new WmItemRecptLine();
-            param.setRecptId(wmItemRecpt.getRecptId());
-            List<WmItemRecptLine> lines = wmItemRecptLineService.selectWmItemRecptLineList(param);
-            if(CollUtil.isEmpty(lines)){
-                return AjaxResult.error("请添加入库单行");
-            }
-        }
-
-        //如果是提交到待执行入库状态，需要检查各个行是否都已分配了对应的明细行，数量必须一致。
-        if(UserConstants.ORDER_STATUS_APPROVED.equals(wmItemRecpt.getStatus())){
-
-            WmItemRecptLine param = new WmItemRecptLine();
-            param.setRecptId(wmItemRecpt.getRecptId());
-            List<WmItemRecptLine> lines = wmItemRecptLineService.selectWmItemRecptLineList(param);
-            boolean flag = true;
-            StringBuilder sb = new StringBuilder();
-            if(CollUtil.isNotEmpty(lines)){
-                for(WmItemRecptLine line : lines){
-                    if(!UserConstants.EQUAL_TO.equals(wmItemRecptDetailService.checkQuantity(line.getLineId()))){
-                        flag = false;
-                        sb.append(line.getItemName()).append(line.getBatchCode()).append("未完成上架！");
-                    }
-                }
-            }else{
-                flag = false;
-                sb.append("请为对入库单行进行上架操作!");
-            }
-
-            if(!flag){
-                return AjaxResult.error(sb.toString());
-            }
-        }
-
-        return toAjax(wmItemRecptService.updateWmItemRecpt(wmItemRecpt));
+        // 状态机、来源冻结、上架数量校验统一在服务层完成（PC 与移动端共用）。
+        itemRecptWorkflowService.edit(wmItemRecpt, getUsername(), false);
+        return AjaxResult.success();
     }
 
     /**
@@ -201,33 +177,8 @@ public class WmItemRecptController extends BaseController
     @Transactional
     @PutMapping("/{recptId}")
     public AjaxResult execute(@PathVariable Long recptId){
-
-        WmItemRecpt recpt = wmItemRecptService.selectWmItemRecptByRecptId(recptId);
-
-        WmArrivalNoticeLine sourceParam = new WmArrivalNoticeLine();
-        sourceParam.setNoticeId(recpt == null ? null : recpt.getNoticeId());
-        List<WmArrivalNoticeLine> sourceLines = recpt != null && recpt.getNoticeId() != null
-                ? wmArrivalNoticeLineService.selectWmArrivalNoticeLineList(sourceParam)
-                : java.util.Collections.emptyList();
-        formLinkagePolicy.assertPurchaseReceiptExecutable(recpt, sourceLines);
-
-        //构造Transaction事务，并执行库存更新逻辑
-        List<ItemRecptTxBean> beans = wmItemRecptService.getTxBeans(recptId);
-
-        //调用库存核心
-        storageCoreService.processItemRecpt(beans);
-
-        //更新单据状态
-        recpt.setStatus(UserConstants.ORDER_STATUS_FINISHED);
-        wmItemRecptService.updateWmItemRecpt(recpt);
-
-        //更新关联的到货通知单的状态（这里不进行数量的验证，只要关联就人为对应的单据已完成）
-        WmArrivalNotice notice = wmArrivalNoticeService.selectWmArrivalNoticeByNoticeId(recpt.getNoticeId());
-        if(StringUtils.isNotNull(notice)){
-            notice.setStatus(UserConstants.ORDER_STATUS_FINISHED);
-            wmArrivalNoticeService.updateWmArrivalNotice(notice);
-        }
-
+        // 状态、来源、数量、检验放行、上架明细与过账幂等全部由共享服务在行锁内校验。
+        itemRecptWorkflowService.execute(recptId, getUsername());
         return AjaxResult.success();
     }
 
@@ -241,18 +192,8 @@ public class WmItemRecptController extends BaseController
 	@DeleteMapping("/{recptIds}")
     public AjaxResult remove(@PathVariable Long[] recptIds)
     {
-        for (Long id:
-                recptIds
-             ) {
-            WmItemRecpt itemRecpt = wmItemRecptService.selectWmItemRecptByRecptId(id);
-            if(!UserConstants.ORDER_STATUS_PREPARE.equals(itemRecpt.getStatus())){
-                return AjaxResult.error("只能删除草稿状态的单据!");
-            }
-
-            wmItemRecptLineService.deleteByRecptId(id);
-        }
-
-        return toAjax(wmItemRecptService.deleteWmItemRecptByRecptIds(recptIds));
+        itemRecptWorkflowService.remove(recptIds, getUsername());
+        return AjaxResult.success();
     }
 
     @GetMapping("/getItem/{vendorId}")

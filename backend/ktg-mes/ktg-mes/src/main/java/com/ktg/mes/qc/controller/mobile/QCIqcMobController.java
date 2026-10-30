@@ -49,6 +49,9 @@ public class QCIqcMobController extends BaseController {
     @Autowired
     private IWmItemRecptLineService wmItemRecptLineService;
 
+    @Autowired
+    private com.ktg.mes.qc.service.impl.QcIqcCompletionService qcIqcCompletionService;
+
 
     /**
      * 查询来料检验单列表
@@ -110,34 +113,11 @@ public class QCIqcMobController extends BaseController {
     @PutMapping
     public AjaxResult edit(@RequestBody QcIqc qcIqc)
     {
-        if(UserConstants.NOT_UNIQUE.equals(qcIqcService.checkIqcCodeUnique(qcIqc))){
-            return AjaxResult.error("单据编号已存在！");
-        }
-
-        QcTemplateProduct param = new QcTemplateProduct();
-        param.setItemId(qcIqc.getItemId());
-        List<QcTemplateProduct> templates = qcTemplateProductService.selectQcTemplateProductList(param);
-        if(CollUtil.isNotEmpty(templates)){
-            qcIqc.setTemplateId(templates.get(0).getTemplateId());
-        }else{
-            return AjaxResult.error("当前产品未配置检测模板！");
-        }
+        // 移动端此前把完成结果回写到 wm_item_recpt_line（错误来源）且不校验数量，
+        // 现统一走共享完成服务，与 PC 使用同一套来源、数量与并发规则。
         qcIqc.setInspector(getUsername());
-
-        //如果是完成状态，则根据来源单据更新其对应的检测单
-        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcIqc.getStatus())){
-            if(StringUtils.isNotNull(qcIqc.getSourceDocCode())){
-                //这里默认是采购入库单，后续有其他单据则根据单据类型(sourceDocType)进行区分
-                WmItemRecptLine line = wmItemRecptLineService.selectWmItemRecptLineByLineId(qcIqc.getSourceLineId());
-                if(StringUtils.isNotNull(line)){
-                    line.setIqcCode(qcIqc.getIqcCode());
-                    line.setIqcId(qcIqc.getIqcId());
-                    wmItemRecptLineService.updateWmItemRecptLine(line);
-                }
-            }
-        }
-
-        return toAjax(qcIqcService.updateQcIqc(qcIqc));
+        qcIqcCompletionService.save(qcIqc, getUsername());
+        return AjaxResult.success();
     }
 
     /**
