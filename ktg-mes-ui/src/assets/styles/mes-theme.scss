@@ -481,6 +481,26 @@ body {
   color: $mes-primary !important;
 }
 
+/* 导航留白和状态反馈，让精简后的分组更容易浏览。 */
+.sidebar-container .el-menu:not(.el-menu--collapse) {
+  > .el-submenu > .el-submenu__title {
+    margin-top: 10px;
+    letter-spacing: 0.03em;
+  }
+  > .el-submenu > .el-menu > .el-menu-item {
+    margin-top: 3px;
+    margin-bottom: 3px;
+    border-radius: 8px;
+    transition: background-color 0.16s ease, color 0.16s ease;
+  }
+}
+
+.sidebar-container .el-menu .el-menu-item:focus-visible,
+.sidebar-container .el-menu .el-submenu__title:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
 /* ---------- 左侧「总」导航栏（域切换） ---------- */
 .rail {
   position: fixed;

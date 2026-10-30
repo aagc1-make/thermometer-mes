@@ -1,5 +1,15 @@
 import request from '@/utils/request'
 
+// 基于已执行采购入库生成可调整的退供草稿。
+export function createFromReceipt(recptId) {
+  return request({ url: '/mes/wm/rtvendor/fromReceipt/' + recptId, method: 'post' })
+}
+
+// 基于来料检验未入库不合格数量（重新）生成退供草稿；取消/删除后可再次生成。
+export function createFromIqc(iqcId) {
+  return request({ url: '/mes/wm/rtvendor/fromIqc/' + iqcId, method: 'post' })
+}
+
 // 查询供应商退货列表
 export function listRtvendor(query) {
   return request({

@@ -1,4 +1,4 @@
-﻿-- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: j2eedb
 -- ------------------------------------------------------
@@ -3160,6 +3160,8 @@ INSERT INTO `sys_menu` VALUES (2395,'盘点方案删除',2364,4,'',NULL,NULL,1,0
 INSERT INTO `sys_menu` VALUES (2396,'盘点方案详情',2364,5,'',NULL,NULL,1,0,'F','0','0','mes:wm:stocktakingplan:query','#','admin','2025-05-15 18:01:54','',NULL,'');
 INSERT INTO `sys_menu` VALUES (2400,'生产驾驶舱',2072,0,'dashboard','mes/dashboard/index',NULL,1,0,'C','0','0','mes:pro:dashboard','chart','admin','2026-10-24 10:59:51','',NULL,'工单进度/库存水位/设备状态/产量趋势大屏');
 INSERT INTO `sys_menu` VALUES (2401,'驾驶舱查看',2400,1,'',NULL,NULL,1,0,'F','0','0','mes:pro:dashboard:view','#','admin','2026-10-24 10:59:51','',NULL,'');
+INSERT INTO `sys_menu` VALUES (2410,'智能助手',0,2,'mes/ai',NULL,NULL,1,0,'M','0','0',NULL,'message','admin','2026-10-24 22:06:48','',NULL,'自然语言查询库存/工单/检验');
+INSERT INTO `sys_menu` VALUES (2411,'智能问答',2410,1,'chat','mes/ai/index',NULL,1,0,'C','0','0','mes:ai:query','message','admin','2026-10-24 22:06:48','',NULL,'');
 /*!40000 ALTER TABLE `sys_menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -3846,6 +3848,14 @@ INSERT INTO `sys_role_menu` VALUES (107,2307);
 INSERT INTO `sys_role_menu` VALUES (107,2356);
 INSERT INTO `sys_role_menu` VALUES (107,2400);
 INSERT INTO `sys_role_menu` VALUES (107,2401);
+INSERT INTO `sys_role_menu` VALUES (1,2410);
+INSERT INTO `sys_role_menu` VALUES (1,2411);
+INSERT INTO `sys_role_menu` VALUES (101,2410);
+INSERT INTO `sys_role_menu` VALUES (101,2411);
+INSERT INTO `sys_role_menu` VALUES (102,2410);
+INSERT INTO `sys_role_menu` VALUES (102,2411);
+INSERT INTO `sys_role_menu` VALUES (107,2410);
+INSERT INTO `sys_role_menu` VALUES (107,2411);
 /*!40000 ALTER TABLE `sys_role_menu` ENABLE KEYS */;
 UNLOCK TABLES;
 

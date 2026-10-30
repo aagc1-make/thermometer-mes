@@ -76,7 +76,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </sql>
 
     <select id="selectWmRtVendorLineList" parameterType="WmRtVendorLine" resultMap="WmRtVendorLineResult">
-        select l.line_id, l.rt_id, l.item_id, l.item_code, l.item_name, l.specification, l.unit_of_measure, l.unit_name, l.quantity_rted, sum(d.quantity) as quantity, l.batch_id, l.batch_code, l.remark,  l.create_by, l.create_time, l.update_by, l.update_time
+        select l.line_id, l.rt_id, l.item_id, l.item_code, l.item_name, l.specification, l.unit_of_measure, l.unit_name, l.quantity_rted, sum(d.quantity) as quantity, l.batch_id, l.batch_code, l.remark, l.attr1, l.attr2, l.attr3, l.attr4, l.create_by, l.create_time, l.update_by, l.update_time
         from wm_rt_vendor_line l
              left join wm_rt_vendor_detail d on l.line_id = d.line_id
         <where>  
@@ -91,7 +91,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="batchId != null "> and l.batch_id = #{batchId}</if>
             <if test="batchCode != null  and batchCode != ''"> and l.batch_code = #{batchCode}</if>
         </where>
-        group by l.line_id, l.rt_id, l.item_id, l.item_code, l.item_name, l.specification, l.unit_of_measure, l.unit_name, l.quantity_rted, l.batch_id, l.batch_code, l.remark,  l.create_by, l.create_time, l.update_by, l.update_time
+        group by l.line_id, l.rt_id, l.item_id, l.item_code, l.item_name, l.specification, l.unit_of_measure, l.unit_name, l.quantity_rted, l.batch_id, l.batch_code, l.remark, l.attr1, l.attr2, l.attr3, l.attr4, l.create_by, l.create_time, l.update_by, l.update_time
         order by l.create_time desc
     </select>
 
@@ -113,11 +113,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
 
     <select id="selectWmRtVendorLineByLineId" parameterType="Long" resultMap="WmRtVendorLineResult">
-        select l.line_id, l.rt_id, l.item_id, l.item_code, l.item_name, l.specification, l.unit_of_measure, l.unit_name, l.quantity_rted, sum(d.quantity) as quantity, l.batch_id, l.batch_code, l.remark,  l.create_by, l.create_time, l.update_by, l.update_time
+        select l.line_id, l.rt_id, l.item_id, l.item_code, l.item_name, l.specification, l.unit_of_measure, l.unit_name, l.quantity_rted, sum(d.quantity) as quantity, l.batch_id, l.batch_code, l.remark, l.attr1, l.attr2, l.attr3, l.attr4, l.create_by, l.create_time, l.update_by, l.update_time
         from wm_rt_vendor_line l
         left join wm_rt_vendor_detail d on l.line_id = d.line_id
         where l.line_id = #{lineId}
-        group by l.line_id, l.rt_id, l.item_id, l.item_code, l.item_name, l.specification, l.unit_of_measure, l.unit_name, l.quantity_rted, l.batch_id, l.batch_code, l.remark,  l.create_by, l.create_time, l.update_by, l.update_time
+        group by l.line_id, l.rt_id, l.item_id, l.item_code, l.item_name, l.specification, l.unit_of_measure, l.unit_name, l.quantity_rted, l.batch_id, l.batch_code, l.remark, l.attr1, l.attr2, l.attr3, l.attr4, l.create_by, l.create_time, l.update_by, l.update_time
         order by l.create_time desc
     </select>
         

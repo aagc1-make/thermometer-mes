@@ -34,7 +34,7 @@ public class WmRtVendorDetailMobController extends BaseController {
     /**
      * 查询采购退货单明细列表
      */
-    @PreAuthorize("@ss.hasPermi('mes:wm:rtvendordetail:list')")
+    @PreAuthorize("@ss.hasAnyPermi('mes:wm:rtvendor:list,mes:wm:rtvendordetail:list')")
     @GetMapping("/list")
     public AjaxResult list(WmRtVendorDetail wmRtVendorDetail)
     {
@@ -45,7 +45,7 @@ public class WmRtVendorDetailMobController extends BaseController {
     /**
      * 获取采购退货单明细详细信息
      */
-    @PreAuthorize("@ss.hasPermi('mes:wm:rtvendordetail:query')")
+    @PreAuthorize("@ss.hasAnyPermi('mes:wm:rtvendor:query,mes:wm:rtvendordetail:query')")
     @GetMapping(value = "/{detailId}")
     public AjaxResult getInfo(@PathVariable("detailId") Long detailId)
     {
@@ -56,7 +56,7 @@ public class WmRtVendorDetailMobController extends BaseController {
     /**
      * 新增采购退货单明细
      */
-    @PreAuthorize("@ss.hasPermi('mes:wm:rtvendordetail:add')")
+    @PreAuthorize("@ss.hasAnyPermi('mes:wm:rtvendor:add,mes:wm:rtvendordetail:add')")
     @Log(title = "采购退货单明细", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody WmRtVendorDetail wmRtVendorDetail)
@@ -82,7 +82,7 @@ public class WmRtVendorDetailMobController extends BaseController {
     /**
      * 修改采购退货单明细
      */
-    @PreAuthorize("@ss.hasPermi('mes:wm:rtvendordetail:edit')")
+    @PreAuthorize("@ss.hasAnyPermi('mes:wm:rtvendor:edit,mes:wm:rtvendordetail:edit')")
     @Log(title = "采购退货单明细", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody WmRtVendorDetail wmRtVendorDetail)
@@ -108,7 +108,7 @@ public class WmRtVendorDetailMobController extends BaseController {
     /**
      * 删除采购退货单明细
      */
-    @PreAuthorize("@ss.hasPermi('mes:wm:rtvendordetail:remove')")
+    @PreAuthorize("@ss.hasAnyPermi('mes:wm:rtvendor:remove,mes:wm:rtvendordetail:remove')")
     @Log(title = "采购退货单明细", businessType = BusinessType.DELETE)
     @DeleteMapping("/{detailIds}")
     public AjaxResult remove(@PathVariable Long[] detailIds)

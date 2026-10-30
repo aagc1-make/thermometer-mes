@@ -331,4 +331,21 @@ public class WmBatchServiceImpl implements IWmBatchService
 
         return oldBatch;
     }
+
+    @Override
+    public java.util.Map<String,Object> traceBatch(String batchCode) {
+        java.util.Map<String,Object> result = new java.util.LinkedHashMap<>();
+        if (batchCode == null || batchCode.trim().isEmpty()) {
+            result.put("error", "批次号不能为空");
+            return result;
+        }
+        String code = batchCode.trim();
+        result.put("batchCode", code);
+        result.put("receipts", wmBatchMapper.traceReceipts(code));
+        result.put("issueLines", wmBatchMapper.traceIssueLines(code));
+        result.put("transactions", wmBatchMapper.traceTransactions(code));
+        result.put("sales", wmBatchMapper.traceSales(code));
+        result.put("note", "同批次关联与来源键关联分别列出；销售单与工单无直接来源键，仅按批次并列展示");
+        return result;
+    }
 }

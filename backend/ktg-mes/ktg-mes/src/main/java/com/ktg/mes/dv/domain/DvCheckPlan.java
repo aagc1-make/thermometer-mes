@@ -1,6 +1,7 @@
 package com.ktg.mes.dv.domain;
 
 import java.util.Date;
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -51,6 +52,9 @@ public class DvCheckPlan extends BaseEntity
     /** 状态 */
     @Excel(name = "状态")
     private String status;
+
+    /** 状态集合（查询用：允许“已确认/已启用”等多状态，不落库） */
+    private List<String> statusList;
 
     /** 预留字段1 */
     private String attr1;
@@ -144,6 +148,17 @@ public class DvCheckPlan extends BaseEntity
     {
         return status;
     }
+
+    public List<String> getStatusList()
+    {
+        return statusList;
+    }
+
+    public void setStatusList(List<String> statusList)
+    {
+        this.statusList = statusList;
+    }
+
     public void setAttr1(String attr1) 
     {
         this.attr1 = attr1;

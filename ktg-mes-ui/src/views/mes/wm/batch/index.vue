@@ -337,6 +337,13 @@
       <el-table-column label="生产批号" align="center" prop="productCode" />
       <el-table-column label="质量状态" align="center" prop="qualityStatus" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+        <el-button
+          size="mini"
+          type="text"
+          icon="el-icon-connection"
+          @click="handleTrace(scope.row)"
+          v-hasPermi="['mes:wm:batch:query']"
+        >追溯</el-button>
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -483,7 +490,8 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
-  </div>
+  
+</div>
 </template>
 
 <script>

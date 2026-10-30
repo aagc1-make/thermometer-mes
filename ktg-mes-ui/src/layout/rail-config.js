@@ -12,6 +12,21 @@
  *   roots    归属该域的顶级路由 path 前缀（对应 sys_menu 顶级目录的 path）
  *   groups   右栏母目录分组：[组名, 该组包含的路由 path 片段]
  */
+// 仅控制导航显示；不修改路由、权限或业务数据。
+const hiddenMenuPaths = new Set([
+  '/mes/wm/package', '/mes/wm/barcode', '/mes/wm/sn',
+  '/mes/wm/outsourceissue', '/mes/wm/outsourcerecpt',
+  '/mes/wm/stocktaking/stocktaking', '/mes/wm/stocktaking/stocktakingplan',
+  '/mes/pro/andonrecord', '/mes/pro/procard', '/tm/tooltype', '/tm/tool',
+  '/tool/build', '/tool/gen', '/tool/swagger', '/iot/model',
+  '/report/tablereport/report', '/report/tablereport/designer',
+  '/print/printerconfig', '/print/printtemplate'
+])
+
+export function isMenuHidden(path) {
+  return hiddenMenuPaths.has(String(path || '').replace(/\/+$/, '') || '/')
+}
+
 export const railDomains = [
   {
     key: 'home',

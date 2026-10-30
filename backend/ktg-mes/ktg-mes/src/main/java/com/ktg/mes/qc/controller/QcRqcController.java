@@ -10,10 +10,13 @@ import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.bean.BeanUtils;
 import com.ktg.mes.qc.domain.*;
 import com.ktg.mes.qc.service.IQcRqcLineService;
+import com.ktg.mes.qc.service.impl.QcRqcItemLineService;
 import com.ktg.mes.qc.service.IQcTemplateIndexService;
 import com.ktg.mes.qc.service.IQcTemplateProductService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.service.*;
+import com.ktg.mes.wm.mapper.PostingLockMapper;
+import java.util.Objects;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,10 +47,14 @@ import com.ktg.common.core.page.TableDataInfo;
 public class QcRqcController extends BaseController
 {
     @Autowired
+    private PostingLockMapper postingLockMapper;
+    @Autowired
     private IQcRqcService qcRqcService;
 
     @Autowired
     private IQcRqcLineService qcRqcLineService;
+    @Autowired
+    private QcRqcItemLineService rqcItemLines;
 
     @Autowired
     private IQcTemplateProductService qcTemplateProductService;
@@ -137,6 +144,11 @@ public class QcRqcController extends BaseController
             return AjaxResult.error("检测数量与合格品/不合格品总和数量不匹配！");
         }
 
+        String conclusionError = checkConclusionConsistency(qcRqc);
+        if (conclusionError != null) {
+            return AjaxResult.error(conclusionError);
+        }
+
         qcRqcService.insertQcRqc(qcRqc);
 
         generateLine(qcRqc);
@@ -153,6 +165,63 @@ public class QcRqcController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody QcRqc qcRqc)
     {
+        if (qcRqc.getRqcId() == null) return AjaxResult.error("请先保存退料检验单");
+        String status = postingLockMapper.rqc(qcRqc.getRqcId());
+        if (status == null || UserConstants.ORDER_STATUS_FINISHED.equals(status)
+                || UserConstants.ORDER_STATUS_CANCELED.equals(status)) {
+            return AjaxResult.error("退料检验单不存在、已完成或已取消");
+        }
+        String sourceType = postingLockMapper.rqcSourceType(qcRqc.getRqcId());
+        if (UserConstants.ORDER_STATUS_FINISHED.equals(qcRqc.getStatus())) {
+            Long sourceId = postingLockMapper.rqcRtIssueSource(qcRqc.getRqcId());
+            if (UserConstants.SOURCE_DOC_TYPE_RTISSUE.equals(sourceType) && sourceId == null) {
+                return AjaxResult.error("退料检验单缺少来源退料单");
+            }
+            if (!UserConstants.SOURCE_DOC_TYPE_RTISSUE.equals(sourceType)
+                    && UserConstants.SOURCE_DOC_TYPE_RTISSUE.equals(qcRqc.getSourceDocType())) {
+                return AjaxResult.error("退料检验的来源类型不能修改");
+            }
+            if (sourceId != null) {
+                if (!UserConstants.RTISSUE_STATUS_UNCHECK.equals(postingLockMapper.rtIssue(sourceId))) {
+                    return AjaxResult.error("来源退料单不在待检状态");
+                }
+                QcRqc db = qcRqcService.selectQcRqcByRqcId(qcRqc.getRqcId());
+                if (db == null || !Objects.equals(sourceId, db.getSourceDocId())
+                        || (qcRqc.getSourceDocId() != null && !Objects.equals(sourceId, qcRqc.getSourceDocId()))
+                        || (qcRqc.getSourceLineId() != null && !Objects.equals(db.getSourceLineId(), qcRqc.getSourceLineId()))
+                        || (qcRqc.getSourceDocType() != null && !Objects.equals(db.getSourceDocType(), qcRqc.getSourceDocType()))
+                        || (qcRqc.getItemId() != null && !Objects.equals(db.getItemId(), qcRqc.getItemId()))) {
+                    return AjaxResult.error("退料检验的来源或物料不能修改");
+                }
+                WmRtIssueLine source = wmRtIssueLineService.selectWmRtIssueLineByLineId(db.getSourceLineId());
+                if (source == null || !Objects.equals(sourceId, source.getRtId())
+                        || !Objects.equals(db.getItemId(), source.getItemId())
+                        || !UserConstants.QUALITY_STATUS_NOTTEST.equals(source.getQualityStatus())) {
+                    return AjaxResult.error("来源退料行不存在、归属不符或已完成检验");
+                }
+                if (qcRqc.getQuantityCheck() == null || qcRqc.getQuantityQualified() == null
+                        || qcRqc.getQuantityUnqualified() == null
+                        || qcRqc.getQuantityCheck().signum() <= 0
+                        || qcRqc.getQuantityQualified().signum() < 0 || qcRqc.getQuantityUnqualified().signum() < 0
+                        || source.getQuantityRt() == null || qcRqc.getQuantityCheck().compareTo(source.getQuantityRt()) != 0) {
+                    return AjaxResult.error("检测数量须等于来源退料数量，且合格和不合格数量不得为负");
+                }
+                qcRqc.setSourceDocId(sourceId); qcRqc.setSourceLineId(db.getSourceLineId());
+                qcRqc.setSourceDocType(db.getSourceDocType()); qcRqc.setSourceDocCode(db.getSourceDocCode());
+                qcRqc.setItemId(db.getItemId());
+            }
+        } else if (UserConstants.SOURCE_DOC_TYPE_RTISSUE.equals(sourceType)) {
+            QcRqc db = qcRqcService.selectQcRqcByRqcId(qcRqc.getRqcId());
+            if (db == null || (qcRqc.getSourceDocId() != null && !Objects.equals(db.getSourceDocId(), qcRqc.getSourceDocId()))
+                    || (qcRqc.getSourceLineId() != null && !Objects.equals(db.getSourceLineId(), qcRqc.getSourceLineId()))
+                    || (qcRqc.getSourceDocType() != null && !Objects.equals(sourceType, qcRqc.getSourceDocType()))
+                    || (qcRqc.getItemId() != null && !Objects.equals(db.getItemId(), qcRqc.getItemId()))) {
+                return AjaxResult.error("退料检验的来源或物料不能修改");
+            }
+            qcRqc.setSourceDocId(db.getSourceDocId()); qcRqc.setSourceLineId(db.getSourceLineId());
+            qcRqc.setSourceDocType(sourceType); qcRqc.setSourceDocCode(db.getSourceDocCode());
+            qcRqc.setItemId(db.getItemId());
+        }
         if(UserConstants.NOT_UNIQUE.equals(qcRqcService.checkCodeUnique(qcRqc))){
             return AjaxResult.error("单据编号已存在！");
         }
@@ -174,6 +243,12 @@ public class QcRqcController extends BaseController
 
         if(qcRqc.getQuantityCheck().compareTo(qcRqc.getQuantityQualified().add(qcRqc.getQuantityUnqualified()))!=0){
             return AjaxResult.error("检测数量与合格品/不合格品总和数量不匹配！");
+        }
+
+        // 结论与数量一致性（完成时必须显式且一致），放在任何来源回写之前
+        String conclusionError = checkConclusionConsistency(qcRqc);
+        if (conclusionError != null) {
+            return AjaxResult.error(conclusionError);
         }
 
         //完成状态时,处理来源单据的状态、数量、质量状态等数据
@@ -203,7 +278,7 @@ public class QcRqcController extends BaseController
                         line.setBatchCode(batch.getBatchCode());
                         line.setQualityStatus(UserConstants.QUALITY_STATUS_NOTGOOD);
                         line.setQuantityRt(qcRqc.getQuantityUnqualified());
-                        wmRtIssueLineService.insertWmRtIssueLine(line);
+                        wmRtIssueLineService.insertInspectionSplit(line);
                     }
                      **/
                     if(qcRqc.getQuantityUnqualified().compareTo(BigDecimal.ZERO) == 0){
@@ -222,12 +297,12 @@ public class QcRqcController extends BaseController
                         }
                         line.setQualityStatus(UserConstants.QUALITY_STATUS_NOTGOOD);
                         line.setQuantityRt(qcRqc.getQuantityUnqualified());
-                        wmRtIssueLineService.insertWmRtIssueLine(line);
+                        wmRtIssueLineService.insertInspectionSplit(line);
 
                         sourceLine.setQualityStatus(UserConstants.QUALITY_STATUS_PASS);
                         sourceLine.setQuantityRt(qcRqc.getQuantityQualified());
-                        wmRtIssueLineService.updateWmRtIssueLine(sourceLine);
                     }
+                    wmRtIssueLineService.applyInspectionResult(sourceLine);
 
                     //3.判断生产退料单行上是否还有待检验的物资，如果没有，则将生产退料单的状态设置为待上架
                     WmRtIssueLine paramLine = new WmRtIssueLine();
@@ -304,30 +379,30 @@ public class QcRqcController extends BaseController
      * 根据头信息生成行信息
      * @param rqc
      */
-    private void generateLine(QcRqc rqc){
-        QcTemplateIndex param = new QcTemplateIndex();
-        param.setTemplateId(rqc.getTemplateId());
-        List<QcTemplateIndex > indexs = qcTemplateIndexService.selectQcTemplateIndexList(param);
-        if(CollUtil.isNotEmpty(indexs)){
-            for (QcTemplateIndex index:indexs
-            ) {
-                QcRqcLine line = new QcRqcLine();
-                line.setRqcId(rqc.getRqcId());
-                line.setIndexId(index.getIndexId());
-                line.setIndexCode(index.getIndexCode());
-                line.setIndexName(index.getIndexName());
-                line.setIndexType(index.getIndexType());
-                line.setQcTool(index.getQcTool());
-                line.setCheckMethod(index.getCheckMethod());
-                line.setStanderVal(index.getStanderVal());
-                line.setUnitOfMeasure(index.getUnitOfMeasure());
-                line.setThresholdMax(index.getThresholdMax());
-                line.setThresholdMin(index.getThresholdMin());
-                line.setCrQuantity(BigDecimal.ZERO);
-                line.setMajQuantity(BigDecimal.ZERO);
-                line.setMajQuantity(BigDecimal.ZERO);
-                qcRqcLineService.insertQcRqcLine(line);
-            }
+    /**
+     * 完成检验时校验结论与数量一致：合格量>0 必须 ACCEPT，合格量=0 必须 REJECT。
+     * 混合结果（合格、不合格都>0）仍按 ACCEPT 处理，保持现有安全行为；未填结论时由必填校验拦截。
+     */
+    private String checkConclusionConsistency(QcRqc rqc) {
+        if (rqc == null || !UserConstants.ORDER_STATUS_FINISHED.equals(rqc.getStatus())) {
+            return null;
         }
+        BigDecimal qualified = rqc.getQuantityQualified() == null ? BigDecimal.ZERO : rqc.getQuantityQualified();
+        String result = rqc.getCheckResult();
+        if (result == null || result.trim().isEmpty()) {
+            return "请选择检验结论（合格品数量大于 0 应选“检验通过”）";
+        }
+        String expected = qualified.compareTo(BigDecimal.ZERO) > 0 ? "ACCEPT" : "REJECT";
+        if (!expected.equalsIgnoreCase(result.trim())) {
+            return "检验结论与数量不一致：合格品数量为 "
+                    + qualified.stripTrailingZeros().toPlainString()
+                    + "，应选择 " + ("ACCEPT".equals(expected) ? "检验通过" : "检验不通过")
+                    + "；如确为相反结论，请调整合格/不合格数量";
+        }
+        return null;
+    }
+
+    private void generateLine(QcRqc rqc){
+        rqcItemLines.generate(rqc);
     }
 }

@@ -58,7 +58,7 @@ public class WmItemRecptDetailController extends BaseController
     /**
      * 查询物料入库单明细列表
      */
-    @PreAuthorize("@ss.hasPermi('mes:wm:itemrecept:list')")
+    @PreAuthorize("@ss.hasAnyPermi('mes:wm:itemrecpt:list,mes:wm:itemrecept:list')")
     @GetMapping("/list")
     public TableDataInfo list(WmItemRecptDetail wmItemRecptDetail)
     {
@@ -70,7 +70,7 @@ public class WmItemRecptDetailController extends BaseController
     /**
      * 导出物料入库单明细列表
      */
-    @PreAuthorize("@ss.hasPermi('mes:wm:itemrecept:export')")
+    @PreAuthorize("@ss.hasAnyPermi('mes:wm:itemrecpt:export,mes:wm:itemrecept:export')")
     @Log(title = "物料入库单明细", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, WmItemRecptDetail wmItemRecptDetail)
@@ -83,7 +83,7 @@ public class WmItemRecptDetailController extends BaseController
     /**
      * 获取物料入库单明细详细信息
      */
-    @PreAuthorize("@ss.hasPermi('mes:wm:itemrecept:query')")
+    @PreAuthorize("@ss.hasAnyPermi('mes:wm:itemrecpt:query,mes:wm:itemrecept:query')")
     @GetMapping(value = "/{detailId}")
     public AjaxResult getInfo(@PathVariable("detailId") Long detailId)
     {
@@ -93,7 +93,7 @@ public class WmItemRecptDetailController extends BaseController
     /**
      * 新增物料入库单明细
      */
-    @PreAuthorize("@ss.hasPermi('mes:wm:itemrecept:add')")
+    @PreAuthorize("@ss.hasAnyPermi('mes:wm:itemrecpt:add,mes:wm:itemrecept:add')")
     @Log(title = "物料入库单明细", businessType = BusinessType.INSERT)
     @Transactional
     @PostMapping
@@ -154,7 +154,7 @@ public class WmItemRecptDetailController extends BaseController
     /**
      * 修改物料入库单明细
      */
-    @PreAuthorize("@ss.hasPermi('mes:wm:itemrecept:edit')")
+    @PreAuthorize("@ss.hasAnyPermi('mes:wm:itemrecpt:edit,mes:wm:itemrecept:edit')")
     @Log(title = "物料入库单明细", businessType = BusinessType.UPDATE)
     @Transactional
     @PutMapping
@@ -206,7 +206,7 @@ public class WmItemRecptDetailController extends BaseController
     /**
      * 删除物料入库单明细
      */
-    @PreAuthorize("@ss.hasPermi('mes:wm:itemrecept:remove')")
+    @PreAuthorize("@ss.hasAnyPermi('mes:wm:itemrecpt:remove,mes:wm:itemrecept:remove')")
     @Log(title = "物料入库单明细", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{detailIds}")
     public AjaxResult remove(@PathVariable Long[] detailIds)

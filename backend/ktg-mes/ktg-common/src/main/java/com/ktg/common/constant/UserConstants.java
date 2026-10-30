@@ -130,6 +130,7 @@ public class UserConstants
     public static final String QC_IQC_CODE ="QC_IQC_CODE"; //来料检验单
     public static final String QC_PQC_CODE ="QC_PQC_CODE"; //过程检验单
     public static final String QC_OQC_CODE ="QC_OQC_CODE"; //出货检验单
+    public static final String QC_RQC_CODE ="QC_RQC_CODE"; //退料检验单
     public static final String QC_RESULT_CODE ="QC_RESULT_CODE"; //检验结果编号(样品编号)
     public static final String BATCH_CODE ="BATCH_CODE"; //批次编号
     public static final String DV_REPAIR_CODE ="DV_REPAIR_CODE"; //维修单

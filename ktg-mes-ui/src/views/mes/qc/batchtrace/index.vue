@@ -199,12 +199,49 @@
           </el-col>
         </el-row>
       </el-form>
-      <el-tabs type="border-card">
+      <el-tabs type="border-card" @tab-click="onTraceTab">
         <el-tab-pane label="向前追溯">
           <forward :batchId="form.batchId" :batchCode="form.batchCode"></forward>
         </el-tab-pane>
         <el-tab-pane label="向后追溯">
           <backward :batchId="form.batchId" :batchCode="form.batchCode"></backward>
+        </el-tab-pane>
+        <el-tab-pane label="全链追溯">
+          <div v-loading="traceLoading">
+            <p class="trace-note">{{ traceNote }}</p>
+            <h4>产品入库 / 工单（来源键：入库行批次号 → 入库单 → 工单）</h4>
+            <el-table :data="trace.receipts" size="mini" border max-height="160">
+              <el-table-column label="入库单" prop="recptCode" width="150" />
+              <el-table-column label="状态" prop="status" width="100" />
+              <el-table-column label="工单" prop="workorderCode" width="140" />
+              <el-table-column label="物料" prop="itemCode" width="120" />
+              <el-table-column label="数量" prop="qty" width="90" align="right" />
+            </el-table>
+            <h4>领料明细与原料批次（来源键：工单 → 领料单 → 领料明细）</h4>
+            <el-table :data="trace.issueLines" size="mini" border max-height="180">
+              <el-table-column label="领料单" prop="issueCode" width="140" />
+              <el-table-column label="工单" prop="workorderCode" width="140" />
+              <el-table-column label="物料" prop="itemCode" width="120" />
+              <el-table-column label="原料批次" prop="materialBatch" width="140" />
+              <el-table-column label="数量" prop="qty" width="90" align="right" />
+            </el-table>
+            <h4>相关库存流水（按批次或领料单）</h4>
+            <el-table :data="trace.transactions" size="mini" border max-height="180">
+              <el-table-column label="单据" prop="sourceDocCode" width="140" />
+              <el-table-column label="类型" prop="sourceDocType" width="110" />
+              <el-table-column label="批次" prop="batchCode" width="140" />
+              <el-table-column label="明细类型" prop="transactionType" width="150" />
+              <el-table-column label="数量" prop="qty" width="90" align="right" />
+            </el-table>
+            <h4>同批次关联的销售单（仅按批次关联，不能证明来自某张工单）</h4>
+            <el-table :data="trace.sales" size="mini" border max-height="160">
+              <el-table-column label="销售单" prop="salesCode" width="150" />
+              <el-table-column label="状态" prop="status" width="100" />
+              <el-table-column label="物料" prop="itemCode" width="120" />
+              <el-table-column label="数量" prop="qty" width="90" align="right" />
+            </el-table>
+            <p v-if="traceEmpty" class="trace-note">该批次暂无关联记录（无记录）</p>
+          </div>
         </el-tab-pane>
       </el-tabs>
       <div slot="footer" class="dialog-footer">
@@ -215,7 +252,7 @@
 </template>
 
 <script>
-import { listBatch, getBatch, delBatch, addBatch, updateBatch } from "@/api/mes/wm/batch";
+import { listBatch, getBatch, delBatch, addBatch, updateBatch, traceBatch } from "@/api/mes/wm/batch";
 import forward from "./forward.vue";
 import backward from "./backward.vue";
 export default {
@@ -223,6 +260,8 @@ export default {
   components: {forward,backward},
   data() {
     return {
+      traceLoading: false, traceNote: '', traceEmpty: false,
+      trace: { receipts: [], issueLines: [], transactions: [], sales: [] },
       // 遮罩层
       loading: true,
       // 选中数组
@@ -261,6 +300,20 @@ export default {
     this.getList();
   },
   methods: {
+    onTraceTab(tab) {
+      if ((tab.label || '').includes('全链追溯')) this.loadTrace()
+    },
+    loadTrace() {
+      const code = this.form && this.form.batchCode
+      if (!code) { this.traceNote = '请先选择批次'; return }
+      this.traceLoading = true
+      traceBatch(code).then(res => {
+        const d = res.data || {}
+        this.trace = { receipts: d.receipts || [], issueLines: d.issueLines || [], transactions: d.transactions || [], sales: d.sales || [] }
+        this.traceNote = d.note || ''
+        this.traceEmpty = !this.trace.receipts.length && !this.trace.issueLines.length && !this.trace.transactions.length && !this.trace.sales.length
+      }).finally(() => { this.traceLoading = false })
+    },
     /** 查询批次记录列表 */
     getList() {
       this.loading = true;

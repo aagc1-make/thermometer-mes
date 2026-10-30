@@ -16,14 +16,14 @@
                   type="text"
                   icon="el-icon-edit"
                   @click="handleUpdate(scope.row)"
-                  v-hasPermi="['mes:wm:itemrecpt:edit']"
+                  v-hasPermi="['mes:wm:productsales:edit']"
                 >修改</el-button>
                 <el-button
                   size="mini"
                   type="text"
                   icon="el-icon-delete"
                   @click="handleDelete(scope.row)"
-                  v-hasPermi="['mes:wm:itemrecpt:remove']"
+                  v-hasPermi="['mes:wm:productsales:remove']"
                 >删除</el-button>
               </template>
             </el-table-column>
@@ -49,7 +49,7 @@
             type="text"
             icon="el-icon-shopping-cart-full"
             @click="handleAdd(scope.row)"
-            v-hasPermi="['mes:wm:itemrecpt:edit']"
+            v-hasPermi="['mes:wm:productsales:add']"
           >拣货</el-button>
         </template>
       </el-table-column>

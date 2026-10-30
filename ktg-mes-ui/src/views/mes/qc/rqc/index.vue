@@ -515,6 +515,47 @@ export default {
         }
       });
     },
+    /** 数量守恒校验：合格数 + 不合格数 = 检测数量，且各自不超过检测数量 */
+    checkQuantities() {
+      const q = this.form.quantityQualified;
+      const uq = this.form.quantityUnqualified;
+      const qc = this.form.quantityCheck;
+      if (q != null && uq != null && q !== '' && uq !== '' && qc != null
+          && (Number(q) + Number(uq)) !== Number(qc)) {
+        this.$message.warning("合格数与不合格数之和必须等于检测总数！");
+        return false;
+      }
+      if (q != null && q !== '' && Number(q) > Number(qc)) {
+        this.$message.warning("合格数不能大于检测总数！");
+        return false;
+      }
+      if (uq != null && uq !== '' && Number(uq) > Number(qc)) {
+        this.$message.warning("不合格数不能大于检测总数！");
+        return false;
+      }
+      return true;
+    },
+    /** 提 交：完成检验（状态置为已完成，由后端回写来源退料行/退料单） */
+    submitForm() {
+      if (!this.checkQuantities()) return;
+      this.$refs["form"].validate(valid => {
+        if (!valid) {
+          this.$message.warning("请补全必填项后再提交检验");
+          return;
+        }
+        this.$confirm('提交后检验单将完成，来源退料行质量状态随之回写，确定继续？', '提示', { type: 'warning' })
+          .then(() => {
+            const payload = Object.assign({}, this.form, { status: 'FINISHED' });
+            return updateRqc(payload);
+          })
+          .then(() => {
+            this.$modal.msgSuccess("检验已完成");
+            this.open = false;
+            this.getList();
+          })
+          .catch(() => {});
+      });
+    },
     /** 删除按钮操作 */
     handleDelete(row) {
       const rqcIds = row.rqcId || this.ids;

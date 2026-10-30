@@ -40,6 +40,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="cycleType != null  and cycleType != ''"> and cycle_type = #{cycleType}</if>
             <if test="cycleCount != null "> and cycle_count = #{cycleCount}</if>
             <if test="status != null and status != ''"> and status = #{status}</if>
+            <if test="statusList != null and statusList.size() > 0">
+                and status in
+                <foreach collection="statusList" item="item" open="(" separator="," close=")">#{item}</foreach>
+            </if>
         </where>
     </select>
     
@@ -68,6 +72,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         on pl.plan_id = dv.plan_id
         where plan_type = #{planType}
         and dv.machinery_code = #{machineryCode}
+        and pl.status in ('CONFIRMED', 'FINISHED')
+        order by case when pl.status = 'FINISHED' then 0 else 1 end, pl.plan_id
         limit 1
     </select>
 

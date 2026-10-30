@@ -455,6 +455,10 @@ export default {
   },
   methods: {
     init() {
+      if (!webSite.print_transfer_url) {
+        this.$modal.msgWarning('打印服务未配置（VUE_APP_PRINT_TRANSFER_URL），打印模板功能暂不可用');
+        return;
+      }
       hiprint.init({
         providers: [provider],
         host: webSite.print_transfer_url,

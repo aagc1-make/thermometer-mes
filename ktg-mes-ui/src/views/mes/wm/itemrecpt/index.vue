@@ -117,6 +117,18 @@
         </template>
       </el-table-column>
       <el-table-column label="采购订单号" align="center" prop="poCode" />
+      <!-- 列表层直接暴露来源到货通知，便于从入库单反查，无需先打开详情 -->
+      <el-table-column label="到货通知单" align="center" width="170px">
+        <template slot-scope="scope">
+          <el-button
+            v-if="scope.row.noticeId && scope.row.noticeCode"
+            type="text"
+            size="mini"
+            @click="openLinkage('ARRIVAL', scope.row.noticeId)"
+          >{{ scope.row.noticeCode }}</el-button>
+          <span v-else style="color: #909399;">未关联</span>
+        </template>
+      </el-table-column>
       <el-table-column label="单据状态" align="center" prop="status" >
         <template slot-scope="scope">
           <dict-tag :options="dict.type.mes_itemrecpt_status" :value="scope.row.status"/>
@@ -140,6 +152,14 @@
             @click="handleStocking(scope.row)"
             v-hasPermi="['mes:wm:itemrecpt:edit']"
           >执行上架</el-button>          
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-back"
+            v-if="scope.row.status == 'FINISHED'"
+            @click="handleCreateVendorReturn(scope.row)"
+            v-hasPermi="['mes:wm:rtvendor:add']"
+          >生成退供</el-button>
           <el-button
             size="mini"
             type="text"
@@ -168,8 +188,8 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改物料入库单对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="1000px" append-to-body>
+    <!-- 添加或修改物料入库单对话框；宽度 1200px 以容纳“来源到货行/检验状态/来料检验单”三列 -->
+    <el-dialog :title="title" :visible.sync="open" width="1200px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="8">
@@ -208,6 +228,13 @@
               <el-input v-model="form.noticeCode" readonly="readonly" placeholder="请选择到货通知单" >
                 <el-button slot="append" @click="handleSelectNotice" icon="el-icon-search"></el-button>
               </el-input>
+              <el-button
+                v-if="form.noticeId"
+                type="text"
+                size="mini"
+                @click="openLinkage('ARRIVAL', form.noticeId)"
+              >查看到货通知（{{ form.noticeCode }}）</el-button>
+              <span v-else-if="form.recptId" style="color: #909399; font-size: 12px; margin-left: 8px;">未关联</span>
               <NoticeSelect ref="noticeSelect" @onSelected="onNoticeSelected"></NoticeSelect>
             </el-form-item>
           </el-col>
@@ -256,11 +283,18 @@
         <el-button @click="close">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <linkage-doc-dialog
+      :visible.sync="linkVisible"
+      :doc-type="linkType"
+      :doc-id="linkId"
+    />
   </div>
 </template>
 
 <script>
 import { listItemrecpt, getItemrecpt, delItemrecpt, addItemrecpt, updateItemrecpt, confirmItemrecpt,execute } from "@/api/mes/wm/itemrecpt";
+import { createFromReceipt } from "@/api/mes/wm/rtvendor";
 import {getTreeList} from "@/api/mes/wm/warehouse"
 import {genCode} from "@/api/system/autocode/rule"
 import VendorSelect from "@/components/vendorSelect/single.vue";
@@ -268,10 +302,11 @@ import IqcSelect from "@/components/iqcSelect/single.vue";
 import NoticeSelect from "@/components/noticeSelect/single.vue"
 import Itemrecptline from "./line.vue";
 import ItemrecptDetail from "./detail.vue";
+import LinkageDocDialog from "@/components/LinkageDocDialog/index.vue";
 export default {
   name: "Itemrecpt",
   dicts:['mes_itemrecpt_status'],
-  components :{VendorSelect,IqcSelect,Itemrecptline,ItemrecptDetail, NoticeSelect},
+  components :{VendorSelect,IqcSelect,Itemrecptline,ItemrecptDetail, NoticeSelect, LinkageDocDialog},
   data() {
     return {
       //自动生成编码
@@ -302,6 +337,9 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      linkVisible: false,
+      linkType: "",
+      linkId: null,
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -356,6 +394,11 @@ export default {
     this.getWarehouseList();
   },
   methods: {
+    handleCreateVendorReturn(row) {
+      this.$modal.confirm('根据该入库单的可退批次生成退供草稿？').then(() => createFromReceipt(row.recptId)).then(response => {
+        this.$modal.msgSuccess('退供草稿已生成，请到采购退货中调整数量并拣货');
+      }).catch(() => {});
+    },
     /** 查询物料入库单列表 */
     getList() {
       this.loading = true;
@@ -636,6 +679,12 @@ export default {
     //到货通知单选择
     handleSelectNotice(){
       this.$refs.noticeSelect.handleOpen(this.form.noticeId)
+    },
+    openLinkage(type, id) {
+      if (id == null) return;
+      this.linkType = type;
+      this.linkId = id;
+      this.linkVisible = true;
     },
     //到货通知单选择弹出框
     onNoticeSelected(obj){

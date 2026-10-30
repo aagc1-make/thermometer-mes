@@ -250,6 +250,38 @@
               <el-image fit="contain" v-else :src="prepareImg" />
           </el-col>
         </el-row>
+        <el-row>
+          <el-col :span="8">
+            <el-form-item label="来源到货通知">
+              <el-button
+                v-if="form.sourceDocType === 'ARRIVAL_NOTICE' && form.sourceDocId"
+                type="text"
+                size="mini"
+                @click="openLinkage('ARRIVAL', form.sourceDocId)"
+              >{{ form.sourceDocCode || form.sourceDocId }}</el-button>
+              <span v-else>未关联</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="来源物料行">
+              <span v-if="sourceLine">
+                {{ sourceLine.itemCode }} / {{ sourceLine.itemName }}（到货 {{ sourceLine.quantityArrival }}，来源行 #{{ sourceLine.lineId }}）
+              </span>
+              <span v-else>未关联</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="相关采购入库单">
+              <el-button
+                v-if="relatedReceipts.length"
+                type="text"
+                size="mini"
+                @click="openLinkage('ARRIVAL', form.sourceDocId)"
+              >查看关联入库单（{{ relatedReceipts.length }}）</el-button>
+              <span v-else>暂无关联入库单</span>
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-divider content-position="center">物料与供应商</el-divider>
         <el-row>
           <el-col :span="8">
@@ -406,11 +438,20 @@
         <el-button @click="cancel">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <linkage-doc-dialog
+      :visible.sync="linkVisible"
+      :doc-type="linkType"
+      :doc-id="linkId"
+    />
   </div>
 </template>
 
 <script>
 import { listIqc, getIqc, delIqc, addIqc, updateIqc } from "@/api/mes/qc/iqc";
+import { getArrivalnoticeline } from "@/api/mes/wm/arrivalnoticeline";
+import { listItemrecpt } from "@/api/mes/wm/itemrecpt";
+import LinkageDocDialog from "@/components/LinkageDocDialog/index.vue";
 import ItemSelect  from "@/components/itemSelect/single.vue";
 import VendorSelect from "@/components/vendorSelect/single.vue";
 import IqcLine from "./iqcline.vue";
@@ -420,7 +461,7 @@ import {genCode} from "@/api/system/autocode/rule"
 export default {
   name: "Iqc",
   dicts: ['mes_qc_result','mes_order_status'],
-  components: {ItemSelect,VendorSelect,IqcLine,QCResutl},
+  components: {ItemSelect,VendorSelect,IqcLine,QCResutl, LinkageDocDialog},
   data() {
     return {
       //自动生成编码
@@ -447,6 +488,11 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      linkVisible: false,
+      linkType: "",
+      linkId: null,
+      sourceLine: null,
+      relatedReceipts: [],
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -534,6 +580,8 @@ export default {
     },
     // 表单重置
     reset() {
+      this.sourceLine = null;
+      this.relatedReceipts = [];
       this.form = {
         iqcId: null,
         iqcCode: null,
@@ -610,6 +658,7 @@ export default {
         this.open = true;
         this.title = "查看来料检验单信息";
         this.optType = "view";
+        this.loadSourceInfo();
       });
     },
     /** 修改按钮操作 */
@@ -621,7 +670,28 @@ export default {
         this.open = true;
         this.title = "修改来料检验单";
         this.optType = 'edit';
+        this.loadSourceInfo();
       });
+    },
+    loadSourceInfo() {
+      this.sourceLine = null;
+      this.relatedReceipts = [];
+      if (this.form.sourceLineId) {
+        getArrivalnoticeline(this.form.sourceLineId).then(res => {
+          this.sourceLine = res.data || null;
+        }).catch(() => {});
+      }
+      if (this.form.sourceDocType === 'ARRIVAL_NOTICE' && this.form.sourceDocId) {
+        listItemrecpt({ noticeId: this.form.sourceDocId, pageSize: 100 }).then(res => {
+          this.relatedReceipts = res.rows || [];
+        }).catch(() => {});
+      }
+    },
+    openLinkage(type, id) {
+      if (id == null) return;
+      this.linkType = type;
+      this.linkId = id;
+      this.linkVisible = true;
     },
     /** 提交按钮 */
     submitForm() {

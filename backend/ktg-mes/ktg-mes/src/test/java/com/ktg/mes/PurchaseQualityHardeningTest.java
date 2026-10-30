@@ -444,7 +444,8 @@ public class PurchaseQualityHardeningTest {
                 return 1;
             });
             return new QcIqcCompletionService(iqcService, notices, arrivalLines, outsource, outsourceLines,
-                    draft, new FormLinkagePolicy(), lock, guard);
+                    draft, new FormLinkagePolicy(), lock, guard,
+                    org.mockito.Mockito.mock(com.ktg.mes.wm.service.impl.PreStockVendorReturnService.class));
         }
     }
 }

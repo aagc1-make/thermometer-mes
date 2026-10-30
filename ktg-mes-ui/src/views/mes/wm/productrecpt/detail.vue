@@ -47,7 +47,7 @@
                     type="text"
                     icon="el-icon-shopping-cart-full"
                     @click="handleAdd(scope.row)"
-                    v-hasPermi="['mes:wm:productrecpt:edit']"
+                    v-hasPermi="['mes:wm:productrecpt:add']"
                 >上架</el-button>
                 <printLabel :businessId="scope.row.batchId" :businessCode="scope.row.batchCode" labelText="标签打印" businessType = "BATCH"></printLabel>
                 </template>

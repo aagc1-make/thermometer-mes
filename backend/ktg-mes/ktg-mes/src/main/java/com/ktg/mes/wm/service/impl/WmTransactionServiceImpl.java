@@ -71,8 +71,11 @@ public class WmTransactionServiceImpl implements IWmTransactionService
         boolean issueOut = "ISSUE".equals(wmTransaction.getSourceDocType())
                 && UserConstants.TRANSACTION_TYPE_ITEM_ISSUE_OUT.equals(wmTransaction.getTransactionType())
                 && Integer.valueOf(-1).equals(wmTransaction.getTransactionFlag());
+        boolean vendorOut = "RTV".equals(wmTransaction.getSourceDocType())
+                && UserConstants.TRANSACTION_TYPE_ITEM_RTV.equals(wmTransaction.getTransactionType())
+                && Integer.valueOf(-1).equals(wmTransaction.getTransactionFlag());
         WmMaterialStock ms;
-        if (issueOut && wmTransaction.getMaterialStockId() != null) {
+        if ((issueOut || vendorOut) && wmTransaction.getMaterialStockId() != null) {
             // 领料只能扣减拣货明细引用的库存行，不能按维度重新选择另一条重复库存。
             ms = wmMaterialStockMapper.lockMaterialStockById(wmTransaction.getMaterialStockId());
             if (ms == null) throw new BussinessException("来源库存不存在，请刷新后重试");
@@ -86,7 +89,7 @@ public class WmTransactionServiceImpl implements IWmTransactionService
         if(StringUtils.isNotNull(ms)){
             //MS已存在
             BigDecimal resultQuantity =ms.getQuantityOnhand().add(quantity);
-            if((issueOut || wmTransaction.isStorageCheckFlag()) && resultQuantity.compareTo(new BigDecimal(0))<0){
+            if((issueOut || vendorOut || wmTransaction.isStorageCheckFlag()) && resultQuantity.compareTo(new BigDecimal(0))<0){
                 throw new BussinessException("库存数量不足！");
             }
             stock.setQuantityOnhand(resultQuantity);
@@ -98,7 +101,7 @@ public class WmTransactionServiceImpl implements IWmTransactionService
 
             //TODO:需要为库存增加一个效验逻辑：同一个库位上不能放不同批次和属性的物资
 
-            if ((issueOut || wmTransaction.isStorageCheckFlag()) && quantity.signum() < 0) {
+            if ((issueOut || vendorOut || wmTransaction.isStorageCheckFlag()) && quantity.signum() < 0) {
                 throw new BussinessException("库存数量不足！");
             }
             stock.setQuantityOnhand(quantity);

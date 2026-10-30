@@ -97,6 +97,11 @@
         </template>
       </el-table-column>
       <el-table-column label="退货单名称" align="center" prop="rtName" />
+      <el-table-column label="退供类型" align="center" width="120">
+        <template slot-scope="scope">
+          <span>{{ scope.row.attr2 === 'PRE_STOCK' ? '未入库退供' : scope.row.attr2 === 'STOCK' ? '已入库退供' : '历史单据' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="采购订单编号" align="center" prop="poCode" />
       <el-table-column label="供应商编码" align="center" prop="vendorCode" />
       <el-table-column label="供应商名称" align="center" width="150px" prop="vendorName" :show-overflow-tooltip="true"/>
@@ -128,6 +133,21 @@
             @click="handleStocking(scope.row)"
             v-hasPermi="['mes:wm:rtvendor:edit']"
           >执行拣货</el-button>        
+          <el-button
+            size="mini"
+            type="text"
+            v-if="(scope.row.attr2 === 'STOCK' || scope.row.attr2 === 'PRE_STOCK') && (scope.row.status === 'APPROVING' || scope.row.status === 'APPROVED')"
+            @click="handleReturnToDraft(scope.row)"
+            v-hasPermi="['mes:wm:rtvendor:edit']"
+          >退回草稿</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-refresh-left"
+            v-if="scope.row.attr2 === 'PRE_STOCK' && (scope.row.status === 'CANCELED' || scope.row.status === 'FINISHED')"
+            @click="handleRegenerate(scope.row)"
+            v-hasPermi="['mes:wm:rtvendor:add']"
+          >重新生成</el-button>
           <el-button
             size="mini"
             type="text"
@@ -234,7 +254,7 @@
       </el-form>
       <el-divider v-if="form.rtId !=null" content-position="center">物料信息</el-divider>
       <el-card shadow="always" v-if="form.rtId !=null && form.status == 'PREPARE'" class="box-card">
-        <Rtvendorline ref=line :rtId="form.rtId" :batchCode="form.batchCdoe" :vendorId="form.vendorId" :optType="optType"></Rtvendorline>
+        <Rtvendorline ref=line :rtId="form.rtId" :batchCode="form.batchCdoe" :vendorId="form.vendorId" :optType="optType" :returnMode="form.attr2"></Rtvendorline>
       </el-card>
       <el-card shadow="always" v-if="form.rtId !=null && form.status != 'PREPARE'" class="box-card">
         <RtvendorDetail ref=detail :rtId="form.rtId" :batchCode="form.batchCdoe" :optType="optType"></RtvendorDetail>
@@ -251,7 +271,7 @@
 </template>
 
 <script>
-import { listRtvendor, getRtvendor, checkQuantity, delRtvendor, addRtvendor, updateRtvendor,execute } from "@/api/mes/wm/rtvendor";
+import { listRtvendor, getRtvendor, checkQuantity, delRtvendor, addRtvendor, updateRtvendor, execute, createFromIqc } from "@/api/mes/wm/rtvendor";
 import {genCode} from "@/api/system/autocode/rule"
 import VendorSelect from "@/components/vendorSelect/single.vue";
 import Rtvendorline from "./line.vue"
@@ -328,6 +348,22 @@ export default {
     this.getList();
   },
   methods: {
+    /** 未入库退供：按来源检验单的剩余不合格量重新生成草稿（取消/删除后可用） */
+    handleRegenerate(row) {
+      const key = row.attr1 || '';
+      const iqcId = key.startsWith('AUTO:RTV:IQC:') ? key.substring('AUTO:RTV:IQC:'.length) : '';
+      if (!iqcId) { this.$modal.msgError('该单据没有可识别的检验来源'); return; }
+      this.$modal.confirm('将按该检验单剩余不合格数量生成新的退供草稿，确定继续？').then(() => createFromIqc(iqcId)).then(res => {
+        this.$modal.msgSuccess('已生成退供草稿：' + (res.data || ''));
+        this.getList();
+      }).catch(() => {});
+    },
+    handleReturnToDraft(row) {
+      this.$modal.confirm('退回草稿后可调整退货数量，确定继续？').then(() => updateRtvendor({ rtId: row.rtId, status: 'PREPARE' })).then(() => {
+        this.$modal.msgSuccess('已退回草稿');
+        this.getList();
+      }).catch(() => {});
+    },
     /** 查询供应商退货列表 */
     getList() {
       this.loading = true;

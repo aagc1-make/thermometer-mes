@@ -25,6 +25,14 @@
                         </el-form>
                   </el-header>
                   <el-main>
+                        <el-alert
+                          v-if="!hasSelectedUser"
+                          title="请先选择人员后查看排班"
+                          type="info"
+                          :closable="false"
+                          show-icon
+                          style="margin-bottom: 10px;">
+                        </el-alert>
                         <el-calendar v-loading="loading" v-model="date">
                               <template slot="dateCell" slot-scope="{date, data }">
                               <div>
@@ -83,6 +91,7 @@ export default {
                   ],
                   teamShiftQueryParams:{
                         queryType:'USER',
+                        userId: null
                   },
                   queryParams: {
                         theDay: null,
@@ -95,6 +104,12 @@ export default {
       watch:{
             date:{
                   handler(newVal,oldVal){
+                        // 未选择人员时不得发起查询：后端 getCalendarByUser(null) 会取全部成员的第一条班组，显示他人排班
+                        if (!this.hasSelectedUser) {
+                              this.calendarDayList = [];
+                              this.loading = false;
+                              return;
+                        }
                         this.teamShiftQueryParams.date = newVal.getFullYear()+'-'+(newVal.getMonth()+1)+'-'+newVal.getDate();
                         this.loading = true;
                         listCalendars(this.teamShiftQueryParams).then(response =>{
@@ -102,6 +117,11 @@ export default {
                               this.loading = false;
                         });
                   }
+            }
+      },
+      computed: {
+            hasSelectedUser() {
+                  return this.teamShiftQueryParams.userId != null;
             }
       },
       created() {
@@ -139,7 +159,8 @@ export default {
                   this.form.nickName = row.nickName;
                   this.loading = true;
                   this.teamShiftQueryParams.userId = row.userId;
-                  this.teamShiftQueryParams.date = this.date;
+                  // 与 calendarType.vue 保持一致：date 必须是字符串；Date 对象会被 tansParams 丢弃，后端回落到当前月
+                  this.teamShiftQueryParams.date = this.date.getFullYear() + '-' + (this.date.getMonth() + 1) + '-' + this.date.getDate();
                   listCalendars(this.teamShiftQueryParams).then(response =>{
                         this.calendarDayList = response.data;
                         this.loading = false;

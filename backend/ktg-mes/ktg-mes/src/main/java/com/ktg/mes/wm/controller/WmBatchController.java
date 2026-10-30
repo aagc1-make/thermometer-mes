@@ -8,6 +8,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -47,6 +48,7 @@ public class WmBatchController extends BaseController
         List<WmBatch> list = wmBatchService.selectWmBatchList(wmBatch);
         return getDataTable(list);
     }
+
 
 
     /**

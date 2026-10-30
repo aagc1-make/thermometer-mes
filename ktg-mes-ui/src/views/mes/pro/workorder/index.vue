@@ -510,8 +510,18 @@ export default {
   },
   created() {
     this.getList();
+    this.openFromAssistant();
+  },
+  watch: {
+    '$route.query.openWorkorderId'() { this.openFromAssistant(); }
   },
   methods: {
+    openFromAssistant() {
+      const id = this.$route.query.openWorkorderId;
+      if (id && /^\d+$/.test(String(id)) && this.$auth.hasPermi('mes:pro:workorder:query')) {
+        this.handleView({ workorderId: id });
+      }
+    },
     handleClickTab(tab) {
       if (tab.name == 'item') {
         this.itemStatus = true

@@ -198,14 +198,20 @@ public class QcOqcController extends BaseController
         QcOqc persisted = qcOqcService.selectQcOqcByOqcId(qcOqc.getOqcId());
         formLinkagePolicy.assertQualityCompletionAllowed(
                 persisted == null ? null : persisted.getStatus(), qcOqc.getStatus());
-        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())){
+        boolean finishLike = UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())
+                || UserConstants.ORDER_STATUS_CONFIRMED.equalsIgnoreCase(qcOqc.getStatus());
+        if(finishLike){
             if(qcOqc.getQuantityCheck() == null){
                 qcOqc.setQuantityCheck(qcOqc.getQuantityOut());
             }
             formLinkagePolicy.assertQualityQuantities(qcOqc.getQuantityCheck(),
                     qcOqc.getQuantityQualified(), qcOqc.getQuantityUnqualified());
         }
-        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())){
+        // 页面“完成”提交 CONFIRMED，服务端完成语义统一按 FINISHED 处理（两值都触发完成回写）
+        boolean finishRequested = UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())
+                || UserConstants.ORDER_STATUS_CONFIRMED.equalsIgnoreCase(qcOqc.getStatus());
+        if(finishRequested){
+            qcOqc.setStatus(UserConstants.ORDER_STATUS_FINISHED);
             qcOqcService.completeOqc(qcOqc);
             return AjaxResult.success("出货检验已完成");
         }

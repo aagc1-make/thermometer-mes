@@ -16,7 +16,7 @@
         <span class="zen-card__delta" :class="kpi.woDone === kpi.woTotal ? 'zen-card__delta--up' : 'zen-card__delta--down'">
           {{ kpi.woDone }}/{{ kpi.woTotal }} 已完工
         </span>
-        <div class="zen-card__dot zen-card__dot--ink"></div>
+        <div class="zen-card__dot zen-card__dot--ink"><i class="el-icon-s-order"></i></div>
         <div class="zen-card__label">生产工单</div>
         <div class="zen-card__value">{{ kpi.woTotal }}</div>
         <div class="zen-card__desc">全部工单数量（含草稿/已取消）</div>
@@ -25,14 +25,14 @@
         <span class="zen-card__delta" :class="kpi.rate >= 95 ? 'zen-card__delta--up' : 'zen-card__delta--down'">
           {{ kpi.unq }} 件不合格
         </span>
-        <div class="zen-card__dot zen-card__dot--matcha"></div>
+        <div class="zen-card__dot zen-card__dot--matcha"><i class="el-icon-circle-check"></i></div>
         <div class="zen-card__label">报工合格率</div>
         <div class="zen-card__value">{{ kpi.rate }}%</div>
         <div class="zen-card__desc">已完成报工合格数 / 已完成报工总数</div>
       </div>
       <div class="zen-card">
         <span class="zen-card__delta zen-card__delta--up">{{ kpi.stockWh }} 个仓库</span>
-        <div class="zen-card__dot zen-card__dot--sand"></div>
+        <div class="zen-card__dot zen-card__dot--sand"><i class="el-icon-goods"></i></div>
         <div class="zen-card__label">库存总量</div>
         <div class="zen-card__value">{{ kpi.stock }}</div>
         <div class="zen-card__desc">各仓库存按计量单位分别统计</div>
@@ -41,7 +41,7 @@
         <span class="zen-card__delta" :class="kpi.machRate >= 80 ? 'zen-card__delta--up' : 'zen-card__delta--down'">
           {{ kpi.machRun }}/{{ kpi.machTotal }} 台运行
         </span>
-        <div class="zen-card__dot zen-card__dot--sakura"></div>
+        <div class="zen-card__dot zen-card__dot--sakura"><i class="el-icon-cpu"></i></div>
         <div class="zen-card__label">设备运行占比</div>
         <div class="zen-card__value">{{ kpi.machRate }}%</div>
         <div class="zen-card__desc">生产中台数 / 设备总数</div>
@@ -164,6 +164,7 @@
 <script>
 import * as echarts from 'echarts'
 import request from '@/utils/request'
+import { getMdItem } from '@/api/mes/md/mdItem'
 
 const BASE = process.env.VUE_APP_BASE_API
 
@@ -211,6 +212,23 @@ export default {
       } while (rows.length < total)
       return { rows, total }
     },
+    async normalizeStockUnits(rows) {
+      const invalid = unit => !unit || /[\uFFFD\u0300-\u036F\u0000-\u001F]/.test(unit)
+      const ids = [...new Set(rows.filter(r => invalid(r.unitName) && r.itemId).map(r => r.itemId))]
+      const unitByItem = {}
+      if (this.$auth.hasPermi('mes:md:mditem:query')) {
+        await Promise.all(ids.map(async id => {
+          try {
+            const result = await getMdItem(id)
+            const name = result.data && result.data.unitName
+            if (!invalid(name)) unitByItem[id] = name
+          } catch (e) { /* 无法获取物料单位时不合并不同物料 */ }
+        }))
+      }
+      return rows.map(r => invalid(r.unitName)
+        ? Object.assign({}, r, { unitName: unitByItem[r.itemId] || `单位待核实（${r.itemCode || r.itemId || '未知物料'}）` })
+        : r)
+    },
     resize() {
       Object.values(this.charts).forEach(c => c && c.resize())
     },
@@ -242,7 +260,7 @@ export default {
       ])
       const woRows = wo.rows || []
       const fbRows = (fb.rows || []).filter(r => r.status === 'FINISHED')
-      const stRows = st.rows || []
+      const stRows = await this.normalizeStockUnits(st.rows || [])
       const mcRows = mc.rows || []
       const targets = [...new Set(stRows.map(r => r.warehouseCode || r.warehouseName))]
 
@@ -277,6 +295,23 @@ export default {
     async loadWorkorder() {
       const res = await this.get('/mes/pro/workorder/list')
       const rows = res.rows || []
+      // 旧工单可能保存了损坏的产品名称；仅驾驶舱从物料主数据读取显示名称。
+      const badIds = [...new Set(rows.filter(r => /\uFFFD/.test(r.productName || '') && r.productId).map(r => r.productId))]
+      const namesById = {}
+      if (this.$auth.hasPermi('mes:md:mditem:query')) {
+        await Promise.all(badIds.map(async id => {
+          try {
+            const item = await getMdItem(id)
+            const name = item.data && item.data.itemName
+            if (name && !/\uFFFD/.test(name)) namesById[id] = name
+          } catch (e) { /* 无法读取主数据时显示产品编码 */ }
+        }))
+      }
+      rows.forEach(r => {
+        if (/\uFFFD/.test(r.productName || '')) {
+          r.productName = namesById[r.productId] || r.productCode || '产品名称不可用'
+        }
+      })
       const byProduct = {}
       rows.forEach(r => {
         const key = r.productName || r.productCode || '未命名产品'
@@ -332,7 +367,7 @@ export default {
     // ② 库存水位：固定展示 原料仓 / 线边库 / 成品仓（排除虚拟过账仓），无数据也显示 0
     async loadStock() {
       const res = await this.get('/mes/wm/wmstock/list')
-      const rows = res.rows || []
+      const rows = await this.normalizeStockUnits(res.rows || [])
       const byWh = {}
       const zero = []
       rows.forEach(r => {

@@ -144,8 +144,8 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改到货通知单对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="960px" append-to-body>
+    <!-- 添加或修改到货通知单对话框；宽度 1200px 以容纳“检验状态/来料检验单”两列 -->
+    <el-dialog :title="title" :visible.sync="open" width="1200px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="8">
@@ -220,21 +220,31 @@
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="saveForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
         <el-button type="success" @click="submitForm" v-if="form.status =='PREPARE' && optType !='view' && form.noticeId !== null ">提 交</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button v-if="form.noticeId" @click="openLinkage">查看关联采购入库单<template v-if="relatedReceipts.length">（{{ relatedReceipts.length }}）</template></el-button>
+        <span v-if="form.noticeId && relatedReceipts.length === 0" style="color: #909399; font-size: 12px; margin: 0 8px;">暂无关联入库单</span>
+        <el-button @click="cancel">{{ optType === 'view' ? '关 闭' : '取 消' }}</el-button>
       </div>
     </el-dialog>
+
+    <linkage-doc-dialog
+      :visible.sync="linkVisible"
+      :doc-type="linkType"
+      :doc-id="linkId"
+    />
   </div>
 </template>
 
 <script>
 import { listArrivalnotice, getArrivalnotice, delArrivalnotice, addArrivalnotice, updateArrivalnotice } from "@/api/mes/wm/arrivalnotice";
+import { listItemrecpt } from "@/api/mes/wm/itemrecpt";
 import {genCode} from "@/api/system/autocode/rule"
 import VendorSelect from "@/components/vendorSelect/single.vue";
+import LinkageDocDialog from "@/components/LinkageDocDialog/index.vue";
 import NoticeLine from "./line.vue"
 export default {
   name: "Arrivalnotice",
   dicts:['mes_rn_status'],
-  components :{VendorSelect,NoticeLine},
+  components :{VendorSelect,NoticeLine, LinkageDocDialog},
   data() {
     return {
       autoGenFlag:false,
@@ -257,6 +267,10 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      linkVisible: false,
+      linkType: "",
+      linkId: null,
+      relatedReceipts: [],
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -296,6 +310,9 @@ export default {
     };
   },
   created() {
+    // 智能助手创建成功后跳转过来时带 noticeCode，直接定位到这张单据
+    const code = this.$route && this.$route.query ? this.$route.query.noticeCode : ''
+    if (code) this.queryParams.noticeCode = String(code)
     this.getList();
   },
   methods: {
@@ -313,8 +330,15 @@ export default {
       this.open = false;
       this.reset();
     },
+    openLinkage() {
+      if (!this.form.noticeId) return;
+      this.linkType = 'ARRIVAL';
+      this.linkId = this.form.noticeId;
+      this.linkVisible = true;
+    },
     // 表单重置
     reset() {
+      this.relatedReceipts = [];
       this.form = {
         noticeId: null,        noticeCode: null,        noticeName: null,        poCode: null,        vendorId: null,        vendorCode: null,        vendorName: null,        vendorNick: null,        arrivalDate: new Date(),        status: "PREPARE",        remark: null,        attr1: null,        attr2: null,        attr3: null,        attr4: null,        createBy: null,        createTime: null,        updateBy: null,        updateTime: null      };
         this.autoGenFlag = false;
@@ -362,7 +386,15 @@ export default {
         this.open = true;
         this.title = "查看到货通知单";
         this.optType = "view";
+        this.loadRelatedReceipts(noticeId);
       });
+    },
+    loadRelatedReceipts(noticeId) {
+      this.relatedReceipts = [];
+      if (!noticeId) return;
+      listItemrecpt({ noticeId: noticeId, pageSize: 100 }).then(res => {
+        this.relatedReceipts = res.rows || [];
+      }).catch(() => {});
     },
     /**
      * 保存

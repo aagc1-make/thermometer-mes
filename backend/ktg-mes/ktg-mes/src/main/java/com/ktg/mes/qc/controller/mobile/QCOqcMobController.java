@@ -144,7 +144,11 @@ public class QCOqcMobController extends BaseController {
         qcOqc.setInspector(getUsername());
 
         // ===== 2. 完成：与 PC 共用同一事务编排（含并发防重与合格判定）=====
-        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())){
+        // 与 PC 一致：CONFIRMED（页面“完成”）同样视为完成请求，归一为 FINISHED 后走同一服务
+        boolean finishRequested = UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())
+                || UserConstants.ORDER_STATUS_CONFIRMED.equalsIgnoreCase(qcOqc.getStatus());
+        if(finishRequested){
+            qcOqc.setStatus(UserConstants.ORDER_STATUS_FINISHED);
             qcOqcService.completeOqc(qcOqc);
             return AjaxResult.success("出货检验已完成");
         }

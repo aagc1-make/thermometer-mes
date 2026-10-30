@@ -224,6 +224,9 @@ public class StorageCoreServiceImpl implements IStorageCoreService {
             transaction_out.setTransactionType(transactionType_out);
             BeanUtils.copyBeanProp(transaction_out,line);
 
+            // 明细上的库存行可能属于目标仓库，出库应始终按线边库与批次定位。
+            transaction_out.setMaterialStockId(null);
+
             //这里的出库事务默认从线边库出库到实际仓库
             WmWarehouse warehouse = wmWarehouseService.selectWmWarehouseByWarehouseCode(UserConstants.VIRTUAL_WH);
             transaction_out.setWarehouseId(warehouse.getWarehouseId());

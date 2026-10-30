@@ -5,6 +5,7 @@ import com.ktg.common.annotation.Log;
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.core.controller.BaseController;
 import com.ktg.common.core.domain.AjaxResult;
+import com.ktg.common.exception.ServiceException;
 import com.ktg.common.core.page.TableDataInfo;
 import com.ktg.common.enums.BusinessType;
 import com.ktg.common.utils.StringUtils;
@@ -14,6 +15,9 @@ import com.ktg.mes.pro.service.IProWorkorderService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.RtIssueTxBean;
 import com.ktg.mes.wm.service.*;
+import com.ktg.mes.qc.service.impl.RtIssueInspectionDraftService;
+import com.ktg.mes.wm.mapper.PostingLockMapper;
+import com.ktg.mes.wm.service.impl.RtIssueExecuteService;
 import com.ktg.system.strategy.AutoCodeUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -30,9 +34,15 @@ import java.util.List;
 @RestController
 @RequestMapping("/mobile/wm/rtissue")
 public class WmRtIssueMobController extends BaseController {
+    @Autowired
+    private RtIssueExecuteService rtIssueExecuteService;
+    @Autowired
+    private PostingLockMapper postingLockMapper;
 
     @Autowired
     private IWmRtIssueService wmRtIssueService;
+    @Autowired
+    private RtIssueInspectionDraftService inspectionDrafts;
 
     @Autowired
     private IWmRtIssueLineService wmRtIssueLineService;
@@ -83,6 +93,10 @@ public class WmRtIssueMobController extends BaseController {
     @PostMapping
     public AjaxResult add(@RequestBody WmRtIssue wmRtIssue)
     {
+        if (wmRtIssue.getStatus() != null && !UserConstants.RTISSUE_STATUS_PREPARE.equals(wmRtIssue.getStatus())) {
+            return AjaxResult.error("新增退料单必须为草稿状态");
+        }
+        wmRtIssue.setStatus(UserConstants.RTISSUE_STATUS_PREPARE);
         if(StringUtils.isNotNull(wmRtIssue.getRtCode())){
             if(UserConstants.NOT_UNIQUE.equals(wmRtIssueService.checkUnique(wmRtIssue))){
                 return AjaxResult.error("退料单编号已存在");
@@ -109,8 +123,29 @@ public class WmRtIssueMobController extends BaseController {
     @PreAuthorize("@ss.hasPermi('mes:wm:rtissue:edit')")
     @Log(title = "生产退料单头", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional(rollbackFor = Exception.class)
     public AjaxResult edit(@RequestBody WmRtIssue wmRtIssue)
     {
+        String previous = wmRtIssue.getRtId() == null ? null : postingLockMapper.rtIssue(wmRtIssue.getRtId());
+        if (previous == null || UserConstants.RTISSUE_STATUS_FINISHED.equals(previous)
+                || UserConstants.RTISSUE_STATUS_CANCELED.equals(previous)
+                || UserConstants.RTISSUE_STATUS_FINISHED.equals(wmRtIssue.getStatus())) {
+            return AjaxResult.error("退料单不存在、已完成或已取消，完成状态只能通过执行产生");
+        }
+        if (UserConstants.RTISSUE_STATUS_UNEXECUTE.equals(wmRtIssue.getStatus())
+                && !UserConstants.RTISSUE_STATUS_UNSTOCK.equals(previous)
+                && !UserConstants.RTISSUE_STATUS_UNEXECUTE.equals(previous)) {
+            return AjaxResult.error("退料单未完成检验和上架，不能提交待执行");
+        }
+        if (UserConstants.RTISSUE_STATUS_PREPARE.equals(wmRtIssue.getStatus())
+                && !UserConstants.RTISSUE_STATUS_PREPARE.equals(previous)) {
+            return AjaxResult.error("退料单已提交，不能退回草稿");
+        }
+        if (UserConstants.RTISSUE_STATUS_UNSTOCK.equals(wmRtIssue.getStatus())
+                && !UserConstants.RTISSUE_STATUS_PREPARE.equals(previous)
+                && !UserConstants.RTISSUE_STATUS_UNSTOCK.equals(previous)) {
+            return AjaxResult.error("待检退料只能由检验完成后进入待上架");
+        }
         if(UserConstants.NOT_UNIQUE.equals(wmRtIssueService.checkUnique(wmRtIssue))){
             return AjaxResult.error("退料单编号已存在");
         }
@@ -170,7 +205,16 @@ public class WmRtIssueMobController extends BaseController {
         }
 
 
-        return toAjax(wmRtIssueService.updateWmRtIssue(wmRtIssue));
+        int rows = wmRtIssueService.updateWmRtIssue(wmRtIssue);
+        if (rows == 1 && UserConstants.RTISSUE_STATUS_UNCHECK.equals(wmRtIssue.getStatus())) {
+            // 提交待检：为需检且未检的退料行生成/关联 RQC 草稿（同一行不重复建单）
+            try {
+                inspectionDrafts.ensureDrafts(wmRtIssue.getRtId(), getUsername());
+            } catch (Exception e) {
+                throw new ServiceException("生成退料检验草稿失败：" + e.getMessage());
+            }
+        }
+        return toAjax(rows);
     }
 
     /**
@@ -183,13 +227,13 @@ public class WmRtIssueMobController extends BaseController {
     @DeleteMapping("/{rtIds}")
     public AjaxResult remove(@PathVariable Long[] rtIds)
     {
-        for (Long rtId: rtIds
-        ) {
-            WmRtIssue header = wmRtIssueService.selectWmRtIssueByRtId(rtId);
-            if(!UserConstants.ORDER_STATUS_PREPARE.equals(header.getStatus())){
+        java.util.SortedSet<Long> ordered = new java.util.TreeSet<Long>(java.util.Arrays.asList(rtIds));
+        for (Long rtId : ordered) {
+            if(!UserConstants.ORDER_STATUS_PREPARE.equals(postingLockMapper.rtIssue(rtId))){
                 return AjaxResult.error("只能删除草稿状态的单据!");
             }
-
+        }
+        for (Long rtId : ordered) {
             wmRtIssueLineService.deleteByRtId(rtId);
         }
         return toAjax(wmRtIssueService.deleteWmRtIssueByRtIds(rtIds));
@@ -206,34 +250,7 @@ public class WmRtIssueMobController extends BaseController {
     @Transactional
     @PutMapping("/{rtId}")
     public AjaxResult execute(@PathVariable Long rtId){
-        WmRtIssue rtIssue = wmRtIssueService.selectWmRtIssueByRtId(rtId);
-
-        //单据有效性
-        if(!StringUtils.isNotNull(rtIssue)){
-            return AjaxResult.error("无效单据");
-        }
-
-        //先检查单据状态
-        if(UserConstants.ORDER_STATUS_FINISHED.equals(rtIssue.getStatus())){
-            return AjaxResult.error("当前单据已提交!");
-        }
-
-        //检查行信息
-        WmRtIssueLine param = new WmRtIssueLine();
-        param.setRtId(rtId);
-        List<WmRtIssueLine> lines = wmRtIssueLineService.selectWmRtIssueLineList(param);
-        if(CollUtil.isEmpty(lines)){
-            return AjaxResult.error("请选择要退料的物资");
-        }
-
-        List<RtIssueTxBean> beans = wmRtIssueService.getTxBeans(rtId);
-
-        //执行生产退料
-        storageCoreService.processRtIssue(beans);
-
-
-        rtIssue.setStatus(UserConstants.ORDER_STATUS_FINISHED);
-        wmRtIssueService.updateWmRtIssue(rtIssue);
+        rtIssueExecuteService.execute(rtId);
         return AjaxResult.success();
     }
 

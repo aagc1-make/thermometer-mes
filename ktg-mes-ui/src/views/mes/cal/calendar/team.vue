@@ -90,7 +90,6 @@ export default {
       watch:{
             date:{
                   handler(newVal,oldVal){
-                        console.log(newVal.getFullYear()+'-'+(newVal.getMonth()+1)+'-'+newVal.getDate());
                         this.teamShiftQueryParams.date = newVal.getFullYear()+'-'+(newVal.getMonth()+1)+'-'+newVal.getDate();
                         this.loading = true;
                         listCalendars(this.teamShiftQueryParams).then(response =>{
@@ -136,7 +135,8 @@ export default {
             onSelected(teamId){
                   this.loading = true;
                   this.teamShiftQueryParams.teamId = teamId;
-                  this.teamShiftQueryParams.date = this.date;
+                  // 与 calendarType.vue 保持一致：date 必须是字符串；Date 对象会被 tansParams 丢弃，后端回落到当前月
+                  this.teamShiftQueryParams.date = this.date.getFullYear() + '-' + (this.date.getMonth() + 1) + '-' + this.date.getDate();
                   listCalendars(this.teamShiftQueryParams).then(response =>{
                         this.calendarDayList = response.data;
                         this.loading = false;

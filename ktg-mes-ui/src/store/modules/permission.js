@@ -38,6 +38,7 @@ const permission = {
           const rdata = JSON.parse(JSON.stringify(res.data))
           const sidebarRoutes = filterAsyncRouter(sdata)
           const rewriteRoutes = filterAsyncRouter(rdata, false, true)
+          ensureUniqueRouteNames(rewriteRoutes)
           const asyncRoutes = filterDynamicRoutes(dynamicRoutes);
           rewriteRoutes.push({ path: '*', redirect: '/404', hidden: true })
           router.addRoutes(asyncRoutes);
@@ -50,6 +51,27 @@ const permission = {
       })
     }
   }
+}
+
+// 后台菜单可能在不同父级下复用 name（User/Tool/Report）。
+// 在整个路由树范围内去重，保留第一项原名，后续加数字后缀。
+function ensureUniqueRouteNames(routes, seen = new Set()) {
+  routes.forEach(route => {
+    if (route.name) {
+      const original = route.name
+      let name = original
+      let index = 2
+      while (seen.has(name)) {
+        name = original + index
+        index++
+      }
+      seen.add(name)
+      route.name = name
+    }
+    if (route.children && route.children.length) {
+      ensureUniqueRouteNames(route.children, seen)
+    }
+  })
 }
 
 // 遍历后台传来的路由字符串，转换为组件对象

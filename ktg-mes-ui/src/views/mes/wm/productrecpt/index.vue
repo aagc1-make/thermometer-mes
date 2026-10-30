@@ -220,6 +220,11 @@
         <el-card v-if="form.recptId !=null && form.status !='PREPARE'" class="box-card">
           <ProductrecptDetail ref="detail" :recptId="form.recptId" :optType="optType"></ProductrecptDetail>
         </el-card>
+        <el-tabs v-if="open && optType === 'view' && form.recptId != null" style="margin-top: 16px">
+          <el-tab-pane label="库存变动">
+            <StockTransactions :key="form.recptId" :recptId="form.recptId" :status="form.status" />
+          </el-tab-pane>
+        </el-tabs>
         <div slot="footer" class="dialog-footer">
           <el-button type="primary" @click="saveForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
           <el-button type="warning" @click="submitToStock" v-if="form.status =='PREPARE' && form.recptId !=null && optType !='view' ">提 交</el-button>
@@ -236,12 +241,13 @@ import { listProductrecpt, getProductrecpt, delProductrecpt, addProductrecpt, up
 import WorkorderSelect from "@/components/workorderSelect/single.vue"
 import Productrecptline from "./line.vue"
 import ProductrecptDetail from "./detail.vue"
+import StockTransactions from "./stock-transactions.vue"
 import {getTreeList} from "@/api/mes/wm/warehouse"
 import {genCode} from "@/api/system/autocode/rule"
 export default {
   name: "Productrecpt",
   dicts: ['mes_order_status'],
-  components:{WorkorderSelect,Productrecptline,ProductrecptDetail},
+  components:{WorkorderSelect,Productrecptline,ProductrecptDetail,StockTransactions},
   data() {
     return {
       //自动生成编码

@@ -67,6 +67,12 @@ public interface IWmRtIssueLineService
      */
     public int updateWmRtIssueLine(WmRtIssueLine wmRtIssueLine);
 
+    /** 检验完成回写：允许更新质量状态与数量（仅供 RQC 完成流程使用）。 */
+    public int applyInspectionResult(WmRtIssueLine wmRtIssueLine);
+
+    /** 混合结果拆分行：按检验结论直接落库（仅供 RQC 完成流程使用）。 */
+    public int insertInspectionSplit(WmRtIssueLine wmRtIssueLine);
+
     /**
      * 批量删除生产退料单行
      * 

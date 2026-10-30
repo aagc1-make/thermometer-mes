@@ -620,6 +620,17 @@ export default {
         this.$modal.msgError("请选择检测结果！");
         return;
       }
+      // 页面只有“检测数量/不合格数量”输入，合格数量由两者之差补齐（后端仍校验三者守恒）
+      if(this.form.quantityCheck != null){
+        const unqualified = Number(this.form.quantityUnqualified || 0);
+        const qualified = Number(this.form.quantityCheck) - unqualified;
+        if(qualified < 0){
+          this.$modal.msgError("不合格数量不能大于检测数量！");
+          return;
+        }
+        this.form.quantityQualified = qualified;
+        this.form.quantityUnqualified = unqualified;
+      }
 
       this.$refs["form"].validate(valid => {
         if (valid) {

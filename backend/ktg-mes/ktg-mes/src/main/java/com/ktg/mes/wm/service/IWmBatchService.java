@@ -43,6 +43,9 @@ public interface IWmBatchService
      */
     public List<WmBatch> selectBackwardBatchList(String batchCode);
 
+    /** 只读批次追溯：成品批次 → 入库/工单/领料明细(原料批次)/流水/销售 */
+    public java.util.Map<String,Object> traceBatch(String batchCode);
+
     /**
      * 新增批次记录
      * 

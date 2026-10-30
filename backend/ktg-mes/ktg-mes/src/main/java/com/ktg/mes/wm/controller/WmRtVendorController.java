@@ -7,8 +7,12 @@ import com.ktg.common.constant.UserConstants;
 import com.ktg.mes.wm.domain.WmRtVendorLine;
 import com.ktg.mes.wm.domain.tx.RtVendorTxBean;
 import com.ktg.mes.wm.service.IStorageCoreService;
+import com.ktg.mes.wm.service.impl.PreStockVendorReturnService;
 import com.ktg.mes.wm.service.IWmRtVendorDetailService;
 import com.ktg.mes.wm.service.IWmRtVendorLineService;
+import com.ktg.mes.wm.mapper.PostingLockMapper;
+import com.ktg.mes.wm.service.impl.VendorReturnWorkflowService;
+import com.ktg.mes.wm.service.impl.StockVendorReturnDraftService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +44,10 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/wm/rtvendor")
 public class WmRtVendorController extends BaseController
 {
+    @Autowired private VendorReturnWorkflowService workflow;
+    @Autowired private StockVendorReturnDraftService stockDrafts;
+    @Autowired private PreStockVendorReturnService preStockDrafts;
+    @Autowired private PostingLockMapper locks;
     @Autowired
     private IWmRtVendorService wmRtVendorService;
 
@@ -112,6 +120,10 @@ public class WmRtVendorController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmRtVendor wmRtVendor)
     {
+        if (wmRtVendor.getAttr1()!=null || wmRtVendor.getAttr2()!=null
+                || (wmRtVendor.getStatus()!=null && !UserConstants.ORDER_STATUS_PREPARE.equals(wmRtVendor.getStatus())))
+            return AjaxResult.error("新增退供单必须为普通草稿，来源需通过业务流程生成");
+        wmRtVendor.setStatus(UserConstants.ORDER_STATUS_PREPARE);
         if(UserConstants.NOT_UNIQUE.equals(wmRtVendorService.checkCodeUnique(wmRtVendor))){
             return AjaxResult.error("退货单编号已经存在！");
         }
@@ -125,8 +137,10 @@ public class WmRtVendorController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:wm:rtvendor:edit')")
     @Log(title = "供应商退货", businessType = BusinessType.UPDATE)
     @PutMapping
+    @Transactional(rollbackFor = Exception.class)
     public AjaxResult edit(@RequestBody WmRtVendor wmRtVendor)
     {
+        workflow.prepareEdit(wmRtVendor);
         if(UserConstants.NOT_UNIQUE.equals(wmRtVendorService.checkCodeUnique(wmRtVendor))){
             return AjaxResult.error("退货单编号已经存在！");
         }
@@ -152,13 +166,13 @@ public class WmRtVendorController extends BaseController
     @DeleteMapping("/{rtIds}")
     public AjaxResult remove(@PathVariable Long[] rtIds)
     {
-        for (Long rtId:rtIds
-             ) {
-            WmRtVendor rtVendor = wmRtVendorService.selectWmRtVendorByRtId(rtId);
-            if(!UserConstants.ORDER_STATUS_PREPARE.equals(rtVendor.getStatus())){
+        java.util.SortedSet<Long> ordered=new java.util.TreeSet<Long>(java.util.Arrays.asList(rtIds));
+        for (Long rtId:ordered) {
+            if(!UserConstants.ORDER_STATUS_PREPARE.equals(locks.rtVendor(rtId))){
                 return AjaxResult.error("只能删除草稿状态的单据!");
             }
-
+        }
+        for (Long rtId:ordered) {
             wmRtVendorLineService.deleteByRtId(rtId);
         }
         return toAjax(wmRtVendorService.deleteWmRtVendorByRtIds(rtIds));
@@ -172,21 +186,29 @@ public class WmRtVendorController extends BaseController
     @Transactional
     @PutMapping("/{rtId}")
     public AjaxResult execute(@PathVariable Long rtId){
-        //判断单据状态
-        WmRtVendor wmRtVendor = wmRtVendorService.selectWmRtVendorByRtId(rtId);
-
-        //构造事务Bean
-        List<RtVendorTxBean> beans = wmRtVendorService.getTxBeans(rtId);
-
-        //调用库存核心
-        storageCoreService.processRtVendor(beans);
-
-        //更新单据状态
-        WmRtVendor rtVendor = wmRtVendorService.selectWmRtVendorByRtId(rtId);
-        rtVendor.setStatus(UserConstants.ORDER_STATUS_FINISHED);
-        wmRtVendorService.updateWmRtVendor(rtVendor);
-
+        workflow.execute(rtId);
         return AjaxResult.success();
+    }
+
+    @PreAuthorize("@ss.hasPermi('mes:wm:rtvendor:add')")
+    @Log(title = "采购入库生成退供草稿", businessType = BusinessType.INSERT)
+    @PostMapping("/fromReceipt/{recptId}")
+    public AjaxResult fromReceipt(@PathVariable Long recptId) {
+        return AjaxResult.success(stockDrafts.create(recptId, getUsername()));
+    }
+
+    /**
+     * 按来料检验重新生成未入库退供草稿（取消/删除后剩余不合格量可再次生成）。
+     */
+    @PreAuthorize("@ss.hasPermi('mes:wm:rtvendor:add')")
+    @Log(title = "来料不合格重新生成退供草稿", businessType = BusinessType.INSERT)
+    @PostMapping("/fromIqc/{iqcId}")
+    public AjaxResult fromIqc(@PathVariable Long iqcId) {
+        Long rtId = preStockDrafts.createFromIqc(iqcId, getUsername());
+        if (rtId == null) {
+            return AjaxResult.error("该检验单的不合格数量已全部退供，无可退数量");
+        }
+        return AjaxResult.success(rtId);
     }
 
 

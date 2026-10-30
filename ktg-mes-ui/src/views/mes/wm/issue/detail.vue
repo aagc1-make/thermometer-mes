@@ -44,7 +44,7 @@
             type="text"
             icon="el-icon-shopping-cart-full"
             @click="handleAdd(scope.row)"
-            v-hasPermi="['mes:wm:issueheader:edit']"
+            v-hasPermi="['mes:wm:issueheader:add']"
           >拣货</el-button>
         </template>
       </el-table-column>
