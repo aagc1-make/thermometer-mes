@@ -1,0 +1,303 @@
+@use '@/styles/variables.scss' as *;
+@use '@/styles/blocks.scss' as *;
+
+.page {
+  @include page-base;
+}
+
+.tabs {
+  margin-top: 8rpx;
+  white-space: nowrap;
+}
+
+.tabRow {
+  display: inline-flex;
+  padding: 0 $page-padding;
+}
+
+.tabItem {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 24rpx 24rpx;
+}
+
+.tabText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.tabTextActive {
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
+.tabLine {
+  position: absolute;
+  bottom: 8rpx;
+  width: 40rpx;
+  height: 6rpx;
+  background: $color-primary;
+  border-radius: 6rpx;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  margin: 8rpx $page-padding 0;
+  padding: 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+}
+
+.summaryItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.summaryValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.summaryLabel {
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.summaryDivider {
+  width: 1rpx;
+  height: 56rpx;
+  background: $color-divider;
+}
+
+.card {
+  margin: 24rpx $page-padding 0;
+  padding: 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+
+  &:active {
+    background: #fcfdff;
+  }
+}
+
+.head {
+  @include flex-between;
+}
+
+.headLeft {
+  display: flex;
+  align-items: center;
+}
+
+.orderNo {
+  margin-right: 8rpx;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.status {
+  @include tag;
+}
+
+.status_quoted {
+  background: $color-primary-soft;
+  color: $color-primary;
+}
+
+.status_confirmed {
+  background: #fff6e6;
+  color: $color-warning;
+}
+
+.status_producing {
+  background: #e9fbf1;
+  color: $color-success;
+}
+
+.status_delivered {
+  background: #f0f3fa;
+  color: $color-text-secondary;
+}
+
+.dashed {
+  height: 1rpx;
+  margin: 20rpx 0 4rpx;
+  border-bottom: 1rpx dashed $color-border;
+}
+
+.lineRow {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 0 0;
+}
+
+.thumb {
+  flex-shrink: 0;
+  width: 88rpx;
+  height: 88rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.lineInfo {
+  flex: 1;
+  min-width: 0;
+  padding: 0 16rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.lineName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.lineMeta {
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.lineQty {
+  flex-shrink: 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.moreLine {
+  margin-top: 12rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.foot {
+  @include flex-between;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid $color-divider;
+}
+
+.footLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.footMeta {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.footDate {
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.footRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.amountLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.amount {
+  margin-top: 4rpx;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-price;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20rpx;
+}
+
+.ghostBtn {
+  @include ghost-button;
+  margin-right: 16rpx;
+}
+
+.primaryBtn {
+  @include primary-button;
+  height: 72rpx;
+  padding: 0 32rpx;
+}
+
+.btnIcon {
+  margin-right: 6rpx;
+}
+
+.btnIconRight {
+  margin-left: 4rpx;
+}
+
+.empty {
+  padding-top: 200rpx;
+  @include flex-center;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.emptyCard {
+  margin: 24rpx $page-padding 0;
+  padding: 80rpx 40rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emptyIcon {
+  width: 128rpx;
+  height: 128rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-round;
+  @include flex-center;
+}
+
+.emptyTitle {
+  margin-top: 28rpx;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.emptyDesc {
+  margin-top: 12rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  text-align: center;
+}
+
+.emptyBtn {
+  margin-top: 32rpx;
+  @include primary-button;
+}
+
+.emptyBtnText {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+}

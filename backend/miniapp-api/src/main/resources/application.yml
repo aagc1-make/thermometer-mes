@@ -1,0 +1,38 @@
+server:
+  port: 8081
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: miniapp-api
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/j2eedb?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&zeroDateTimeBehavior=convertToNull
+    username: root
+    # 密码只从环境变量读取，避免明文写入仓库（启动前设置 KTG_DB_PASSWORD）
+    password: ${KTG_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 5000
+      pool-name: miniapp-pool
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: Asia/Shanghai
+
+miniapp:
+  auth:
+    # 令牌签名密钥：生产环境务必通过 MINIAPP_AUTH_SECRET 环境变量覆盖
+    secret: ${MINIAPP_AUTH_SECRET:ktg-mes-miniapp-demo-secret}
+    # 令牌有效期（秒），默认 12 小时
+    expire-seconds: 43200
+
+logging:
+  level:
+    com.ktg.miniapp: info
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n'

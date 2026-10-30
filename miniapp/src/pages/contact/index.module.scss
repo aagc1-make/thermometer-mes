@@ -1,0 +1,200 @@
+@use '@/styles/variables.scss' as *;
+@use '@/styles/blocks.scss' as *;
+
+.page {
+  @include page-base;
+}
+
+.tipCard {
+  display: flex;
+  align-items: center;
+  margin: 16rpx $page-padding 0;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #eaf1ff 0%, #f7faff 100%);
+  border-radius: $radius-2xl;
+}
+
+.tipIcon {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  @include flex-center;
+}
+
+.tipContent {
+  flex: 1;
+  min-width: 0;
+  margin-left: 16rpx;
+}
+
+.tipTitle {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.tipDesc {
+  display: block;
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+}
+
+.card {
+  @include page-card;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 88rpx;
+  height: 88rpx;
+  background: linear-gradient(135deg, #2b6beb 0%, #5b93ff 100%);
+  border-radius: $radius-round;
+  @include flex-center;
+}
+
+.avatarText {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-white;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+  margin-left: 20rpx;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+}
+
+.name {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.defaultTag {
+  @include tag;
+  margin-left: 12rpx;
+  height: 34rpx;
+  padding: 0 12rpx;
+}
+
+.dept {
+  display: block;
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.dashed {
+  height: 1rpx;
+  margin: 20rpx 0 6rpx;
+  border-bottom: 1rpx dashed $color-border;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 0;
+}
+
+.rowLabel {
+  flex-shrink: 0;
+  width: 80rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.rowValue {
+  flex: 1;
+  min-width: 0;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.rowAction {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-left: 16rpx;
+}
+
+.rowActionIcon {
+  margin-right: 4rpx;
+}
+
+.rowActionText {
+  font-size: $font-size-xs;
+  color: $color-primary;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16rpx;
+}
+
+.callBtn {
+  display: flex;
+  align-items: center;
+  height: 68rpx;
+  padding: 0 28rpx;
+  background: $color-primary;
+  border-radius: $radius-button;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.callText {
+  margin-left: 8rpx;
+  font-size: $font-size-xs;
+  color: $color-text-white;
+}
+
+.empty {
+  padding-top: 180rpx;
+  @include flex-center;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.emptyCard {
+  @include page-card;
+  margin-top: 32rpx;
+  padding: 64rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emptyTitle {
+  margin-top: 20rpx;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.emptyDesc {
+  margin-top: 10rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}

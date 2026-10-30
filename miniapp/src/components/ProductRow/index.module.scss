@@ -1,0 +1,94 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  margin-bottom: $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.thumb {
+  flex-shrink: 0;
+  width: 128rpx;
+  height: 128rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-xl;
+  overflow: hidden;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+  padding: 0 20rpx 0 24rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.tag {
+  align-self: flex-start;
+  font-size: $font-size-xs;
+  color: $color-primary;
+  line-height: 1.4;
+  margin-bottom: 4rpx;
+}
+
+.name {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  line-height: 1.4;
+  @include text-ellipsis;
+}
+
+.code {
+  margin-top: 2rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.param {
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.addBtn {
+  flex-shrink: 0;
+  min-width: 132rpx;
+  height: 56rpx;
+  padding: 0 18rpx;
+  border: 2rpx solid $color-primary-light;
+  border-radius: $radius-button;
+  @include flex-center;
+  background: transparent;
+  transition: all $transition-base;
+
+  &:active {
+    background: $color-primary-soft;
+  }
+}
+
+.addIcon {
+  margin-right: 4rpx;
+}
+
+.addText {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+}

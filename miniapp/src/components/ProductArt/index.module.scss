@@ -1,0 +1,406 @@
+@use '@/styles/variables.scss' as *;
+
+.art {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  @include flex-center;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.base {
+  position: absolute;
+  left: 18%;
+  bottom: 8%;
+  width: 64%;
+  height: 9%;
+  background: $color-primary-glow;
+  border-radius: 50%;
+  opacity: 0.9;
+}
+
+// ========== 基础款测温枪 ==========
+.thermoDevice {
+  position: absolute;
+  left: 26%;
+  top: 6%;
+  width: 38%;
+  height: 64%;
+  transform: rotate(-8deg);
+}
+
+.precisionDevice {
+  position: absolute;
+  left: 25%;
+  top: 6%;
+  width: 42%;
+  height: 64%;
+  transform: rotate(-3deg);
+}
+
+.thermoBody {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(160deg, #ffffff 0%, #f4f8ff 100%);
+  border-radius: 14% 14% 10% 10%;
+  box-shadow: 0 6rpx 14rpx rgba(43, 107, 235, 0.18);
+}
+
+.thermoScreen {
+  position: absolute;
+  left: 12%;
+  top: 9%;
+  width: 68%;
+  height: 40%;
+  background: #16294a;
+  border-radius: 12%;
+  @include flex-center;
+}
+
+.screenText {
+  color: #ff6a6a;
+  font-size: 0.82em;
+  font-weight: $font-weight-semibold;
+  line-height: 1;
+}
+
+.thermoLens {
+  position: absolute;
+  right: -8%;
+  top: 12%;
+  width: 24%;
+  height: 24%;
+  background: $color-primary;
+  border: 4rpx solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2rpx 6rpx rgba(43, 107, 235, 0.3);
+}
+
+.thermoButton {
+  position: absolute;
+  right: 14%;
+  top: 56%;
+  width: 13%;
+  height: 13%;
+  background: $color-primary;
+  border-radius: 50%;
+}
+
+.thermoHandle {
+  position: absolute;
+  left: 6%;
+  bottom: -12%;
+  width: 44%;
+  height: 30%;
+  background: linear-gradient(180deg, #ffffff 0%, #eef4ff 100%);
+  border-radius: 12% 12% 26% 26%;
+}
+
+// ========== 高精度款 ==========
+.precisionLensBig {
+  position: absolute;
+  right: -6%;
+  top: 10%;
+  width: 20%;
+  height: 20%;
+  background: #ffffff;
+  border: 4rpx solid $color-primary-glow;
+  border-radius: 50%;
+}
+
+.precisionLensSmall {
+  position: absolute;
+  right: 8%;
+  top: 15%;
+  width: 8%;
+  height: 8%;
+  background: $color-primary;
+  border-radius: 50%;
+}
+
+.precisionLine {
+  position: absolute;
+  right: -4%;
+  top: 50%;
+  width: 16%;
+  height: 6%;
+  background: $color-primary;
+  border-radius: $radius-round;
+}
+
+// ========== 壁挂式 ==========
+.wallDevice {
+  position: absolute;
+  left: 16%;
+  top: 10%;
+  width: 68%;
+  height: 64%;
+  transform: rotate(4deg);
+}
+
+.wallBody {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(160deg, #ffffff 0%, #f3f8ff 100%);
+  border-radius: 16%;
+  box-shadow: 0 6rpx 14rpx rgba(43, 107, 235, 0.16);
+}
+
+.wallScreen {
+  position: absolute;
+  left: 10%;
+  top: 10%;
+  width: 80%;
+  height: 52%;
+  background: #16294a;
+  border-radius: 10%;
+  padding: 8% 10%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.wallBars {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  width: 56%;
+}
+
+.wallBar {
+  width: 14%;
+  margin-right: 6%;
+  background: #43e0a2;
+  border-radius: 4rpx;
+
+  &:last-child {
+    margin-right: 0;
+  }
+}
+
+.wallBar1 {
+  height: 34%;
+}
+
+.wallBar2 {
+  height: 62%;
+}
+
+.wallBar3 {
+  height: 90%;
+}
+
+.wallText {
+  color: #ff6a6a;
+  font-size: 0.78em;
+  font-weight: $font-weight-semibold;
+  line-height: 1;
+}
+
+.wallDot {
+  position: absolute;
+  right: 8%;
+  bottom: 10%;
+  width: 10%;
+  height: 10%;
+  background: $color-primary;
+  border-radius: 50%;
+}
+
+// ========== 电控预装件（绿色板） ==========
+.pcbBoard {
+  position: absolute;
+  left: 10%;
+  top: 18%;
+  width: 80%;
+  height: 62%;
+  background: linear-gradient(150deg, #238563 0%, #196a4f 100%);
+  border-radius: 12%;
+  transform: rotate(-3deg);
+  box-shadow: 0 6rpx 14rpx rgba(25, 106, 79, 0.22);
+}
+
+.pcbScreen {
+  position: absolute;
+  left: 10%;
+  top: 15%;
+  width: 54%;
+  height: 44%;
+  background: #0b3b2c;
+  border-radius: 8%;
+  @include flex-center;
+}
+
+.pcbText {
+  color: #6bf5b8;
+  font-size: 0.78em;
+  font-weight: $font-weight-semibold;
+  line-height: 1;
+}
+
+.pcbChip1 {
+  position: absolute;
+  right: 8%;
+  top: 14%;
+  width: 24%;
+  height: 18%;
+  background: #3aa87d;
+  border-radius: 10%;
+  border: 2rpx solid rgba(255, 255, 255, 0.25);
+}
+
+.pcbChip2 {
+  position: absolute;
+  right: 10%;
+  top: 42%;
+  width: 18%;
+  height: 12%;
+  background: #3aa87d;
+  border-radius: 10%;
+}
+
+.pcbLed {
+  position: absolute;
+  left: 14%;
+  bottom: 14%;
+  width: 9%;
+  height: 9%;
+  background: #e8ff9b;
+  border-radius: 50%;
+}
+
+// ========== 扳机手柄预装件 ==========
+.triggerBody {
+  position: absolute;
+  left: 30%;
+  top: 6%;
+  width: 40%;
+  height: 64%;
+  background: linear-gradient(160deg, #ffffff 0%, #f1f6ff 100%);
+  border-radius: 16% 16% 42% 42%;
+  transform: rotate(8deg);
+  box-shadow: 0 6rpx 14rpx rgba(43, 107, 235, 0.16);
+}
+
+.triggerDot {
+  position: absolute;
+  left: 34%;
+  top: 16%;
+  width: 32%;
+  height: 7%;
+  background: $color-primary;
+  border-radius: $radius-round;
+}
+
+.triggerSlot {
+  position: absolute;
+  left: 38%;
+  top: 42%;
+  width: 24%;
+  height: 30%;
+  background: #e3ebf9;
+  border-radius: 20%;
+}
+
+// ========== 主板贴片组件 ==========
+.mainBoard {
+  position: absolute;
+  left: 4%;
+  top: 25%;
+  width: 92%;
+  height: 50%;
+  background: linear-gradient(150deg, #238563 0%, #196a4f 100%);
+  border-radius: 8%;
+  box-shadow: 0 6rpx 14rpx rgba(25, 106, 79, 0.22);
+}
+
+.mainChip1 {
+  position: absolute;
+  left: 10%;
+  top: 22%;
+  width: 26%;
+  height: 32%;
+  background: #0b3b2c;
+  border-radius: 10%;
+}
+
+.mainChip2 {
+  position: absolute;
+  left: 42%;
+  top: 22%;
+  width: 18%;
+  height: 20%;
+  background: #3aa87d;
+  border-radius: 10%;
+}
+
+.mainChip3 {
+  position: absolute;
+  right: 10%;
+  top: 26%;
+  width: 22%;
+  height: 28%;
+  background: #3aa87d;
+  border-radius: 10%;
+  border: 2rpx solid rgba(255, 255, 255, 0.24);
+}
+
+.mainPin {
+  position: absolute;
+  left: 12%;
+  bottom: 14%;
+  width: 66%;
+  height: 6%;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: $radius-round;
+}
+
+// ========== 红外传感模组 ==========
+.sensorBoard {
+  position: absolute;
+  left: 20%;
+  top: 28%;
+  width: 60%;
+  height: 46%;
+  background: linear-gradient(150deg, #2b6beb 0%, #1e4fbf 100%);
+  border-radius: 16%;
+  box-shadow: 0 6rpx 14rpx rgba(43, 107, 235, 0.25);
+}
+
+.sensorDome {
+  position: absolute;
+  left: 28%;
+  top: 12%;
+  width: 44%;
+  height: 44%;
+  background: #ffffff;
+  border: 4rpx solid $color-primary-glow;
+  border-radius: 50%;
+}
+
+.sensorPin {
+  position: absolute;
+  left: 22%;
+  bottom: 12%;
+  width: 56%;
+  height: 6%;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: $radius-round;
+}

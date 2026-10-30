@@ -1,0 +1,464 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f7f9ff 0%, $color-bg-page 320rpx, $color-bg-page 100%);
+}
+
+// 顶部状态 tab
+.tabs {
+  display: flex;
+  align-items: center;
+  padding: 4rpx $page-padding 0;
+}
+
+.tabItem {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  margin-right: 40rpx;
+  padding-bottom: 14rpx;
+}
+
+.tabText {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.tabTextActive {
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.tabCount {
+  margin-left: 6rpx;
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.tabCountActive {
+  color: $color-primary;
+}
+
+.tabLine {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 44rpx;
+  height: 6rpx;
+  background: $color-primary;
+  border-radius: $radius-round;
+}
+
+.content {
+  padding: 24rpx $page-padding 40rpx;
+}
+
+.contentWithBar {
+  padding-bottom: 220rpx;
+}
+
+// 草稿卡片
+.draftCard {
+  padding: 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+}
+
+.draftHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.draftId {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.editable {
+  height: 40rpx;
+  padding: 0 16rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-sm;
+  @include flex-center;
+}
+
+.editableText {
+  font-size: 20rpx;
+  color: $color-primary;
+  white-space: nowrap;
+}
+
+.dashedLine {
+  height: 1rpx;
+  margin: 20rpx 0 0;
+  border-bottom: 1rpx dashed $color-border;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  padding: 22rpx 0;
+
+  & + & {
+    border-top: 1rpx dashed $color-border;
+  }
+}
+
+.itemThumb {
+  flex-shrink: 0;
+  width: 96rpx;
+  height: 96rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-xl;
+  overflow: hidden;
+}
+
+.itemInfo {
+  flex: 1;
+  min-width: 0;
+  padding: 0 16rpx 0 20rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.itemName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.itemMeta {
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.stepper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.stepBtn {
+  width: 44rpx;
+  height: 44rpx;
+  background: #f8faff;
+  border: 1rpx solid $color-border;
+  border-radius: 50%;
+  @include flex-center;
+
+  &:active {
+    background: $color-primary-soft;
+  }
+}
+
+.stepQty {
+  min-width: 72rpx;
+  padding: 0 8rpx;
+  text-align: center;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+// 询价信息
+.infoCard {
+  margin-top: 24rpx;
+  padding: 4rpx 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  height: 92rpx;
+
+  &:active {
+    opacity: 0.75;
+  }
+}
+
+.infoLabel {
+  flex-shrink: 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.infoValue {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.infoDivider {
+  height: 1rpx;
+  background: $color-divider;
+}
+
+// 提示
+.hint {
+  margin-top: 24rpx;
+  padding: 20rpx 24rpx;
+  background: #f5f9ff;
+  border: 1rpx dashed #bfd5fa;
+  border-radius: $radius-lg;
+}
+
+.hintText {
+  font-size: $font-size-xs;
+  line-height: 1.7;
+  color: $color-text-secondary;
+}
+
+// 底部提交栏
+.submitBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: rgba(245, 247, 252, 0.94);
+  z-index: 10;
+}
+
+.submitInner {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 6rpx 24rpx rgba(23, 35, 61, 0.1);
+}
+
+.submitSummary {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.submitTotal {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.submitTip {
+  margin-top: 4rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.submitBtn {
+  flex-shrink: 0;
+  width: 228rpx;
+  height: 80rpx;
+  background: $color-primary;
+  border-radius: $radius-button;
+  @include flex-center;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.submitBtnText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-white;
+  white-space: nowrap;
+}
+
+.btnIcon {
+  margin-right: 8rpx;
+}
+
+// 空状态
+.emptyCard {
+  padding: 72rpx 32rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emptyIcon {
+  width: 104rpx;
+  height: 104rpx;
+  background: $color-primary-soft;
+  border-radius: 50%;
+  @include flex-center;
+}
+
+.emptyTitle {
+  margin-top: 24rpx;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.emptyDesc {
+  margin-top: 8rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  text-align: center;
+}
+
+.emptyBtn {
+  height: 72rpx;
+  margin-top: 32rpx;
+  padding: 0 40rpx;
+  background: $color-primary;
+  border-radius: $radius-button;
+  @include flex-center;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.emptyBtnText {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+  white-space: nowrap;
+}
+
+// 历史询价单
+.records {
+  display: flex;
+  flex-direction: column;
+}
+
+.recordCard {
+  margin-bottom: $spacing-md;
+  padding: 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.recordHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recordId {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.statusTag {
+  height: 40rpx;
+  padding: 0 16rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-sm;
+  @include flex-center;
+}
+
+.statusTagQuoted {
+  background: #e9fbf1;
+}
+
+.statusText {
+  font-size: 20rpx;
+  color: $color-primary;
+  white-space: nowrap;
+}
+
+.statusTextQuoted {
+  color: $color-success;
+}
+
+.recordItem {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+}
+
+.recordThumb {
+  flex-shrink: 0;
+  width: 88rpx;
+  height: 88rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.recordInfo {
+  flex: 1;
+  min-width: 0;
+  padding: 0 16rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.recordName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.recordMeta {
+  margin-top: 4rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.recordQty {
+  flex-shrink: 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.recordFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid $color-divider;
+}
+
+.recordFootText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.recordTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.empty {
+  padding: 80rpx 0;
+  @include flex-center;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}

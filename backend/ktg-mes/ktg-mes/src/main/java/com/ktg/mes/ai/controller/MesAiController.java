@@ -61,6 +61,22 @@ public class MesAiController extends BaseController {
     @Value("${mes.ai.timeout-ms:3000}")
     private int timeoutMs;
 
+    /** 本机兜底：配置项为空时直接读环境变量，避免环境差异导致密钥读不到 */
+    @javax.annotation.PostConstruct
+    private void applyEnvFallback() {
+        if (!notBlank(deepseekKey)) {
+            deepseekKey = envValue("MES_AI_KEY");
+        }
+        if (!notBlank(glmKey)) {
+            glmKey = envValue("MES_AI_FB_KEY");
+        }
+    }
+
+    private static String envValue(String name) {
+        String v = System.getenv(name);
+        return v == null ? "" : v.trim();
+    }
+
     private static final String SYSTEM_PROMPT =
             "你是 MES 系统的意图解析器。把用户的中文问题解析成 JSON，只输出 JSON，不要解释。\n"
           + "字段：metric（stock 库存盘点 / inbound 入库 / outbound 出库 / workorder 工单 / inspection 检验 / alert 安全库存预警 / unknown）\n"

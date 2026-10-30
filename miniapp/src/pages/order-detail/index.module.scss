@@ -1,0 +1,311 @@
+@use '@/styles/variables.scss' as *;
+@use '@/styles/blocks.scss' as *;
+
+.page {
+  @include page-base;
+}
+
+.empty {
+  padding-top: 200rpx;
+  @include flex-center;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.hero {
+  margin: 24rpx $page-padding 0;
+  padding: 28rpx 24rpx 24rpx;
+  background: linear-gradient(135deg, #2b6beb 0%, #4c8bff 100%);
+  border-radius: $radius-2xl;
+  box-shadow: 0 8rpx 28rpx rgba(43, 107, 235, 0.25);
+}
+
+.heroHead {
+  @include flex-between;
+}
+
+.orderNo {
+  display: block;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-white;
+}
+
+.orderStatus {
+  display: block;
+  margin-top: 8rpx;
+  font-size: $font-size-xs;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.copyBtn {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 20rpx;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: $radius-round;
+}
+
+.copyIcon {
+  margin-right: 4rpx;
+}
+
+.copyText {
+  font-size: $font-size-xs;
+  color: $color-text-white;
+}
+
+.steps {
+  display: flex;
+  margin-top: 36rpx;
+}
+
+.step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.stepTop {
+  display: flex;
+  align-items: center;
+}
+
+.dot {
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: $radius-round;
+  background: rgba(255, 255, 255, 0.32);
+  @include flex-center;
+}
+
+.dotActive {
+  background: $color-text-white;
+}
+
+.dotCurrent {
+  box-shadow: 0 0 0 6rpx rgba(255, 255, 255, 0.28);
+}
+
+.stepLine {
+  flex: 1;
+  height: 2rpx;
+  margin: 0 8rpx;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.stepLineActive {
+  background: $color-text-white;
+}
+
+.stepName {
+  margin-top: 12rpx;
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.stepNameActive {
+  color: $color-text-white;
+}
+
+.card {
+  @include page-card;
+}
+
+.cardHead {
+  @include flex-between;
+  margin-bottom: 4rpx;
+}
+
+.cardTitle {
+  @include section-title;
+}
+
+.cardMeta {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.lineRow {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+
+  & + & {
+    border-top: 1rpx dashed $color-border;
+  }
+}
+
+.thumb {
+  flex-shrink: 0;
+  width: 96rpx;
+  height: 96rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-xl;
+  overflow: hidden;
+}
+
+.lineInfo {
+  flex: 1;
+  min-width: 0;
+  padding: 0 16rpx 0 20rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.lineName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.lineMeta {
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.linePrice {
+  margin-top: 8rpx;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.lineRight {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.lineQty {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.lineAmount {
+  margin-top: 8rpx;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+}
+
+.totalRow {
+  @include flex-between;
+  margin-top: 8rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid $color-divider;
+}
+
+.totalLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.totalValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-price;
+}
+
+.deliveryStatus {
+  @include tag(#e9fbf1, $color-success);
+}
+
+.progressBar {
+  margin-top: 20rpx;
+  height: 12rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #2b6beb 0%, #5b93ff 100%);
+  border-radius: $radius-round;
+}
+
+.progressText {
+  margin-top: 12rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.deliveryRow {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+  padding: 18rpx 20rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-lg;
+}
+
+.deliveryLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.deliveryValue {
+  flex: 1;
+  margin-left: 16rpx;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.deliveryCopy {
+  font-size: $font-size-xs;
+  color: $color-primary;
+}
+
+.infoRow {
+  display: flex;
+  align-items: flex-start;
+  min-height: 84rpx;
+  padding: 20rpx 0;
+}
+
+.infoLabel {
+  flex-shrink: 0;
+  width: 150rpx;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.infoValue {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.divider {
+  @include divider;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 24rpx $page-padding 0;
+}
+
+.ghostBtn {
+  @include ghost-button;
+  margin-right: 16rpx;
+}
+
+.primaryBtn {
+  @include primary-button;
+  height: 72rpx;
+  padding: 0 32rpx;
+}
+
+.btnIcon {
+  margin-right: 6rpx;
+}

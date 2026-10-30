@@ -1,0 +1,425 @@
+{
+  "info": {
+    "name": "苦糖果 MES API",
+    "description": "基于 ktg-mes 3.8.2 实测。使用前：1) 启动后端(8080) 2) 在环境变量里确认 baseUrl 3) 先跑「00 认证 → 登录」，token 会自动写入环境变量。\n\n接口规律（RuoYi 七件套）：\n- 列表  GET    {prefix}/list?pageNum=1&pageSize=10\n- 详情  GET    {prefix}/{id}\n- 新增  POST   {prefix}\n- 修改  PUT    {prefix}\n- 删除  DELETE {prefix}/{ids}   （多 id 用英文逗号）\n- 导出  POST   {prefix}/export\n\n业务前缀：主数据 /mes/md/*、生产 /mes/pro/*、质量 /mes/qc/*、仓储 /mes/wm/*、设备 /mes/dv/*、排班 /mes/cal/*；移动端为 /mobile/*。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8080" }
+  ],
+  "item": [
+    {
+      "name": "00 认证",
+      "item": [
+        {
+          "name": "验证码 (公开)",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/captchaImage", "host": ["{{baseUrl}}"], "path": ["captchaImage"] }
+          }
+        },
+        {
+          "name": "登录 (保存 token)",
+          "auth": { "type": "noauth" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.environment.set('token', res.token);",
+                  "  console.log('token 已写入环境变量');",
+                  "} else {",
+                  "  console.warn('登录失败：', res.msg);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\",\n  \"code\": \"\",\n  \"uuid\": \"\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] }
+          }
+        },
+        {
+          "name": "当前用户信息",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/getInfo", "host": ["{{baseUrl}}"], "path": ["getInfo"] }
+          }
+        },
+        {
+          "name": "我的菜单路由",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/getRouters", "host": ["{{baseUrl}}"], "path": ["getRouters"] }
+          }
+        },
+        {
+          "name": "退出登录",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/logout", "host": ["{{baseUrl}}"], "path": ["logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 主数据 /mes/md",
+      "item": [
+        {
+          "name": "物料产品 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mes/md/mditem/list?pageNum=1&pageSize=10&itemCode=&itemName=",
+              "host": ["{{baseUrl}}"],
+              "path": ["mes", "md", "mditem", "list"],
+              "query": [
+                { "key": "pageNum", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "itemCode", "value": "" },
+                { "key": "itemName", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "物料产品 详情",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mes/md/mditem/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["mes", "md", "mditem", "1"]
+            }
+          }
+        },
+        {
+          "name": "物料产品 新增",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemCode\": \"IF_TEST_001\",\n  \"itemName\": \"Postman测试物料\",\n  \"itemTypeId\": 0,\n  \"unitOfMeasure\": \"PCS\",\n  \"enableFlag\": \"Y\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/mes/md/mditem", "host": ["{{baseUrl}}"], "path": ["mes", "md", "mditem"] }
+          }
+        },
+        {
+          "name": "物料产品 修改",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemId\": 1,\n  \"itemCode\": \"IF20261018002\",\n  \"itemName\": \"螺丝刀刀头-改\",\n  \"enableFlag\": \"Y\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/mes/md/mditem", "host": ["{{baseUrl}}"], "path": ["mes", "md", "mditem"] }
+          }
+        },
+        {
+          "name": "物料产品 删除",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/md/mditem/1", "host": ["{{baseUrl}}"], "path": ["mes", "md", "mditem", "1"] }
+          }
+        },
+        {
+          "name": "物料分类 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/md/itemtype/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "md", "itemtype", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "客户 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/md/client/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "md", "client", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "供应商 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/md/vendor/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "md", "vendor", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "BOM 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/md/bom/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "md", "bom", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "工作站 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/md/workstation/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "md", "workstation", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 生产 /mes/pro",
+      "item": [
+        {
+          "name": "生产工单 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/pro/workorder/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "pro", "workorder", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "生产工单 详情",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/pro/workorder/1", "host": ["{{baseUrl}}"], "path": ["mes", "pro", "workorder", "1"] }
+          }
+        },
+        {
+          "name": "生产报工 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/pro/feedback/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "pro", "feedback", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "生产任务 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/pro/protask/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "pro", "protask", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "流转卡 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/pro/procard/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "pro", "procard", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "安灯记录 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/pro/andonrecord/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "pro", "andonrecord", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "工艺路线 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/pro/proroute/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "pro", "proroute", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 质量 /mes/qc",
+      "item": [
+        {
+          "name": "IPQC 过程检验 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/qc/ipqc/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "qc", "ipqc", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "IQC 来料检验 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/qc/iqc/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "qc", "iqc", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "OQC 出货检验 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/qc/oqc/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "qc", "oqc", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "缺陷记录 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/qc/defectrecord/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "qc", "defectrecord", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "批次正向追溯 (listForward)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mes/wm/batch/listForward?pageNum=1&pageSize=10&workorderId=",
+              "host": ["{{baseUrl}}"],
+              "path": ["mes", "wm", "batch", "listForward"],
+              "query": [
+                { "key": "pageNum", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "workorderId", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "批次反向追溯 (listBackward)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mes/wm/batch/listBackward?pageNum=1&pageSize=10&batchCode=",
+              "host": ["{{baseUrl}}"],
+              "path": ["mes", "wm", "batch", "listBackward"],
+              "query": [
+                { "key": "pageNum", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "batchCode", "value": "" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 仓储 /mes/wm",
+      "item": [
+        {
+          "name": "库存现有量 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/wm/wmstock/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "wm", "wmstock", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "批次 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/wm/batch/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "wm", "batch", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "条码 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/wm/barcode/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "wm", "barcode", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "采购入库 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/wm/itemrecpt/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "wm", "itemrecpt", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "领料出库 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/wm/issueheader/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "wm", "issueheader", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 设备与排班",
+      "item": [
+        {
+          "name": "设备台账 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/dv/machinery/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "dv", "machinery", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        },
+        {
+          "name": "班次 列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/mes/cal/shift/list?pageNum=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["mes", "cal", "shift", "list"], "query": [{ "key": "pageNum", "value": "1" }, { "key": "pageSize", "value": "10" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 公共 /common",
+      "item": [
+        {
+          "name": "上传文件（本地磁盘）",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": [] }] },
+            "url": { "raw": "{{baseUrl}}/common/upload", "host": ["{{baseUrl}}"], "path": ["common", "upload"] }
+          }
+        },
+        {
+          "name": "上传文件（MinIO）",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": [] }] },
+            "url": { "raw": "{{baseUrl}}/common/uploadMinio", "host": ["{{baseUrl}}"], "path": ["common", "uploadMinio"] }
+          }
+        },
+        {
+          "name": "下载文件",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/common/download?fileName=/profile/upload/xxx.png&delete=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["common", "download"],
+              "query": [{ "key": "fileName", "value": "/profile/upload/xxx.png" }, { "key": "delete", "value": "false" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -13,18 +13,36 @@ import net from 'node:net';
 const BASE = process.env.MES_BASE || 'http://127.0.0.1:8080';
 const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
 const REDIS_PORT = Number(process.env.REDIS_PORT || 6379);
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD || '';
 const TS = Date.now().toString().slice(-6);
 let token = '';
 let step = 0;
 
-/** 直接读 Redis 取验证码，避免依赖 redis-cli 子进程 */
+/** 拼一个 RESP 命令（数组形式） */
+function resp(parts) {
+  const out = [Buffer.from(`*${parts.length}\r\n`)];
+  for (const p of parts) {
+    const b = Buffer.from(p, 'utf8');
+    out.push(Buffer.from(`$${b.length}\r\n`), b, Buffer.from('\r\n'));
+  }
+  return Buffer.concat(out);
+}
+
+/** 直接读 Redis 取验证码，避免依赖 redis-cli 子进程；支持 requirepass */
 function redisGet(key) {
   return new Promise((resolve, reject) => {
     const sock = net.connect(REDIS_PORT, REDIS_HOST);
     let buf = Buffer.alloc(0);
     const onData = d => {
       buf = Buffer.concat([buf, d]);
-      const text = buf.toString('utf8');
+      let text = buf.toString('utf8');
+      // 带密码时先收到 AUTH 的 +OK，把它剥掉再解析 GET 的 bulk 回复
+      if (REDIS_PASSWORD && text.startsWith('+OK\r\n')) text = text.slice(5);
+      else if (REDIS_PASSWORD && text.startsWith('-')) {
+        sock.removeListener('data', onData);
+        sock.end();
+        return reject(new Error('Redis AUTH 失败: ' + text.trim()));
+      }
       if (!text.endsWith('\r\n')) return;
       sock.removeListener('data', onData);
       sock.end();
@@ -35,10 +53,8 @@ function redisGet(key) {
     sock.on('data', onData);
     sock.on('error', reject);
     sock.setTimeout(5000, () => { sock.destroy(); reject(new Error('Redis 连接超时')); });
-    const k = Buffer.from(key, 'utf8');
-    sock.write(Buffer.concat([
-      Buffer.from(`*2\r\n$3\r\nGET\r\n$${k.length}\r\n`), k, Buffer.from('\r\n')
-    ]));
+    const cmds = REDIS_PASSWORD ? [resp(['AUTH', REDIS_PASSWORD]), resp(['GET', key])] : [resp(['GET', key])];
+    sock.write(Buffer.concat(cmds));
   });
 }
 

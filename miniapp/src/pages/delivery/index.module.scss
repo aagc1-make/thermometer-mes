@@ -1,0 +1,239 @@
+@use '@/styles/variables.scss' as *;
+@use '@/styles/blocks.scss' as *;
+
+.page {
+  @include page-base;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  margin: 16rpx $page-padding 0;
+  padding: 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+}
+
+.summaryItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.summaryValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.summaryLabel {
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.summaryDivider {
+  width: 1rpx;
+  height: 56rpx;
+  background: $color-divider;
+}
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  margin: 20rpx $page-padding 0;
+  padding: 16rpx 20rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-lg;
+}
+
+.filterText {
+  flex: 1;
+  margin-left: 10rpx;
+  font-size: $font-size-xs;
+  color: $color-primary;
+}
+
+.filterReset {
+  display: flex;
+  align-items: center;
+}
+
+.filterResetText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.card {
+  @include page-card;
+}
+
+.head {
+  @include flex-between;
+}
+
+.deliveryNo {
+  display: block;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.orderNo {
+  display: block;
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.status {
+  @include tag;
+}
+
+.status_waiting {
+  background: #f0f3fa;
+  color: $color-text-secondary;
+}
+
+.status_producing {
+  background: #fff6e6;
+  color: $color-warning;
+}
+
+.status_shipped {
+  background: $color-primary-soft;
+  color: $color-primary;
+}
+
+.status_delivered {
+  background: #e9fbf1;
+  color: $color-success;
+}
+
+.progressWrap {
+  margin-top: 24rpx;
+}
+
+.progressBar {
+  height: 12rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #2b6beb 0%, #5b93ff 100%);
+  border-radius: $radius-round;
+}
+
+.progressDone {
+  background: linear-gradient(90deg, #12a15b 0%, #3ecf8e 100%);
+}
+
+.progressMeta {
+  @include flex-between;
+  margin-top: 12rpx;
+}
+
+.progressText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.dashed {
+  height: 1rpx;
+  margin: 20rpx 0 6rpx;
+  border-bottom: 1rpx dashed $color-border;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  padding: 10rpx 0;
+}
+
+.rowLabel {
+  flex-shrink: 0;
+  width: 130rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.rowValue {
+  flex: 1;
+  min-width: 0;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  line-height: $line-height-normal;
+}
+
+.rowAction {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-left: 16rpx;
+}
+
+.rowActionIcon {
+  margin-right: 4rpx;
+}
+
+.rowActionText {
+  font-size: $font-size-xs;
+  color: $color-primary;
+}
+
+.remark {
+  display: block;
+  margin-top: 12rpx;
+  padding: 14rpx 18rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-sm;
+  font-size: 20rpx;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+}
+
+.updateTime {
+  display: block;
+  margin-top: 14rpx;
+  text-align: right;
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+}
+
+.empty {
+  padding-top: 180rpx;
+  @include flex-center;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.emptyCard {
+  @include page-card;
+  margin-top: 32rpx;
+  padding: 64rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emptyTitle {
+  margin-top: 20rpx;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.emptyDesc {
+  margin-top: 10rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  text-align: center;
+}

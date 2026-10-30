@@ -1,0 +1,256 @@
+@use '@/styles/variables.scss' as *;
+@use '@/styles/blocks.scss' as *;
+
+.page {
+  @include page-base;
+}
+
+.profileCard {
+  @include page-card;
+  margin-top: 16rpx;
+  background: linear-gradient(135deg, #f3f7ff 0%, #ffffff 70%);
+}
+
+.profileHead {
+  display: flex;
+  align-items: center;
+}
+
+.profileIcon {
+  flex-shrink: 0;
+  width: 72rpx;
+  height: 72rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-lg;
+  @include flex-center;
+}
+
+.profileInfo {
+  flex: 1;
+  min-width: 0;
+  margin-left: 16rpx;
+}
+
+.profileTitle {
+  display: block;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.profileTax {
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.profileTag {
+  @include tag;
+  height: 34rpx;
+  padding: 0 12rpx;
+}
+
+.profileDivider {
+  @include divider;
+  margin: 20rpx 0 8rpx;
+}
+
+.profileRow {
+  @include flex-between;
+  padding: 12rpx 0;
+}
+
+.profileLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.profileValue {
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+}
+
+.profileTip {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  line-height: $line-height-normal;
+}
+
+.formCard {
+  @include page-card;
+  margin-top: 24rpx;
+}
+
+.formTitle {
+  @include section-title;
+  margin-bottom: 8rpx;
+}
+
+.field {
+  @include form-field;
+}
+
+.fieldLabel {
+  flex-shrink: 0;
+  width: 140rpx;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.input {
+  @include form-input;
+}
+
+.pickerValue {
+  flex: 1;
+  text-align: right;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.submitBtn {
+  @include primary-button;
+  margin-top: 24rpx;
+}
+
+.submitDisabled {
+  opacity: 0.6;
+}
+
+.submitText {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+}
+
+.btnIcon {
+  margin-right: 6rpx;
+}
+
+.listHead {
+  @include flex-between;
+  margin: 32rpx $page-padding 0;
+}
+
+.listTitle {
+  @include section-title;
+}
+
+.listCount {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.card {
+  @include page-card;
+}
+
+.cardHead {
+  @include flex-between;
+}
+
+.invoiceNoWrap {
+  display: flex;
+  align-items: center;
+}
+
+.copyIcon {
+  margin-left: 6rpx;
+}
+
+.invoiceNo {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.status {
+  @include tag;
+}
+
+.statusIssued {
+  background: #e9fbf1;
+  color: $color-success;
+}
+
+.statusApplied {
+  background: #fff6e6;
+  color: $color-warning;
+}
+
+.dashed {
+  height: 1rpx;
+  margin: 18rpx 0 6rpx;
+  border-bottom: 1rpx dashed $color-border;
+}
+
+.row {
+  @include flex-between;
+  padding: 10rpx 0;
+}
+
+.rowLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.rowValue {
+  flex: 1;
+  min-width: 0;
+  margin-left: 24rpx;
+  text-align: right;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.rowAmount {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-price;
+}
+
+.remark {
+  display: block;
+  margin-top: 12rpx;
+  padding: 14rpx 18rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-sm;
+  font-size: 20rpx;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+}
+
+.empty {
+  padding-top: 160rpx;
+  @include flex-center;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.emptyCard {
+  @include page-card;
+  margin-top: 24rpx;
+  padding: 64rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emptyTitle {
+  margin-top: 20rpx;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.emptyDesc {
+  margin-top: 10rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}

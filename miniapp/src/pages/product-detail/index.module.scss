@@ -1,0 +1,174 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 40rpx;
+  background: linear-gradient(180deg, #f7f9ff 0%, $color-bg-page 320rpx, $color-bg-page 100%);
+}
+
+.heroCard {
+  margin: 8rpx $page-padding 0;
+  padding: 24rpx 32rpx 32rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+}
+
+.heroArt {
+  width: 100%;
+  height: 400rpx;
+  margin-bottom: 24rpx;
+  background: linear-gradient(160deg, #eff5ff 0%, #e4eeff 100%);
+  border-radius: $radius-2xl;
+  overflow: hidden;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 40rpx;
+  padding: 0 16rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-sm;
+}
+
+.tagText {
+  font-size: 20rpx;
+  color: $color-primary;
+}
+
+.name {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 38rpx;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  line-height: 1.4;
+}
+
+.code {
+  display: block;
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.card {
+  margin: 24rpx $page-padding 0;
+  padding: 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+}
+
+.cardTitle {
+  display: block;
+  margin-bottom: 8rpx;
+  font-size: 32rpx;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.paramRow {
+  display: flex;
+  align-items: center;
+  min-height: 88rpx;
+  padding: 12rpx 0;
+}
+
+.paramLabel {
+  flex-shrink: 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.paramValue {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.divider {
+  height: 1rpx;
+  background: $color-divider;
+}
+
+.desc {
+  display: block;
+  padding-top: 12rpx;
+  font-size: $font-size-sm;
+  line-height: 1.8;
+  color: $color-text-secondary;
+}
+
+.bottomSpace {
+  height: 180rpx;
+}
+
+.actionBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: rgba(245, 247, 252, 0.94);
+  z-index: 10;
+}
+
+.addBtn {
+  flex: 1;
+  height: 84rpx;
+  margin-right: 20rpx;
+  border: 2rpx solid $color-primary;
+  border-radius: $radius-button;
+  background: $color-bg-card;
+  @include flex-center;
+
+  &:active {
+    background: $color-primary-soft;
+  }
+}
+
+.addBtnText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-primary;
+  white-space: nowrap;
+}
+
+.btnIcon {
+  margin-right: 8rpx;
+}
+
+.inquiryBtn {
+  flex: 1.4;
+  height: 84rpx;
+  background: $color-primary;
+  border-radius: $radius-button;
+  @include flex-center;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.inquiryBtnText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-white;
+  white-space: nowrap;
+}
+
+.empty {
+  padding-top: 200rpx;
+  @include flex-center;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}

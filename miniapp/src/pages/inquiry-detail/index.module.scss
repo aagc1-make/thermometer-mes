@@ -1,0 +1,224 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 40rpx;
+  background: linear-gradient(180deg, #f7f9ff 0%, $color-bg-page 320rpx, $color-bg-page 100%);
+}
+
+.card {
+  margin: 8rpx $page-padding 0;
+  padding: 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+
+  & + & {
+    margin-top: 24rpx;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.id {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.tag {
+  height: 40rpx;
+  padding: 0 16rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-sm;
+  @include flex-center;
+}
+
+.tagQuoted {
+  background: #e9fbf1;
+}
+
+.tagText {
+  font-size: 20rpx;
+  color: $color-primary;
+}
+
+.tagTextQuoted {
+  color: $color-success;
+}
+
+.dashed {
+  height: 1rpx;
+  margin: 20rpx 0 0;
+  border-bottom: 1rpx dashed $color-border;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  padding: 22rpx 0;
+
+  & + & {
+    border-top: 1rpx dashed $color-border;
+  }
+}
+
+.thumb {
+  flex-shrink: 0;
+  width: 96rpx;
+  height: 96rpx;
+  background: $color-bg-soft;
+  border-radius: $radius-xl;
+  overflow: hidden;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+  padding: 0 16rpx 0 20rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.meta {
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.qty {
+  flex-shrink: 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  min-height: 88rpx;
+  padding: 8rpx 0;
+}
+
+.label {
+  flex-shrink: 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.value {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.divider {
+  height: 1rpx;
+  background: $color-divider;
+}
+
+.totalCard {
+  display: flex;
+  align-items: center;
+  margin: 24rpx $page-padding 0;
+  padding: 24rpx;
+  background: $color-bg-card;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+}
+
+.totalLeft {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.totalText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.totalTip {
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.quote {
+  margin-top: 6rpx;
+  font-size: $font-size-sm;
+  color: $color-price;
+}
+
+.callBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 72rpx;
+  padding: 0 24rpx;
+  background: $color-primary-soft;
+  border-radius: $radius-button;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.callText {
+  margin-left: 8rpx;
+  font-size: $font-size-xs;
+  color: $color-primary;
+  white-space: nowrap;
+}
+
+.actionBtn {
+  flex-shrink: 0;
+  height: 72rpx;
+  padding: 0 32rpx;
+  background: $color-primary;
+  border-radius: $radius-button;
+  @include flex-center;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.actionDisabled {
+  opacity: 0.6;
+}
+
+.actionText {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+  white-space: nowrap;
+}
+
+.btnIcon {
+  margin-right: 6rpx;
+}
+
+.empty {
+  padding-top: 200rpx;
+  @include flex-center;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
