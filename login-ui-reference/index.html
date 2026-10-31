@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>井安智联-钻井多源感知与井喷风险智能预警系统</title>
+<link rel="icon" type="image/png" href="/assets/drilling/wellan-logo.png"/>
+<link rel="apple-touch-icon" href="/assets/drilling/wellan-logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+if (window.tailwind) window.tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            "colors": {
+                "surface-container-low": "var(--color-surface-container-low)",
+                "surface-container-high": "var(--color-surface-container-high)",
+                "surface-container-lowest": "var(--color-surface-container-lowest)",
+                "error-container": "var(--color-error-container)",
+                "primary-dim": "var(--color-primary-dim)",
+                "on-tertiary-container": "var(--color-on-tertiary-container)",
+                "on-secondary-fixed": "var(--color-on-secondary-fixed)",
+                "outline-variant": "var(--color-outline-variant)",
+                "tertiary-dim": "var(--color-tertiary-dim)",
+                "primary-container": "var(--color-primary-container)",
+                "secondary-fixed-dim": "var(--color-secondary-fixed-dim)",
+                "surface": "var(--color-surface)",
+                "primary-fixed-dim": "var(--color-primary-fixed-dim)",
+                "background": "var(--color-background)",
+                "on-surface-variant": "var(--color-on-surface-variant)",
+                "on-primary": "var(--color-on-primary)",
+                "on-primary-fixed": "var(--color-on-primary-fixed)",
+                "inverse-primary": "var(--color-inverse-primary)",
+                "error-dim": "var(--color-error-dim)",
+                "inverse-on-surface": "var(--color-inverse-on-surface)",
+                "secondary-dim": "var(--color-secondary-dim)",
+                "tertiary-container": "var(--color-tertiary-container)",
+                "error": "var(--color-error)",
+                "on-background": "var(--color-on-background)",
+                "on-primary-fixed-variant": "var(--color-on-primary-fixed-variant)",
+                "outline": "var(--color-outline)",
+                "on-secondary-container": "var(--color-on-secondary-container)",
+                "surface-bright": "var(--color-surface-bright)",
+                "on-tertiary-fixed-variant": "var(--color-on-tertiary-fixed-variant)",
+                "on-primary-container": "var(--color-on-primary-container)",
+                "on-secondary": "var(--color-on-secondary)",
+                "surface-dim": "var(--color-surface-dim)",
+                "on-secondary-fixed-variant": "var(--color-on-secondary-fixed-variant)",
+                "primary-fixed": "var(--color-primary-fixed)",
+                "surface-container": "var(--color-surface-container)",
+                "on-tertiary": "var(--color-on-tertiary)",
+                "surface-variant": "var(--color-surface-variant)",
+                "on-error": "var(--color-on-error)",
+                "on-error-container": "var(--color-on-error-container)",
+                "inverse-surface": "var(--color-inverse-surface)",
+                "surface-tint": "var(--color-surface-tint)",
+                "secondary-container": "var(--color-secondary-container)",
+                "tertiary-fixed": "var(--color-tertiary-fixed)",
+                "primary": "var(--color-primary)",
+                "on-surface": "var(--color-on-surface)",
+                "surface-container-highest": "var(--color-surface-container-highest)",
+                "secondary": "var(--color-secondary)",
+                "tertiary": "var(--color-tertiary)",
+                "tertiary-fixed-dim": "var(--color-tertiary-fixed-dim)",
+                "secondary-fixed": "var(--color-secondary-fixed)"
+            },
+            "borderRadius": {
+                "DEFAULT": "var(--radius-default)",
+                "lg": "var(--radius-lg)",
+                "xl": "var(--radius-xl)",
+                "full": "var(--radius-full)"
+            },
+            "fontFamily": {
+                "headline": ["Space Grotesk"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+            }
+        },
+    }
+}
+</script>
+</head>
+<body>
+<div id="app"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

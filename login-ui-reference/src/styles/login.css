@@ -1,0 +1,53 @@
+.login-input{
+    border-radius:4px !important;
+}
+.login-input:focus {
+    box-shadow: none !important;
+    animation: none !important;
+}
+
+/* ============================================================
+   Login Tabs — Transparent with horizontal line decoration
+   ============================================================ */
+
+/* 两侧水平装饰线 */
+.login-tab-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(
+        to right,
+        transparent,
+        rgba(180, 180, 180, 0.6) 30%,
+        rgba(180, 180, 180, 0.6) 70%,
+        transparent
+    );
+}
+
+.login-tab-line-left {
+    max-width: 60px;
+}
+
+.login-tab-line-right {
+    max-width: 60px;
+}
+
+/* 中间竖线分隔符 */
+.login-tab-divider {
+    width: 1px;
+    height: 16px;
+    background: rgba(180, 180, 180, 0.5);
+    margin: 0 12px;
+    flex-shrink: 0;
+}
+
+/* 按钮默认：透明背景 */
+.login-tab-btn {
+    background: transparent !important;
+    color: rgba(180, 180, 180, 0.7);
+}
+
+/* 按钮激活态 */
+.login-tab-btn.active {
+    background: transparent !important;
+    color: var(--color-primary, #6366f1);
+}
