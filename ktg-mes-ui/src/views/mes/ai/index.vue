@@ -100,6 +100,10 @@
             <el-button v-if="!m.finished" size="mini" :disabled="m.busy" @click="cancelDraft(m)">取消</el-button>
             <el-button v-if="m.workorderId && $auth.hasPermi('mes:pro:workorder:query')" type="text" @click="openWorkorder(m.workorderId)">打开工单详情</el-button>
           </div>
+          <div v-if="m.analysisContext" class="msg__meta">
+            <el-button type="text" size="mini" :loading="m.analysisBusy" @click="requestAnalysis(m)">请求大模型分析</el-button>
+            <span>需确认发送当前问题和部分回答</span>
+          </div>
         </div>
       </div>
 
@@ -175,6 +179,7 @@ export default {
       if (!q || this.loading) return
       this.input = ''
       this.push({ role: 'user', type: 'text', text: q })
+      const responseStart = this.messages.length
       this.loading = true
       try {
         await this.route(q)
@@ -183,14 +188,62 @@ export default {
         const message = /timeout|超时/i.test(reason) ? '查询超时，请稍后重试。' : /network|连接/i.test(reason) ? '无法连接业务服务，请检查服务是否启动。' : `查询未完成：${reason || '服务暂时不可用'}。`
         this.push({ role: 'bot', type: 'text', text: message })
       } finally {
+        const replies = this.messages.slice(responseStart).filter(m => m.role === 'bot')
+        if (replies.length) {
+          const facts = replies.map(m => {
+            const keys = m.type === 'stock' ? ['itemCode', 'itemName', 'batchCode', 'warehouseName', 'inQty', 'outQty', 'endQty'] : (m.columns || []).map(c => c.prop)
+            const rows = m.rows || m.lines || []
+            return {
+              type: m.type, title: m.title, text: m.text, source: m.source,
+              begin: m.begin, inQty: m.inQty, outQty: m.outQty, end: m.end,
+              rows: rows.slice(0, 20).map(row => keys.reduce((shown, key) => { shown[key] = row[key]; return shown }, {})),
+              rowsTruncated: rows.length > 20, options: m.options, summary: m.summary
+            }
+          })
+          this.$set(replies[replies.length - 1], 'analysisContext', { question: q, facts })
+        }
         this.loading = false
         this.$nextTick(this.scrollBottom)
       }
     },
 
+    async requestAnalysis(m) {
+      if (m.analysisBusy || !m.analysisContext) return
+      try {
+        await this.$confirm('将当前问题及部分回答、表格数据发送给已配置的外部模型服务进行分析。请确认内容适合发送。', '确认发送', { confirmButtonText: '确认发送', cancelButtonText: '取消', type: 'warning' })
+      } catch (e) { return }
+      const facts = JSON.stringify(m.analysisContext.facts)
+      if (facts.length > 12000) {
+        this.$modal.msgWarning('当前结果过长，请缩小查询范围后再请求分析。')
+        return
+      }
+      this.$set(m, 'analysisBusy', true)
+      try {
+        const result = await request({ url: '/mes/ai/analysis', method: 'post', data: { question: m.analysisContext.question, facts }, timeout: 20000 })
+        if (!result || !result.data || !result.data.text) throw new Error('模型未返回分析结果')
+        this.push({ role: 'bot', type: 'text', text: `大模型分析（${result.data.model || '模型'}）：\n${result.data.text}\n\n分析可能存在误差，请以表格及原始业务数据为准。` })
+      } catch (e) {
+        this.push({ role: 'bot', type: 'text', text: '大模型分析暂不可用；原始回答和表格仍可查看。' })
+      } finally { this.$set(m, 'analysisBusy', false) }
+    },
+
     /* ---------- 意图解析（规则引擎；LLM 只做兜底，故意不参与算数） ---------- */
     parseTime(q) {
       const now = new Date()
+      const range = q.match(/(?:(20\d{2})\s*[-年]\s*)?(\d{1,2})\s*[-月]\s*(\d{1,2})\s*日?\s*(?:到|至|~|～)\s*(?:(20\d{2})\s*[-年]\s*)?(?:(\d{1,2})\s*[-月]\s*)?(\d{1,2})\s*日?/)
+      if (range) {
+        const makeDay = (year, month, day) => {
+          const d = new Date(year, month - 1, day)
+          if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) throw new Error('日期无效，请检查查询时间')
+          return this.p2(d)
+        }
+        const year = Number(range[1] || (now.getMonth() + 1 < Number(range[2]) ? now.getFullYear() - 1 : now.getFullYear()))
+        const from = makeDay(year, Number(range[2]), Number(range[3]))
+        const to = makeDay(Number(range[4] || year), Number(range[5] || range[2]), Number(range[6]))
+        if (from > to) throw new Error('开始日期不能晚于结束日期')
+        return { from, to, label: `${from} 至 ${to}` }
+      }
+      if (/\d\s*日/.test(q)) throw new Error('请提供完整日期范围，例如 2026年10月1日到10月15日')
       let m = q.match(/(\d{1,2})\s*月/)
       if (m) {
         const mon = Number(m[1]) - 1
@@ -208,6 +261,7 @@ export default {
       m = q.match(/近\s*(\d+)\s*天/)
       if (m) {
         const d = Number(m[1])
+        if (d < 1 || d > 366) throw new Error('查询天数应在 1 到 366 之间')
         return { from: this.p2(new Date(Date.now() - (d - 1) * 86400000)), to: this.p2(now), label: `近 ${d} 天` }
       }
       return { from: this.p2(new Date(now.getFullYear(), now.getMonth(), 1)), to: this.p2(new Date(now.getFullYear(), now.getMonth() + 1, 0)), label: '本月' }
@@ -242,6 +296,7 @@ export default {
      */
     materialMention(q) {
       let s = String(q || '')
+      s = s.replace(/(?:(?:20\d{2})\s*[-年]\s*)?\d{1,2}\s*[-月]\s*\d{1,2}\s*日?\s*(?:到|至|~|～)\s*(?:(?:20\d{2})\s*[-年]\s*)?(?:\d{1,2}\s*[-月]\s*)?\d{1,2}\s*日?/g, ' ')
       s = s.replace(/(?:20\d{2}\s*年)?\d{1,2}\s*月份?|本月|这个月|当月|上月|上个月|近\s*\d+\s*天/g, ' ')
       s = s.replace(/(采购|到货|收货|入库|出库|领料|发货|销售|工单|进度|排产|安全库存|库存|盘点|结存|检验|质检|合格率|低于|预警|缺料)/g, ' ')
       s = s.replace(/(还剩多少|剩余多少|剩下多少|剩多少|多少|哪些|哪个|什么|怎么样|怎么|情况|统计|汇总|明细|记录|清单|报表|数据|查询|查一下|查|看一下|看|帮我|请问|请|一共|总计|全部|所有|整体|通知|计划|订单|单据|单号)/g, ' ')
@@ -313,6 +368,35 @@ export default {
         })
         return
       }
+      if (/放假|节假日|假期|休假|调休/.test(q)) {
+        this.lastStock = null
+        this.lastWorkorder = null
+        this.waitingWeatherCity = false
+        if (/请假|年假|我.*休假|个人休假/.test(q)) {
+          this.push({ role: 'bot', type: 'text', text: '节假日设置记录的是系统日历的休息日和工作日，不能代表个人请假或年假。请在班组排班或人员管理中核对个人安排。' })
+          return
+        }
+        return this.queryHolidays(q)
+      }
+      if (/有哪些|有哪(?:些|几个)|多少|名单|列表|查看|查询|列出/.test(q)) {
+        if (/供应商/.test(q) && !/订单|采购|退货|入库/.test(q)) return this.queryBasicList('vendor')
+        if (/仓库/.test(q) && !/库存|入库|出库|流水|物料/.test(q)) return this.queryBasicList('warehouse')
+        if (/班组/.test(q) && !/成员|人员|排班|日期|今天|明天/.test(q)) return this.queryBasicList('team')
+        if (/设备|机器|机械/.test(q) && !/异常|不合格|点检|维修|故障|运行|停机|状态|保养/.test(q)) return this.queryBasicList('equipment')
+      }
+      if (/功能|模块|能做什么|怎么用/.test(q)) {
+        const guides = [
+          { re: /主数据|基础数据/, text: '主数据可以维护物料、客户、供应商及生产基础信息。可以问我“公司有哪些客户”或“有哪些供应商”。' },
+          { re: /仓储|仓库管理/, text: '仓储包括库存、采购入库、领料和销售出库。可以问我“盘点上壳库存”或“有哪些仓库”。' },
+          { re: /生产管理|生产模块/, text: '生产模块包含工单、排产、工艺和报工。可以问我指定工单进度或“哪些工单已经超期”。' },
+          { re: /质量|质检/, text: '质量模块包括来料、过程和出货检验。可以问我“本月过程检验合格率”。' },
+          { re: /设备管理|设备模块/, text: '设备模块包括设备台账和点检记录。可以问我“有哪些设备”或“哪些设备最近点检有异常”。' },
+          { re: /排班|班组/, text: '班组排班包括班组、排班计划、日历和节假日设置。可以问我“有哪些班组”或“公司什么时候放假”。' },
+          { re: /系统管理|系统模块/, text: '系统模块包含用户、角色和权限等配置。可以问我“我的角色是什么”；可见内容以账号权限为准。' }
+        ]
+        const guide = guides.find(g => g.re.test(q))
+        if (guide) { this.push({ role: 'bot', type: 'text', text: guide.text }); return }
+      }
       if (/设备|机器|机械/.test(q)) {
         this.lastStock = null
         this.lastWorkorder = null
@@ -326,6 +410,12 @@ export default {
         const roles = info.roles || []
         this.push({ role: 'bot', type: 'text', text: roles.length ? `当前账号的角色标识：${roles.join('、')}。具体可用功能以菜单和操作权限为准。` : '当前账号没有查到角色信息，请联系管理员。' })
         return
+      }
+      if (/客户|合作客户/.test(q) && /有哪些|有哪(?:些|几个)|有什么|多少|列表|清单|查看|查询|查一下|列出|介绍/.test(q) && !/订单|出库|销售|发货|退货|金额|联系人|电话/.test(q)) {
+        this.waitingWeatherCity = false
+        this.lastStock = null
+        this.lastWorkorder = null
+        return this.queryCustomers(q)
       }
       if (/部门|组织架构|组织结构/.test(q) && /有哪些|有哪几个|有什么|列表|结构|架构|介绍|查看|查询|查一下|列出/.test(q)) {
         this.waitingWeatherCity = false
@@ -376,9 +466,19 @@ export default {
       const open = q.match(/(?:打开|查看详情|进入)\s*(?:工单)?\s*([A-Za-z][A-Za-z0-9_-]*\d[A-Za-z0-9_-]*)/i)
       if (open && /工单|^MO/i.test(q)) return this.findAndOpenWorkorder(open[1])
       // 只处理明确的省略式库存追问，不将其他主题误当作上一轮查询。
-      const dateFollowup = /^(?:那|那么)?\s*(?:(?:20\d{2}年)?\s*\d{1,2}\s*月(?:份)?|近\s*\d+\s*天|上个月|上月|本月|这个月|当月)\s*(?:呢|怎么样|的情况)?[？?。！!]*$/.test(q)
+      const dateFollowup = /^(?:那|那么)?\s*(?:(?:20\d{2}\s*年\s*)?\d{1,2}\s*月(?:份)?|近\s*\d+\s*天|上个月|上月|本月|这个月|当月)\s*(?:呢|怎么样|的情况)?[？?。！!]*$/.test(q)
+      const warehouseFollowup = /^(?:只看|仅看|查看|换成|那|那么)\s*.+(?:仓库|仓|库)(?:呢|的情况)?[？?。！!]*$/.test(q)
+      if (this.lastStock && warehouseFollowup && !this.matchRule(q)) {
+        const name = this.lastStock.warehouses.find(n => q.includes(n))
+        if (!name) {
+          this.push({ role: 'bot', type: 'ask', text: '没有找到该物料对应的仓库，请选择完整仓库名称。', options: this.lastStock.warehouses.map(n => `只看${n}`) })
+          return
+        }
+        return this.queryStock(`盘点 ${this.lastStock.time} ${this.lastStock.itemCode} ${name} 库存`)
+      }
       if (this.lastStock && (/^(那|那么|上个月|本月|这个月|上月)/.test(q) || dateFollowup) && !this.matchRule(q)) {
-        const t = q.match(/(?:20\d{2}年)?\d{1,2}月|上个月|上月|本月|这个月|近\s*\d+\s*天/)
+        const t = q.match(/(?:20\d{2}\s*年\s*)?\d{1,2}\s*月(?:份)?|上个月|上月|本月|这个月|当月|近\s*\d+\s*天/)
+        if (dateFollowup && t) return this.queryStock(`盘点 ${t[0]} ${this.lastStock.itemCode} ${this.lastStock.warehouse || ''} 库存`)
         const matched = await this.matchItem(q)
         const item = matched.items && matched.items.length === 1 ? matched.item : null
         if (matched.items && matched.items.length > 1) return this.queryStock('盘点 ' + q + ' 库存')
@@ -429,10 +529,8 @@ export default {
       // ③ 都不行：追问，绝不编造
       this.push({
         role: 'bot', type: 'ask',
-        text: this.llmUnavailable ? '智能意图识别暂时不可用。你仍可以直接查询库存、出入库或工单，例如“盘点上壳库存”。' : slots && slots.metric === 'unknown'
-          ? '这个问题不在 MES 业务数据范围内，我无法给出可靠答案。你是想查下面哪一类？'
-          : '这个问题我暂时没把握，你是想查下面哪一类？',
-        options: ['盘点某物料某月的库存', '本月采购入库情况', '工单进度落后清单', '低于安全库存的物料']
+        text: this.llmUnavailable ? '智能意图识别暂时不可用。你仍可以直接查询库存、客户、工单或节假日等已支持的内容。' : '我暂时没有识别出这个问题对应的查询方式，并不代表系统没有相关信息。请换个说法或选择下面的示例。',
+        options: ['盘点某物料某月的库存', '本月采购入库情况', '工单进度落后清单', '公司什么时候放假']
       })
     },
 
@@ -467,6 +565,65 @@ export default {
       this.push({ role: 'bot', type: 'text', text: rows.length ? `最近一次已完成点检中，有 ${rows.length} 台设备记录了异常，具体项目见上表。` : '已查询的最近一次已完成点检中没有发现异常记录；未完成点检或没有点检记录的设备无法据此判断。' })
     },
 
+    async queryHolidays(q) {
+      if (!this.$auth.hasPermi('mes:cal:calholiday:list')) {
+        this.push({ role: 'bot', type: 'text', text: '当前账号没有节假日设置的查询权限，请联系管理员。' })
+        return
+      }
+      if (/春节|国庆|劳动节|五一|元旦|清明|端午|中秋/.test(q) && !/\d\s*月|本月|上月|这个月|上个月/.test(q)) {
+        this.push({ role: 'bot', type: 'text', text: '系统节假日设置只记录日期和休息类型，不记录节日名称，无法直接判断某个节日的放假安排。请提供具体月份，例如“查询今年10月的放假安排”。' })
+        return
+      }
+      const response = await request({ url: '/mes/cal/calholiday/list', method: 'get' })
+      if (!response || !Array.isArray(response.data)) throw new Error('节假日数据格式异常，请稍后重试')
+      const now = new Date()
+      let from = this.p2(now), to = '', scope = '今天及之后'
+      const year = q.match(/(20\d{2})\s*年/)
+      if (/\d\s*月|本月|上月|这个月|上个月|当月|近\s*\d+\s*天/.test(q)) {
+        const t = this.parseTime(q); from = t.from; to = t.to; scope = `${from} 至 ${to}`
+      } else if (year || /今年|明年|去年/.test(q)) {
+        const y = year ? Number(year[1]) : now.getFullYear() + (/明年/.test(q) ? 1 : /去年/.test(q) ? -1 : 0)
+        from = `${y}-01-01`; to = `${y}-12-31`; scope = `${y} 年`
+      }
+      const rows = response.data.filter(r => r.holidayType === 'HOLIDAY' && r.theDay && String(r.theDay).slice(0, 10) >= from && (!to || String(r.theDay).slice(0, 10) <= to))
+        .map(r => ({ theDay: String(r.theDay).slice(0, 10), type: '休息日' })).sort((a, b) => a.theDay.localeCompare(b.theDay))
+      this.push({ role: 'bot', type: 'list', title: `${scope} · 系统节假日设置`, columns: [{ prop: 'theDay', label: '日期', width: 150 }, { prop: 'type', label: '日历类型', width: 120 }], rows, source: '来源：班组排班 → 节假日设置，仅列系统标记为休息日的日期；不等同于个人排班或官方假期通知。' })
+      this.push({ role: 'bot', type: 'text', text: rows.length ? `${scope}，系统中标记了 ${rows.length} 条休息日记录，最早一条为 ${rows[0].theDay}。个人是否休息还需结合所在班组的排班及公司通知确认。` : `${scope}没有查到系统标记的休息日。这不代表一定不放假，可能是尚未维护，请以公司通知和个人排班为准。` })
+    },
+    async queryBasicList(kind) {
+      const configs = {
+        vendor: { label: '供应商', permission: 'mes:md:vendor:list', url: '/mes/md/vendor/list', code: 'vendorCode', name: 'vendorName', source: '主数据 → 供应商管理' },
+        warehouse: { label: '仓库', permission: 'mes:wm:warehouse:list', url: '/mes/wm/warehouse/list', code: 'warehouseCode', name: 'warehouseName', source: '仓储 → 仓库设置' },
+        team: { label: '班组', permission: 'mes:cal:team:list', url: '/mes/cal/team/list', code: 'teamCode', name: 'teamName', source: '班组排班 → 班组设置' },
+        equipment: { label: '设备', permission: 'mes:dv:machinery:list', url: '/mes/dv/machinery/list', code: 'machineryCode', name: 'machineryName', source: '设备 → 设备台账' }
+      }
+      const config = configs[kind]
+      if (!this.$auth.hasPermi(config.permission)) { this.push({ role: 'bot', type: 'text', text: `当前账号没有${config.label}列表查询权限，请联系管理员。` }); return }
+      this.lastStock = null; this.lastWorkorder = null; this.waitingWeatherCity = false
+      const result = await this.get(config.url)
+      const rows = (result.rows || []).map(r => ({ code: r[config.code] || '未填写', name: r[config.name] || '未填写' }))
+      this.push({ role: 'bot', type: 'list', title: `${config.label}名单`, columns: [{ prop: 'code', label: `${config.label}编码`, width: 160 }, { prop: 'name', label: `${config.label}名称` }], rows, source: `来源：${config.source}，共 ${rows.length} 条；以当前账号可查询范围为准。` })
+      this.push({ role: 'bot', type: 'text', text: rows.length ? `当前查询到 ${rows.length} 条${config.label}记录，编码和名称可在${config.source}核对。` : `当前查询范围内没有查到${config.label}记录，请到${config.source}核对。` })
+    },
+    async queryCustomers(q) {
+      if (!this.$auth.hasPermi('mes:md:client:list')) {
+        this.push({ role: 'bot', type: 'text', text: '当前账号没有客户列表查询权限，请联系管理员。' })
+        return
+      }
+      const params = /启用|有效/.test(q) && !/未启用|停用|禁用/.test(q) ? { enableFlag: 'Y' } : /未启用|停用|禁用/.test(q) ? { enableFlag: 'N' } : {}
+      const result = await this.get('/mes/md/client/list', params)
+      const rows = (result.rows || []).map(c => ({ clientCode: c.clientCode || '未填写', clientName: c.clientName || '未填写', clientNick: c.clientNick || '未填写', status: c.enableFlag === 'Y' ? '启用' : c.enableFlag === 'N' ? '停用' : '未标注' }))
+      this.push({ role: 'bot', type: 'list', title: '客户名单', columns: [
+        { prop: 'clientCode', label: '客户编码', width: 150 },
+        { prop: 'clientName', label: '客户名称' },
+        { prop: 'clientNick', label: '客户简称' },
+        { prop: 'status', label: '状态', width: 90 }
+      ], rows, source: `数据来源：主数据 → 客户管理，共 ${rows.length} 条；显示范围以当前账号权限及接口返回为准` })
+      const enabled = rows.filter(c => c.status === '启用').length
+      const disabled = rows.filter(c => c.status === '停用').length
+      const unknown = rows.length - enabled - disabled
+      this.push({ role: 'bot', type: 'text', text: rows.length ? `目前查询到 ${rows.length} 条客户记录，其中启用 ${enabled} 条、停用 ${disabled} 条${unknown ? `、状态未标注 ${unknown} 条` : ''}。客户编码和名称可在客户管理中核对。` : '当前查询范围内没有找到客户记录，可到客户管理核对筛选条件。' })
+    },
     async queryDepartments() {
       const result = await request({ url: '/system/dept/treeselect', method: 'get' })
       const names = []
@@ -853,12 +1010,13 @@ export default {
       const endQty = lines.reduce((v, r) => v + r.endQty, 0)
       this.push({ role: 'bot', type: 'stock', title: `${t.label} · ${item.itemName}（${item.itemCode}）库存盘点`,
         begin: round(endQty - inQty + outQty), inQty: round(inQty), outQty: round(outQty), end: round(endQty), lines,
-        source: `数据来源：库存现有量及完整库存流水，${t.from} ~ ${t.to}；按仓库与批次核对，单位：${item.unitName || item.unitOfMeasure || '同物料单位'}` })
-      const timeText = q.match(/(?:20\d{2}年)?\d{1,2}月|上个月|上月|本月|这个月|当月|近\s*\d+\s*天/)
+        source: `数据来源：库存现有量及可查询库存流水，${t.from} ~ ${t.to}；历史结存根据期后流水回推，依赖流水完整；按仓库与批次核对，单位：${item.unitName || item.unitOfMeasure || '同物料单位'}` })
       const warehouseNames = [...(tx.rows || []), ...(stock.rows || [])].reduce((all, r) => all.concat(r.warehouseName || [], r.warehouseCode || []), [])
       const warehouseName = warehouseNames.sort((a, b) => b.length - a.length).find(name => q.includes(name)) || ''
-      this.lastStock = { itemCode: item.itemCode, time: timeText ? timeText[0] : '本月', warehouse: warehouseName }
-      this.push({ role: 'bot', type: 'text', text: `${item.itemName}在${t.label}的期末库存为 ${round(endQty)} ${item.unitName || item.unitOfMeasure || ''}；期间入库 ${round(inQty)}，出库 ${round(outQty)}。明细见上表。` })
+      this.lastStock = { itemCode: item.itemCode, time: `${t.from}至${t.to}`, warehouse: warehouseName, warehouses: [...new Set(warehouseNames)] }
+      const net = round(inQty - outQty)
+      const trend = net > 0 ? `期间净增加 ${net}` : net < 0 ? `期间净减少 ${Math.abs(net)}` : '期间入出库数量相同'
+      this.push({ role: 'bot', type: 'text', text: `${item.itemName}在${t.label}的期末库存为 ${round(endQty)} ${item.unitName || item.unitOfMeasure || ''}；期间入库 ${round(inQty)}，出库 ${round(outQty)}，${trend}。各仓库与批次的明细见上表；历史结果依赖流水完整。` })
     },
 
     async findAndOpenWorkorder(code) {
@@ -926,9 +1084,9 @@ export default {
       })
       const byItem = {}
       rows.forEach(r => {
-        const k = r.itemCode
-        const product = (allItems || []).find(i => i.itemCode === k)
-        if (!byItem[k]) byItem[k] = { itemCode: k, itemName: r.itemName, unit: r.unitName || (product && (product.unitName || product.unitOfMeasure)) || '未标注', qty: 0, cnt: 0 }
+        const k = [r.itemCode, r.warehouseCode || r.warehouseId || r.warehouseName || ''].join('|')
+        const product = (allItems || []).find(i => i.itemCode === r.itemCode)
+        if (!byItem[k]) byItem[k] = { itemCode: r.itemCode, itemName: r.itemName, warehouseName: r.warehouseName || '未标注', unit: r.unitName || (product && (product.unitName || product.unitOfMeasure)) || '未标注', qty: 0, cnt: 0 }
         byItem[k].qty += Math.abs(Number(r.transactionQuantity || 0))
         byItem[k].cnt += 1
       })
@@ -939,6 +1097,7 @@ export default {
         columns: [
           { prop: 'itemCode', label: '物料编码', width: 130 },
           { prop: 'itemName', label: '物料名称' },
+          { prop: 'warehouseName', label: '仓库', width: 120 },
           { prop: 'qty', label: dir === 'IN' ? '入库数' : '出库数', width: 100, align: 'right' },
           { prop: 'unit', label: '单位', width: 80 },
           { prop: 'cnt', label: '流水条数', width: 90, align: 'right' }
@@ -946,7 +1105,10 @@ export default {
         rows: list,
         source: `数据来源：wm_transaction ${t.from} ~ ${t.to}，共 ${rows.length} 条${dir === 'IN' ? '入库' : '出库'}流水`
       })
-      this.push({ role: 'bot', type: 'text', text: `${t.label}${selected.length ? '' : '（未指定物料，统计全部物料）'}共找到 ${rows.length} 条${dir === 'IN' ? '入库' : '出库'}流水，涉及 ${list.length} 种物料。各物料数量见上表。` })
+      const itemCount = new Set(list.map(r => r.itemCode)).size
+      const warehouseCount = new Set(list.map(r => r.warehouseName).filter(name => name !== '未标注')).size
+      const unknownWarehouse = list.some(r => r.warehouseName === '未标注') ? '，部分记录未标注仓库' : ''
+      this.push({ role: 'bot', type: 'text', text: `${t.label}${selected.length ? '' : '（未指定物料，统计全部物料）'}共找到 ${rows.length} 条${dir === 'IN' ? '入库' : '出库'}流水，涉及 ${itemCount} 种物料、${warehouseCount} 个已标注仓库${unknownWarehouse}。各仓库数量和单位见上表，不同物料或单位不直接相加。` })
     },
 
     /* ---------- ③ 工单进度 ---------- */
@@ -957,9 +1119,13 @@ export default {
       const doc = q.match(/(?:工单号?|单号)[：:\s]*([A-Za-z][A-Za-z0-9_-]*\d[A-Za-z0-9_-]*)/)
         || q.match(/(MO\d{6,}|[A-Z]{2,}\d{6,})/i)
       const res = await this.get('/mes/pro/workorder/list', doc ? { workorderCode: doc[1] } : {})
-      const range = /\d\s*月|本月|上月|这个月|上个月|近\s*\d+\s*天/.test(q) ? this.parseTime(q) : null
+      const range = /\d\s*月|20\d{2}-\d{1,2}-\d{1,2}|本月|上月|这个月|上个月|近\s*\d+\s*天/.test(q) ? this.parseTime(q) : null
       let rows = (res.rows || []).filter(r => (!doc || r.workorderCode === doc[1]) && (!range || (String(r.createTime || '').slice(0, 10) >= range.from && String(r.createTime || '').slice(0, 10) <= range.to)))
       const today = new Date().setHours(0, 0, 0, 0)
+      const overdueOnly = !doc && /落后|超期|逾期|延期/.test(q)
+      if (overdueOnly) {
+        rows = rows.filter(r => r.status !== 'FINISHED' && r.status !== 'CANCELED' && r.requestDate && new Date(String(r.requestDate).replace(/-/g, '/')).getTime() < today)
+      }
       if (doc && rows.length === 0) {
         this.push({
           role: 'bot', type: 'text',
@@ -977,14 +1143,14 @@ export default {
           : ''
         return {
           workorderCode: r.workorderCode, productName: r.productName,
-          plan, done, percent,
+          plan, done, percent, requestDate: r.requestDate ? String(r.requestDate).slice(0, 10) : '未设置',
           overText,
-          lag: r.status !== 'FINISHED' && r.status !== 'CANCELED' && req > 0 && req < today ? '已超期' : '正常'
+          lag: !req || Number.isNaN(req) ? '未设置交期' : r.status !== 'FINISHED' && r.status !== 'CANCELED' && req < today ? '已超期' : '正常'
         }
       }).sort((a, b) => a.percent - b.percent).slice(0, 10)
       this.push({
         role: 'bot', type: 'list',
-        title: doc ? `工单 ${doc[1]} 进度` : '工单进度（按完成比例升序，最多 10 张）',
+        title: doc ? `工单 ${doc[1]} 进度` : overdueOnly ? '已超期未完成工单（最多 10 张）' : '工单进度（按完成比例升序，最多 10 张）',
         workorderId: doc && rows.length === 1 ? rows[0].workorderId : null,
         columns: [
           { prop: 'workorderCode', label: '工单号', width: 150 },
@@ -993,7 +1159,8 @@ export default {
           { prop: 'done', label: '已产', width: 80, align: 'right' },
           { prop: 'percent', label: '进度%', width: 80, align: 'right' },
           { prop: 'overText', label: '超产', width: 120 },
-          { prop: 'lag', label: '交期', width: 90 }
+          { prop: 'requestDate', label: '需求日期', width: 110 },
+          { prop: 'lag', label: '交期状态', width: 100 }
         ],
         rows: list,
         source: `数据来源：pro_workorder，共 ${rows.length} 张工单`
@@ -1003,6 +1170,13 @@ export default {
         this.lastWorkorder = w.workorderCode
         const statuses = { PREPARE: '草稿', CONFIRMED: '已确认', FINISHED: '已完成', CANCELED: '已取消' }
         this.push({ role: 'bot', type: 'text', text: `工单 ${w.workorderCode} 的状态为 ${statuses[w.status] || w.status || '未知'}，计划生产 ${w.quantity || 0}，已生产 ${w.quantityProduced || 0}。你可以说“打开它”查看详情。` })
+      } else if (overdueOnly) {
+        const shown = list.map(r => r.workorderCode).join('、')
+        this.push({ role: 'bot', type: 'text', text: rows.length
+          ? `截至今天，在当前账号可查询范围内，共有 ${rows.length} 张工单已超过需求日期且尚未完成或取消。${rows.length > list.length ? `表格展示其中 ${list.length} 张，包括` : '涉及'}${shown}。建议优先核对这些工单的需求日期与生产进度。`
+          : '截至今天，在当前账号可查询范围内，没有查到超过需求日期且未完成或取消的工单。未设置需求日期的工单无法判断是否超期。' })
+      } else if (!doc) {
+        this.push({ role: 'bot', type: 'text', text: `当前查询到 ${rows.length} 张工单，表格按完成比例从低到高展示${rows.length > list.length ? `前 ${list.length} 张` : ` ${list.length} 张`}。可根据需求日期和交期状态进一步核对。` })
       }
     },
 

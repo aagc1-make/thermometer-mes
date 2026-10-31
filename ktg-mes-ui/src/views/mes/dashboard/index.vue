@@ -145,7 +145,7 @@
             <el-table-column prop="quantityProduced" label="已生产" width="86" align="right" />
             <el-table-column label="进度" width="160">
               <template slot-scope="s">
-                <el-progress :percentage="s.row.percent" :stroke-width="8" :color="s.row.percent >= 100 ? '#12a150' : '#2F6BEF'" />
+                <el-progress :percentage="s.row.percent" :stroke-width="8" :color="s.row.percent >= 100 ? '#31946a' : '#3b806d'" />
               </template>
             </el-table-column>
             <el-table-column prop="requestDate" label="交期" width="110" />
@@ -359,8 +359,8 @@ export default {
         },
         yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f0f2f5' } }, axisLabel: { color: '#6b7280' } },
         series: [
-          { name: '计划数量', type: 'bar', barWidth: 18, itemStyle: { color: '#93b8f7', borderRadius: [4, 4, 0, 0] }, data: names.map(n => byProduct[n].plan) },
-          { name: '已生产', type: 'bar', barWidth: 18, itemStyle: { color: '#2563eb', borderRadius: [4, 4, 0, 0] }, data: names.map(n => byProduct[n].done) }
+          { name: '计划数量', type: 'bar', barWidth: 18, itemStyle: { color: '#a9cf8a', borderRadius: [4, 4, 0, 0] }, data: names.map(n => byProduct[n].plan) },
+          { name: '已生产', type: 'bar', barWidth: 18, itemStyle: { color: '#246d5e', borderRadius: [4, 4, 0, 0] }, data: names.map(n => byProduct[n].done) }
         ]
       }, true)
     },
@@ -420,7 +420,7 @@ export default {
           type: 'bar', barWidth: 34,
           itemStyle: {
             borderRadius: [6, 6, 0, 0],
-            color: p => (['#12a150', '#2563eb', '#d97706'][p.dataIndex] || '#12a150')
+            color: p => (['#31946a', '#246d5e', '#d39a38'][p.dataIndex] || '#31946a')
           },
           label: { show: true, position: 'top', color: '#4b5563', formatter: '{c}' },
           data: targets.map(n => Math.round(byWh[n] * 100) / 100)
@@ -438,7 +438,7 @@ export default {
       this.charts.machinery.setOption({
         tooltip: { trigger: 'item', formatter: '{b}：{c} 台（{d}%）' },
         legend: { bottom: 0, icon: 'circle', itemWidth: 8, itemHeight: 8 },
-        color: ['#12a150', '#d97706', '#98a2b3'],
+        color: ['#31946a', '#d39a38', '#91a09a'],
         series: [{
           type: 'pie', radius: ['46%', '68%'], center: ['50%', '46%'],
           avoidLabelOverlap: true,
@@ -475,10 +475,10 @@ export default {
         yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#f0f2f5' } }, axisLabel: { color: '#6b7280' } },
         series: [{
           type: 'line', smooth: true, symbolSize: 6,
-          lineStyle: { width: 2.5, color: '#2563eb' },
-          itemStyle: { color: '#2563eb' },
+          lineStyle: { width: 2.5, color: '#246d5e' },
+          itemStyle: { color: '#246d5e' },
           label: { show: true, color: '#4b5563', formatter: p2 => (p2.value ? p2.value : '') },
-          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(37,99,235,.22)' }, { offset: 1, color: 'rgba(37,99,235,0)' }]) },
+          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(36,109,94,.22)' }, { offset: 1, color: 'rgba(36,109,94,0)' }]) },
           data: days.map(d => Math.round((sum[d] || 0) * 100) / 100)
         }]
       }, true)

@@ -7,16 +7,18 @@
         <h2 class="home-hero__title">红外测温枪 MES 系统</h2>
         <p class="home-hero__sub">主数据 · 仓储 · 生产 · 质量 · 设备 · 班组排班 —— 全流程业务闭环</p>
       </div>
-      <div class="home-hero__tip">今日生产数据实时汇总</div>
+      <div class="home-hero__tip">设备概览与生产工单</div>
     </div>
 
-    <panel-group @handleSetLineChartData="handleSetLineChartData" />
+    <panel-group />
 
     <el-row :gutter="32" style="padding:16px 16px 0;margin-bottom:32px;">
         <el-card>
             <div slot="header" class="clearfix">
-                <span>生产进度</span>
+                <span>生产进度 · 已确认工单</span>
+                <el-button style="float:right" type="text" @click="showDetails = !showDetails">{{ showDetails ? '收起详细信息' : '展开详细信息' }}</el-button>
             </div>
+          <el-alert v-if="loadError" title="工单加载失败，请重试" type="error" :closable="false" show-icon><el-button type="text" @click="getList">重新加载</el-button></el-alert>
           <el-table
             v-loading="loading"
             :data="workorderList"
@@ -33,12 +35,12 @@
                 >{{scope.row.workorderCode}}</el-button>
               </template>
             </el-table-column>
-            <el-table-column label="订单编号" align="center" prop="sourceCode" />
-            <el-table-column label="工单名称" align="center" prop="workorderName" :show-overflow-tooltip="true"/>
-            <el-table-column label="产品编号" width="120" align="center" prop="productCode" />
+            <el-table-column v-if="showDetails" label="订单编号" align="center" prop="sourceCode" />
+            <el-table-column v-if="showDetails" label="工单名称" align="center" prop="workorderName" :show-overflow-tooltip="true"/>
+            <el-table-column v-if="showDetails" label="产品编号" width="120" align="center" prop="productCode" />
             <el-table-column label="产品名称" align="center" prop="productName" :show-overflow-tooltip="true"/>
-            <el-table-column label="规格型号" width="140" align="center" prop="productSpc" :show-overflow-tooltip="true"/>
-            <el-table-column label="单位" width="140" align="center" prop="unitOfMeasure" />
+            <el-table-column v-if="showDetails" label="规格型号" width="140" align="center" prop="productSpc" :show-overflow-tooltip="true"/>
+            <el-table-column v-if="showDetails" label="单位" width="100" align="center" prop="unitOfMeasure" />
             <el-table-column label="工单数量" width="100" align="center" prop="quantity" />
             <el-table-column label="已生产数量" width="100" align="center" prop="quantityProduced" />
             <el-table-column label="需求日期" align="center" prop="requestDate">
@@ -46,14 +48,16 @@
                 <span>{{ parseTime(scope.row.requestDate, '{y}-{m}-{d}') }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="工序进度" align="center" width="350">
+            <el-table-column label="生产进度" width="140" align="center"><template slot-scope="scope"><el-progress :percentage="safeProgress(scope.row.quantityProduced, scope.row.quantity)" :stroke-width="8" /></template></el-table-column>
+            <el-table-column label="单据状态" width="100" align="center"><template slot-scope="scope">{{ scope.row.status === 'CONFIRMED' ? '已确认' : (scope.row.status || '未知') }}</template></el-table-column>
+            <el-table-column v-if="showDetails" label="工序进度" align="center" width="350">
               <template slot-scope="scope">
                   <div style="display: flex;width: 100%;overflow:auto;">
-                  <div v-for="(item, index) in scope.row.routeHomg" style="flex-shrink: 0;">
+                  <div v-for="(item, index) in scope.row.routeHomg" :key="index" style="flex-shrink: 0;">
                     <div style="display: flex">
                       <div style="line-height: 70px; text-align: center;color: #5e75ff;flex-shrink:0;" v-if="index != 0">--------</div>
                       <div style="display: flex; flex-direction: column;margin: 0 5px">
-                        <el-progress :height="70" :width="70" type="circle" :percentage="parseFloat(((item.completeNumber/item.total)*100).toFixed(2))" :color="colors"></el-progress>
+                        <el-progress :width="70" type="circle" :percentage="safeProgress(item.completeNumber, item.total)" :color="colors"></el-progress>
                         <el-tooltip class="item" effect="dark" :content="item.processName" placement="bottom">
                           <span style="display: inline-block;width: 55px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap">{{ item.processName }}</span>
                         </el-tooltip>
@@ -125,6 +129,8 @@ export default {
   data() {
     return {
         loading: true,
+        loadError: false,
+        showDetails: false,
         queryParams: {status:'CONFIRMED'},
         workorderList: [],
         chartList: [],
@@ -145,10 +151,18 @@ export default {
   methods: {
     getList() {
       this.loading = true;
-      getHomeList(this.queryParams).then(response => {
-        this.workorderList = response.data;
-        this.loading = false;
-      });
+      this.loadError = false;
+      return getHomeList(this.queryParams).then(response => {
+        this.workorderList = Array.isArray(response.data) ? response.data : [];
+      }).catch(() => { this.loadError = true; this.workorderList = []; }).finally(() => { this.loading = false; });
+    },
+    safeProgress(done, total) {
+      const n = Number(done), d = Number(total);
+      if (!Number.isFinite(n) || !Number.isFinite(d) || d <= 0) return 0;
+      return Math.min(100, Math.max(0, Math.round(n / d * 10000) / 100));
+    },
+    handleView(row) {
+      if (row && row.workorderId) this.$router.push({ path: '/mes/pro/workorder', query: { openWorkorderId: String(row.workorderId) } }).catch(() => {});
     },
     getCharts(){
       getMyCharts().then(response => {
@@ -163,7 +177,7 @@ export default {
             }
             return item;
           });;
-      });
+      }).catch(() => { this.chartList = []; });
     },
     handleSetLineChartData(type) {
       this.lineChartData = lineChartData[type]
