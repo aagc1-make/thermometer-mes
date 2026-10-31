@@ -36,4 +36,10 @@ public class InquiryController {
     public R submit(@RequestBody Map<String, Object> payload) {
         return R.ok(repo.createInquiry(payload));
     }
+
+    /** 撤销询价单：仅待提交/已提交（未报价）状态可撤销 */
+    @PostMapping("/{inquiryNo}/cancel")
+    public R cancel(@PathVariable String inquiryNo) {
+        return R.ok(repo.cancelInquiry(inquiryNo));
+    }
 }

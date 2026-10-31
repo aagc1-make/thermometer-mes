@@ -313,6 +313,66 @@
   background: $color-divider;
 }
 
+// 账号与登录
+.accountRow {
+  display: flex;
+  align-items: center;
+  min-height: 88rpx;
+  padding: 12rpx 0;
+}
+
+.accountMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.accountLabel {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.accountValue {
+  display: block;
+  margin-top: 6rpx;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.switchBtn {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  padding: 8rpx 24rpx;
+  border: 2rpx solid $color-primary;
+  border-radius: $radius-button;
+
+  &:active {
+    background: $color-primary-soft;
+  }
+}
+
+.switchText {
+  font-size: $font-size-xs;
+  color: $color-primary;
+}
+
+.signOutRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+
+  &:active {
+    opacity: 0.75;
+  }
+}
+
+.signOutText {
+  font-size: $font-size-sm;
+  color: #e5484d;
+}
+
 .footer {
   display: block;
   margin-top: 40rpx;

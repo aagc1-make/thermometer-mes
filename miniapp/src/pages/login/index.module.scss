@@ -34,6 +34,61 @@
   padding: 8rpx 24rpx;
 }
 
+.sectionTitle {
+  margin: 32rpx $page-padding 0;
+}
+
+.sectionTitleText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.accountList {
+  margin: 16rpx $page-padding 0;
+}
+
+.accountItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+  padding: 24rpx;
+  background: $color-bg-card;
+  border: 2rpx solid transparent;
+  border-radius: $radius-2xl;
+  box-shadow: 0 4rpx 20rpx rgba(23, 35, 61, 0.05);
+}
+
+.accountItemActive {
+  border-color: $color-primary;
+  background: $color-primary-soft;
+}
+
+.accountMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.accountCompany {
+  display: block;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.accountMeta {
+  display: block;
+  margin-top: 6rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.accountUser {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  font-size: $font-size-xs;
+  color: $color-primary;
+}
+
 .field {
   display: flex;
   align-items: center;

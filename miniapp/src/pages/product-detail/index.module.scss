@@ -103,6 +103,62 @@
   color: $color-text-secondary;
 }
 
+.cardHint {
+  display: block;
+  margin-bottom: 4rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.bomRow {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.bomRowChild {
+  padding-left: 32rpx;
+  background: #fafbfe;
+}
+
+.bomMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.bomName {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.bomCode {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+}
+
+.bomRowChild .bomName {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.bomQty {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.usedIn {
+  display: block;
+  padding: 12rpx 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
 .bottomSpace {
   height: 180rpx;
 }

@@ -39,4 +39,4 @@ const ProductTile: React.FC<ProductTileProps> = ({ product, onAdd, onClick }) =>
   );
 };
 
-export default ProductTile;
+export default React.memo(ProductTile);

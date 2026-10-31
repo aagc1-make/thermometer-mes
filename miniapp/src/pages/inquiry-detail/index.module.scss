@@ -213,6 +213,25 @@
   margin-right: 6rpx;
 }
 
+.cancelRow {
+  margin: 32rpx auto 0;
+  padding: 20rpx 0;
+  width: 320rpx;
+  border: 1rpx solid #f5c2c0;
+  border-radius: $radius-button;
+  background: #fef4f4;
+  @include flex-center;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.cancelText {
+  font-size: $font-size-sm;
+  color: #e5484d;
+}
+
 .empty {
   padding-top: 200rpx;
   @include flex-center;

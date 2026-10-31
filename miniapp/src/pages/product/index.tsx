@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, Input, ScrollView } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import classnames from 'classnames';
@@ -9,6 +9,7 @@ import { PRODUCT_FILTERS } from '@/data/products';
 import { useCatalogStore } from '@/store/catalog';
 import { useInquiryStore } from '@/store/inquiry';
 import { syncInquiryBadge } from '@/utils/tabbar';
+import { navigateTo } from '@/utils/navigate';
 import type { Product } from '@/types';
 import styles from './index.module.scss';
 
@@ -50,7 +51,10 @@ const ProductPage: React.FC = () => {
       if (filter === '半成品') {
         return product.category === 'semi';
       }
-      if (filter === '电控组件' || filter === '结构件') {
+      if (filter === '物料') {
+        return product.category === 'material';
+      }
+      if (filter === '电子件' || filter === '结构件' || filter === '包装辅料') {
         return product.group === filter;
       }
       return true;
@@ -64,15 +68,18 @@ const ProductPage: React.FC = () => {
     return list;
   }, [products, filter, sort, keyword]);
 
-  const handleAdd = (product: Product) => {
-    addItem(product);
-    syncInquiryBadge(useInquiryStore.getState().items.length);
-    Taro.showToast({ title: '已加入询价单', icon: 'none' });
-  };
+  const handleAdd = useCallback(
+    (product: Product) => {
+      addItem(product);
+      syncInquiryBadge(useInquiryStore.getState().items.length);
+      Taro.showToast({ title: '已加入询价单', icon: 'none' });
+    },
+    [addItem]
+  );
 
-  const handleOpen = (product: Product) => {
-    Taro.navigateTo({ url: `/pages/product-detail/index?id=${product.id}` });
-  };
+  const handleOpen = useCallback((product: Product) => {
+    navigateTo(`/pages/product-detail/index?id=${product.id}`);
+  }, []);
 
   return (
     <View className={styles.page}>

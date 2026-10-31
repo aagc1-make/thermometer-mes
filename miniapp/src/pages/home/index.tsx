@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, Input } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import classnames from 'classnames';
@@ -9,15 +9,17 @@ import ProductRow from '@/components/ProductRow';
 import { useCatalogStore } from '@/store/catalog';
 import { useInquiryStore } from '@/store/inquiry';
 import { syncInquiryBadge } from '@/utils/tabbar';
+import { navigateTo } from '@/utils/navigate';
 import type { Product } from '@/types';
 import styles from './index.module.scss';
 
-type HomeTab = 'all' | 'finished' | 'semi';
+type HomeTab = 'all' | 'finished' | 'semi' | 'material';
 
 const TABS: { key: HomeTab; name: string }[] = [
   { key: 'all', name: '全部' },
   { key: 'finished', name: '成品' },
-  { key: 'semi', name: '半成品' }
+  { key: 'semi', name: '半成品' },
+  { key: 'material', name: '物料' }
 ];
 
 const QUICK_ENTRIES: { key: string; name: string; icon: IconName }[] = [
@@ -57,15 +59,18 @@ const HomePage: React.FC = () => {
     );
   }, [products, tab, keyword]);
 
-  const handleAdd = (product: Product) => {
-    addItem(product);
-    syncInquiryBadge(useInquiryStore.getState().items.length);
-    Taro.showToast({ title: '已加入询价单', icon: 'none' });
-  };
+  const handleAdd = useCallback(
+    (product: Product) => {
+      addItem(product);
+      syncInquiryBadge(useInquiryStore.getState().items.length);
+      Taro.showToast({ title: '已加入询价单', icon: 'none' });
+    },
+    [addItem]
+  );
 
-  const handleOpenProduct = (product: Product) => {
-    Taro.navigateTo({ url: `/pages/product-detail/index?id=${product.id}` });
-  };
+  const handleOpenProduct = useCallback((product: Product) => {
+    navigateTo(`/pages/product-detail/index?id=${product.id}`);
+  }, []);
 
   const goInquiry = () => {
     Taro.switchTab({ url: '/pages/inquiry/index' });
@@ -111,7 +116,7 @@ const HomePage: React.FC = () => {
 
       <View className={styles.hero}>
         <View className={styles.heroLeft}>
-          <Text className={styles.heroTitle}>成品与半成品</Text>
+          <Text className={styles.heroTitle}>成品 · 半成品 · 物料</Text>
           <Text className={styles.heroTitle}>批量订购</Text>
           <Text className={styles.heroSub}>按需选择，提交采购需求</Text>
           <View className={styles.heroBtn} onClick={goInquiry}>

@@ -8,6 +8,7 @@ import ProductArt from '@/components/ProductArt';
 import { fetchInquiryRecords } from '@/services/api';
 import { useInquiryStore } from '@/store/inquiry';
 import { syncInquiryBadge } from '@/utils/tabbar';
+import { navigateTo } from '@/utils/navigate';
 import type { InquiryRecord } from '@/types';
 import styles from './index.module.scss';
 
@@ -36,8 +37,11 @@ const InquiryPage: React.FC = () => {
   const submitted = useInquiryStore((state) => state.submitted);
   const quoted = useInquiryStore((state) => state.quoted);
   const setQty = useInquiryStore((state) => state.setQty);
+  const removeItem = useInquiryStore((state) => state.removeItem);
   const clearDraft = useInquiryStore((state) => state.clearDraft);
   const submit = useInquiryStore((state) => state.submit);
+  const cancelledIds = useInquiryStore((state) => state.cancelledIds);
+  const cancelRecord = useInquiryStore((state) => state.cancelRecord);
 
   const refresh = async () => {
     const records = await fetchInquiryRecords();
@@ -101,14 +105,39 @@ const InquiryPage: React.FC = () => {
   };
 
   const openRecord = (record: InquiryRecord) => {
-    Taro.navigateTo({ url: `/pages/inquiry-detail/index?id=${record.id}` });
+    navigateTo(`/pages/inquiry-detail/index?id=${record.id}`);
   };
 
-  const remoteSubmitted = remoteRecords.filter((item) => item.status === 'submitted');
-  const remoteQuoted = remoteRecords.filter((item) => item.status === 'quoted');
-  // 后端有数据时以真实询价单为准，后端不可用时回退本地演示记录
-  const submittedList = remoteRecords.length > 0 ? remoteSubmitted : submitted;
-  const quotedList = remoteRecords.length > 0 ? remoteQuoted : quoted;
+  const handleRemoveItem = (productId: string, name: string) => {
+    removeItem(productId);
+    syncInquiryBadge(useInquiryStore.getState().items.length);
+    Taro.showToast({ title: `已移除 ${name}`, icon: 'none' });
+  };
+
+  const handleCancelRecord = async (record: InquiryRecord) => {
+    try {
+      const res = await Taro.showModal({
+        title: '撤销询价单',
+        content: `撤销后 ${record.id} 将置为已取消，已报价的询价单不可撤销。`,
+        confirmText: '撤销',
+        confirmColor: '#f04438'
+      });
+      if (!res.confirm) return;
+      await cancelRecord(record.id);
+      Taro.showToast({ title: '询价单已撤销', icon: 'none' });
+    } catch (error) {
+      console.info('[Inquiry] 取消撤销操作', error);
+    }
+  };
+
+  const activeRemote = remoteRecords.filter((item) => !cancelledIds.includes(item.id));
+  const remoteSubmitted = activeRemote.filter((item) => item.status === 'submitted');
+  const remoteQuoted = activeRemote.filter((item) => item.status === 'quoted');
+  const localSubmitted = submitted.filter((item) => !cancelledIds.includes(item.id));
+  const localQuoted = quoted.filter((item) => !cancelledIds.includes(item.id));
+  // 后端有数据时以真实询价单为准，后端不可用时回退本地记录
+  const submittedList = activeRemote.length > 0 ? remoteSubmitted : localSubmitted;
+  const quotedList = activeRemote.length > 0 ? remoteQuoted : localQuoted;
 
   const tabItems: { key: TabKey; name: string; count: number }[] = [
     { key: 'pending', name: '待提交', count: items.length },
@@ -151,7 +180,20 @@ const InquiryPage: React.FC = () => {
             <Text className={styles.recordFootText}>
               {record.itemCount} 个品项 · 共 {record.totalQty} 件
             </Text>
-            <Text className={styles.recordTime}>{record.submitTime} 提交</Text>
+            <View className={styles.recordFootRight}>
+              <Text className={styles.recordTime}>{record.submitTime} 提交</Text>
+              {record.status !== 'quoted' && (
+                <View
+                  className={styles.cancelBtn}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleCancelRecord(record);
+                  }}
+                >
+                  <Text className={styles.cancelBtnText}>撤销</Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
       ))}
@@ -219,6 +261,15 @@ const InquiryPage: React.FC = () => {
                         >
                           <Icon name="plus" size={18} color="#2b6beb" />
                         </View>
+                      </View>
+                      <View
+                        className={styles.removeBtn}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleRemoveItem(item.productId, item.name);
+                        }}
+                      >
+                        <Icon name="trash" size={24} color="#c3ccdd" />
                       </View>
                     </View>
                   ))}

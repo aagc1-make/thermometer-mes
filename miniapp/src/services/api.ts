@@ -40,23 +40,6 @@ import { request } from './request';
  */
 export const USE_REMOTE_API = true;
 
-/** 后端物料结构（md_item） */
-interface MdItem {
-  itemId: number | string;
-  itemCode: string;
-  itemName: string;
-  specification?: string;
-  unitName?: string;
-  unitOfMeasure?: string;
-  itemOrProduct?: string;
-  itemTypeName?: string;
-  remark?: string;
-  attr1?: string;
-  attr2?: string;
-  attr3?: string | number;
-  attr4?: string | number;
-}
-
 /** 询价单提交入参 */
 export interface InquirySubmitPayload {
   clientId?: number;
@@ -91,8 +74,6 @@ export interface InquiryResult {
   createTime?: string;
 }
 
-const ARTS: ProductArt[] = ['thermometer', 'precision', 'wall', 'pcb', 'trigger', 'mainboard', 'sensor'];
-
 function clone<T>(data: T): T {
   return JSON.parse(JSON.stringify(data)) as T;
 }
@@ -106,31 +87,14 @@ function text(value: unknown, fallback = ''): string {
   return value === null || value === undefined || value === '' ? fallback : String(value);
 }
 
+const ARTS: ProductArt[] = ['thermometer', 'precision', 'wall', 'pcb', 'trigger', 'mainboard', 'sensor'];
+
+/** 订单行 / 询价行的示意图类型 */
 function normalizeArt(value: unknown, isFinished: boolean): ProductArt {
   if (value && ARTS.includes(value as ProductArt)) {
     return value as ProductArt;
   }
   return isFinished ? 'thermometer' : 'pcb';
-}
-
-function mapItemToProduct(item: MdItem): Product {
-  const isFinished = item.itemOrProduct === 'PRODUCT' || item.itemOrProduct === '2' || item.itemOrProduct === 'Y';
-  return {
-    id: String(item.itemId),
-    name: item.itemName,
-    code: item.itemCode,
-    category: isFinished ? 'finished' : 'semi',
-    categoryName: isFinished ? '成品' : '半成品',
-    group: isFinished ? undefined : item.attr1 === '结构件' ? '结构件' : '电控组件',
-    param: item.specification || '规格以实际订单为准',
-    moq: num(item.attr3, isFinished ? 50 : 100),
-    unit: item.unitName || item.unitOfMeasure || '件',
-    leadDays: num(item.attr4, 7),
-    art: normalizeArt(item.attr2, isFinished),
-    desc:
-      item.remark ||
-      `${item.itemName}（${item.itemCode}），规格：${item.specification || '—'}，具体交付与报价以销售确认为准。`
-  };
 }
 
 function normalizeAddress(row: Record<string, unknown>): Address {
@@ -295,21 +259,13 @@ export async function login(username: string, password: string): Promise<LoginRe
 
 // ==================== 产品目录 ====================
 
-/** 产品目录：优先独立后端 /api/v1/catalog/products，失败时回落到本地演示数据 */
+/**
+ * 产品目录：直接使用与 MES 一致的本地结构（17 条：成品 1 / 半成品 2 / 物料 14）
+ * 说明：miniapp-api 的目录接口只返回 IRG 前缀物料，与 MES 现有 TG 结构不一致，
+ *      因此目录以 MES 主数据快照为准，不再被接口覆盖。
+ */
 export async function loadCatalog(): Promise<Product[]> {
-  if (!USE_REMOTE_API) {
-    return PRODUCTS;
-  }
-  try {
-    const list = await request<MdItem[]>({ url: '/api/v1/catalog/products', method: 'GET' });
-    if (!Array.isArray(list) || list.length === 0) {
-      return PRODUCTS;
-    }
-    return [...list].sort((a, b) => String(a.itemCode).localeCompare(String(b.itemCode))).map(mapItemToProduct);
-  } catch (error) {
-    console.info('[Api] 独立后端产品目录不可用，使用本地演示数据', error);
-    return PRODUCTS;
-  }
+  return PRODUCTS;
 }
 
 // ==================== 客户档案 ====================
@@ -359,6 +315,14 @@ export async function submitInquiryRemote(payload: InquirySubmitPayload): Promis
     url: '/api/v1/inquiries',
     method: 'POST',
     data: payload as unknown as Record<string, unknown>
+  });
+}
+
+/** 撤销询价单：服务端把状态置为 CANCELED（保留记录，不物理删除） */
+export async function cancelInquiryRemote(inquiryNo: string): Promise<void> {
+  await request<Record<string, unknown>>({
+    url: `/api/v1/inquiries/${inquiryNo}/cancel`,
+    method: 'POST'
   });
 }
 
@@ -424,7 +388,10 @@ export async function fetchInquiryRecords(status?: string): Promise<InquiryRecor
     if (!Array.isArray(rows)) {
       return [];
     }
-    return rows.map(normalizeInquiryRecord);
+    // 已撤销（CANCELED）的询价单不在小程序列表展示
+    return rows
+      .filter((row) => text(row.status).toLowerCase() !== 'canceled')
+      .map(normalizeInquiryRecord);
   } catch (error) {
     console.info('[Api] 询价单记录接口不可用', error);
     return [];

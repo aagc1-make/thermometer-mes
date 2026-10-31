@@ -145,6 +145,16 @@
   align-items: center;
 }
 
+.removeBtn {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  padding: 8rpx;
+
+  &:active {
+    opacity: 0.6;
+  }
+}
+
 .stepBtn {
   width: 44rpx;
   height: 44rpx;
@@ -448,9 +458,31 @@
   color: $color-text-secondary;
 }
 
+.recordFootRight {
+  display: flex;
+  align-items: center;
+}
+
 .recordTime {
   font-size: $font-size-xs;
   color: $color-text-tertiary;
+}
+
+.cancelBtn {
+  margin-left: 16rpx;
+  padding: 6rpx 18rpx;
+  border: 1rpx solid #f5c2c0;
+  border-radius: $radius-button;
+  background: #fef4f4;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.cancelBtnText {
+  font-size: $font-size-xs;
+  color: #e5484d;
 }
 
 .empty {

@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import type { InquiryItem, InquiryMeta, InquiryRecord, Product } from '@/types';
 import { DEFAULT_INQUIRY_META } from '@/data/customer';
 import { CUSTOMER } from '@/data/customer';
-import { submitInquiryRemote } from '@/services/api';
+import { cancelInquiryRemote, submitInquiryRemote } from '@/services/api';
 
 /** Taro 存储适配器，用于询价单本地持久化 */
 const taroStorage: StateStorage = {
@@ -35,116 +35,47 @@ function toInquiryItem(product: Product, qty: number): InquiryItem {
   };
 }
 
-/** 设计稿中的待提交草稿商品 */
-const INITIAL_DRAFT: InquiryItem[] = [
-  {
-    productId: 'p001',
-    name: '基础款红外测温枪',
-    code: 'IRG-FG-001',
-    categoryName: '成品',
-    art: 'thermometer',
-    qty: 50,
-    moq: 50,
-    unit: '件'
-  },
-  {
-    productId: 'p004',
-    name: '测温显示电控预装件',
-    code: 'IRG-SA-CTRL-001',
-    categoryName: '半成品',
-    art: 'pcb',
-    qty: 100,
-    moq: 100,
-    unit: '件'
-  },
-  {
-    productId: 'p005',
-    name: '扳机侧键手柄预装件',
-    code: 'IRG-SA-TRIG-001',
-    categoryName: '半成品',
-    art: 'trigger',
-    qty: 100,
-    moq: 100,
-    unit: '件'
-  }
-];
+/** 待提交草稿：默认不含演示商品，由用户自行加购 */
+const INITIAL_DRAFT: InquiryItem[] = [];
 
-/** 已提交（待报价）历史记录 */
-const INITIAL_SUBMITTED: InquiryRecord[] = [
-  {
-    id: 'XJ20261020-002',
-    status: 'submitted',
-    items: [
-      {
-        productId: 'p002',
-        name: '医用高精度测温枪',
-        code: 'IRG-FG-002',
-        categoryName: '成品',
-        art: 'precision',
-        qty: 60,
-        moq: 50,
-        unit: '件'
-      }
-    ],
-    itemCount: 1,
-    totalQty: 60,
-    submitTime: '2026-10-20 14:32',
-    expectedDate: '2026-11-03',
-    address: DEFAULT_INQUIRY_META.address,
-    invoice: DEFAULT_INQUIRY_META.invoice,
-    remark: '整机与预装件同批次交付'
-  }
-];
+/** 已提交（待报价）历史记录，实际数据从后端加载 */
+const INITIAL_SUBMITTED: InquiryRecord[] = [];
 
-/** 已报价历史记录 */
+/** 已报价历史记录，与后端询价单保持同步 */
 const INITIAL_QUOTED: InquiryRecord[] = [
   {
-    id: 'XJ20261012-001',
+    id: 'XJ20261019-001',
     status: 'quoted',
     items: [
       {
-        productId: 'p001',
+        productId: '9218',
         name: '基础款红外测温枪',
         code: 'IRG-FG-001',
         categoryName: '成品',
         art: 'thermometer',
-        qty: 200,
+        qty: 100,
         moq: 50,
         unit: '件'
-      }
-    ],
-    itemCount: 1,
-    totalQty: 200,
-    submitTime: '2026-10-12 09:18',
-    expectedDate: '2026-10-28',
-    address: DEFAULT_INQUIRY_META.address,
-    invoice: DEFAULT_INQUIRY_META.invoice,
-    remark: '—',
-    quoteAmount: 86400
-  },
-  {
-    id: 'XJ20261008-003',
-    status: 'quoted',
-    items: [
+      },
       {
-        productId: 'p006',
-        name: '主板贴片组件',
-        code: 'IRG-SA-PCBA-001',
-        categoryName: '半成品',
-        art: 'mainboard',
-        qty: 500,
-        moq: 200,
+        productId: '9223',
+        name: '测温显示电控预装件',
+        code: 'IRG-SA-CTRL-001',
+        categoryName: '成品',
+        art: 'pcb',
+        qty: 200,
+        moq: 100,
         unit: '件'
       }
     ],
-    itemCount: 1,
-    totalQty: 500,
-    submitTime: '2026-10-08 16:05',
-    expectedDate: '2026-10-25',
+    itemCount: 2,
+    totalQty: 300,
+    submitTime: '2026-10-19 09:30',
+    expectedDate: '2026-11-15',
     address: DEFAULT_INQUIRY_META.address,
     invoice: DEFAULT_INQUIRY_META.invoice,
-    remark: '—',
-    quoteAmount: 128000
+    remark: '报价含税含运费，有效期 7 天',
+    quoteAmount: 74000
   }
 ];
 
@@ -154,11 +85,14 @@ interface InquiryState {
   meta: InquiryMeta;
   submitted: InquiryRecord[];
   quoted: InquiryRecord[];
+  /** 已在小程序侧撤销的询价单号（服务端同步置为 CANCELED） */
+  cancelledIds: string[];
   addItem: (product: Product, qty?: number) => void;
   removeItem: (productId: string) => void;
   setQty: (productId: string, qty: number) => void;
   clearDraft: () => void;
   updateMeta: (meta: Partial<InquiryMeta>) => void;
+  cancelRecord: (id: string) => Promise<void>;
   submit: () => Promise<InquiryRecord | null>;
 }
 
@@ -174,6 +108,7 @@ export const useInquiryStore = create<InquiryState>()(
       meta: DEFAULT_INQUIRY_META,
       submitted: INITIAL_SUBMITTED,
       quoted: INITIAL_QUOTED,
+      cancelledIds: [],
 
       addItem: (product, qty) => {
         const list = get().items;
@@ -208,6 +143,18 @@ export const useInquiryStore = create<InquiryState>()(
 
       updateMeta: (meta) => {
         set({ meta: { ...get().meta, ...meta } });
+      },
+
+      cancelRecord: async (id) => {
+        try {
+          // 服务端把状态置为 CANCELED（记录保留，可追溯）
+          await cancelInquiryRemote(id);
+        } catch (error) {
+          console.info('[Inquiry] 服务端撤销失败，仅本地标记', error);
+        }
+        const next = Array.from(new Set([...get().cancelledIds, id]));
+        set({ cancelledIds: next });
+        console.info('[Inquiry] 撤销询价单', id);
       },
 
       submit: async () => {
@@ -275,7 +222,8 @@ export const useInquiryStore = create<InquiryState>()(
         items: state.items,
         meta: state.meta,
         submitted: state.submitted,
-        quoted: state.quoted
+        quoted: state.quoted,
+        cancelledIds: state.cancelledIds
       })
     }
   )

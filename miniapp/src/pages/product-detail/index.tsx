@@ -1,12 +1,15 @@
 import React, { useEffect } from 'react';
 import { View, Text } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
+import classnames from 'classnames';
 import PageHeader from '@/components/PageHeader';
 import Icon from '@/components/Icon';
 import ProductArt from '@/components/ProductArt';
 import { useCatalogStore } from '@/store/catalog';
 import { useInquiryStore } from '@/store/inquiry';
+import { bomOf, parentsOf } from '@/data/bom';
 import { syncInquiryBadge } from '@/utils/tabbar';
+import type { Product } from '@/types';
 import styles from './index.module.scss';
 
 const ProductDetailPage: React.FC = () => {
@@ -44,6 +47,12 @@ const ProductDetailPage: React.FC = () => {
     Taro.switchTab({ url: '/pages/inquiry/index' });
   };
 
+  const bom = bomOf(product.code);
+  const usedInNames = parentsOf(product.code)
+    .map((code) => products.find((item) => item.code === code))
+    .filter((item): item is Product => Boolean(item))
+    .map((item) => `${item.name}（${item.code}）`);
+
   return (
     <View className={styles.page}>
       <PageHeader title="产品详情" showBack />
@@ -62,11 +71,8 @@ const ProductDetailPage: React.FC = () => {
       <View className={styles.card}>
         <Text className={styles.cardTitle}>订购参数</Text>
         <View className={styles.paramRow}>
-          <Text className={styles.paramLabel}>产品类型</Text>
-          <Text className={styles.paramValue}>
-            {product.categoryName}
-            {product.group ? ` · ${product.group}` : ''}
-          </Text>
+          <Text className={styles.paramLabel}>物料类型</Text>
+          <Text className={styles.paramValue}>{product.group || product.categoryName}</Text>
         </View>
         <View className={styles.divider} />
         <View className={styles.paramRow}>
@@ -91,6 +97,50 @@ const ProductDetailPage: React.FC = () => {
         <Text className={styles.cardTitle}>产品说明</Text>
         <Text className={styles.desc}>{product.desc}</Text>
       </View>
+
+      {bom.length > 0 && (
+        <View className={styles.card}>
+          <Text className={styles.cardTitle}>BOM 组成清单</Text>
+          <Text className={styles.cardHint}>单台用量 · 物料编码与 MES 主数据一致</Text>
+          {bom.map((line) => (
+            <React.Fragment key={line.itemCode}>
+              <View className={styles.bomRow}>
+                <View className={styles.bomMain}>
+                  <Text className={styles.bomName}>{line.itemName}</Text>
+                  <Text className={styles.bomCode}>
+                    {line.itemCode} · {line.kind === 'semi' ? '半成品' : '物料'}
+                  </Text>
+                </View>
+                <Text className={styles.bomQty}>
+                  {line.qty} {line.unit}
+                </Text>
+              </View>
+              {(line.children || []).map((child) => (
+                <View key={child.itemCode} className={classnames(styles.bomRow, styles.bomRowChild)}>
+                  <View className={styles.bomMain}>
+                    <Text className={styles.bomName}>{child.itemName}</Text>
+                    <Text className={styles.bomCode}>{child.itemCode}</Text>
+                  </View>
+                  <Text className={styles.bomQty}>
+                    {child.qty} {child.unit}
+                  </Text>
+                </View>
+              ))}
+            </React.Fragment>
+          ))}
+        </View>
+      )}
+
+      {usedInNames.length > 0 && (
+        <View className={styles.card}>
+          <Text className={styles.cardTitle}>应用机型</Text>
+          {usedInNames.map((name) => (
+            <Text key={name} className={styles.usedIn}>
+              {name}
+            </Text>
+          ))}
+        </View>
+      )}
 
       <View className={styles.bottomSpace} />
 

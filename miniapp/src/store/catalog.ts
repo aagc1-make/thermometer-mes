@@ -12,7 +12,7 @@ interface CatalogState {
 }
 
 /**
- * 产品目录：初始使用本地演示数据，进入页面后异步拉取后端真实目录
+ * 产品目录：与 MES 主数据一致（成品 1 / 半成品 2 / 物料 14）
  */
 export const useCatalogStore = create<CatalogState>()((set, get) => ({
   products: PRODUCTS,

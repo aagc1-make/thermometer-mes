@@ -15,6 +15,7 @@ const InquiryDetailPage: React.FC = () => {
   const recordId = router.params.id || '';
   const submitted = useInquiryStore((state) => state.submitted);
   const quoted = useInquiryStore((state) => state.quoted);
+  const cancelRecord = useInquiryStore((state) => state.cancelRecord);
   const localRecord = [...submitted, ...quoted].find((item) => item.id === recordId);
   const [record, setRecord] = useState<InquiryRecord | undefined>(localRecord);
   const [submitting, setSubmitting] = useState(false);
@@ -44,6 +45,23 @@ const InquiryDetailPage: React.FC = () => {
   }
 
   const isQuoted = record.status === 'quoted';
+
+  const handleCancel = async () => {
+    try {
+      const res = await Taro.showModal({
+        title: '撤销询价单',
+        content: `撤销后 ${record.id} 将置为已取消，已报价的询价单不可撤销。`,
+        confirmText: '撤销',
+        confirmColor: '#f04438'
+      });
+      if (!res.confirm) return;
+      await cancelRecord(record.id);
+      Taro.showToast({ title: '询价单已撤销', icon: 'none' });
+      setTimeout(() => Taro.navigateBack(), 400);
+    } catch (error) {
+      console.info('[Inquiry] 取消撤销操作', error);
+    }
+  };
 
   const handleConfirmOrder = async () => {
     if (submitting) {
@@ -153,6 +171,12 @@ const InquiryDetailPage: React.FC = () => {
           </View>
         )}
       </View>
+
+      {!isQuoted && (
+        <View className={styles.cancelRow} onClick={handleCancel}>
+          <Text className={styles.cancelText}>撤销该询价单</Text>
+        </View>
+      )}
     </View>
   );
 };

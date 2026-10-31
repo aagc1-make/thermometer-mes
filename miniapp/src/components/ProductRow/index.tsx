@@ -38,4 +38,4 @@ const ProductRow: React.FC<ProductRowProps> = ({ product, onAdd, onClick }) => {
   );
 };
 
-export default ProductRow;
+export default React.memo(ProductRow);

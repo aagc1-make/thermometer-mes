@@ -10,8 +10,11 @@ export type ProductArt =
   | 'mainboard'
   | 'sensor';
 
-/** 产品分类：成品 / 半成品 */
-export type ProductCategory = 'finished' | 'semi';
+/** 产品分类：成品 / 半成品 / 物料（对应 MES 三层目录） */
+export type ProductCategory = 'finished' | 'semi' | 'material';
+
+/** 半成品与物料的细分组（与 MES itemTypeName 一致） */
+export type ProductGroup = '整机成品' | '自制半成品' | '电子件' | '结构件' | '包装辅料';
 
 /** 产品 */
 export interface Product {
@@ -20,8 +23,8 @@ export interface Product {
   code: string;
   category: ProductCategory;
   categoryName: string;
-  /** 半成品细分：电控组件 / 结构件 */
-  group?: '电控组件' | '结构件';
+  /** MES 中的物料类型：整机成品 / 自制半成品 / 电子件 / 结构件 / 包装辅料 */
+  group?: ProductGroup;
   /** 规格参数文案 */
   param: string;
   /** 起订量 */
@@ -33,6 +36,18 @@ export interface Product {
   art: ProductArt;
   /** 详情说明 */
   desc: string;
+}
+
+/** BOM 组成行：成品由半成品/物料构成，半成品可继续展开物料 */
+export interface BomLine {
+  itemCode: string;
+  itemName: string;
+  /** 单台用量 */
+  qty: number;
+  unit: string;
+  /** semi：半成品（可展开）；material：外购物料 */
+  kind: 'semi' | 'material';
+  children?: BomLine[];
 }
 
 /** 询价单中的商品行 */

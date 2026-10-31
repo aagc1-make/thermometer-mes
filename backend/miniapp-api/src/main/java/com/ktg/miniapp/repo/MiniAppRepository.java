@@ -234,6 +234,34 @@ public class MiniAppRepository {
         return headers.get(0);
     }
 
+    /**
+     * 撤销询价单：把状态置为 CANCELED（不删除记录，保留可追溯性）
+     * 已报价 / 已确认 / 已下单的询价单不允许撤销
+     */
+    @Transactional
+    public Map<String, Object> cancelInquiry(String inquiryNo) {
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT inquiry_id AS inquiryId, UPPER(status) AS status FROM mes_inquiry_header "
+                        + "WHERE inquiry_no = ? AND (client_id = ? OR client_id IS NULL)",
+                inquiryNo, CLIENT_ID);
+        if (rows.isEmpty()) {
+            throw new BizException("询价单不存在");
+        }
+        Map<String, Object> row = rows.get(0);
+        String status = str(row.get("status"));
+        if ("CANCELED".equalsIgnoreCase(status)) {
+            return inquiry(inquiryNo);
+        }
+        if ("QUOTED".equalsIgnoreCase(status)
+                || "CONFIRMED".equalsIgnoreCase(status)
+                || "ORDERED".equalsIgnoreCase(status)) {
+            throw new BizException("已报价或已下单的询价单不可撤销");
+        }
+        jdbc.update("UPDATE mes_inquiry_header SET status = 'CANCELED', update_time = NOW() WHERE inquiry_id = ?",
+                toLong(row.get("inquiryId")));
+        return inquiry(inquiryNo);
+    }
+
     @SuppressWarnings("unchecked")
     @Transactional
     public Map<String, Object> createInquiry(Map<String, Object> payload) {
