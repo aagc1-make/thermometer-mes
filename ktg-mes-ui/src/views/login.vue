@@ -66,6 +66,8 @@
             <button class="login-tab-btn" :class="{ active: loginTab === 'password' }" @click="loginTab = 'password'" data-tab="password" type="button">密码登录</button>
             <div class="login-tab-divider"></div>
             <button class="login-tab-btn" :class="{ active: loginTab === 'sms' }" @click="loginTab = 'sms'" data-tab="sms" type="button">验证码登录</button>
+            <div class="login-tab-divider"></div>
+            <button class="login-tab-btn" :class="{ active: loginTab === 'face' }" @click="loginTab = 'face'" data-tab="face" type="button">人脸登录</button>
             <div class="login-tab-line login-tab-line-right"></div>
           </div>
         </div>
@@ -190,11 +192,46 @@
           <p class="text-sm text-error mt-0.5 min-h-5 text-center" id="login-error-sms"></p>
         </form>
 
+        <!-- 人脸登录表单 -->
+        <form class="space-y-4" id="login-form-face" v-show="loginTab === 'face'" @submit.prevent="startFaceLogin">
+          <div class="space-y-1 form-field anim-fade-up anim-delay-2">
+            <label class="font-label text-[0.6875rem] uppercase tracking-widest text-primary/80 ml-1 font-semibold">用户账号</label>
+            <div class="relative group">
+              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-all duration-300 text-xl">account_circle</span>
+              <input
+                id="login-face-username" v-model="loginForm.username" aria-label="用户账号"
+                class="w-full bg-surface-container-lowest border border-outline-variant/60 focus:ring-primary/50 focus:border-primary/50 input-border py-3.5 pl-12 pr-4 text-on-surface placeholder:text-on-surface-variant/40 transition-all duration-300 login-input"
+                placeholder="请输入登录账号"
+                type="text"
+                autocomplete="username"
+              >
+            </div>
+          </div>
+
+          <div style="font-size:12px;line-height:1.7;color:#64748b;background:rgba(37,99,235,.06);border-radius:8px;padding:10px 12px">
+            首次使用请先用密码登录，在「个人中心 → 人脸登录」录入；<br>
+            人脸只在本机浏览器内比对，服务端仅保存特征向量，不保存照片。
+          </div>
+
+          <button
+            id="login-button-face" :disabled="loading"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2 group btn-press relative overflow-hidden anim-fade-up anim-delay-5"
+            type="submit"
+          >
+            <span class="relative z-10 flex items-center gap-2">
+              <i class="el-icon-camera" style="font-size:18px"></i>
+              <span>{{ loading ? '正在验证…' : '开始人脸识别' }}</span>
+            </span>
+          </button>
+
+          <p class="text-sm text-error mt-0.5 min-h-5 text-center" id="login-error-face" aria-live="polite">{{ faceError }}</p>
+        </form>
+
         <!-- 第三方认证 & 注册链接 -->
         <div class="mt-6 pt-5 border-t border-outline-variant/30 flex flex-col items-center space-y-4 anim-fade-up anim-delay-6">
           <div class="flex items-center space-x-3">
-            <button class="w-10 h-10 rounded-xl border border-outline-variant/40 flex items-center justify-center hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-all duration-300 group" title="指纹识别" type="button" @click="alternativeLogin">
-              <span class="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">fingerprint</span>
+            <button class="w-10 h-10 rounded-xl border border-outline-variant/40 flex items-center justify-center hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-all duration-300 group" title="人脸登录" type="button" @click="loginTab = 'face'">
+              <i class="el-icon-camera text-lg group-hover:scale-110 transition-transform"></i>
             </button>
             <button class="w-10 h-10 rounded-xl border border-outline-variant/40 flex items-center justify-center hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-all duration-300 group" title="扫码登录" type="button" @click="alternativeLogin">
               <span class="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">qr_code_scanner</span>
@@ -245,12 +282,15 @@
       <p class="verification-hint">红外测温枪智能制造平台</p>
       <p>贯通物料、生产、质量与设备管理，让红外测温枪制造过程清晰可控、全程可追溯。</p>
     </el-dialog>
+
+    <face-capture :visible.sync="faceVisible" title="人脸登录" tip="人脸特征只用于本次身份核验，不会上传照片" @captured="handleFaceCaptured" />
   </div>
 </template>
 
 <script>
 import { getCodeImg } from '@/api/login'
 import { getAll } from '@/api/print/client'
+import FaceCapture from '@/components/FaceCapture'
 import Cookies from 'js-cookie'
 import { encrypt, decrypt } from '@/utils/jsencrypt'
 
@@ -258,6 +298,7 @@ const introImages = [1, 2, 3, 4, 5, 6].map(n => require('@/assets/images/p' + n 
 
 export default {
   name: 'Login',
+  components: { FaceCapture },
   data() {
     return {
       business: { brand: '温衡智造' }, isDrilling: true,
@@ -267,6 +308,7 @@ export default {
       loading: false, loginError: '', captchaOnOff: true, captchaReady: false,
       captchaVisible: false, captchaError: '', codeUrl: '',
       helpVisible: false, productVisible: false, clientId: null, clientList: [], clientChanged: false,
+      faceVisible: false, faceError: '',
       register: false, redirect: undefined
     }
   },
@@ -333,6 +375,32 @@ export default {
       } finally { this.loading = false }
     },
     smsUnavailable() { this.$message.info('短信登录暂未开通，请使用密码登录。') },
+    startFaceLogin() {
+      this.faceError = ''
+      if (this.loading) return
+      if (!this.loginForm.username.trim()) {
+        this.faceError = '请先输入用户账号'
+        return
+      }
+      this.faceVisible = true
+    },
+    async handleFaceCaptured(payload) {
+      this.faceVisible = false
+      this.loading = true
+      this.faceError = ''
+      try {
+        await this.$store.dispatch('FaceLogin', {
+          username: this.loginForm.username.trim(),
+          descriptor: Array.from(payload.descriptor)
+        })
+        Cookies.set('username', this.loginForm.username.trim(), { expires: 30 })
+        await this.$router.push({ path: this.redirect || '/' }).catch(() => {})
+      } catch (error) {
+        this.faceError = (error && error.message) || '人脸登录失败，请重试或使用密码登录'
+      } finally {
+        this.loading = false
+      }
+    },
     alternativeLogin() { this.$message.info('该认证方式暂未开通，请使用密码登录。') },
     forgotPassword() { this.$alert('请联系系统管理员核验身份并重置密码。', '忘记密钥', { confirmButtonText: '知道了' }) },
     goToRegister() {

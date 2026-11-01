@@ -3,6 +3,16 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const vm = require('node:vm')
 
+// ai/index.vue 会剥离 import 后放进沙箱运行，这里把它的纯逻辑依赖一并注入。
+function answerRules() {
+  const box = { exports: {} }
+  vm.createContext(box)
+  vm.runInContext(fs.readFileSync('ktg-mes-ui/src/utils/mesAnswerRules.js', 'utf8')
+    .replace(/export (const|function) /g, '$1 ') +
+    '\nexports={detectMesTopic,buildInspectionAnswer,buildUnqualifiedAnswer,knowledgeFallback};', box)
+  return box.exports
+}
+
 const NOTICE = { noticeId: 31, noticeCode: 'AN20261031003', status: 'PREPARE', vendorName: '测试供应商', arrivalDate: '2026-10-31' }
 const LINE = { noticeId: 31, lineId: 72, itemId: 6, itemCode: 'TG-EL-006', itemName: '电池', unitName: '节', quantityArrival: 10, iqcCheck: 'Y' }
 const created = (notice = NOTICE) => ({ role: 'bot', type: 'arrival', ...notice, finished: true, busy: false, error: '', lines: [{ ...LINE }] })
@@ -26,7 +36,7 @@ function chat({ history = [created()], notice = NOTICE, lines = [LINE], inspecti
     if (config.url === '/mes/pro/workorder/list') return { rows: [{ workorderId: 200, workorderCode: 'WO-002', quantity: 10, quantityProduced: 0, unitName: '台' }], total: 1 }
     throw new Error('Unexpected API: ' + config.url)
   }
-  const box = { component: null, request, Date, console, setTimeout: () => 1, clearTimeout() {},
+  const box = { ...answerRules(), component: null, request, Date, console, setTimeout: () => 1, clearTimeout() {},
     sessionStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) } }
   vm.createContext(box)
   vm.runInContext(code, box)

@@ -2,6 +2,7 @@
   <div class="app-container ai">
     <div class="ai__head">
       <div>
+        <el-button size="mini" icon="el-icon-reading" @click="$refs.knowledgeBase.open()">知识库<span v-if="knowledgeDocuments.length">（{{ knowledgeDocuments.length }}）</span></el-button>
         <h2 class="ai__title">MES 智能助手</h2>
         <p class="ai__sub">用自然语言查询库存、出入库、工单与检验数据 —— 结果全部来自真实业务库</p>
       </div>
@@ -12,11 +13,18 @@
     </div>
 
     <business-chain ref="businessChain" />
+    <knowledge-base ref="knowledgeBase" :user-id="knowledgeUserId" @change="knowledgeDocuments = $event" />
+    <div class="ai__mode">
+      <el-radio-group v-model="queryMode" size="mini" aria-label="助手工作模式"><el-radio-button label="business">业务助手</el-radio-button><el-radio-button label="knowledge">知识问答</el-radio-button></el-radio-group>
+      <span>{{ queryMode === 'knowledge' ? '检索本浏览器已启用的资料，回答附原文引用。' : '查询实时业务数据，或按确认步骤处理业务单据。' }}</span>
+      <el-button v-if="queryMode === 'knowledge'" type="text" size="mini" @click="$refs.knowledgeBase.open()">管理与导入资料</el-button>
+    </div>
     <div class="ai__body" ref="scroller">
       <div v-for="(m, i) in messages" :key="i" :class="['msg', 'msg--' + m.role]">
         <div class="msg__bubble">
           <!-- 文本 -->
           <div v-if="m.type === 'text'" class="msg__text">{{ m.text }}</div>
+          <knowledge-answer v-else-if="m.type === 'knowledge'" :message="m" @source="showKnowledgeSource" />
 
           <!-- 盘点结果 -->
           <div v-else-if="m.type === 'stock'" class="msg__card">
@@ -154,7 +162,7 @@
           </div>
           <div v-if="m.analysisContext" class="msg__meta">
             <el-button type="text" size="mini" :loading="m.analysisBusy" @click="requestAnalysis(m)">请求大模型分析</el-button>
-            <span>需确认发送当前问题和部分回答</span>
+            <span>{{ m.type === 'knowledge' ? '需确认发送当前问题与引用的文档片段' : '需确认发送当前问题和部分回答' }}</span>
           </div>
         </div>
       </div>
@@ -165,19 +173,20 @@
     </div>
 
     <div class="ai__input">
-      <el-input v-model="input" placeholder="例如：盘点一下 10 月份测温显示电控预装件的库存情况" @keyup.enter.native="send()" clearable />
+      <el-input v-model="input" :placeholder="queryMode === 'knowledge' ? '例如：红外传感器来料检验需要检查哪些项目？' : '例如：盘点一下 10 月份测温显示电控预装件的库存情况'" @keyup.enter.native="send()" clearable />
       <el-button type="primary" icon="el-icon-s-promotion" @click="send()">发送</el-button>
     </div>
 
     <div class="ai__tips">
       <span class="ai__tips-label">试试：</span>
-      <span class="chip" v-for="(q, i) in samples" :key="i" @click="send(q)">{{ q }}</span>
+      <span class="chip" v-for="(q, i) in displaySamples" :key="i" @click="send(q)">{{ q }}</span>
     </div>
   </div>
 </template>
 
 <script>
 import request from '@/utils/request'
+import { detectMesTopic, buildInspectionAnswer, buildUnqualifiedAnswer, knowledgeFallback } from '@/utils/mesAnswerRules'
 
 const CHAT_WELCOME = '你好，我是 MES 智能助手。可以问我：\n· 盘点 10 月份测温显示电控预装件的库存\n· 这个月采购入库了多少电子件\n· 有哪些工单进度落后\n· 本月的检验合格率是多少\n也可以让我登记单据，例如“帮我添加 10 个上壳、10 个电池的到货通知”'
 const CHAT_TTL = 10 * 60 * 1000
@@ -185,10 +194,12 @@ let chatExpiryTimer = null
 
 export default {
   name: 'MesAi',
-  components: { BusinessChain: () => import('./BusinessChain') },
+  components: { BusinessChain: () => import('./BusinessChain'), KnowledgeBase: () => import('./KnowledgeBase'), KnowledgeAnswer: () => import('./KnowledgeAnswer') },
   data() {
     return {
       input: '',
+      queryMode: 'business',
+      knowledgeDocuments: [],
       loading: false,
       llmUnavailable: false,
       waitingWeatherCity: false,
@@ -197,11 +208,19 @@ export default {
       messages: [{ role: 'bot', type: 'text', text: CHAT_WELCOME }],
       samples: [
         '盘点 10 月份测温显示电控预装件的库存',
+        '红外传感器来料检验要检查哪些项目',
+        '不合格物料应该如何处理',
         '本月采购入库了多少电子件',
         '帮我添加 10 个上壳、10 个电池的到货通知',
         '哪些工单进度落后',
         '现在哪些物料低于安全库存'
       ]
+    }
+  },
+  computed: {
+    knowledgeUserId() { return this.$store && this.$store.state.user.id || '' },
+    displaySamples() {
+      return this.queryMode === 'knowledge' ? ['红外传感器来料检验需要检查什么？', '测温枪装配工艺有哪些注意事项？', '不合格物料应该如何处理？'] : this.samples
     }
   },
   created() {
@@ -308,7 +327,8 @@ export default {
               type: m.type, title: m.title, text: m.text, source: m.source,
               begin: m.begin, inQty: m.inQty, outQty: m.outQty, end: m.end,
               rows: rows.slice(0, 20).map(row => keys.reduce((shown, key) => { shown[key] = row[key]; return shown }, {})),
-              rowsTruncated: rows.length > 20, options: m.options, summary: m.summary
+              rowsTruncated: rows.length > 20, options: m.options, summary: m.summary,
+              citations: m.type === 'knowledge' ? m.sources : undefined
             }
           })
           this.$set(replies[replies.length - 1], 'analysisContext', { question: q, facts })
@@ -321,7 +341,7 @@ export default {
     async requestAnalysis(m) {
       if (m.analysisBusy || !m.analysisContext) return
       try {
-        await this.$confirm('将当前问题及部分回答、表格数据发送给已配置的外部模型服务进行分析。请确认内容适合发送。', '确认发送', { confirmButtonText: '确认发送', cancelButtonText: '取消', type: 'warning' })
+        await this.$confirm(m.type === 'knowledge' ? '将当前问题与已引用的文档片段发送给已配置的外部模型服务。未引用的正文不会发送，请确认内容适合发送。' : '将当前问题及部分回答、表格数据发送给已配置的外部模型服务进行分析。请确认内容适合发送。', '确认发送', { confirmButtonText: '确认发送', cancelButtonText: '取消', type: 'warning' })
       } catch (e) { return }
       const facts = JSON.stringify(m.analysisContext.facts)
       if (facts.length > 12000) {
@@ -339,6 +359,28 @@ export default {
     },
 
     /* ---------- 意图解析（规则引擎；LLM 只做兜底，故意不参与算数） ---------- */
+    async queryKnowledge(question) {
+      const knowledgeBase = this.$refs.knowledgeBase
+      if (!knowledgeBase) { this.push({ role: 'bot', type: 'text', text: '知识库正在加载，请稍后重试。' }); return }
+      const result = await knowledgeBase.search(question)
+      if (!result.documentCount) { this.push({ role: 'bot', type: 'text', text: '知识库还没有资料，请先点击“知识库”导入文档，再进行知识问答。' }); return }
+      if (!result.activeCount) { this.push({ role: 'bot', type: 'text', text: '当前没有启用的文档版本，请在知识库中启用需要检索的版本。' }); return }
+      const topic = detectMesTopic(question)
+      if (!result.sources.length) {
+        // 资料里确实没有该主题时，别再让用户自己换关键词：业务规则问题用系统真实流程回答。
+        const fallback = knowledgeFallback(topic)
+        this.push({ role: 'bot', type: 'text', text: fallback || '在已启用的文档中未找到相关片段。请补充对应资料，或使用文档中的物料、工序、检验项目等具体关键词。' })
+        return
+      }
+      const businessHint = (topic === 'inspection-items' || topic === 'unqualified')
+        ? ' 如需按系统实际配置和单据核对，请切到「业务助手」再问同一句。' : ''
+      this.push({ role: 'bot', type: 'knowledge', title: '知识库检索结果',
+        text: '以下是已启用资料中与问题相关的原文片段：' + businessHint, sources: result.sources,
+        source: '本浏览器知识文档；按名称、版本和段落定位原文' })
+    },
+    showKnowledgeSource(source) {
+      if (this.$refs.knowledgeBase) this.$refs.knowledgeBase.showSource(source)
+    },
     parseTime(q) {
       const now = new Date()
       const range = q.match(/(?:(20\d{2})\s*[-年]\s*)?(\d{1,2})\s*[-月]\s*(\d{1,2})\s*日?\s*(?:到|至|~|～)\s*(?:(20\d{2})\s*[-年]\s*)?(?:(\d{1,2})\s*[-月]\s*)?(\d{1,2})\s*日?/)
@@ -399,6 +441,30 @@ export default {
         return false
       })
       return { item: fuzzy[0] || null, items: fuzzy, rows, fuzzy }
+    },
+
+    /**
+     * 检验/流程类问题的物料匹配。
+     * 提问通常带「来料检验要检查什么」这类业务词，物料名不一定完整出现（问「红外传感器」，
+     * 主数据里叫「红外传感器模块」），所以精确匹配失败时按相邻两字的命中数排序，命中接近的让用户选。
+     */
+    async matchBusinessItem(q) {
+      const matched = await this.matchItem(q)
+      if (matched.item || (matched.items && matched.items.length)) return matched
+      const rows = matched.rows || []
+      const mention = this.materialMention(q)
+      if (!mention) return matched
+      const grams = []
+      for (let i = 0; i + 1 < mention.length; i++) grams.push(mention.slice(i, i + 2))
+      const threshold = Math.min(2, grams.length)
+      const scored = rows
+        .map(item => ({ item, hits: grams.filter(gram => (item.itemName || '').includes(gram)).length }))
+        .filter(entry => entry.hits >= threshold)
+        .sort((left, right) => right.hits - left.hits)
+      if (!scored.length) return { ...matched, fuzzy: [] }
+      const best = scored[0].hits
+      const candidates = scored.filter(entry => entry.hits >= best - 1).map(entry => entry.item)
+      return { item: candidates.length === 1 ? candidates[0] : null, items: candidates, rows }
     },
 
     /**
@@ -464,6 +530,7 @@ export default {
 
     /** 主流程：解析单据指代 → 写操作 → 专属问答 → 规则 → 大模型 → 追问 */
     async route(q) {
+      if (this.queryMode === 'knowledge') return this.queryKnowledge(q)
       if (/(?:一键|自动|完整|整个|全流程|业务流程).{0,8}贯通|贯通.{0,8}(?:整个|完整|全流程|业务流程)/.test(q)) {
         this.$refs.businessChain.open()
         this.push({ role: 'bot', type: 'text', text: '已打开全流程贯通。点击“开始执行”，即可按顺序执行采购、质检、生产和销售主链，默认生产 10 台、销售 6 台、结存 4 台。执行会生成真实单据并变更库存。' })
@@ -471,6 +538,16 @@ export default {
       }
       if (await this.handleArrivalFollowup(q)) return
       if (/执行|过账/.test(q) && /采购入库|原料入库|原材料入库|生产领料|领料单|产品入库|成品入库|销售出库|销售发货/.test(q)) return this.preparePosting(q)
+      // 业务规则题先走确定性回答：检验项目、不合格处置在系统里都有真实配置和单据可查，
+      // 不该落到“知识库无结果”或让模型自由发挥。
+      const topic = detectMesTopic(q)
+      if (topic) {
+        this.lastStock = null
+        this.lastWorkorder = null
+        this.waitingWeatherCity = false
+        if (topic === 'unqualified') return this.queryUnqualifiedHandling()
+        return this.queryInspectionItems(q)
+      }
       // 写操作优先：新增/创建单据必须排在入库、库存等读查询规则之前，
       // 否则“帮我添加一条到货通知”会因为含“采购/到货”被答成入库汇总。
       const action = this.matchAction(q)
@@ -1524,12 +1601,95 @@ export default {
         source: `数据来源：qc_ipqc ${t.from} ~ ${t.to}，共 ${rows.length} 张检验单`
       })
       this.push({ role: 'bot', type: 'text', text: rows.length ? `${t.label}过程检验共 ${rows.length} 张，按单位分别统计：${summary}。` : `${t.label}没有可统计的过程检验记录。` })
+    },
+
+    /* ---------- ⑥ 业务规则问答：来料检验要检查什么 ---------- */
+    async queryInspectionItems(q) {
+      this.lastStock = null
+      this.lastWorkorder = null
+      const { item, items, fuzzy } = await this.matchBusinessItem(q)
+      if (!item) {
+        const candidates = [(items || []), (fuzzy || [])].find(list => list.length) || []
+        if (candidates.length) {
+          this.push({
+            role: 'bot', type: 'ask',
+            text: '匹配到多个物料，请明确要查哪一个的检验项目（不同物料的检测项不能混用）：',
+            options: candidates.slice(0, 4).map(i => `${i.itemName} 来料检验要检查哪些项目`)
+          })
+          return
+        }
+        this.push({
+          role: 'bot', type: 'text',
+          text: `没有找到与「${this.materialMention(q) || '该物料'}」匹配的物料，因此不会用全部物料的检测项冒充它的结果。请改用物料编码或更完整的名称再问，例如「红外传感器模块 来料检验要检查哪些项目」。`
+        })
+        return
+      }
+      // 来料检验单能提供"最近实际检验了什么"，缺权限时退化为只读质检方案。
+      let lastIqc = null
+      let lastIqcLines = []
+      if (this.$auth.hasPermi('mes:qc:iqc:list')) {
+        const iqc = await this.get('/mes/qc/iqc/list', { itemId: item.itemId })
+        const finished = (iqc.rows || [])
+          .filter(row => row.status === 'FINISHED')
+          .sort((left, right) => String(right.inspectDate || '').localeCompare(String(left.inspectDate || '')))
+        lastIqc = finished[0] || null
+        if (lastIqc) {
+          const lines = await this.get('/mes/qc/iqcline/list', { iqcId: lastIqc.iqcId })
+          lastIqcLines = lines.rows || []
+        }
+      }
+      const products = await this.get('/mes/qc/templateproduct/list', { itemId: item.itemId })
+      const productRows = products.rows || []
+      const templateId = (lastIqc && lastIqc.templateId) || (productRows[0] && productRows[0].templateId) || null
+      let template = null
+      let product = null
+      let indexes = []
+      if (templateId) {
+        const [templates, indexRows] = await Promise.all([
+          this.get('/mes/qc/qctemplate/list', { templateId }),
+          this.get('/mes/qc/templateindex/list', { templateId })
+        ])
+        template = (templates.rows || []).find(row => String(row.templateId) === String(templateId)) || null
+        product = productRows.find(row => String(row.templateId) === String(templateId)) || null
+        indexes = indexRows.rows || []
+      }
+      const answer = buildInspectionAnswer({ item, template, product, indexes, lastIqc, lastIqcLines })
+      this.push({ role: 'bot', type: 'text', text: answer.text })
+      if (answer.rows.length) {
+        this.push({ role: 'bot', type: 'list', title: answer.title, columns: answer.columns, rows: answer.rows, source: answer.source })
+      }
+    },
+
+    /* ---------- ⑦ 业务规则问答：不合格物料如何处理 ---------- */
+    async queryUnqualifiedHandling() {
+      this.lastStock = null
+      this.lastWorkorder = null
+      const canReadIqc = this.$auth.hasPermi('mes:qc:iqc:list')
+      const canReadReturns = this.$auth.hasPermi('mes:wm:rtvendor:list')
+      let iqcRows = []
+      if (canReadIqc) {
+        const iqc = await this.get('/mes/qc/iqc/list')
+        iqcRows = (iqc.rows || []).filter(row => row.status === 'FINISHED')
+      }
+      let returnRows = []
+      if (canReadReturns) {
+        const rtv = await this.get('/mes/wm/rtvendor/list')
+        // 只看与不合格处置相关的退供：未入库退供（attr2=PRE_STOCK）或名称含"不合格"的退供单。
+        returnRows = (rtv.rows || []).filter(row => row.attr2 === 'PRE_STOCK' || /不合格/.test(String(row.rtName || '')))
+      }
+      const answer = buildUnqualifiedAnswer({ iqcRows, returnRows, iqcRowsRead: canReadIqc, returnRowsRead: canReadReturns })
+      this.push({ role: 'bot', type: 'text', text: answer.text })
+      if (answer.rows.length) {
+        this.push({ role: 'bot', type: 'list', title: answer.title, columns: answer.columns, rows: answer.rows, source: answer.source })
+      }
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
+.ai__mode { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 0 0 14px; }
+.ai__mode > span { color: #6b7280; font-size: 12px; }
 .ai {
   display: flex;
   flex-direction: column;

@@ -154,3 +154,13 @@ mes:
     glm-url: https://open.bigmodel.cn/api/paas/v4/chat/completions
     glm-model: glm-4-flash
     timeout-ms: 8000
+  # 人脸登录：浏览器本地 1:1 特征比对，服务端只存特征不存照片
+  face:
+    # 关闭后登录与录入接口直接拒绝，前端入口仍显示
+    enabled: true
+    # 欧氏距离阈值：同一人通常 0.3~0.5，不同人通常大于 0.6；调大更宽松、调小更严格
+    threshold: 0.55
+    # 同一账号连续失败多少次后短期封禁
+    max-fail: 5
+    # 失败计数窗口（秒）
+    fail-window: 600

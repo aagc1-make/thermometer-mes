@@ -8,6 +8,7 @@ function login() {
   const code = fs.readFileSync('ktg-mes-ui/src/views/login.vue', 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1]
     .replace(/^import .*$/mg, '').replace('export default', 'component =')
   const box = { component: null, require: name => name, encrypt: value => value,
+    FaceCapture: { name: 'FaceCapture' },
     Cookies: { remove() {}, set() {} },
     localStorage: { setItem: (key, value) => saved.set(key, value), removeItem: key => saved.delete(key) } }
   vm.createContext(box); vm.runInContext(code, box)
