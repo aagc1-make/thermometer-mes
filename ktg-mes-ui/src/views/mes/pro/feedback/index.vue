@@ -187,6 +187,14 @@
     <!-- 添加或修改生产报工记录对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="960px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-alert
+          v-if="optType === 'add'"
+          class="fb-auto-hint"
+          :closable="false"
+          show-icon
+          :type="autoHint.type"
+          :title="autoHint.text"
+        />
         <el-row>
           <el-col :span="8">
             <el-form-item label="报工类型" prop="feedbackType">
@@ -200,36 +208,48 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="16">
-            <el-form-item label="报工单号" prop="feedbackCode">
-              <el-input v-model="form.feedbackCode" readonly="readonly" placeholder="系统自动生成"/>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row>
           <el-col :span="8">
             <el-form-item label="生产工单" prop="workorderCode">
-              <el-input v-model="form.workorderCode" placeholder="请选择生产工单" >
+              <el-input v-model="form.workorderCode" readonly="readonly" placeholder="点这里选择生产工单" @click.native="handleWorkorderSelect">
                 <el-button slot="append" icon="el-icon-search" @click="handleWorkorderSelect"></el-button>
               </el-input>
             </el-form-item>
             <WorkorderSelect ref="woSelect" @onSelected="onWorkorderSelected"></WorkorderSelect>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="工作站" prop="workstationName">
-              <el-input v-model="form.workstationName" placeholder="请选择工作站" >
-                <el-button slot="append" icon="el-icon-search" @click="handleWorkstationSelect"></el-button>
-              </el-input>
+            <el-form-item label="报工单号" prop="feedbackCode">
+              <el-input v-model="form.feedbackCode" readonly="readonly" placeholder="系统自动生成" />
             </el-form-item>
-            <WorkstationSelect ref="wsSelect" @onSelected="onWorkstationSelected"></WorkstationSelect>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="生产任务" prop="taskCode">
-              <el-input v-model="form.taskCode" placeholder="请选择生产任务" >
-                <el-button slot="append" icon="el-icon-search" @click="handleTaskSelect"></el-button>
-              </el-input>
+        </el-row>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="生产任务" prop="taskId">
+              <el-select
+                v-if="optType === 'add'"
+                v-model="form.taskId"
+                class="fb-task-select"
+                filterable
+                clearable
+                :loading="taskLoading"
+                :disabled="!form.workorderId"
+                :placeholder="form.workorderId ? '自动带出待报工工序' : '请先选择生产工单'"
+                @change="onTaskChange"
+              >
+                <el-option
+                  v-for="task in taskOptions"
+                  :key="task.taskId"
+                  :label="taskLabel(task)"
+                  :value="task.taskId"
+                />
+              </el-select>
+              <el-input v-else v-model="form.taskCode" readonly="readonly" />
             </el-form-item>
-            <ProtaskSelect ref="taskSelect" :workorderId="form.workorderId" :workstationId="form.workstationId" @onSelected="onTaskSelected"> </ProtaskSelect>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="工作站" prop="workstationName">
+              <el-input v-model="form.workstationName" readonly="readonly" placeholder="由生产任务自动带出" />
+            </el-form-item>
           </el-col>
         </el-row>
         <el-row>
@@ -259,7 +279,7 @@
         <el-row v-if="form.isCheck == 'N'">
           <el-col :span="8">
             <el-form-item label="报工数量" prop="quantityFeedback">
-              <el-input readonly="readonly" v-model="form.quantityFeedback" />
+              <el-input :value="form.quantityFeedback" inputmode="decimal" placeholder="请输入报工数量" @input="handleFeedbackQuantityInput" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -353,18 +373,21 @@
 </template>
 
 <script>
+import pipelineWorkorderContext from '@/mixins/pipelineWorkorderContext'
 import { listFeedback, getFeedback, delFeedback, addFeedback, updateFeedback, execute } from "@/api/mes/pro/feedback";
+import { listProtask } from "@/api/mes/pro/protask";
+import { listProductprocess } from "@/api/mes/pro/routeprocess";
 import WorkorderSelect from "@/components/workorderSelect/single.vue"
-import WorkstationSelect from "@/components/workstationSelect/simpletableSingle.vue"
 import UserSingleSelect from "@/components/userSelect/single.vue"
-import ProtaskSelect from "@/components/TaskSelect/taskSelectSingle.vue"
 import ProductProduce from './produce.vue';
 import ItemConsume from './consume.vue'
-import {getUserProfile} from "@/api/system/user";
+import { getUserProfile } from "@/api/system/user";
+import { defaultTask, openTaskIds, pendingTasks, quantityDefaults, taskRemaining } from "@/utils/feedbackDefaults";
 
 export default {
+  mixins: [pipelineWorkorderContext],
   name: "Feedback",
-  components: {WorkorderSelect,WorkstationSelect,UserSingleSelect,ProtaskSelect,ItemConsume,ProductProduce},
+  components: {WorkorderSelect, UserSingleSelect, ItemConsume, ProductProduce},
   dicts: ['mes_feedback_status', 'mes_feedback_type'],
   data() {
     return {
@@ -421,16 +444,20 @@ export default {
       },
       // 表单参数
       form: {},
+      // 该工单可报工的工序任务；按工艺路线顺序排序，首条自动带出任务与工作站
+      taskOptions: [],
+      taskLoading: false,
       // 表单校验
       rules: {
         feedbackType: [
           { required: true, message: "报工类型不能为空", trigger: "change" }
         ],
-        taskCode: [
-          { required: true, message: "请选择生产任务", trigger: "blur" }
+        taskId: [
+          { required: true, message: "请选择生产任务", trigger: "change" }
         ],       
         quantityFeedback: [
-          { required: true, message: "请填写报工数量", trigger: "blur" }
+          { required: true, message: "请填写报工数量", trigger: "blur" },
+          { validator: (rule, value, callback) => this.validateFeedbackQuantity(rule, value, callback), trigger: 'blur' }
         ],
         nickName: [
           { required: true, message: "请选择报工人", trigger: "blur"}
@@ -446,6 +473,34 @@ export default {
         ]
       }
     };
+  },
+  computed: {
+    // 当前带出的工序任务
+    currentTask() {
+      return this.taskOptions.find(task => String(task.taskId) === String(this.form.taskId)) || null;
+    },
+    // 弹窗顶部的自动带出提示：告诉用户"已经替你做完了什么、现在只需要核对什么"
+    autoHint() {
+      if (!this.form.workorderId) {
+        return { type: "info", text: "选择生产工单后，系统按工艺顺序自动带出待报工任务、工作站和数量，核对后直接保存。" };
+      }
+      if (this.taskLoading) return { type: "info", text: "正在按工艺路线带出待报工任务…" };
+      if (!this.taskOptions.length) {
+        return { type: "warning", text: "该工单没有可报工的工序任务：可能尚未排产或已全部报工，请先检查生产排产。" };
+      }
+      if (!this.currentTask) {
+        const first = this.taskOptions[0];
+        return first.hasOpenFeedback
+          ? { type: "warning", text: "「" + (first.processName || first.taskName) + "」已有未完成的报工单，请先在列表处理，避免重复报工。" }
+          : { type: "info", text: "该工单还有可报工的工序任务，请在任务下拉里选择。" };
+      }
+      const task = this.currentTask;
+      if (task.hasOpenFeedback) {
+        return { type: "warning", text: "「" + (task.processName || task.taskName) + "」已有未完成的报工单，请先在列表处理，避免重复报工。" };
+      }
+      const unit = task.unitName ? " " + task.unitName : "";
+      return { type: "success", text: "已自动带出「" + (task.processName || task.taskName) + "」任务与工作站「" + task.workstationName + "」，剩余可报 " + taskRemaining(task) + unit + "；核对数量后直接保存。" };
+    }
   },
   created() {
     this.getList();
@@ -473,7 +528,8 @@ export default {
       this.form = {
         recordId: null,
         feedbackCode: null,
-        feedbackType: null,
+        // 默认"自行报工"，免去每次手选；报工人、审核人默认当前登录用户，可在弹窗里改
+        feedbackType: "SELF",
         workstationId: null,
         workstationCode: null,
         workstationName: null,
@@ -501,7 +557,7 @@ export default {
         quantityOtherScrap: 0,
         userName: null,
         nickName: null,
-        feedbackChannel: null,
+        feedbackChannel: "PC",
         feedbackTime: this.formatDate(new Date(),"yyyy-MM-dd HH:mm:ss"),
         recordUser: null,
         recordNick: null,
@@ -519,13 +575,46 @@ export default {
       this.form.userId = this.user.userId;
       this.form.userName = this.user.userName;
       this.form.nickName = this.user.nickName;
+      // 单人工位/单人值守场景不需要再选两个人：默认由当前用户报工并审核。
+      this.form.recordUser = this.user.userName;
+      this.form.recordNick = this.user.nickName;
+      this.taskOptions = [];
+      this.taskLoading = false;
+      // 作废还在飞的取任务请求，避免关闭弹窗后旧结果写回新表单
+      this._taskRequestSequence = (this._taskRequestSequence || 0) + 1;
       this.resetForm("form");
     },
+    handleFeedbackQuantityInput(value) {
+      this.form.quantityFeedback = value;
+      if (value === '' || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(String(value))) return;
+      const quantity = Number(value);
+      const unqualified = Number(this.form.quantityUnquanlified) || 0;
+      if (Number.isFinite(quantity) && quantity >= unqualified) {
+        this.form.quantityQualified = Number((quantity - unqualified).toFixed(8));
+      }
+    },
+    validateFeedbackQuantity(rule, value, callback) {
+      const text = String(value == null ? '' : value).trim();
+      const quantity = Number(text);
+      if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(text) || !Number.isFinite(quantity) || quantity <= 0) {
+        callback(new Error('报工数量必须大于 0'));
+      } else if (this.form.isCheck === 'N' && quantity < (Number(this.form.quantityUnquanlified) || 0)) {
+        callback(new Error('报工数量不能小于不良品数量，请先调整不良品数量'));
+      } else {
+        callback();
+      }
+    },
     handleQuantityChanged(){
-      this.form.quantityFeedback = this.form.quantityQualified + this.form.quantityUnquanlified;
+      const qualified = Number(this.form.quantityQualified) || 0;
+      const unqualified = Number(this.form.quantityUnquanlified) || 0;
+      this.form.quantityFeedback = Number((qualified + unqualified).toFixed(8));
     },
     handleScrapChanged(){
-      this.form.quantityUnquanlified = this.form.quantityLaborScrap + this.form.quantityMaterialScrap + this.form.quantityOtherScrap;
+      const labor = Number(this.form.quantityLaborScrap) || 0;
+      const material = Number(this.form.quantityMaterialScrap) || 0;
+      const other = Number(this.form.quantityOtherScrap) || 0;
+      this.form.quantityUnquanlified = Number((labor + material + other).toFixed(8));
+      this.handleQuantityChanged();
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -535,6 +624,7 @@ export default {
     /** 重置按钮操作 */
     resetQuery() {
       this.resetForm("queryForm");
+      this.clearPipelineWorkorderContext();
       this.handleQuery();
     },
     // 多选框选中数据
@@ -543,12 +633,37 @@ export default {
       this.single = selection.length!==1
       this.multiple = !selection.length
     },
-    /** 新增按钮操作 */
-    handleAdd() {
+    /** 新增按钮操作：默认值补齐后，只让用户核对数量就能保存 */
+    async handleAdd() {
       this.reset();
       this.open = true;
       this.title = "添加生产报工记录";
       this.optType = "add";
+      // 弹窗会被复用，重置后把报工时间刷成当前时间，避免沿用上次打开的时间
+      this.form.feedbackTime = this.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss");
+      await this.ensureCurrentUser();
+      // 从首页流水线点进来时带着工单上下文，直接按该工单带出待报工工序
+      const workorderId = Number(this.queryParams.workorderId);
+      if (workorderId > 0) {
+        this.form.workorderId = workorderId;
+        this.form.workorderCode = this.queryParams.workorderCode || null;
+        await this.loadWorkorderTasks(workorderId);
+      }
+    },
+    /** 个人资料还没回来时补一次，避免保存时卡在"请选择报工人/审核人" */
+    async ensureCurrentUser() {
+      if (this.form.userName && this.form.recordUser) return;
+      try {
+        const response = await getUserProfile();
+        this.user = response.data || this.user;
+        this.form.userId = this.user.userId;
+        this.form.userName = this.user.userName;
+        this.form.nickName = this.user.nickName;
+        this.form.recordUser = this.user.userName;
+        this.form.recordNick = this.user.nickName;
+      } catch (e) {
+        // 取不到就保持手工选择，不阻断新增
+      }
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -676,60 +791,132 @@ export default {
       this.$refs.woSelect.handleOpen(this.form.workorderId)
     },
     onWorkorderSelected(row){
-      if(row != undefined && row != null){
-        this.form.workorderId = row.workorderId;
-        this.form.workorderCode = row.workorderCode;
-        this.form.workorderName = row.workorderName;
-        this.form.itemId = row.productId;
-        this.form.itemCode = row.productCode;
-        this.form.itemName = row.productName;
-        this.form.specification = row.productSpc;
-        this.form.unitOfMeasure = row.unitOfMeasure;
-        this.form.unitName = row.unitName;
+      if(row == undefined || row == null) return;
+      this.form.workorderId = row.workorderId;
+      this.form.workorderCode = row.workorderCode;
+      this.form.workorderName = row.workorderName;
+      this.form.itemId = row.productId;
+      this.form.itemCode = row.productCode;
+      this.form.itemName = row.productName;
+      this.form.specification = row.productSpc;
+      this.form.unitOfMeasure = row.unitOfMeasure;
+      this.form.unitName = row.unitName;
+      // 换工单就重新按工艺顺序带出待报工工序，避免沿用上一个工单的任务
+      this.clearTaskFields();
+      this.loadWorkorderTasks(row.workorderId);
+    },
+    /** 按工单带出可报工的工序任务，并默认选中第一道待报工工序 */
+    async loadWorkorderTasks(workorderId){
+      // 连续换工单时只认最后一次请求，避免旧结果盖掉新工单
+      const sequence = this._taskRequestSequence = (this._taskRequestSequence || 0) + 1;
+      this.taskOptions = [];
+      if(workorderId == undefined || workorderId == null || workorderId === "") return;
+      this.taskLoading = true;
+      try {
+        const [taskResponse, feedbackResponse] = await Promise.all([
+          listProtask({ workorderId: workorderId, pageNum: 1, pageSize: 200 }),
+          listFeedback({ workorderId: workorderId, pageNum: 1, pageSize: 200 }).catch(() => ({ rows: [] }))
+        ]);
+        if(sequence !== this._taskRequestSequence) return;
+        const tasks = (taskResponse && taskResponse.rows) || [];
+        const openIds = openTaskIds((feedbackResponse && feedbackResponse.rows) || []);
+        const processes = await this.loadRouteProcessOrder(tasks);
+        if(sequence !== this._taskRequestSequence) return;
+        this.taskOptions = pendingTasks(tasks, processes).map(task => Object.assign({}, task, {
+          hasOpenFeedback: openIds.has(String(task.taskId))
+        }));
+        const picked = defaultTask(tasks, processes, openIds);
+        if(picked){
+          this.applyTask(this.taskOptions.find(task => String(task.taskId) === String(picked.taskId)) || picked);
+        }
+      } catch (e) {
+        if(sequence === this._taskRequestSequence) this.taskOptions = [];
+        if(this.$modal) this.$modal.msgError("生产任务加载失败，请刷新后重试");
+      } finally {
+        if(sequence === this._taskRequestSequence) this.taskLoading = false;
       }
     },
-    //选择工作站
-    handleWorkstationSelect(){
-      this.$refs.wsSelect.handleOpen(this.form.workstationId)
-    },
-    onWorkstationSelected(row){
-      if(row != undefined && row != null){
-        this.form.workstationId = row.workstationId;
-        this.form.workstationCode = row.workstationCode;
-        this.form.workstationName = row.workstationName;
+    /** 工艺路线顺序：优先按路线工序顺序排，未配路线时按任务创建顺序兜底 */
+    async loadRouteProcessOrder(tasks){
+      const productId = (tasks[0] || {}).itemId || this.form.itemId;
+      if(productId == undefined || productId == null) return [];
+      try {
+        const response = await listProductprocess(productId);
+        return (response && response.data) || [];
+      } catch (e) {
+        return [];
       }
     },
-    handleTaskSelect(){
-      this.$refs.taskSelect.handleOpen(this.form.taskId)
+    /** 任务下拉文案：工序 · 任务编号（剩余可报/排产数量） */
+    taskLabel(task){
+      const unit = task.unitName ? " " + task.unitName : "";
+      return (task.processName || task.taskName) + " · " + task.taskCode +
+        "（剩余 " + taskRemaining(task) + "/" + (Number(task.quantity) || 0) + unit + "）" +
+        (task.hasOpenFeedback ? " · 已有未完成报工单" : "");
     },
-    onTaskSelected(row){
-      if(row != undefined && row != null){
-        this.form.taskId = row.taskId;
-        this.form.taskCode = row.taskCode;
-        this.form.taskName = row.taskName;
-        this.form.workstationId = row.workstationId;
-        this.form.workstationCode = row.workstationCode;
-        this.form.workstationName = row.workstationName;
-        this.form.workorderId = row.workorderId;
-        this.form.workorderCode = row.workorderCode;
-        this.form.workorderName = row.workorderName;
-        this.form.itemId = row.itemId;
-        this.form.itemCode = row.itemCode;
-        this.form.itemName = row.itemName;
-        this.form.specification = row.specification;
-        this.form.unitOfMeasure = row.unitOfMeasure;
-        this.form.unitName = row.unitName;
-        this.form.processId = row.processId;
-        this.form.processCode = row.processCode;
-        this.form.processName = row.processName;
-        this.form.routeId = row.routeId;
-        this.form.routeCode = row.routeCode;
-        this.form.isCheck = row.isCheck;        
-
-        this.form.quantityFeedback = 0;
-        this.form.quantityQualified =0;
-        this.form.quantityUnquanlified = 0;
+    onTaskChange(taskId){
+      const task = this.taskOptions.find(row => String(row.taskId) === String(taskId));
+      if(task){
+        this.applyTask(task);
+      } else {
+        this.clearTaskFields();
       }
+    },
+    /** 把任务上的工作站、工序、产品信息和默认数量一次性填好，用户只需核对数量 */
+    applyTask(task){
+      if(task == undefined || task == null) return;
+      this.form.taskId = task.taskId;
+      this.form.taskCode = task.taskCode;
+      this.form.taskName = task.taskName;
+      this.form.workstationId = task.workstationId;
+      this.form.workstationCode = task.workstationCode;
+      this.form.workstationName = task.workstationName;
+      this.form.workorderId = task.workorderId;
+      this.form.workorderCode = task.workorderCode;
+      this.form.workorderName = task.workorderName;
+      this.form.itemId = task.itemId;
+      this.form.itemCode = task.itemCode;
+      this.form.itemName = task.itemName;
+      this.form.specification = task.specification;
+      this.form.unitOfMeasure = task.unitOfMeasure;
+      this.form.unitName = task.unitName;
+      this.form.processId = task.processId;
+      this.form.processCode = task.processCode;
+      this.form.processName = task.processName;
+      this.form.routeId = task.routeId;
+      this.form.routeCode = task.routeCode;
+      this.form.isCheck = task.isCheck;
+      // 默认把该工序剩余可报量一次报完；免检工序同步拆出合格/不良两栏，保证合计等于报工数量
+      const defaults = quantityDefaults(task);
+      this.form.quantityFeedback = defaults.quantityFeedback;
+      this.form.quantityQualified = defaults.quantityQualified;
+      this.form.quantityUnquanlified = defaults.quantityUnquanlified;
+      this.form.quantityLaborScrap = 0;
+      this.form.quantityMaterialScrap = 0;
+      this.form.quantityOtherScrap = 0;
+    },
+    /** 清空任务相关字段：换工单或清空任务时不能把上一张任务的工作站带过去 */
+    clearTaskFields(){
+      Object.assign(this.form, {
+        taskId: null,
+        taskCode: null,
+        taskName: null,
+        workstationId: null,
+        workstationCode: null,
+        workstationName: null,
+        routeId: null,
+        routeCode: null,
+        processId: null,
+        processCode: null,
+        processName: null,
+        isCheck: null,
+        quantityFeedback: 0,
+        quantityQualified: 0,
+        quantityUnquanlified: 0,
+        quantityLaborScrap: 0,
+        quantityMaterialScrap: 0,
+        quantityOtherScrap: 0
+      });
     },
     //点击人员选择按钮
     handleUserSelect(){
@@ -752,3 +939,13 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.fb-auto-hint {
+  margin-bottom: 14px;
+}
+
+.fb-task-select {
+  width: 100%;
+}
+</style>

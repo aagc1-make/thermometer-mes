@@ -1,9 +1,12 @@
-# 红外测温枪 MES 系统
+# 温衡智造 · 红外测温枪 MES 系统
 
 基于若依（RuoYi 3.8.2）+ KTG MES 改造的制造执行系统，覆盖红外测温枪从采购到货、生产装配、
 质量检验到成品销售出库的全流程业务闭环。
 
 > 需求依据：《红外测温枪MES系统_软件需求规格说明书》（对应 §2.3–2.9，共 REQ-001~025）
+
+当前版本包含工单九环节进度跟踪、整单自动拣货、报工与过程检验联动、工单成品销售出库、智能助手及微信小程序端。
+开发、部署、测试和设计资料的入口见 [项目资料索引](docs/README.md)。
 
 ## 技术栈
 
@@ -13,7 +16,7 @@
 | 前端 | Vue 2.6 / Element-UI 2.15 / ECharts 4.9 / Vue-CLI 4 |
 | 数据库 | MySQL 8（库名 `j2eedb`，181 张表） |
 | 中间件 | Redis（缓存/验证码/Token）、MinIO（文件上传） |
-| 运行时 | JDK 8、Node 16（前端 dev/build）、Node 18+（演示脚本） |
+| 运行时 | JDK 8、Maven 3.6+；Node 20（测试及演示，前端构建需 OpenSSL 兼容参数） |
 
 ## 功能模块
 
@@ -28,7 +31,7 @@
 系统       用户 / 角色 / 菜单 / 部门 / 岗位 / 字典 / 参数 / 编码规则 / 日志 / 定时任务
 ```
 
-左侧为 8 个业务域的图标导航，右侧为「母目录 + 子菜单」两级分组，默认展开。
+左侧图标导航切换业务域，业务页右侧显示「母目录 + 子菜单」两级分组。首页只保留图标导航，为工单流水线和图表留出空间。
 
 ## 快速开始
 
@@ -40,34 +43,61 @@
 # MinIO（端口 9100，桶 lx-mes）
 ```
 
-### 2. 初始化数据库
+### 2. 配置本地数据库连接
+
+在项目根目录执行；已有 `application-druid.yml` 时直接修改现有文件，无须覆盖：
+
+```powershell
+$configDir = 'backend/ktg-mes/ktg-admin/src/main/resources'
+Copy-Item "$configDir/application-druid.example.yml" "$configDir/application-druid.yml"
+$env:MES_DB_USER = 'root'
+$env:MES_DB_PASSWORD = '<本机数据库密码>'
+```
+
+示例默认连接 `localhost:3307/j2eedb`，也可通过 `MES_DB_URL` 覆盖。数据库配置文件、真实密钥、日志和本地备份不提交到 Git。
+Redis、MinIO 等连接参数在 `application.yml` 中配置。可选的大模型密钥通过 `MES_AI_KEY` 和 `MES_AI_FB_KEY` 注入。
+当前示例含本机演示用账户；部署到共享环境前需修改默认密码及 Token 签名密钥。
+
+### 3. 初始化数据库
 
 ```powershell
 mysql -h127.0.0.1 -P3307 -uroot -p -e "CREATE DATABASE IF NOT EXISTS j2eedb DEFAULT CHARACTER SET utf8mb4;"
-mysql -h127.0.0.1 -P3307 -uroot -p j2eedb -e "source E:/JavaCode/sql/01_schema.sql"
-mysql -h127.0.0.1 -P3307 -uroot -p j2eedb -e "source E:/JavaCode/sql/02_data.sql"
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -p j2eedb -e "source sql/01_schema.sql"
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -p j2eedb -e "source sql/02_data.sql"
 ```
 
 详细云端部署步骤见 `sql/云端数据库导入说明.txt`。
 
-### 3. 启动后端
+### 4. 编译并启动后端
+
+设置 `JAVA_HOME` 指向 JDK 8，在项目根目录打开终端执行：
 
 ```powershell
-cd backend/ktg-mes/ktg-admin
-java -jar target/ktg-admin.jar
+cd backend/ktg-mes
+mvn -B -pl ktg-admin -am package
+java -jar ktg-admin/target/ktg-admin.jar --server.port=8081
 # 或 IDEA 运行 com.ktg.RuoYiApplication（JDK 8）
 ```
 
-### 4. 启动前端
+前端开发代理指向后端 `8081`；直接使用默认 `8080` 时需同步修改代理配置。
+根目录的一键启动脚本保留本机中间件路径，使用前请按安装位置调整。
+`start-backend-8081.bat` 是本机演示库专用入口，默认连接 `j2eedb_it`，与上述新建的 `j2eedb` 分开；
+使用新初始化的数据库时按上方 `java -jar ... --server.port=8081` 命令启动，或设置 `MES_DB_URL` 显式覆盖脚本中的演示库地址。
+
+### 5. 启动前端
+
+另开终端，在项目根目录执行：
 
 ```powershell
 cd ktg-mes-ui
-nvm use 16
-npm install
+npm ci
 npm run dev
 ```
 
-### 5. 登录
+发布构建可在根目录运行 `build-frontend.bat`，脚本会为 Node 17+ 加入 webpack 4 所需的 `--openssl-legacy-provider` 参数。
+生产环境需将 `/prod-api` 反向代理到后端。
+
+### 6. 登录
 
 - 地址：`http://localhost`
 - 账号：`admin` / `admin123`
@@ -84,7 +114,23 @@ npm run dev
 
 ## 演示与测试脚本
 
-> 需要 Node 18+（脚本使用全局 fetch）：`nvm use 20`
+> 需要 Node 20；先在 `ktg-mes-ui` 安装依赖。以下命令在项目根目录执行。
+
+不依赖运行中的后端或数据库的回归测试：
+
+```powershell
+node scripts/run-unit-tests.mjs
+# 或在 ktg-mes-ui 目录运行 npm run test:unit
+```
+
+后端测试：
+
+```powershell
+cd backend/ktg-mes
+mvn -B -pl ktg-admin -am test
+```
+
+以下脚本需要 MySQL、Redis 和后端运行；演示、CRUD 及上传脚本会写入业务数据，请使用演示库：
 
 ```powershell
 node scripts\demo-flow.mjs      # 10 台整机全流程：到货→IQC→入库→工单→排产→领料→报工→IPQC→成品入库→OQC→销售出库
@@ -93,10 +139,14 @@ node scripts\check-api.mjs      # 菜单/上传/库存流水/主数据冒烟
 node scripts\check-upload.mjs   # 本地存储 + MinIO 上传通道验证
 ```
 
+`scripts/verify-full-flow.test.mjs` 是依赖固定演示数据的只读集成检查，不包含在离线测试入口中。
+它要求 `demo-flow.mjs` 生成的三张工单、质检、入库及销售数据；已有多轮演示或人工业务数据的数据库不满足该固定快照。
+默认检查后端 `8080`，使用 `8081` 时先设置 `$env:MES_BASE='http://127.0.0.1:8081'`。
+
 演示历史数据（可选，用于驾驶舱图表更丰满）：
 
 ```powershell
-mysql -h127.0.0.1 -P3307 -uroot -p j2eedb -e "source E:/JavaCode/scripts/demo-history.sql"
+mysql -h127.0.0.1 -P3307 -uroot -p j2eedb -e "source scripts/demo-history.sql"
 ```
 
 ## 目录说明
@@ -104,14 +154,23 @@ mysql -h127.0.0.1 -P3307 -uroot -p j2eedb -e "source E:/JavaCode/scripts/demo-hi
 ```
 backend/ktg-mes/     后端 Maven 多模块工程（ktg-admin 为启动模块）
 ktg-mes-ui/          前端 Vue 工程
+ktg-mes-mp/          微信小程序端
 sql/                 建库脚本、初始化数据、云端部署说明
-scripts/             演示与冒烟脚本
+scripts/             离线测试入口、业务回归测试、演示与冒烟脚本
+docs/                项目资料索引、实施计划及设计说明
 改造与验证说明.md     需求条目（REQ-001~025）与实现的逐项对照、接口变更记录
 ```
 
 ## 版本记录
 
-### 2026-10-24 v2（本次）
+### 2026-11-01
+
+- 工单进度覆盖确认、排产、备料、领料、报工、过程检验、完工、产品入库和销售完成九个环节。
+- 增加整单自动拣货、工单成品选择、报工批次范围校验、生产链路操作及排班查询改进。
+- 更新温衡智造登录页、图标、字体和首页布局；收窄首页导航右侧留白；生产驾驶舱支持全屏、按钮退出和 Esc 退出。
+- 增加本地数据库配置示例、统一离线测试入口及前端环境配置，锁定 npm 依赖；排除本地备份和验证产物。
+
+### 2026-10-24 v2
 
 - 新增「生产驾驶舱」：工单进度、库存水位、设备状态、产量趋势四图，30 秒自动刷新，数据全部取自真实业务接口
 - 界面改版：左侧 8 域图标导航 + 右侧母/子分组；登录页、首页工作台、驾驶舱使用测温枪实物图 + 渐变遮罩，卡片毛玻璃效果

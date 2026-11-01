@@ -26,6 +26,9 @@ Thumbs.db
 # ===== 本地备份/临时 =====
 .git-nested-backup/
 .tmp-*/
+.playwright-mcp/
+/交付备份-*/
+/答辩证据/
 
 # ===== 调研/答辩资料（不上传）=====
 ktg-mes-前端呈现调研.md
@@ -37,6 +40,13 @@ ktg-mes-市场调研.md
 # ===== 密钥/本地配置（防止误传）=====
 **/application-local.yml
 *ai-key*.txt
+.env
+.env.local
+.env.*.local
+*.pem
+*.p12
+*.pfx
+*.jks
 
 # ===== 本地数据库备份与演示产物（体积大/可再生成，不上传）=====
 backup_before_reset.sql

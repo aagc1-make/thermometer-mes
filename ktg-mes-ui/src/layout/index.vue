@@ -4,7 +4,7 @@
     <!-- 可访问性：键盘用户可跳过导航直达主内容（WCAG 2.4.1） -->
     <a class="skip-to-content" href="#main-content" @click.prevent="skipToContent">跳到主内容</a>
     <rail />
-    <sidebar v-if="!sidebar.hide" class="sidebar-container" />
+    <sidebar v-if="!sidebar.hide && !isHomePage" class="sidebar-container" />
     <div :class="{hasTagsView:needTagsView,sidebarHide:sidebar.hide}" class="main-container">
       <div class="fixed-header">
         <navbar />
@@ -55,9 +55,14 @@ export default {
       device: state => state.app.device,
       needTagsView: state => state.settings.tagsView
     }),
+    // 首页（驾驶舱）隐藏左侧菜单栏，把横向空间让给流水线与表格；rail 图标导航保留
+    isHomePage() {
+      const path = this.$route.path || ''
+      return path === '/index' || path === '/' || path === '/index/'
+    },
     classObj() {
       return {
-        hideSidebar: this.device === 'mobile' && !this.sidebar.opened,
+        hideSidebar: (this.device === 'mobile' && !this.sidebar.opened) || this.isHomePage,
         openSidebar: this.device !== 'mobile' || this.sidebar.opened,
         withoutAnimation: this.sidebar.withoutAnimation,
         mobile: this.device === 'mobile'

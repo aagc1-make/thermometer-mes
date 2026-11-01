@@ -2,11 +2,12 @@
       <div class="app-container">
           <el-container>
                   <el-aside width="150px">
-                        <el-radio-group v-model="selectedType" class="x-fillitem el-group-list" @change="onSelected">
+                        <el-radio-group v-model="selectedType" class="x-fillitem el-group-list team-selector" @change="onSelected">
                               <el-radio-button
                                     v-for="item in teamList"
                                     :key="item.teamId"
                                     :label="item.teamId"
+                                    :title="item.teamName"
                               >{{item.teamName}}</el-radio-button>
                         </el-radio-group>
                   </el-aside>
@@ -174,6 +175,26 @@ export default {
 }
 </script>
 <style>
+      .team-selector.el-radio-group {
+            width: 100%;
+            box-sizing: border-box;
+      }
+
+      .team-selector.el-radio-group .el-radio-button {
+            width: 100%;
+            min-width: 0;
+      }
+
+      .team-selector.el-radio-group > label > .el-radio-button__inner {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 10px 12px;
+            line-height: 1.5;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+      }
+
       .grid-content{
             padding: 5px 0;
       }

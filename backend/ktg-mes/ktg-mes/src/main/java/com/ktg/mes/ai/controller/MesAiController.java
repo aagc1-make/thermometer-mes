@@ -28,7 +28,7 @@ import java.util.Map;
  * 设计要点：
  * 1. 大模型只做「自然语言 → 槽位 JSON」，不做任何数值计算；
  * 2. 双模型兜底：DeepSeek-chat（主）→ GLM-4-Flash（免费兜底，超时/报错时切换）；
- * 3. 都不行时返回 code=500，由前端回落到本地规则引擎并给出追问，绝不让演示卡住；
+ * 3. 都不行时返回 code=500，由前端回落到本地规则引擎并给出追问，绝不让页面卡住；
  * 4. API Key 全部从环境变量读取（MES_AI_KEY / MES_AI_FB_KEY），不落配置文件。
  */
 @RestController

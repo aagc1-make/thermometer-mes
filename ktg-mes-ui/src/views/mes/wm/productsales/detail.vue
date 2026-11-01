@@ -30,12 +30,17 @@
           </el-table>
         </template>
       </el-table-column>
-      <el-table-column label="产品编码" width="120px" align="center" prop="itemCode" />
-      <el-table-column label="产品名称" width="150px" align="center" prop="itemName" :show-overflow-tooltip="true"/>
+      <el-table-column label="产品编码" width="110px" align="center" prop="itemCode" />
+      <el-table-column label="产品名称" width="140px" align="center" prop="itemName" :show-overflow-tooltip="true"/>
       <el-table-column label="规格型号" align="center" prop="specification" :show-overflow-tooltip="true"/>
       <el-table-column label="单位" align="center" prop="unitName" />
       <el-table-column label="出库数量" align="center" prop="quantitySales" />
-      <el-table-column label="批次号" width="120px" align="center" prop="batchCode" /> 
+      <el-table-column label="批次号" width="115px" align="center" prop="batchCode" />
+      <el-table-column label="来源工单" width="150px" align="center" prop="workorderCode">
+        <template slot-scope="scope">
+          <span>{{ scope.row.workorderCode || '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="是否检验" align="center" prop="iqcCheck">
         <template slot-scope="scope">
           <dict-tag :options="dict.type.sys_yes_no" :value="scope.row.oqcCheck"/>

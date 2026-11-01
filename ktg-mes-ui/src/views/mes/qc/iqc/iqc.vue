@@ -425,10 +425,10 @@
         </el-collapse>
         <el-tabs type="border-card" v-if="form.iqcId != null">
         <el-tab-pane label="检测项">
-          <IqcLine ref=line :iqcId="form.iqcId" :optType="optType"></IqcLine>
+          <IqcLine :key="'line-' + form.iqcId" ref=line :iqcId="form.iqcId" :optType="optType"></IqcLine>
         </el-tab-pane>
         <el-tab-pane label="检测结果">
-          <QCResutl ref="qcResult" :qcId="form.iqcId" :qcType="'IQC'" :optType="optType"></QCResutl>
+          <QCResutl :key="'result-' + form.iqcId" ref="qcResult" :qcId="form.iqcId" :qcType="'IQC'" :optType="optType"></QCResutl>
         </el-tab-pane>
       </el-tabs>
       </el-form>
@@ -561,9 +561,32 @@ export default {
     };
   },
   created() {
-    this.getList();
+    this.applyAssistantRoute();
+  },
+  watch: {
+    '$route.query'() { this.applyAssistantRoute(); }
   },
   methods: {
+    applyAssistantRoute() {
+      if (this.$route.path && this.$route.path !== '/mes/qc/iqc') return;
+      const query = this.$route.query || {};
+      this.queryParams.iqcCode = query.iqcCode ? String(query.iqcCode) : null;
+      if (query.iqcCode) this.queryParams.inspectDate = null;
+      this.queryParams.pageNum = 1;
+      this.getList();
+      const id = String(query.openIqcId || '');
+      if (!/^\d+$/.test(id) || !this.$auth.hasPermi('mes:qc:iqc:query')) return;
+      this.reset();
+      getIqc(id).then(response => {
+        if (!response.data || (this.$route.path && this.$route.path !== '/mes/qc/iqc') || String((this.$route.query || {}).openIqcId) !== id) return;
+        this.form = response.data;
+        const editable = this.form.status === 'PREPARE' && this.$auth.hasPermi('mes:qc:iqc:edit');
+        this.optType = editable ? 'edit' : 'view';
+        this.title = editable ? '修改来料检验单' : '查看来料检验单信息';
+        this.open = true;
+        this.loadSourceInfo();
+      });
+    },
     /** 查询来料检验单列表 */
     getList() {
       this.loading = true;

@@ -310,12 +310,23 @@ export default {
     };
   },
   created() {
-    // 智能助手创建成功后跳转过来时带 noticeCode，直接定位到这张单据
-    const code = this.$route && this.$route.query ? this.$route.query.noticeCode : ''
-    if (code) this.queryParams.noticeCode = String(code)
-    this.getList();
+    this.applyAssistantRoute();
+  },
+  watch: {
+    '$route.query'() { this.applyAssistantRoute(); }
   },
   methods: {
+    applyAssistantRoute() {
+      if (this.$route.path && this.$route.path !== '/mes/wm/arrivalnotice') return;
+      const query = this.$route.query || {};
+      this.queryParams.noticeCode = query.noticeCode ? String(query.noticeCode) : null;
+      this.queryParams.pageNum = 1;
+      this.getList();
+      if (!/^\d+$/.test(String(query.openNoticeId || '')) || !this.$auth.hasPermi('mes:wm:arrivalnotice:query')) return;
+      const row = { noticeId: Number(query.openNoticeId) };
+      if (query.edit === '1' && this.$auth.hasPermi('mes:wm:arrivalnotice:edit')) this.handleUpdate(row, true);
+      else this.handleView(row, true);
+    },
     /** 查询到货通知单列表 */
     getList() {
       this.loading = true;
@@ -368,26 +379,32 @@ export default {
       this.optType = "add";
     },
     /** 修改按钮操作 */
-    handleUpdate(row) {
+    handleUpdate(row, fromAssistant = false) {
       this.reset();
       const noticeId = row.noticeId || this.ids
       getArrivalnotice(noticeId).then(response => {
+        if (fromAssistant && !this.isCurrentAssistantNotice(noticeId)) return;
         this.form = response.data;
         this.open = true;
         this.title = "修改到货通知单";
         this.optType = "edit";
       });
     },
-    handleView(row){
+    handleView(row, fromAssistant = false){
       this.reset();
       const noticeId = row.noticeId || this.ids
       getArrivalnotice(noticeId).then(response => {
+        if (fromAssistant && !this.isCurrentAssistantNotice(noticeId)) return;
         this.form = response.data;
         this.open = true;
         this.title = "查看到货通知单";
         this.optType = "view";
         this.loadRelatedReceipts(noticeId);
       });
+    },
+    isCurrentAssistantNotice(noticeId) {
+      return (!this.$route.path || this.$route.path === '/mes/wm/arrivalnotice')
+        && String((this.$route.query || {}).openNoticeId) === String(noticeId);
     },
     loadRelatedReceipts(noticeId) {
       this.relatedReceipts = [];

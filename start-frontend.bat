@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-cd /d E:\JavaCode\ktg-mes-ui
+cd /d "%~dp0ktg-mes-ui"
 
 echo ============================================
 echo  ktg-mes-ui dev server

@@ -237,6 +237,7 @@
 </template>
 
 <script>
+import pipelineWorkorderContext from '@/mixins/pipelineWorkorderContext'
 import { listProductrecpt, getProductrecpt, delProductrecpt, addProductrecpt, updateProductrecpt, checkQuantity ,execute} from "@/api/mes/wm/productrecpt";
 import WorkorderSelect from "@/components/workorderSelect/single.vue"
 import Productrecptline from "./line.vue"
@@ -245,6 +246,7 @@ import StockTransactions from "./stock-transactions.vue"
 import {getTreeList} from "@/api/mes/wm/warehouse"
 import {genCode} from "@/api/system/autocode/rule"
 export default {
+  mixins: [pipelineWorkorderContext],
   name: "Productrecpt",
   dicts: ['mes_order_status'],
   components:{WorkorderSelect,Productrecptline,ProductrecptDetail,StockTransactions},
@@ -384,6 +386,7 @@ export default {
     /** 重置按钮操作 */
     resetQuery() {
       this.resetForm("queryForm");
+      this.clearPipelineWorkorderContext();
       this.handleQuery();
     },
     // 多选框选中数据

@@ -33,6 +33,8 @@
                           show-icon
                           style="margin-bottom: 10px;">
                         </el-alert>
+                        <el-alert v-else-if="calendarError" title="个人排班加载失败，请稍后重试" type="error" :closable="false" show-icon style="margin-bottom: 10px;" />
+                        <el-alert v-else-if="!loading && !hasShifts" title="该人员当月暂无排班记录" type="info" :closable="false" show-icon style="margin-bottom: 10px;" />
                         <el-calendar v-loading="loading" v-model="date">
                               <template slot="dateCell" slot-scope="{date, data }">
                               <div>
@@ -81,6 +83,8 @@ export default {
             return {
                   // 遮罩层
                   loading: true,
+                  calendarError: false,
+                  calendarRequestId: 0,
                   date: new Date(),
                   holidayList:[],//假日
                   workdayList:[],//工作日
@@ -111,23 +115,37 @@ export default {
                               return;
                         }
                         this.teamShiftQueryParams.date = newVal.getFullYear()+'-'+(newVal.getMonth()+1)+'-'+newVal.getDate();
-                        this.loading = true;
-                        listCalendars(this.teamShiftQueryParams).then(response =>{
-                              this.calendarDayList = response.data;
-                              this.loading = false;
-                        });
+                        this.loadUserCalendar();
                   }
             }
       },
       computed: {
             hasSelectedUser() {
                   return this.teamShiftQueryParams.userId != null;
+            },
+            hasShifts() {
+                  return this.calendarDayList.some(day => day.teamShifts && day.teamShifts.length);
             }
       },
       created() {
             this.getList();
       },
       methods:{
+            async loadUserCalendar() {
+                  const requestId = ++this.calendarRequestId;
+                  const params = Object.assign({}, this.teamShiftQueryParams);
+                  this.loading = true;
+                  this.calendarError = false;
+                  this.calendarDayList = [];
+                  try {
+                        const response = await listCalendars(params);
+                        if (requestId === this.calendarRequestId) this.calendarDayList = Array.isArray(response.data) ? response.data : [];
+                  } catch (e) {
+                        if (requestId === this.calendarRequestId) this.calendarError = true;
+                  } finally {
+                        if (requestId === this.calendarRequestId) this.loading = false;
+                  }
+            },
         changeDate(val) {
           this.date = val
         },
@@ -157,14 +175,10 @@ export default {
             //人员选择返回
             onUserSelected(row){
                   this.form.nickName = row.nickName;
-                  this.loading = true;
                   this.teamShiftQueryParams.userId = row.userId;
                   // 与 calendarType.vue 保持一致：date 必须是字符串；Date 对象会被 tansParams 丢弃，后端回落到当前月
                   this.teamShiftQueryParams.date = this.date.getFullYear() + '-' + (this.date.getMonth() + 1) + '-' + this.date.getDate();
-                  listCalendars(this.teamShiftQueryParams).then(response =>{
-                        this.calendarDayList = response.data;
-                        this.loading = false;
-                  });
+                  this.loadUserCalendar();
             },
             isFestival(slotDate, slotData) {
                   let solarDayArr = slotData.day.split('-');

@@ -79,3 +79,16 @@ export function getSaleRecord(clientId) {
     method: 'get'
   })
 }
+
+/**
+ * 查询工单成品可售清单（已入库 − 已开单）
+ * 销售出库行添加"工单生成的产品"时使用
+ * @param {object} query workorderCodeLike/itemCodeLike/itemNameLike/onlyAvailable/excludeLineId/pageNum/pageSize
+ */
+export function listWorkorderProducts(query) {
+  return request({
+    url: '/mes/wm/productsales/workorderProducts',
+    method: 'get',
+    params: query
+  })
+}

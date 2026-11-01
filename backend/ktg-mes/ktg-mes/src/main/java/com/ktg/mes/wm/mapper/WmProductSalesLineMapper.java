@@ -91,4 +91,15 @@ public interface WmProductSalesLineMapper
      * @return
      */
     public int deleteBySalesId(Long salseId);
+
+    /**
+     * 按产品回溯成品来源工单（已执行的产品入库单）
+     *
+     * <p>用于手工添加销售出库行时的自动挂工单：返回该产品的全部已入库记录
+     * （工单ID/编号 + 批次号，按入库时间倒序），由 Service 按批次优先、唯一工单兜底决定关联哪个工单。</p>
+     *
+     * @param itemId 产品物料ID
+     * @return 只含 workorderId/workorderCode/batchCode 的行集合
+     */
+    public List<WmProductSalesLine> selectReceiptWorkorders(Long itemId);
 }

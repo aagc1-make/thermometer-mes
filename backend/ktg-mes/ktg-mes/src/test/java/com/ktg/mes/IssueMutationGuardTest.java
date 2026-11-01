@@ -13,6 +13,36 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.mockito.Mockito.*;
 
 public class IssueMutationGuardTest {
+    @Test
+    public void approvedPickRejectsLineChanges() {
+        WmIssueLineServiceImpl service = new WmIssueLineServiceImpl();
+        PostingLockMapper locks = mock(PostingLockMapper.class);
+        WmIssueLineMapper lines = mock(WmIssueLineMapper.class);
+        ReflectionTestUtils.setField(service, "postingLockMapper", locks);
+        ReflectionTestUtils.setField(service, "wmIssueLineMapper", lines);
+        WmIssueLine line = new WmIssueLine(); line.setLineId(3L); line.setIssueId(1L);
+        when(lines.selectWmIssueLineByLineId(3L)).thenReturn(line);
+        when(locks.issue(1L)).thenReturn("APPROVED");
+        when(locks.issueIdForLine(3L)).thenReturn(1L);
+        org.junit.Assert.assertThrows(ServiceException.class, () -> service.updateWmIssueLine(line));
+        verify(lines, never()).updateWmIssueLine(any(WmIssueLine.class));
+    }
+
+    @Test
+    public void lateManualDeleteCannotInvalidateAnAutomaticallyApprovedPick() {
+        WmIssueDetailServiceImpl service = new WmIssueDetailServiceImpl();
+        PostingLockMapper locks = mock(PostingLockMapper.class);
+        WmIssueDetailMapper details = mock(WmIssueDetailMapper.class);
+        ReflectionTestUtils.setField(service, "postingLockMapper", locks);
+        ReflectionTestUtils.setField(service, "wmIssueDetailMapper", details);
+        WmIssueDetail detail = new WmIssueDetail(); detail.setDetailId(3L); detail.setIssueId(1L);
+        when(details.selectWmIssueDetailByDetailId(3L)).thenReturn(detail);
+        when(locks.issue(1L)).thenReturn("APPROVED");
+        when(locks.issueIdForDetail(3L)).thenReturn(1L);
+        org.junit.Assert.assertThrows(ServiceException.class, () -> service.deleteWmIssueDetailByDetailId(3L));
+        verify(details, never()).deleteWmIssueDetailByDetailId(3L);
+    }
+
     @Test(expected = ServiceException.class)
     public void finishedParentRejectsNewDetail() {
         WmIssueDetailServiceImpl service = new WmIssueDetailServiceImpl();

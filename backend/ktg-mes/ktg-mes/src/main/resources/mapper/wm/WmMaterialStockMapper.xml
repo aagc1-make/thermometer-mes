@@ -119,6 +119,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
     </select>
     
+    <select id="selectIssuePickStocks" resultMap="WmMaterialStockResult">
+        select s.* from wm_material_stock s
+        inner join wm_warehouse w on w.warehouse_id = s.warehouse_id
+        inner join wm_storage_location l on l.location_id = s.location_id and l.warehouse_id = w.warehouse_id
+        inner join wm_storage_area a on a.area_id = s.area_id and a.location_id = l.location_id
+        inner join wm_batch b on b.batch_id = s.batch_id and b.item_id = s.item_id
+        where s.item_id = #{itemId} and s.quantity_onhand &gt; 0
+          and coalesce(s.frozen_flag, 'N') = 'N'
+          and coalesce(w.frozen_flag, 'N') = 'N'
+          and coalesce(l.frozen_flag, 'N') = 'N'
+          and coalesce(a.frozen_flag, 'N') = 'N' and a.enable_flag = 'Y'
+          and upper(w.warehouse_code) not like '%VIR%'
+          and (b.expire_date is null or b.expire_date &gt;= curdate())
+          and (b.quality_status is null or b.quality_status = '' or b.quality_status = 'OK')
+        order by s.recpt_date asc, s.material_stock_id asc
+        for update
+    </select>
+
     <select id="lockMaterialStockById" parameterType="Long" resultMap="WmMaterialStockResult">
         <include refid="selectWmMaterialStockVo"/> where material_stock_id = #{materialStockId} for update
     </select>

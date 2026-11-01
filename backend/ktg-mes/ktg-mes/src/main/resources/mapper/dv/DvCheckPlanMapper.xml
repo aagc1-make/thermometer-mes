@@ -45,6 +45,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                 <foreach collection="statusList" item="item" open="(" separator="," close=")">#{item}</foreach>
             </if>
         </where>
+        order by create_time desc, plan_id desc
     </select>
     
     <select id="selectDvCheckPlanByPlanId" parameterType="Long" resultMap="DvCheckPlanResult">

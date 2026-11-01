@@ -11,6 +11,7 @@ import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.IssueTxBean;
 import com.ktg.mes.wm.service.*;
 import com.ktg.mes.wm.service.impl.IssueExecuteValidator;
+import com.ktg.mes.wm.service.impl.IssueAutoPickService;
 import com.ktg.mes.linkage.MenuLinkageNoticePaths;
 import com.ktg.mes.linkage.MenuLinkageNoticeService;
 import com.ktg.mes.linkage.ProductionNextStepLinkageService;
@@ -46,6 +47,16 @@ public class WmIssueHeaderController extends BaseController
 {
     @Autowired
     private IssueExecuteValidator issueExecuteValidator;
+
+    @Autowired
+    private IssueAutoPickService issueAutoPickService;
+
+    @PreAuthorize("@ss.hasPermi('mes:wm:issueheader:edit')")
+    @Log(title = "生产领料一键拣货", businessType = BusinessType.UPDATE)
+    @PostMapping("/{issueId}/auto-pick")
+    public AjaxResult autoPick(@PathVariable Long issueId) {
+        return AjaxResult.success(issueAutoPickService.pick(issueId, getUsername()));
+    }
 
     @Autowired
     private PostingLockMapper postingLockMapper;

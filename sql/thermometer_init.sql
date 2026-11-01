@@ -1,5 +1,5 @@
 -- ============================================================================
---  红外测温枪 MES 系统 —— 数据库初始化脚本（结构补丁 + 演示主数据）
+--  红外测温枪 MES 系统 —— 数据库初始化脚本（结构补丁 + 初始主数据）
 --  依据：《红外测温枪MES系统_软件需求规格说明书》 §1.2.2 / §2 / §3.4.5
 --  数据库：MySQL 8.x   库名：j2eedb（连接配置见 application-druid.yml）
 --
@@ -11,7 +11,7 @@
 --   4. 单据（到货单/工单/报工/出入库）不在此脚本中伪造，
 --      由 scripts/demo-flow.mjs 按业务流程真实生成，保证库存流水与单据状态自洽。
 --
---  演示规模：1 个成品 + 2 个自制半成品 + 14 种外购物料 = 17 个物料产品节点，
+--  首批规模：1 个成品 + 2 个自制半成品 + 14 种外购物料 = 17 个物料产品节点，
 --           16 行多级 BOM、9 道工序、3 条工艺路线、9 个工作站、
 --           4 个仓库（含虚拟线边库）、10 个检测项、4 套检验方案、
 --           5 台设备、2 个班组、8 类岗位账号。
@@ -218,7 +218,7 @@ SELECT 3, '待判定', 'PENDING', 'mes_qc_result', '', 'warning', 'N', '0', 'adm
 WHERE NOT EXISTS (SELECT 1 FROM sys_dict_data WHERE dict_type = 'mes_qc_result' AND dict_value = 'PENDING');
 
 -- ----------------------------------------------------------------------------
--- 3. 岗位角色与演示账号（需求 §1.3：8 类角色各 1 个演示账号）
+-- 3. 岗位角色与岗位账号（需求 §1.3：8 类角色各 1 个岗位账号）
 --    密码统一为 admin123（BCrypt），超级管理员沿用内置 admin
 -- ----------------------------------------------------------------------------
 DELETE FROM sys_role_menu WHERE role_id BETWEEN 101 AND 107;
@@ -238,13 +238,13 @@ VALUES
 
 INSERT INTO sys_user (user_id, dept_id, user_name, nick_name, user_type, email, phonenumber, sex, avatar, password, status, del_flag, create_by, create_time, remark)
 VALUES
- (200, 100, 'craftsman',  '王工艺',   '00', 'craftsman@tgmes.local',  '13800000200', '0', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '工艺员演示账号'),
- (201, 100, 'planner',    '李计划',   '00', 'planner@tgmes.local',    '13800000201', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '计划员演示账号'),
- (202, 100, 'warehouse',  '张仓管',   '00', 'warehouse@tgmes.local',  '13800000202', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '仓库员演示账号'),
- (203, 100, 'operator',   '赵操作',   '00', 'operator@tgmes.local',   '13800000203', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '生产操作员演示账号'),
- (204, 100, 'inspector',  '孙质检',   '00', 'inspector@tgmes.local',  '13800000204', '0', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '质检员演示账号'),
- (205, 100, 'equipment',  '周设备',   '00', 'equipment@tgmes.local',  '13800000205', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '设备员演示账号'),
- (206, 100, 'teamleader', '吴班组长', '00', 'teamleader@tgmes.local', '13800000206', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '班组长演示账号');
+ (200, 100, 'craftsman',  '王工艺',   '00', 'craftsman@tgmes.local',  '13800000200', '0', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '工艺员岗位账号'),
+ (201, 100, 'planner',    '李计划',   '00', 'planner@tgmes.local',    '13800000201', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '计划员岗位账号'),
+ (202, 100, 'warehouse',  '张仓管',   '00', 'warehouse@tgmes.local',  '13800000202', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '仓库员岗位账号'),
+ (203, 100, 'operator',   '赵操作',   '00', 'operator@tgmes.local',   '13800000203', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '生产操作员岗位账号'),
+ (204, 100, 'inspector',  '孙质检',   '00', 'inspector@tgmes.local',  '13800000204', '0', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '质检员岗位账号'),
+ (205, 100, 'equipment',  '周设备',   '00', 'equipment@tgmes.local',  '13800000205', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '设备员岗位账号'),
+ (206, 100, 'teamleader', '吴班组长', '00', 'teamleader@tgmes.local', '13800000206', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 'admin', NOW(), '班组长岗位账号');
 
 INSERT INTO sys_user_role (user_id, role_id) VALUES (200,101),(201,102),(202,103),(203,104),(204,105),(205,106),(206,107);
 
@@ -319,7 +319,7 @@ VALUES
 INSERT INTO md_item (item_id, item_code, item_name, specification, unit_of_measure, item_or_product, item_type_id, item_type_code, item_type_name, enable_flag, safe_stock_flag, high_value, unit_name, batch_flag, remark, create_by, create_time)
 VALUES
  -- 整机成品
- (9201, 'TG-FG-001', '红外测温枪整机', 'TG-300 便携式红外测温枪（32~42.9℃）', 'TAI', 'PRODUCT', 9102, 'TG_FG', '整机成品', 'Y', 'N', 'N', '台', 'Y', '本期唯一成品，演示生产 10 台', 'admin', NOW()),
+ (9201, 'TG-FG-001', '红外测温枪整机', 'TG-300 便携式红外测温枪（32~42.9℃）', 'TAI', 'PRODUCT', 9102, 'TG_FG', '整机成品', 'Y', 'N', 'N', '台', 'Y', '本期唯一成品，首批试产 10 台', 'admin', NOW()),
  -- 自制半成品
  (9202, 'TG-SF-001', '测温显示电控预装件', '电控预装件（PCBA+传感器+LCD+蜂鸣器+透镜）', 'SET', 'PRODUCT', 9103, 'TG_SF', '自制半成品', 'Y', 'N', 'N', '套', 'Y', '半成品，需总装前预装并过程检验', 'admin', NOW()),
  (9203, 'TG-SF-002', '扳机与侧键手柄预装件', '手柄预装件（三键按键板+电池+扳机组件）', 'SET', 'PRODUCT', 9103, 'TG_SF', '自制半成品', 'Y', 'N', 'N', '套', 'Y', '半成品，需过程检验后供总装', 'admin', NOW()),
@@ -342,7 +342,7 @@ VALUES
  (9217, 'TG-PK-002', '彩盒包装', '350×200×80mm 彩盒', 'PCS', 'ITEM', 9107, 'TG_PACK', '包装辅料', 'Y', 'N', 'N', '个', 'Y', '整机包装附件', 'admin', NOW());
 
 -- 批次管理配置：物料 batch_flag='Y' 时必须存在该配置，否则入库生成批次号会报
--- 「物料 XXX 未配置批次管理!」。演示统一使用序号批次，不额外要求生产日期等参数。
+-- 「物料 XXX 未配置批次管理!」。首批统一使用序号批次，不额外要求生产日期等参数。
 INSERT INTO md_item_batch_config (config_id, item_id, produce_date_flag, expire_date_flag, recpt_date_flag, vendor_flag, client_flag, co_code_flag, po_code_flag, workorder_flag, task_flag, workstation_flag, tool_flag, mold_flag, lot_number_flag, quality_status_flag, enable_flag, remark, create_by, create_time)
 VALUES
  (9111, 9201, 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'Y', '整机批次管理', 'admin', NOW()),
@@ -492,7 +492,7 @@ VALUES
  (9718, 'L-FG',  '成品区',      9703, 200.00, 'Y', 'N', '合格测温枪整机存放', 'admin', NOW()),
  (9719, 'XBKKQ_VIRTUAL', '线边库库区-虚拟', 9704, 0.00, 'Y', 'N', '系统虚拟库区', 'admin', NOW());
 
--- 原料仓库位允许物资/批次混放，便于演示时多物料共用库位
+-- 原料仓库位允许物资/批次混放，便于多物料共用库位
 INSERT INTO wm_storage_area (area_id, area_code, area_name, location_id, area, max_loa, position_x, position_y, position_z, enable_flag, frozen_flag, product_mixing, batch_mixing, remark, create_by, create_time)
 VALUES
  (9721, 'EC-01',  '电控原料库位', 9711, 10.00, 200.00, 1, 1, 1, 'Y', 'N', 'Y', 'Y', '电子件原料库位（允许多物料混放）', 'admin', NOW()),
@@ -645,7 +645,7 @@ VALUES
 
 INSERT INTO cal_plan (plan_id, plan_code, plan_name, calendar_type, start_date, end_date, shift_type, shift_method, shift_count, status, remark, create_by, create_time)
 VALUES
- (9991, 'TG-CAL-2026', '2026 年 11 月测温枪产线排班计划', 'ZZ', '2026-11-01 00:00:00', '2026-11-30 23:59:59', 'SINGLE', 'DAY', 1, 'CONFIRMED', '单班生产，满足 10 台演示产能', 'admin', NOW());
+ (9991, 'TG-CAL-2026', '2026 年 11 月测温枪产线排班计划', 'ZZ', '2026-11-01 00:00:00', '2026-11-30 23:59:59', 'SINGLE', 'DAY', 1, 'CONFIRMED', '单班生产，满足 10 台试产产能', 'admin', NOW());
 
 INSERT INTO cal_shift (shift_id, plan_id, order_num, shift_name, start_time, end_time, remark, create_by, create_time)
 VALUES
@@ -707,4 +707,4 @@ UNION ALL SELECT '检验方案', COUNT(*) FROM qc_template WHERE template_code L
 UNION ALL SELECT '设备台账', COUNT(*) FROM dv_machinery WHERE machinery_code LIKE 'TG-MC-%'
 UNION ALL SELECT '班组', COUNT(*) FROM cal_team WHERE team_code LIKE 'TG-T%'
 UNION ALL SELECT '岗位角色(不含超管)', COUNT(*) FROM sys_role WHERE role_id BETWEEN 101 AND 107
-UNION ALL SELECT '演示账号(不含admin)', COUNT(*) FROM sys_user WHERE user_id BETWEEN 200 AND 206;
+UNION ALL SELECT '岗位账号(不含admin)', COUNT(*) FROM sys_user WHERE user_id BETWEEN 200 AND 206;

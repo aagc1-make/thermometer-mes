@@ -7,9 +7,11 @@ function component(request = () => {}, file = 'ktg-mes-ui/src/views/mes/ai/index
   const source = fs.readFileSync(file, 'utf8')
   const code = source.match(/<script>([\s\S]*?)<\/script>/)[1]
     .replace(/^import .*$/mg, '').replace('export default', 'component =')
-  const box = { component: null, request, Date, console, process: {env:{}} }
+  const box = { component: null, request, Date, console, echarts: require('../../ktg-mes-ui/node_modules/echarts'), process: {env:{}} }
   vm.createContext(box); vm.runInContext(code, box)
-  const ctx = { ...box.component.data(), ...box.component.methods, push(m) { this.answer = m } }
+  const ctx = { ...box.component.data(), ...box.component.methods, answers: [],
+    $auth: { hasPermi: () => true },
+    push(m) { this.answer = m; this.answers.push(m) } }
   return ctx
 }
 
@@ -30,7 +32,8 @@ test('库存以当前余额反推历史期末和非零期初', async () => {
   const tx = [{itemCode:'A',batchCode:'B',warehouseCode:'RAW',transactionDate:'2026-10-02 10:00:00',transactionQuantity:10}, {itemCode:'A',batchCode:'B',warehouseCode:'RAW',transactionDate:'2026-10-03 10:00:00',transactionQuantity:-3}]
   ctx.get = async url => ({rows:url.includes('wmstock') ? [{itemCode:'A',batchCode:'B',warehouseCode:'RAW',quantityOnhand:107}] : tx})
   await ctx.queryStock('A库存')
-  assert.equal(ctx.answer.begin,100); assert.equal(ctx.answer.end,107)
+  const card = ctx.answers.find(m => m.type === 'stock')
+  assert.equal(card.begin,100); assert.equal(card.end,107)
 })
 test('采购入库不包括内部转仓，并使用后端日期参数', async () => {
   const ctx=component(); let sent
@@ -38,7 +41,7 @@ test('采购入库不包括内部转仓，并使用后端日期参数', async ()
   ctx.matchItem=async()=>({item:null,items:[],rows:[]})
   ctx.get=async (url,params)=>{sent=params;return {rows:[{itemCode:'A',transactionQuantity:5,transactionType:'ITEM_RECPT'},{itemCode:'A',transactionQuantity:8,transactionType:'ITEM_ISSUE_IN'}]}}
   await ctx.queryFlow('本月采购入库','IN')
-  assert.equal(ctx.answer.rows[0].qty,5)
+  assert.equal(ctx.answers.find(m => m.type === 'list').rows[0].qty,5)
   assert.equal(sent.params.beginTime,'2026-10-01 00:00:00')
   assert.equal(sent.params.endTime,'2026-10-31 23:59:59')
 })
@@ -46,7 +49,7 @@ test('过程检验只统计已完成检验，不把待检算为合格', async ()
   const ctx=component();ctx.parseTime=()=>({from:'2026-10-01',to:'2026-10-31',label:'10月'})
   ctx.get=async()=>({rows:[{status:'FINISHED',inspectDate:'2026-10-02',quantityCheck:10,quantityUnqualified:2},{status:'PREPARE',createTime:'2026-10-02',quantityCheck:100,quantityUnqualified:0}]})
   await ctx.queryInspection('10月合格率')
-  assert.match(ctx.answer.title,/80%/); assert.equal(ctx.answer.rows.length,1)
+  assert.match(ctx.answer.text,/80%/); assert.equal(ctx.answers.find(m => m.type === 'list').rows.length,1)
 })
 test('驾驶舱包含生产使用的虚拟线边仓且不合并不同单位', async () => {
   const ctx=component(undefined,'ktg-mes-ui/src/views/mes/dashboard/index.vue'); let option
@@ -55,14 +58,16 @@ test('驾驶舱包含生产使用的虚拟线边仓且不合并不同单位', as
     {itemCode:'A',warehouseCode:'XBK_VIRTUAL',warehouseName:'虚拟线边库',quantityOnhand:10,unitName:'个'},
     {itemCode:'B',warehouseCode:'WH-RAW',warehouseName:'原料仓',quantityOnhand:2,unitName:'包'}]})
   await ctx.loadStock()
-  assert.ok(option.xAxis.data.some(n=>n.includes('线边')))
+  const categoryLabels = (option.xAxis.type === 'category' ? option.xAxis : option.yAxis).data
+  assert.ok(categoryLabels.some(n=>n.includes('线边')))
   assert.ok(option.series[0].data.includes(10))
-  assert.ok(option.xAxis.data.some(n=>n.includes('包')))
+  assert.ok(categoryLabels.some(n=>n.includes('包')))
 })
 test('指定工单号不能返回其他工单', async () => {
   const ctx=component();ctx.get=async()=>({rows:[{workorderCode:'WO-001',quantity:10,quantityProduced:2},{workorderCode:'WO-002',quantity:10,quantityProduced:3}]})
   await ctx.queryWorkorder('工单号 WO-002 的进度')
-  assert.equal(ctx.answer.rows.length,1);assert.equal(ctx.answer.rows[0].workorderCode,'WO-002')
+  const card = ctx.answers.find(m => m.type === 'list')
+  assert.equal(card.rows.length,1);assert.equal(card.rows[0].workorderCode,'WO-002')
 })
 test('多个品类匹配时库存查询应澄清而非悄悄取第一个', async () => {
   const ctx=component();ctx.matchItem=async()=>({item:{itemCode:'A'},items:[{itemCode:'A',itemName:'电子A'},{itemCode:'B',itemName:'电子B'}]})

@@ -102,6 +102,16 @@
           v-hasPermi="['mes:pro:workorder:export']"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          @click="openChainCleanup"
+          v-hasPermi="['mes:pro:workorder:remove']"
+        >清理贯通单据</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -388,11 +398,115 @@
         <el-button @click="cancel">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <!-- 贯通单据清理：仅删除生产链路单据并按库存流水反冲 -->
+    <el-dialog title="清理贯通单据" :visible.sync="chainOpen" width="980px" append-to-body @closed="resetChainState">
+      <el-alert
+        type="warning"
+        :closable="false"
+        show-icon
+        title="仅清理生产链路：任务、报工、过程检验、产品产出、物料消耗、生产领料、成品入库，并按库存流水反冲库存；物料主数据、工艺路线、销售出库、发货通知与出货检验保留不删。"
+      />
+      <div class="chain-clean__filter">
+        <el-input
+          v-model="chainQuery.keyword"
+          size="small"
+          placeholder="按工单编号/名称筛选"
+          clearable
+          style="width: 240px"
+          @keyup.enter.native="loadChainCandidates"
+        />
+        <el-checkbox v-model="chainQuery.onlyChain">只看贯通标记（备注含“全流程贯通”）</el-checkbox>
+        <el-button size="mini" type="primary" icon="el-icon-search" @click="loadChainCandidates">查询</el-button>
+        <el-button size="mini" icon="el-icon-refresh" @click="resetChainFilter">重置</el-button>
+      </div>
+      <el-table
+        ref="chainTable"
+        v-loading="chainLoading"
+        :data="chainCandidates"
+        size="mini"
+        border
+        max-height="240"
+        @selection-change="onChainSelectionChange"
+      >
+        <el-table-column type="selection" width="42" />
+        <el-table-column prop="workorder_code" label="工单编号" width="150" />
+        <el-table-column prop="workorder_name" label="工单名称" show-overflow-tooltip />
+        <el-table-column prop="status" label="状态" width="88" align="center">
+          <template slot-scope="s">
+            <dict-tag :options="dict.type.mes_order_status" :value="s.row.status" />
+          </template>
+        </el-table-column>
+        <el-table-column label="任务" width="56" align="center" prop="task_count" />
+        <el-table-column label="报工" width="56" align="center" prop="feedback_count" />
+        <el-table-column label="检验" width="56" align="center" prop="ipqc_count" />
+        <el-table-column label="领料" width="56" align="center" prop="issue_count" />
+        <el-table-column label="入库" width="56" align="center" prop="recpt_count" />
+        <el-table-column label="贯通" width="60" align="center">
+          <template slot-scope="s">
+            <el-tag v-if="s.row.chain_flag" size="mini" type="warning">贯通</el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div v-if="chainPreview" class="chain-clean__preview">
+        <p class="chain-clean__summary">
+          将删除：工单 <b>{{ chainPreview.counts.pro_workorder }}</b> 张（自动带入子工单 {{ chainPreview.childCount }} 张）、
+          任务 {{ chainPreview.counts.pro_task }}、报工 {{ chainPreview.counts.pro_feedback }}、
+          过程检验 {{ chainPreview.counts.qc_ipqc }}（检验行 {{ chainPreview.counts.qc_ipqc_line }}）、
+          领料 {{ chainPreview.counts.wm_issue_header }}、消耗 {{ chainPreview.counts.wm_item_consume }}、
+          产出 {{ chainPreview.counts.wm_product_produce }}、入库 {{ chainPreview.counts.wm_product_recpt }}、
+          库存流水 {{ chainPreview.counts.wm_transaction }} 条
+        </p>
+        <el-table
+          v-if="chainPreview.stockImpact && chainPreview.stockImpact.length"
+          :data="chainPreview.stockImpact"
+          size="mini"
+          border
+          max-height="160"
+        >
+          <el-table-column prop="item_code" label="物料" width="120" />
+          <el-table-column prop="item_name" label="名称" show-overflow-tooltip />
+          <el-table-column prop="warehouse_code" label="仓库" width="110" />
+          <el-table-column label="库存变动" width="110" align="right">
+            <template slot-scope="s">{{ s.row.restore }}</template>
+          </el-table-column>
+        </el-table>
+        <p v-for="(w, i) in chainPreview.warnings" :key="i" class="chain-clean__warn">
+          <i class="el-icon-warning-outline"></i> {{ w }}
+        </p>
+      </div>
+
+      <div class="chain-clean__confirm">
+        <el-input v-model="chainConfirmText" size="small" placeholder="输入 DELETE 以确认删除" style="width: 220px" />
+        <el-button
+          size="mini"
+          type="primary"
+          plain
+          icon="el-icon-view"
+          :disabled="!chainSelected.length || chainLoading"
+          @click="handleChainPreview"
+        >预览</el-button>
+        <el-button
+          size="mini"
+          type="danger"
+          icon="el-icon-delete"
+          :disabled="chainConfirmText !== 'DELETE' || !chainPreview"
+          :loading="chainLoading"
+          @click="handleChainExecute"
+        >执行删除</el-button>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button size="small" @click="chainOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
+import pipelineWorkorderContext from '@/mixins/pipelineWorkorderContext'
 import { listWorkorder, getWorkorder, delWorkorder, addWorkorder, updateWorkorder ,dofinish ,doCancel, submitSubWorkorderBatch} from "@/api/mes/pro/workorder";
+import { listChainCandidates, previewChainCleanup, executeChainCleanup } from "@/api/mes/pro/chainCleanup";
 import Workorderbom from "./bom/bom.vue";
 import WorkorderItemList from "./items/item.vue";
 import ItemSelect  from "@/components/itemSelect/single.vue";
@@ -404,6 +518,7 @@ import BarcodeImg from "@/components/barcodeImg/index.vue"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
 export default {
+  mixins: [pipelineWorkorderContext],
   name: "Workorder",
   dicts: ['mes_order_status','mes_workorder_sourcetype','mes_workorder_type'],
   components: {
@@ -419,6 +534,14 @@ export default {
     return {
       itemStatus: false,
       activeName: 'bom',
+      // 贯通单据清理
+      chainOpen: false,
+      chainLoading: false,
+      chainCandidates: [],
+      chainSelected: [],
+      chainQuery: { keyword: '', onlyChain: false },
+      chainPreview: null,
+      chainConfirmText: '',
       //自动生成编码
       autoGenFlag:false,
       optType: undefined,
@@ -624,6 +747,7 @@ export default {
     /** 重置按钮操作 */
     resetQuery() {
       this.resetForm("queryForm");
+      this.clearPipelineWorkorderContext();
       this.handleQuery();
     },
     //从BOM行中直接新增
@@ -838,7 +962,102 @@ export default {
       }else{
         this.form.workorderCode = null;
       }
+    },
+    /* ------------------ 贯通单据清理 ------------------ */
+    openChainCleanup() {
+      this.chainOpen = true;
+      this.chainPreview = null;
+      this.chainConfirmText = '';
+      this.chainSelected = [];
+      this.chainCandidates = [];
+      this.loadChainCandidates();
+    },
+    loadChainCandidates() {
+      this.chainLoading = true;
+      listChainCandidates({ keyword: this.chainQuery.keyword, onlyChain: this.chainQuery.onlyChain }).then(res => {
+        this.chainCandidates = res.data || [];
+        this.chainPreview = null;
+      }).finally(() => {
+        this.chainLoading = false;
+      });
+    },
+    resetChainFilter() {
+      this.chainQuery = { keyword: '', onlyChain: false };
+      this.loadChainCandidates();
+    },
+    onChainSelectionChange(rows) {
+      this.chainSelected = rows;
+      this.chainPreview = null;
+    },
+    handleChainPreview() {
+      if (!this.chainSelected.length) {
+        return;
+      }
+      this.chainLoading = true;
+      previewChainCleanup(this.chainSelected.map(r => r.workorder_id)).then(res => {
+        this.chainPreview = res.data;
+      }).finally(() => {
+        this.chainLoading = false;
+      });
+    },
+    handleChainExecute() {
+      if (this.chainConfirmText !== 'DELETE' || !this.chainPreview) {
+        return;
+      }
+      const ids = this.chainSelected.map(r => r.workorder_id);
+      this.$modal.confirm('确认删除选中的 ' + ids.length + ' 张工单及其全部关联单据？库存会按流水回退，该操作不可撤销。').then(() => {
+        this.chainLoading = true;
+        return executeChainCleanup(ids, this.chainConfirmText);
+      }).then(res => {
+        const data = res.data || {};
+        this.$modal.msgSuccess('清理完成：删除工单 ' + (data.pro_workorder || 0) + ' 张，库存回退 ' + (data.stockRows || 0) + ' 行');
+        this.chainOpen = false;
+        this.chainPreview = null;
+        this.chainConfirmText = '';
+        this.getList();
+      }).catch(() => {}).finally(() => {
+        this.chainLoading = false;
+      });
+    },
+    resetChainState() {
+      this.chainPreview = null;
+      this.chainConfirmText = '';
+      this.chainSelected = [];
     }
   }
 };
 </script>
+
+<style scoped>
+.chain-clean__filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 10px;
+  flex-wrap: wrap;
+}
+.chain-clean__preview {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+.chain-clean__summary {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #1f2937;
+}
+.chain-clean__warn {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #b45309;
+}
+.chain-clean__confirm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+</style>

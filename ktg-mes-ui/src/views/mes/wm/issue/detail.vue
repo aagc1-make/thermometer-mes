@@ -1,5 +1,9 @@
 <template>
-  <div class="app-container">
+  <div class="app-container issue-materials">
+    <div class="issue-materials__heading">
+      <div><strong>领料明细</strong><span>批次、仓库、库位和数量由库存自动匹配</span></div>
+      <span>{{ total }} 项物料</span>
+    </div>
 
     <el-table v-loading="loading" :data="issuelineList" @selection-change="handleSelectionChange">
       <el-table-column type="expand" style="overflow-x: auto; width: 100%;">
@@ -10,7 +14,7 @@
             <el-table-column label="库区名称" width="120px" align="center" prop="locationName" />
             <el-table-column label="库位名称" width="150px" align="center" prop="areaName" />  
             <el-table-column label="数量" width="120px" align="center" prop="quantity" />            
-            <el-table-column label="操作" align="center" width="100px" v-if="optType != 'view'" class-name="small-padding fixed-width">
+            <el-table-column label="操作" align="center" width="100px" v-if="canEdit" class-name="small-padding fixed-width">
               <template slot-scope="scope">
                 <el-button
                   size="mini"
@@ -31,21 +35,40 @@
           </el-table>
         </template>
       </el-table-column>
-      <el-table-column label="产品物料编码" width="120px" align="center" prop="itemCode" />
-      <el-table-column label="产品物料名称" width="120px"  align="center" prop="itemName" :show-overflow-tooltip="true"/>
-      <el-table-column label="规格型号" align="center" prop="specification" :show-overflow-tooltip="true"/>
-      <el-table-column label="单位" align="center" prop="unitName" />
-      <el-table-column label="领料数量" align="center" prop="quantityIssued" />
-      <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true"/>
-      <el-table-column label="操作" align="center" v-if="optType != 'view'" width="100px" class-name="small-padding fixed-width">
+      <el-table-column label="物料" min-width="150" prop="itemCode">
+        <template slot-scope="scope"><strong class="issue-item-name">{{ scope.row.itemName }}</strong><span class="issue-item-code">{{ scope.row.itemCode }}</span></template>
+      </el-table-column>
+      <el-table-column label="规格型号" min-width="100" prop="specification" :show-overflow-tooltip="true"/>
+      <el-table-column label="需领" align="right" width="75" prop="quantityIssued" />
+      <el-table-column label="已拣" align="right" width="75">
+        <template slot-scope="scope">{{ pickedQuantity(scope.row) }}</template>
+      </el-table-column>
+      <el-table-column label="待拣" align="right" width="75">
+        <template slot-scope="scope"><span :class="{ 'issue-remaining': remainingQuantity(scope.row) > 0 }">{{ remainingQuantity(scope.row) }}</span></template>
+      </el-table-column>
+      <el-table-column label="单位" align="center" width="55" prop="unitName" />
+      <el-table-column label="分配结果 · 批次 / 库位" min-width="210">
+        <template slot-scope="scope">
+          <div v-for="detail in scope.row.details" :key="detail.detailId" class="issue-allocation">
+            <span>{{ detail.batchCode }} · {{ detail.quantity }}{{ scope.row.unitName }}</span>
+            <small>{{ detail.warehouseName }} / {{ detail.locationName }} / {{ detail.areaName }}</small>
+          </div>
+          <span v-if="!scope.row.details || !scope.row.details.length" class="issue-item-code">等待一键分配</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="状态" align="center" width="85">
+        <template slot-scope="scope"><el-tag size="mini" :type="pickedQuantity(scope.row) > Number(scope.row.quantityIssued) ? 'danger' : remainingQuantity(scope.row) === 0 ? 'success' : 'info'">{{ pickedQuantity(scope.row) > Number(scope.row.quantityIssued) ? '已超拣' : remainingQuantity(scope.row) === 0 ? '已拣齐' : '待拣货' }}</el-tag></template>
+      </el-table-column>
+      <el-table-column label="调整" align="center" v-if="canEdit" width="85" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
             type="text"
             icon="el-icon-shopping-cart-full"
             @click="handleAdd(scope.row)"
-            v-hasPermi="['mes:wm:issueheader:add']"
-          >拣货</el-button>
+            :disabled="remainingQuantity(scope.row) <= 0"
+            v-hasPermi="['mes:wm:issueheader:edit']"
+          >手工拣货</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -114,7 +137,7 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="数量" prop="quantity">
-              <el-input-number v-model="form.quantity" :max="form.quantityMax" :min="0" placeholder="请输入入库数量" />
+              <el-input-number v-model="form.quantity" :max="form.quantityMax" :min="0" :precision="4" placeholder="自动带入待拣数量" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -137,6 +160,7 @@ export default {
   props:{
     issueId: null,
     optType: null,
+    status: { type: String, default: 'APPROVING' },
   },
   data() {
     return {
@@ -174,6 +198,18 @@ export default {
         ],      }
     };
   },
+  computed: {
+    canEdit() { return this.optType !== 'view' && this.status === 'APPROVING'; }
+  },
+  watch: {
+    issueId(value) {
+      this.queryParams.issueId = value;
+      this.queryParams.pageNum = 1;
+      this.open = false;
+      this.getListWithDetail();
+    },
+    canEdit(value) { if (!value) this.open = false; }
+  },
   created() {
     this.getListWithDetail();
   },
@@ -181,11 +217,21 @@ export default {
     /** 查询生产领料单明细列表 */
     getListWithDetail() {
       this.loading = true;
-      listWithDetail(this.queryParams).then(response => {
+      const issueId = this.issueId;
+      return listWithDetail(this.queryParams).then(response => {
+        if (issueId !== this.issueId) return;
         this.issuelineList = response.rows;
         this.total = response.total;
-        this.loading = false;
+      }).finally(() => {
+        if (issueId === this.issueId) this.loading = false;
       });
+    },
+    pickedQuantity(row, excludeDetailId) {
+      return Number((row.details || []).reduce((sum, detail) =>
+        detail.detailId === excludeDetailId && excludeDetailId != null ? sum : sum + Number(detail.quantity || 0), 0).toFixed(4));
+    },
+    remainingQuantity(row, excludeDetailId) {
+      return Math.max(0, Number((Number(row.quantityIssued || 0) - this.pickedQuantity(row, excludeDetailId)).toFixed(4)));
     },
     // 取消按钮
     cancel() {
@@ -227,6 +273,8 @@ export default {
       this.form.unitName = row.unitName
       this.form.batchId = row.batchId
       this.form.batchCode = row.batchCode
+      this.form.quantity = this.remainingQuantity(row)
+      this.form.quantityMax = this.form.quantity
       this.open = true;
       this.title = "添加生产领料单明细";
     },
@@ -236,6 +284,8 @@ export default {
       const detailId = row.detailId || this.ids
       getIssuedetail(detailId).then(response => {
         this.form = response.data;
+        const line = this.issuelineList.find(item => item.lineId === this.form.lineId);
+        this.form.quantityMax = line ? this.remainingQuantity(line, this.form.detailId) : this.form.quantity;
         this.open = true;
         this.title = "修改生产领料单明细";
       });
@@ -300,8 +350,11 @@ export default {
           this.form.areaId = obj.areaId;
           this.form.areaCode = obj.areaCode;
           this.form.areaName = obj.areaName;
-          this.form.quantity = obj.quantityOnhand;
-          this.form.quantityMax = obj.quantityOnhand;          
+          const line = this.issuelineList.find(item => item.lineId === this.form.lineId);
+          const remaining = line ? this.remainingQuantity(line, this.form.detailId) : 0;
+          const quantity = Math.max(0, Math.min(Number(obj.quantityOnhand || 0), remaining));
+          this.form.quantity = quantity;
+          this.form.quantityMax = quantity;
         }
     },
 
@@ -309,6 +362,14 @@ export default {
 };
 </script>
 <style scoped>
+.issue-materials { padding: 12px; }
+.issue-materials__heading { display: flex; justify-content: space-between; align-items: center; padding: 0 0 18px; color: #8492a6; font-size: 12px; gap: 12px; }
+.issue-materials__heading strong { color: #25344a; font-size: 15px; margin-right: 16px; }
+.issue-item-name { display: block; color: #34435a; font-weight: 500; }
+.issue-item-code { display: block; color: #8b98aa; font-size: 12px; }
+.issue-remaining { color: #c27b24; font-weight: 600; }
+.issue-allocation { margin: 3px 0; line-height: 1.6; font-size: 12px; }
+.issue-allocation small { display: block; color: #8b98aa; font-size: 12px; }
 ::v-deep .child-table .el-table__header th {
   background-color: #D9DEF2; /* 浅蓝色 */
 }

@@ -1,5 +1,5 @@
 -- ============================================================================
---  驾驶舱演示历史数据（可重复执行，所有造数行都以 HIST 前缀/备注标记）
+--  驾驶舱试产历史数据（可重复执行，所有造数行都以 HIST 前缀/备注标记）
 --  目的：补足「时间跨度」与「状态多样性」，让 4 张图表有真实厚度
 --  执行：mysql --host=... --database=j2eedb -e "source E:/JavaCode/scripts/demo-history.sql"
 -- ============================================================================
@@ -29,7 +29,7 @@ SELECT CONCAT('HIST-', v.code), CONCAT(v.pname, ' ', v.qty, ' ', v.unit),
        p.order_source, v.code, p.product_id, p.product_code, v.pname,
        p.product_spc, p.unit_of_measure, p.unit_name, v.qty, v.done, 0, 0,
        p.client_id, p.client_code, p.client_name,
-       DATE_SUB(CURDATE(), INTERVAL v.d DAY), p.parent_id, p.ancestors, v.st, 'HIST演示历史工单',
+       DATE_SUB(CURDATE(), INTERVAL v.d DAY), p.parent_id, p.ancestors, v.st, 'HIST试产历史工单',
        'admin', DATE_SUB(NOW(), INTERVAL v.d DAY), p.workorder_type, CONCAT('HISTB-', v.code)
 FROM pro_workorder p
 JOIN (
@@ -62,7 +62,7 @@ SELECT 'SELF', CONCAT('HIST-FB-', v.n, '-', DATE_FORMAT(DATE_SUB(CURDATE(), INTE
        v.q, v.q, v.q, 0, 0, 0, 0, 0,
        'operator', '赵操作', 'PC',
        TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL v.d DAY), '10:30:00'),
-       'operator', '赵操作', 'FINISHED', 'HIST演示历史报工',
+       'operator', '赵操作', 'FINISHED', 'HIST试产历史报工',
        'admin', DATE_SUB(NOW(), INTERVAL v.d DAY)
 FROM pro_feedback f
 JOIN (

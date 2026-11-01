@@ -1,6 +1,7 @@
 package com.ktg.mes.wm.service.impl;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.DateUtils;
@@ -25,6 +26,9 @@ import com.ktg.mes.wm.service.IWmBatchService;
 @Service
 public class WmBatchServiceImpl implements IWmBatchService 
 {
+    private static final String PILOT_SCOPE_PREFIX = "PILOT-";
+    private static final Pattern PILOT_SCOPE_PATTERN = Pattern.compile("PILOT-[A-Z0-9]+");
+
     @Autowired
     private WmBatchMapper wmBatchMapper;
 
@@ -134,6 +138,8 @@ public class WmBatchServiceImpl implements IWmBatchService
      */
     @Override
     public WmBatch getOrGenerateBatchCode(WmBatch wmBatch) {
+        // 仅显式试产命名空间启用本次批次隔离；必须在配置清空 poCode/lotNumber 前读取。
+        String pilotScope = readPilotScope(wmBatch);
 
         //1.检查物料ID/物料编码参数是否为空
         if(wmBatch.getItemId() == null && wmBatch.getItemCode() == null){
@@ -272,6 +278,11 @@ public class WmBatchServiceImpl implements IWmBatchService
             }
         }
 
+        // 原有必填维度校验全部通过后再保留命名空间，普通业务仍完全服从物料批次配置。
+        if (pilotScope != null) {
+            wmBatch.setLotNumber(pilotScope);
+        }
+
         //2.根据参数查询现有的批次号
         WmBatch batch = wmBatchMapper.getBatchCodeByParams(wmBatch);
 
@@ -286,6 +297,22 @@ public class WmBatchServiceImpl implements IWmBatchService
         wmBatchMapper.insertWmBatch(wmBatch);
         barcodeUtil.generateBarCode(UserConstants.BARCODE_TYPE_BATCH,wmBatch.getBatchId(),wmBatch.getBatchCode(), wmBatch.getItemName()); //为每个批次号生成一个码
         return wmBatch;
+    }
+
+    private String readPilotScope(WmBatch batch) {
+        String scope = null;
+        for (String candidate : new String[]{batch.getPoCode(), batch.getLotNumber()}) {
+            if (candidate == null || !candidate.startsWith(PILOT_SCOPE_PREFIX)) continue;
+            // 采购订单号字段最多 64 字符；两条来源链采用同一格式和长度约束。
+            if (candidate.length() > 64 || !PILOT_SCOPE_PATTERN.matcher(candidate).matches()) {
+                throw new IllegalArgumentException("试产批次标识必须为 PILOT- 后接大写字母或数字，且总长不超过64字符");
+            }
+            if (scope != null && !scope.equals(candidate)) {
+                throw new IllegalArgumentException("采购订单号与生产批号中的试产批次标识不一致");
+            }
+            scope = candidate;
+        }
+        return scope;
     }
 
     @Override

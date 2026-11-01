@@ -14,7 +14,7 @@ set "PATH=%JAVA_HOME%\bin;%PATH%"
 set "MYSQL_HOME=D:\mysql-8.0.44-winx64"
 set "REDIS_HOME=E:\dev\redis"
 set "MINIO_HOME=E:\dev\minio"
-set "PROJECT=E:\JavaCode\backend\ktg-mes"
+set "PROJECT=%~dp0backend\ktg-mes"
 
 echo ============================================
 echo  [1/4] MySQL  :3307

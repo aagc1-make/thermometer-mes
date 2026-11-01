@@ -3,9 +3,12 @@ package com.ktg.mes.wm.service.impl;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.ktg.common.constant.UserConstants;
+import com.ktg.common.exception.ServiceException;
 import com.ktg.common.utils.DateUtils;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.md.domain.MdProductBom;
@@ -13,6 +16,7 @@ import com.ktg.mes.md.domain.MdWorkstation;
 import com.ktg.mes.md.mapper.MdWorkstationMapper;
 import com.ktg.mes.pro.domain.*;
 import com.ktg.mes.pro.mapper.*;
+import com.ktg.mes.pro.service.FeedbackBatchScopeService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ItemConsumeTxBean;
 import com.ktg.mes.wm.mapper.*;
@@ -207,6 +211,9 @@ public class WmItemConsumeServiceImpl implements IWmItemConsumeService
             p1.setLocationCode(UserConstants.VIRTUAL_WS);
             p1.setAreaCode(UserConstants.VIRTUAL_WA);
             List<WmMaterialStock> stocks = wmMaterialStockMapper.selectWmMaterialStockList(p1);
+            if (feedback.getParams().containsKey(FeedbackBatchScopeService.PARAM_KEY)) {
+                stocks = scopedStocks(feedback, line, stocks);
+            }
             if(CollectionUtil.isEmpty(stocks)){
                 //线边库中没有该物料，则生成一个不带批次号的消耗单明细行
                 WmItemConsumeDetail detail = new WmItemConsumeDetail();
@@ -305,6 +312,9 @@ public class WmItemConsumeServiceImpl implements IWmItemConsumeService
 
                 //库存遍历完成后还有剩余未扣除的数量，直接在库中新增一条为负的记录（后期手工核销）
                 if(quantityToConsume.compareTo(BigDecimal.ZERO)==1){
+                    if (feedback.getParams().containsKey(FeedbackBatchScopeService.PARAM_KEY)) {
+                        throw new ServiceException("物料" + line.getItemCode() + "的指定批次线边库存不足，报工已回滚");
+                    }
                     WmItemConsumeDetail detail = new WmItemConsumeDetail();
                     detail.setRecordId(line.getRecordId());
                     detail.setLineId(line.getLineId());
@@ -333,6 +343,34 @@ public class WmItemConsumeServiceImpl implements IWmItemConsumeService
         }
 
         return itemConsume;
+    }
+
+    /** 显式范围只允许正库存且批次匹配的行，禁止走无批次/负库存兜底。 */
+    private List<WmMaterialStock> scopedStocks(ProFeedback feedback, WmItemConsumeLine line,
+                                               List<WmMaterialStock> stocks) {
+        Object value = feedback.getParams().get(FeedbackBatchScopeService.PARAM_KEY);
+        if (!(value instanceof Map)) {
+            throw new ServiceException("报工消耗批次范围无效");
+        }
+        Object batches = ((Map<?, ?>) value).get(String.valueOf(line.getItemId()));
+        if (!(batches instanceof List) || ((List<?>) batches).isEmpty()) {
+            throw new ServiceException("物料" + line.getItemCode() + "缺少消耗批次范围");
+        }
+        List<WmMaterialStock> selected = new ArrayList<>();
+        BigDecimal available = BigDecimal.ZERO;
+        if (stocks != null) {
+            for (WmMaterialStock stock : stocks) {
+                if (StringUtils.isNotEmpty(stock.getBatchCode()) && ((List<?>) batches).contains(stock.getBatchCode())
+                        && stock.getQuantityOnhand() != null && stock.getQuantityOnhand().signum() > 0) {
+                    selected.add(stock);
+                    available = available.add(stock.getQuantityOnhand());
+                }
+            }
+        }
+        if (selected.isEmpty() || available.compareTo(line.getQuantityConsume()) < 0) {
+            throw new ServiceException("物料" + line.getItemCode() + "的指定批次线边库存不足，报工已回滚");
+        }
+        return selected;
     }
 
 

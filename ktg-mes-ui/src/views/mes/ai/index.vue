@@ -5,9 +5,13 @@
         <h2 class="ai__title">MES 智能助手</h2>
         <p class="ai__sub">用自然语言查询库存、出入库、工单与检验数据 —— 结果全部来自真实业务库</p>
       </div>
-      <el-button size="mini" icon="el-icon-delete" @click="reset">清空对话</el-button>
+      <div>
+        <el-button type="primary" size="mini" icon="el-icon-video-play" @click="$refs.businessChain.open()">全流程贯通</el-button>
+        <el-button size="mini" icon="el-icon-delete" @click="reset">清空对话</el-button>
+      </div>
     </div>
 
+    <business-chain ref="businessChain" />
     <div class="ai__body" ref="scroller">
       <div v-for="(m, i) in messages" :key="i" :class="['msg', 'msg--' + m.role]">
         <div class="msg__bubble">
@@ -51,6 +55,38 @@
             <div class="chips">
               <span class="chip" v-for="(c, ci) in m.options" :key="ci" @click="send(c)">{{ c }}</span>
             </div>
+          </div>
+
+          <div v-else-if="m.type === 'arrivalReceipt'" class="msg__card">
+            <div class="msg__card-title">到货通知 {{ m.notice.noticeCode }} 的采购入库单</div>
+            <p class="msg__text">{{ m.nextStep }}</p>
+            <el-table v-if="m.receipts.length" :data="m.receipts" size="mini" border>
+              <el-table-column prop="recptCode" label="入库单号" />
+              <el-table-column prop="vendorName" label="供应商" />
+              <el-table-column prop="status" label="状态" width="110" />
+            </el-table>
+            <template v-if="$auth.hasPermi('mes:wm:itemrecpt:query')"><el-button v-for="r in m.receipts" :key="r.recptId" type="text" @click="openArrivalReceipt(r)">查看 {{ r.recptCode }}</el-button></template>
+            <div class="msg__meta">数据来源：采购入库单（按到货通知实时查询）</div>
+          </div>
+          <!-- 对话中的原单据：读取当前状态，不把指代词当作物料名 -->
+          <div v-else-if="m.type === 'arrivalDetail'" class="msg__card">
+            <div class="msg__card-title">到货通知 {{ m.notice.noticeCode }} · {{ m.statusLabel }}</div>
+            <p class="msg__text">供应商：{{ m.notice.vendorName || '未填写' }}；到货日期：{{ m.notice.arrivalDate || '未填写' }}</p>
+            <el-table :data="m.lines" size="mini" border max-height="240">
+              <el-table-column prop="itemCode" label="物料编码" width="130" />
+              <el-table-column prop="itemName" label="物料名称" />
+              <el-table-column prop="quantityArrival" label="到货数量" width="100" align="right" />
+              <el-table-column prop="unitName" label="单位" width="70" />
+              <el-table-column label="来料检验" width="90"><template slot-scope="scope">{{ scope.row.iqcCheck === 'Y' ? '需要' : scope.row.iqcCheck === 'N' ? '免检' : '未设置' }}</template></el-table-column>
+            </el-table>
+            <p class="msg__text">{{ m.nextStep }}</p>
+            <div v-for="iqc in m.inspections" :key="iqc.iqcId">
+              <span>{{ iqc.iqcCode }} · {{ iqc.itemName || '' }} · {{ inspectionStatus(iqc.status) }}</span>
+              <el-button v-if="$auth.hasPermi('mes:qc:iqc:query')" type="text" @click="openArrivalInspection(iqc)">打开来料检验</el-button>
+            </div>
+            <el-button type="text" @click="openArrivalNotice(m.notice)">查看到货通知</el-button>
+            <el-button v-if="m.notice.status === 'PREPARE' && $auth.hasPermi('mes:wm:arrivalnotice:edit')" type="text" @click="openArrivalNotice(m.notice, true)">完善并提交到货通知</el-button>
+            <div class="msg__meta">{{ m.source }}</div>
           </div>
 
           <!-- 到货通知草稿确认：识别到“新增到货通知”后先列清物料与数量，用户确认才落库 -->
@@ -100,6 +136,22 @@
             <el-button v-if="!m.finished" size="mini" :disabled="m.busy" @click="cancelDraft(m)">取消</el-button>
             <el-button v-if="m.workorderId && $auth.hasPermi('mes:pro:workorder:query')" type="text" @click="openWorkorder(m.workorderId)">打开工单详情</el-button>
           </div>
+          <div v-else-if="m.type === 'posting'" class="msg__card">
+            <div class="msg__card-title">确认{{ m.label }}</div>
+            <p>单据编号：{{ m.code }}；当前状态：{{ m.status }}</p>
+            <el-table :data="m.lines" size="mini" border max-height="220">
+              <el-table-column prop="itemCode" label="物料编码" width="130" />
+              <el-table-column prop="itemName" label="物料名称" />
+              <el-table-column prop="quantity" label="单据数量" width="100" />
+              <el-table-column prop="unit" label="单位" width="80" />
+              <el-table-column prop="batchCode" label="行批次" width="130" />
+            </el-table>
+            <p>执行后将按单据明细变更库存并生成流水，质量、数量及库位仍由系统校验。</p>
+            <p v-if="m.error" class="msg__text msg__bad">{{ m.error }}</p>
+            <el-button v-if="!m.finished" type="primary" size="mini" :loading="m.busy" @click="confirmPosting(m)">确认执行</el-button>
+            <el-button v-if="!m.finished" size="mini" :disabled="m.busy" @click="cancelPosting(m)">取消</el-button>
+            <el-button v-if="m.finished" type="text" @click="$router.push(m.path)">打开对应单据</el-button>
+          </div>
           <div v-if="m.analysisContext" class="msg__meta">
             <el-button type="text" size="mini" :loading="m.analysisBusy" @click="requestAnalysis(m)">请求大模型分析</el-button>
             <span>需确认发送当前问题和部分回答</span>
@@ -128,9 +180,12 @@
 import request from '@/utils/request'
 
 const CHAT_WELCOME = '你好，我是 MES 智能助手。可以问我：\n· 盘点 10 月份测温显示电控预装件的库存\n· 这个月采购入库了多少电子件\n· 有哪些工单进度落后\n· 本月的检验合格率是多少\n也可以让我登记单据，例如“帮我添加 10 个上壳、10 个电池的到货通知”'
+const CHAT_TTL = 10 * 60 * 1000
+let chatExpiryTimer = null
 
 export default {
   name: 'MesAi',
+  components: { BusinessChain: () => import('./BusinessChain') },
   data() {
     return {
       input: '',
@@ -149,7 +204,61 @@ export default {
       ]
     }
   },
+  created() {
+    this.restoreChat()
+  },
+  watch: {
+    messages: { deep: true, handler() { this.saveChat() } },
+    lastStock: { deep: true, handler() { this.saveChat() } },
+    lastWorkorder() { this.saveChat() },
+    waitingWeatherCity() { this.saveChat() }
+  },
   methods: {
+    chatKey() {
+      const id = this.$store && this.$store.state.user.id
+      return id ? `mes-ai-chat:${id}` : null
+    },
+    scheduleChatExpiry(key, expiresAt) {
+      clearTimeout(chatExpiryTimer)
+      chatExpiryTimer = setTimeout(() => {
+        try {
+          const saved = JSON.parse(sessionStorage.getItem(key) || 'null')
+          if (saved && saved.expiresAt <= Date.now()) sessionStorage.removeItem(key)
+          if (this.chatKey() === key && saved && saved.expiresAt <= Date.now()) this.reset()
+        } catch (e) { /* storage may be unavailable */ }
+      }, Math.max(0, expiresAt - Date.now()))
+    },
+    saveChat() {
+      if (this._restoringChat) return
+      const key = this.chatKey()
+      if (!key) return
+      try {
+        if (this.messages.length <= 1) { sessionStorage.removeItem(key); return }
+        const expiresAt = Date.now() + CHAT_TTL
+        sessionStorage.setItem(key, JSON.stringify({ expiresAt, messages: this.messages, lastStock: this.lastStock, lastWorkorder: this.lastWorkorder, waitingWeatherCity: this.waitingWeatherCity }))
+        this.scheduleChatExpiry(key, expiresAt)
+      } catch (e) { /* keep chat available in memory when storage is full or disabled */ }
+    },
+    restoreChat() {
+      const key = this.chatKey()
+      if (!key) return
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(key) || 'null')
+        if (!saved || !Number.isFinite(saved.expiresAt) || saved.expiresAt <= Date.now() || !Array.isArray(saved.messages)) { sessionStorage.removeItem(key); return }
+        this._restoringChat = true
+        this.messages = saved.messages.map(m => {
+          if ((m.type === 'draft' || m.type === 'arrival' || m.type === 'posting') && m.busy) {
+            return Object.assign({}, m, { busy: false, finished: true, error: '刷新前的提交结果尚未确认，请先到对应单据页面核对，避免重复创建。' })
+          }
+          return Object.assign({}, m, { analysisBusy: false })
+        })
+        this.lastStock = saved.lastStock || null
+        this.lastWorkorder = saved.lastWorkorder || null
+        this.waitingWeatherCity = !!saved.waitingWeatherCity
+        this.scheduleChatExpiry(key, saved.expiresAt)
+        this.$nextTick(() => { this._restoringChat = false; this.scrollBottom() })
+      } catch (e) { this._restoringChat = false; try { sessionStorage.removeItem(key) } catch (ignored) {} }
+    },
     async get(url, params = {}) {
       const rows = []
       let pageNum = 1
@@ -166,6 +275,8 @@ export default {
     },
     p2(n) { const p = x => String(x).padStart(2, '0'); return `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}` },
     reset() {
+      clearTimeout(chatExpiryTimer)
+      try { const key = this.chatKey(); if (key) sessionStorage.removeItem(key) } catch (e) { /* storage may be unavailable */ }
       this.messages = [{ role: 'bot', type: 'text', text: CHAT_WELCOME }]
       this.lastStock = null
       this.lastWorkorder = null
@@ -351,8 +462,15 @@ export default {
       }
     },
 
-    /** 主流程：写操作 → 专属问答 → 规则 → 大模型 → 追问 */
+    /** 主流程：解析单据指代 → 写操作 → 专属问答 → 规则 → 大模型 → 追问 */
     async route(q) {
+      if (/(?:一键|自动|完整|整个|全流程|业务流程).{0,8}贯通|贯通.{0,8}(?:整个|完整|全流程|业务流程)/.test(q)) {
+        this.$refs.businessChain.open()
+        this.push({ role: 'bot', type: 'text', text: '已打开全流程贯通。点击“开始执行”，即可按顺序执行采购、质检、生产和销售主链，默认生产 10 台、销售 6 台、结存 4 台。执行会生成真实单据并变更库存。' })
+        return
+      }
+      if (await this.handleArrivalFollowup(q)) return
+      if (/执行|过账/.test(q) && /采购入库|原料入库|原材料入库|生产领料|领料单|产品入库|成品入库|销售出库|销售发货/.test(q)) return this.preparePosting(q)
       // 写操作优先：新增/创建单据必须排在入库、库存等读查询规则之前，
       // 否则“帮我添加一条到货通知”会因为含“采购/到货”被答成入库汇总。
       const action = this.matchAction(q)
@@ -671,6 +789,49 @@ export default {
       } finally { clearTimeout(timer) }
     },
 
+    postingConfig(q) {
+      if (/采购入库|原料入库|原材料入库/.test(q)) return { label: '采购入库', url: '/mes/wm/itemrecpt', codeKey: 'recptCode', idKey: 'recptId', status: 'APPROVED', permission: 'mes:wm:itemrecpt', path: '/mes/wm/itemrecpt' }
+      if (/生产领料|领料单/.test(q)) return { label: '生产领料', url: '/mes/wm/issueheader', codeKey: 'issueCode', idKey: 'issueId', status: 'APPROVED', permission: 'mes:wm:issueheader', path: '/mes/wm/issue' }
+      if (/产品入库|成品入库/.test(q)) return { label: '产品入库', url: '/mes/wm/productrecpt', codeKey: 'recptCode', idKey: 'recptId', status: 'APPROVED', permission: 'mes:wm:productrecpt', path: '/mes/wm/productrecpt' }
+      if (/销售出库|销售发货/.test(q)) return { label: '销售出库', url: '/mes/wm/productsales', codeKey: 'salesCode', idKey: 'salesId', status: 'UNEXECUTE', permission: 'mes:wm:productsales', path: '/mes/wm/productsales' }
+      return null
+    },
+    async preparePosting(q) {
+      const config = this.postingConfig(q)
+      if (!config) return
+      if (!this.$auth.hasPermi(config.permission + ':list') || !this.$auth.hasPermi(config.permission + ':edit')) {
+        this.push({ role: 'bot', type: 'text', text: `当前账号缺少${config.label}查询或执行权限。` }); return
+      }
+      const codeMatch = q.match(/[A-Za-z][A-Za-z0-9_-]*\d[A-Za-z0-9_-]*/)
+      if (!codeMatch) { this.push({ role: 'bot', type: 'text', text: `请提供完整的${config.label}单号，例如“执行${config.label}单 PR20261030002”。` }); return }
+      const code = codeMatch[0]
+      const result = await this.get(config.url + '/list', { [config.codeKey]: code })
+      const docs = (result.rows || []).filter(r => String(r[config.codeKey] || '').toUpperCase() === code.toUpperCase())
+      if (docs.length !== 1) { this.push({ role: 'bot', type: 'text', text: docs.length ? '该单号匹配到多张单据，请在单据页面核对。' : `未找到${config.label}单 ${code}，请核对单号及权限。` }); return }
+      const doc = docs[0]
+      if (doc.status !== config.status) { this.push({ role: 'bot', type: 'text', text: `${config.label}单 ${code} 当前状态为 ${doc.status || '未知'}，未处于可执行状态（${config.status}），请先在单据页面完成前置步骤。` }); return }
+      if (!doc[config.idKey]) throw new Error('单据缺少有效标识，无法执行')
+      const lineUrls = { '/mes/wm/itemrecpt': ['/mes/wm/itemrecptline/list', 'quantityRecived'], '/mes/wm/issueheader': ['/mes/wm/issueline/list', 'quantityIssued'], '/mes/wm/productrecpt': ['/mes/wm/productrecptline/list', 'quantityRecived'], '/mes/wm/productsales': ['/mes/wm/productsalesline/list', 'quantitySales'] }
+      const [lineUrl, qtyKey] = lineUrls[config.url]
+      const lineResult = await this.get(lineUrl, { [config.idKey]: doc[config.idKey] })
+      const lines = (lineResult.rows || []).filter(r => String(r[config.idKey]) === String(doc[config.idKey])).map(r => ({ itemCode: r.itemCode, itemName: r.itemName, quantity: r[qtyKey], unit: r.unitName || r.unitOfMeasure, batchCode: r.batchCode || '以明细为准' }))
+      if (!lines.length) { this.push({ role: 'bot', type: 'text', text: `未找到${config.label}单明细，请先在单据页面核对。` }); return }
+      this.push({ role: 'bot', type: 'posting', label: config.label, code: doc[config.codeKey], id: doc[config.idKey], status: doc.status, url: config.url, permission: config.permission, path: config.path, lines, busy: false, finished: false, error: '' })
+    },
+    cancelPosting(m) { if (!m.busy) { m.finished = true; m.error = '已取消，未执行过账。' } },
+    async confirmPosting(m) {
+      if (m.busy || m.finished) return
+      if (!this.$auth.hasPermi(m.permission + ':edit')) { m.error = '当前账号没有执行权限。'; return }
+      m.busy = true
+      try {
+        await request({ url: m.url + '/' + encodeURIComponent(m.id), method: 'put' })
+        m.finished = true
+        m.error = `${m.label}单 ${m.code} 已执行，请在对应单据和库存流水页面核对。`
+      } catch (e) {
+        m.finished = true
+        m.error = `执行结果未能确认：${(e && e.message) || '服务异常'}。请先到单据页面核对状态和流水，避免重复操作。`
+      } finally { m.busy = false }
+    },
     async prepareDraft(q) {
       this.lastStock = null
       this.lastWorkorder = null
@@ -680,7 +841,7 @@ export default {
       const number = q.match(/(?:生产|数量为?|数量[:：]?\s*)\s*(\d+(?:\.\d+)?)\s*(?:台|个|件|套|只|支|把|份)?|(?:^|\D)(\d+(?:\.\d+)?)\s*(?:台|个|件|套|只|支|把|份)/)
       const quantity = number ? Number(number[1] || number[2]) : 0
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99999999) {
-        this.push({ role: 'bot', type: 'text', text: '请说明 1 至 99999999 的整数生产数量，例如“创建生产 10 台测温枪演示机的工单”。' }); return
+        this.push({ role: 'bot', type: 'text', text: '请说明 1 至 99999999 的整数生产数量，例如“创建生产 10 台测温枪样机的工单”。' }); return
       }
       const result = await this.get('/mes/md/mditem/list', { itemOrProduct: 'PRODUCT', enableFlag: 'Y' })
       const items = (result.rows || []).filter(i => i.itemOrProduct === 'PRODUCT' && i.enableFlag !== 'N' && ((i.itemName && q.includes(i.itemName)) || (i.itemCode && q.includes(i.itemCode))))
@@ -957,9 +1118,120 @@ export default {
         }
       } finally { m.busy = false }
     },
-    openArrivalNotice(m) {
+    /** 只使用结构化业务消息恢复单据指代；普通文字和模型回答不能充当单据凭据。 */
+    async handleArrivalFollowup(q) {
+      const text = String(q || '').trim()
+      const named = /到货通知|到货单|收货通知/.test(text)
+      const wantsReceipt = /采购入库|原料入库|原材料入库/.test(text) && !/执行|过账/.test(text)
+      // “刚刚创建好的”是指代定语；“新增……需要检验”仍是新的创建请求。
+      const actionText = text.replace(/(?:新增|添加|新建|创建|录入|登记|补录)(?:好|完成)?的/g, '')
+      if (this.matchAction(actionText) === 'arrival') return false
+      if (!named && /工单|入库|出库|领料|采购单|检验单/.test(text) && !wantsReceipt) return false
+      const reference = /刚刚|刚才|刚建|刚创|刚加|上一[张笔次个]|上次|之前|前面|这[张个笔]|那[张个笔]|这单|那单|它|该单|另一[张个笔]/.test(text)
+      const operation = /检验|质检|送检|检查|核对|查看|看看|看下|看一下|打开|详情|状态|提交|修改|编辑|删除|取消/.test(text)
+      const code = text.match(/\bAN[A-Za-z0-9_-]*\d[A-Za-z0-9_-]*\b/i)
+        || text.match(/(?:到货通知(?:单)?|到货单|收货通知|单号)\s*[:：]?\s*([A-Za-z][A-Za-z0-9_-]*\d[A-Za-z0-9_-]*)/)
+      const noticeCode = code ? (code[1] || code[0]).toUpperCase() : ''
+      // 完整的新任务及统计查询照常解析，不能被旧单据吸走。
+      if (/库存|盘点|合格率|统计|汇总|流程|步骤|怎么|如何|为什么/.test(text)) return false
+      if (!operation && !(named && reference) && !noticeCode && !(wantsReceipt && reference)) return false
+      const history = this.messages.filter(m => m.role === 'bot')
+      const latest = history[history.length - 1]
+      const continuation = /^(?:(?:请|帮我|给我|让我|麻烦你?|那就|接着|继续|再)\s*)*(?:检验|质检|送检|检查|核对|查看|看看|看下|看一下|打开)(?:一(?:下下?|遍)|下)?(?:吧|好吗|呢)?[。？?！!]*$/.test(text)
+      if (!named && !noticeCode && !((reference || continuation) && latest && /^(arrival|arrivalDetail|arrivalReceipt)$/.test(latest.type))) return false
+
+      const candidates = []
+      history.slice().reverse().forEach(m => {
+        const doc = /^(arrivalDetail|arrivalReceipt)$/.test(m.type) ? m.notice : m.type === 'arrival' ? m : null
+        if (doc && (!doc.noticeId || !candidates.some(d => String(d.noticeId) === String(doc.noticeId)))) candidates.push(doc)
+      })
+      let target
+      if (noticeCode) target = { noticeCode }
+      else if (/另一[张个笔]|之前|前面|上一[张笔次个]|上次/.test(text) || (!reference && candidates.length > 1)) {
+        target = null
+      } else target = candidates[0]
+      if (!target) {
+        this.push({ role: 'bot', type: 'ask', text: candidates.length ? '请确认要查看或检验哪一张到货通知，选择单号后继续。' : '当前对话没有可确定的到货通知，请提供完整单号，例如“查看到货通知 AN20261031003”。',
+          options: candidates.filter(d => d.noticeCode).slice(0, 6).map(d => `查看到货通知 ${d.noticeCode} 的检验状态`) })
+        return true
+      }
+      if (!target.noticeId && !target.noticeCode) {
+        this.push({ role: 'bot', type: 'text', text: target.finished ? '刚才的到货通知尚未创建或已取消；请先核对创建结果，或提供已存在的单号。' : '刚才的到货通知还在等待确认，请在上一张草稿卡片中补齐信息并点击“确认创建”，创建后再进行送检。' })
+        return true
+      }
+      if (!this.$auth.hasPermi('mes:wm:arrivalnotice:query') || !this.$auth.hasPermi('mes:wm:arrivalnotice:list')) {
+        this.push({ role: 'bot', type: 'text', text: '已识别到你指的是到货通知，但当前账号缺少到货通知查询权限，请联系管理员。' })
+        return true
+      }
+      this.waitingWeatherCity = false
+      this.lastStock = null
+      this.lastWorkorder = null
+      let notice
+      if (target.noticeId) {
+        const res = await request({ url: '/mes/wm/arrivalnotice/' + encodeURIComponent(target.noticeId), method: 'get' })
+        notice = res.data
+        if (notice && (String(notice.noticeId) !== String(target.noticeId) || notice.noticeCode !== target.noticeCode)) notice = null
+      } else {
+        const res = await this.get('/mes/wm/arrivalnotice/list', { noticeCode: target.noticeCode })
+        const exact = (res.rows || []).filter(d => String(d.noticeCode || '').toUpperCase() === target.noticeCode)
+        if (exact.length === 1) notice = exact[0]
+      }
+      if (!notice || !notice.noticeId) {
+        this.push({ role: 'bot', type: 'text', text: `未找到到货通知 ${target.noticeCode}，单据可能已不存在或当前账号不可见，请核对单号。` })
+        return true
+      }
+      if (wantsReceipt) {
+        if (!this.$auth.hasPermi('mes:wm:itemrecpt:list')) {
+          this.push({ role: 'bot', type: 'text', text: '当前账号缺少采购入库单查询权限。' })
+          return true
+        }
+        const result = await this.get('/mes/wm/itemrecpt/list', { noticeId: notice.noticeId })
+        const receipts = (result.rows || []).filter(r => String(r.noticeId) === String(notice.noticeId))
+        const nextStep = receipts.length ? `已找到 ${receipts.length} 张关联采购入库单；请核对明细及状态后办理入库。` : '未找到关联采购入库单。需检行全部完成且有可入库的合格数量后才会生成草稿；请核对到货明细与检验状态。'
+        this.push({ role: 'bot', type: 'arrivalReceipt', notice, receipts, nextStep })
+        return true
+      }
+      const res = await this.get('/mes/wm/arrivalnoticeline/list', { noticeId: notice.noticeId })
+      const lines = (res.rows || []).filter(l => String(l.noticeId) === String(notice.noticeId))
+      const canInspect = this.$auth.hasPermi('mes:qc:iqc:list')
+      let inspections = []
+      if (canInspect) {
+        const iqc = await this.get('/mes/qc/iqc/list', { sourceDocType: 'ARRIVAL_NOTICE', sourceDocId: notice.noticeId })
+        inspections = (iqc.rows || []).filter(i => i.sourceDocType === 'ARRIVAL_NOTICE' && String(i.sourceDocId) === String(notice.noticeId))
+      }
+      const needCheck = lines.some(l => l.iqcCheck === 'Y')
+      let nextStep
+      if (notice.status === 'PREPARE') {
+        nextStep = needCheck
+          ? '这张到货通知仍是草稿。请打开原单核对联系方式和明细并提交，提交后会为需检行生成来料检验草稿，再填写检验结果。'
+          : '这张到货通知仍是草稿，当前没有需检行（已设置的行采用免检）。如要送检，请先在原单中把对应行改为“需要来料检验”，核对信息并提交。'
+      } else if (inspections.length) {
+        nextStep = `已找到这张到货通知关联的 ${inspections.length} 张来料检验单，可打开对应检验单核对状态或填写结果。`
+      } else {
+        nextStep = canInspect
+          ? '当前未找到这张到货通知关联的来料检验单，请打开原单核对检验标志和提交状态。'
+          : '当前账号没有来料检验查询权限，无法核对关联检验单，请联系管理员。'
+      }
+      if (!lines.length) nextStep = '这张到货通知没有查到物料明细，请先打开原单核对并补齐明细，再进行送检。'
+      const statuses = { PREPARE: '草稿', APPROVING: '待检验', APPROVED: '待入库', FINISHED: '已完成', CANCELED: '已取消' }
+      this.push({ role: 'bot', type: 'arrivalDetail', notice, lines, inspections, nextStep, statusLabel: statuses[notice.status] || notice.status || '未知状态',
+        source: `数据来源：到货通知 ${notice.noticeCode} 及其明细${canInspect ? '、关联来料检验单' : ''}（实时查询）` })
+      return true
+    },
+    inspectionStatus(status) {
+      return ({ PREPARE: '草稿', CONFIRMED: '已确认', APPROVING: '检验中', FINISHED: '已完成' })[status] || status || '未知状态'
+    },
+    openArrivalInspection(iqc) {
+      if (!iqc.iqcId || !this.$auth.hasPermi('mes:qc:iqc:query')) return
+      return this.$router.push({ path: '/mes/qc/iqc', query: { iqcCode: iqc.iqcCode, openIqcId: String(iqc.iqcId) } })
+    },
+    openArrivalReceipt(receipt) {
+      if (!receipt.recptId || !this.$auth.hasPermi('mes:wm:itemrecpt:query')) return
+      return this.$router.push({ path: '/mes/wm/itemrecpt', query: { recptCode: receipt.recptCode, openRecptId: String(receipt.recptId) } })
+    },
+    openArrivalNotice(m, edit = false) {
       if (!m.noticeCode) return
-      return this.$router.push({ path: '/mes/wm/arrivalnotice', query: { noticeCode: m.noticeCode } })
+      return this.$router.push({ path: '/mes/wm/arrivalnotice', query: { noticeCode: m.noticeCode, openNoticeId: m.noticeId ? String(m.noticeId) : undefined, edit: edit ? '1' : undefined } })
     },
 
     /* ---------- ① 盘点：期初 / 入库 / 出库 / 期末 + 批次明细 ---------- */

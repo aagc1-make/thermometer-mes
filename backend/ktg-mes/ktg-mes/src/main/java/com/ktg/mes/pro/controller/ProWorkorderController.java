@@ -224,6 +224,12 @@ public class ProWorkorderController extends BaseController
             child.setUnitOfMeasure(bom.getUnitOfMeasure());
             child.setUnitName(bom.getUnitName());
             child.setQuantity(bom.getQuantity());
+            // 子工单承接父工单交付及生产上下文，避免缺失必填交期或客户批次信息。
+            child.setRequestDate(parent.getRequestDate());
+            child.setWorkorderType(parent.getWorkorderType());
+            child.setClientId(parent.getClientId());
+            child.setClientCode(parent.getClientCode());
+            child.setClientName(parent.getClientName());
             child.setParentId(request.getParentId());
             child.setAncestors((parent.getAncestors() == null ? "0" : parent.getAncestors())
                     + "," + request.getParentId());

@@ -1,15 +1,17 @@
 /**
  * 红外测温枪MES —— 界面主题
- * 参照设计稿：蓝色顶栏 + 浅灰工作区 + 白色圆角卡片 + 蓝色主按钮 + 轻量状态标签
+ * 参照 Wallard 风格设计稿：白色顶栏 + 浅灰蓝工作区 + 大圆角白色卡片
+ * + 亮蓝主色 + 侧边栏左侧蓝色竖条选中态 + 轻量胶囊标签
  * 该文件在 main.js 中最后引入，用于覆盖 element-ui / ruoyi 的默认样式
  */
 
-$mes-primary: #2563eb;
-$mes-primary-hover: #1d4ed8;
-$mes-primary-bg: #eaf1fe;
-$mes-header-start: #2b7cf0;
-$mes-header-end: #1f6ad8;
-$mes-bg: #f4f6fa;
+$mes-primary: #6f95cc;
+$mes-primary-hover: #5c85bc;
+$mes-primary-bg: #e8f0fb;
+$mes-bg: #f6f8fc;        /* 主内容区极淡蓝白 */
+$mes-page: #e0e7f2;      /* 页面外部浅蓝灰 */
+$mes-navbar: #d6e2f5;    /* 顶栏莫兰迪浅蓝 */
+$mes-sidebar: #f2f6fb;   /* 侧边栏浅蓝白 */
 $mes-card: #ffffff;
 $mes-text: #1f2937;
 $mes-text-sub: #6b7280;
@@ -18,18 +20,18 @@ $mes-radius: 8px;
 
 /* ---------- 设计令牌（统一改这里即可换肤） ---------- */
 :root {
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
+  --color-primary: #6f95cc;
+  --color-primary-hover: #5c85bc;
   --color-primary-bg: #eaf1fe;
   --color-text: #1f2937;
   --color-text-secondary: #5b6472;
   --color-border: #e5e7eb;
-  --color-bg: #f4f6fa;
-  --radius-control: 6px;
-  --radius-card: 10px;
-  --radius-dialog: 12px;
+  --color-bg: #f6f8fc;
+  --radius-control: 8px;
+  --radius-card: 14px;
+  --radius-dialog: 14px;
   --shadow-card: 0 1px 3px rgba(17, 24, 39, 0.04);
-  --shadow-navbar: 0 2px 10px rgba(28, 78, 156, 0.18);
+  --shadow-navbar: none;
   --transition-control: 0.15s ease;
   --transition-expand: 0.2s ease;
 }
@@ -40,65 +42,67 @@ $mes-radius: 8px;
   outline-offset: 2px;
 }
 
-/* ---------- 基础 ---------- */
+/* ---------- 基础：浅蓝灰页面底，圆角浮岛承载内容 ---------- */
 html,
 body {
-  background: $mes-bg;
+  background: $mes-page;
   color: $mes-text;
 }
 
 .app-container {
   background: $mes-card;
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 20px !important;
   margin: 16px;
   box-shadow: 0 1px 3px rgba(17, 24, 39, 0.04);
 }
 
-/* ---------- 顶栏：蓝色 ---------- */
+/* ---------- 顶栏：莫兰迪浅蓝圆角浮岛 ---------- */
 .navbar {
-  background: linear-gradient(90deg, $mes-header-start 0%, $mes-header-end 100%) !important;
+  background: $mes-navbar !important;
   border-bottom: none !important;
-  box-shadow: 0 2px 10px rgba(28, 78, 156, 0.18);
+  box-shadow: 0 2px 10px rgba(91, 127, 199, 0.12) !important;
+  border-radius: 16px;
+  margin: 0 12px 8px;
 
   .hamburger-container,
   .breadcrumb-container,
   .right-menu-item,
   .right-menu-item i {
-    color: #ffffff !important;
+    color: #3f5170 !important;
   }
 
   .breadcrumb-container {
     .el-breadcrumb__inner,
     .el-breadcrumb__inner a,
     .el-breadcrumb__separator {
-      color: rgba(255, 255, 255, 0.88) !important;
+      color: #6d7f9e !important;
       font-weight: 400;
     }
     .el-breadcrumb__item:last-child .el-breadcrumb__inner {
-      color: #ffffff !important;
+      color: #2c3a55 !important;
       font-weight: 600;
     }
   }
 
   .right-menu-item.hover-effect:hover {
-    background: rgba(255, 255, 255, 0.16) !important;
+    background: rgba(255, 255, 255, 0.75) !important;
   }
 
   .avatar-wrapper .user-avatar {
-    border: 2px solid rgba(255, 255, 255, 0.75);
+    border: 2px solid #e8edf5;
   }
 }
 
-/* ---------- 侧边栏：白底 + 蓝色选中 ---------- */
+/* ---------- 侧边栏：米白底 + 蓝色选中 ---------- */
 .sidebar-container {
-  background: #ffffff !important;
-  box-shadow: 1px 0 0 $mes-border;
+  background: $mes-sidebar !important;
+  box-shadow: none;
 
   .logo-container,
   .sidebar-logo-container {
-    background: #ffffff !important;
-    border-bottom: 1px solid #f0f2f5;
+    background: $mes-sidebar !important;
+    border-bottom: 1px solid #e8eef6;
     .sidebar-title,
     h1 {
       color: $mes-text !important;
@@ -107,7 +111,7 @@ body {
   }
 
   .el-menu {
-    background: #ffffff !important;
+    background: $mes-sidebar !important;
     border-right: none !important;
   }
 
@@ -126,7 +130,7 @@ body {
     }
 
     &:hover {
-      background: #f2f5fa !important;
+      background: #e8eef8 !important;
       color: $mes-text !important;
     }
   }
@@ -148,37 +152,58 @@ body {
 
   /* 二级菜单缩进与浅色背景 */
   .el-submenu .el-menu {
-    background: #ffffff !important;
+    background: $mes-sidebar !important;
   }
 }
 
-/* ---------- 内容区标签页 ---------- */
+/* ---------- 内容区标签页（圆角浮岛 + 胶囊风） ---------- */
 .tags-view-container {
   background: #ffffff;
-  border-bottom: 1px solid #eef1f5;
-  box-shadow: none;
+  border-bottom: none;
+  box-shadow: 0 2px 10px rgba(91, 127, 199, 0.1);
+  border-radius: 14px;
+  margin: 0 12px;
+  width: calc(100% - 24px) !important;
 
   .tags-view-item {
     color: $mes-text-sub;
-    background: transparent;
+    background: #eef2f8;
     border: none;
-    border-radius: 6px 6px 0 0;
+    border-radius: 999px;
+    height: 26px;
+    line-height: 26px;
+    padding: 0 12px;
+    margin: 4px 3px;
+
+    &::before {
+      display: none;
+    }
+
+    .el-icon-close {
+      border-radius: 50%;
+      font-size: 12px;
+      width: 14px;
+      height: 14px;
+      line-height: 14px;
+
+      &:hover {
+        background: #dde6f3;
+        color: #4b5c7e;
+      }
+    }
 
     &.active {
       color: $mes-primary;
       background: $mes-primary-bg;
       border: none;
-
-      &::before {
-        background: $mes-primary;
-      }
+      font-weight: 600;
     }
   }
 }
 
 /* ---------- 按钮 ---------- */
 .el-button {
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 500;
 }
 
@@ -193,6 +218,40 @@ body {
   }
 }
 
+/* 语义色按钮同步莫兰迪柔化（雾蓝/鼠尾草/杏橙/豆沙粉） */
+.el-button--success {
+  background: #88b391;
+  border-color: #88b391;
+
+  &:hover,
+  &:focus {
+    background: #75a37f;
+    border-color: #75a37f;
+  }
+}
+
+.el-button--warning {
+  background: #d8a66f;
+  border-color: #d8a66f;
+
+  &:hover,
+  &:focus {
+    background: #c9955c;
+    border-color: #c9955c;
+  }
+}
+
+.el-button--danger {
+  background: #cf8d9b;
+  border-color: #cf8d9b;
+
+  &:hover,
+  &:focus {
+    background: #bd7a89;
+    border-color: #bd7a89;
+  }
+}
+
 .el-button--text {
   color: $mes-primary;
 }
@@ -200,7 +259,7 @@ body {
 /* ---------- 表单控件 ---------- */
 .el-input__inner,
 .el-textarea__inner {
-  border-radius: 6px;
+  border-radius: 8px;
   border-color: #dfe3ea;
 
   &:focus {
@@ -223,14 +282,14 @@ body {
   color: $mes-text;
 
   th.el-table__cell {
-    background: #f7f9fc !important;
+    background: #f2f6fb !important;
     color: #4b5563;
     font-weight: 600;
-    border-bottom: 1px solid #eef1f5;
+    border-bottom: 1px solid #e8eef6;
   }
 
   td.el-table__cell {
-    border-bottom: 1px solid #f2f4f7;
+    border-bottom: 1px solid #eef2f8;
   }
 
   &::before {
@@ -238,7 +297,7 @@ body {
   }
 
   .el-table__row:hover > td.el-table__cell {
-    background: #f5f8ff !important;
+    background: #f5f8fd !important;
   }
 }
 
@@ -293,13 +352,13 @@ body {
 
 /* ---------- 卡片 / 弹窗 ---------- */
 .el-card {
-  border-radius: 10px;
-  border-color: #eef1f5;
+  border-radius: 14px;
+  border-color: #eef1f7;
   box-shadow: 0 1px 3px rgba(17, 24, 39, 0.04) !important;
 }
 
 .el-dialog {
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
 
   .el-dialog__header {
@@ -339,23 +398,23 @@ body {
   .el-menu:not(.el-menu--collapse) {
     padding: 6px 0 14px;
 
-    /* 一级目录 = 分组标题（浅灰小字 + 左侧折叠箭头） */
+    /* 一级目录 = 分组标题（浅灰小字，参考 Wallard 分组标签） */
     > .el-submenu > .el-submenu__title {
       position: relative;
-      height: 38px;
-      line-height: 38px;
-      margin: 6px 8px 2px;
-      padding-left: 36px !important;
-      font-size: 13px;
+      height: 36px;
+      line-height: 36px;
+      margin: 8px 8px 2px;
+      padding-left: 20px !important;
+      font-size: 12px;
       font-weight: 600;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.04em;
       color: #9aa3af !important;
       background: transparent !important;
       border-radius: 6px;
 
       &:hover {
         color: #6b7280 !important;
-        background: #f7f9fc !important;
+        background: #e8eef8 !important;
       }
 
       i {
@@ -363,11 +422,10 @@ body {
       }
 
       .el-submenu__icon-arrow {
-        left: 16px;
-        right: auto !important;
-        margin-top: -4px;
-        font-size: 12px;
-        color: #b6bdc7 !important;
+        right: 12px !important;
+        margin-top: -3px;
+        font-size: 11px;
+        color: #c3cad4 !important;
         transition: transform 0.2s;
       }
     }
@@ -434,7 +492,7 @@ body {
 .sidebar-container .el-scrollbar__view,
 .sidebar-container .el-menu,
 .sidebar-container .el-submenu .el-menu {
-  background-color: #ffffff !important;
+  background-color: $mes-sidebar !important;
 }
 
 /* 普通菜单项：白底 + 深灰字 */
@@ -467,12 +525,25 @@ body {
 /* 悬浮 */
 .sidebar-container .el-menu .el-menu-item:hover,
 .sidebar-container .el-menu .el-submenu__title:hover {
-  background-color: #f4f7fb !important;
+  background-color: #e8eef8 !important;
 }
 
-/* 选中：淡蓝底 + 主蓝字 */
+/* 选中：淡蓝底 + 主蓝字 + 左侧柔和渐变竖条 */
 .sidebar-container .el-menu .el-menu-item.is-active {
+  position: relative;
   background-color: $mes-primary-bg !important;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 22px;
+    border-radius: 0 4px 4px 0;
+    background: linear-gradient(180deg, #8fb0dd, #6f95cc);
+  }
 }
 
 .sidebar-container .el-menu .el-menu-item.is-active,
@@ -481,73 +552,41 @@ body {
   color: $mes-primary !important;
 }
 
-/* 导航留白和状态反馈，让精简后的分组更容易浏览。 */
-.sidebar-container .el-menu:not(.el-menu--collapse) {
-  > .el-submenu > .el-submenu__title {
-    margin-top: 10px;
-    letter-spacing: 0.03em;
-  }
-  > .el-submenu > .el-menu > .el-menu-item {
-    margin-top: 3px;
-    margin-bottom: 3px;
-    border-radius: 8px;
-    transition: background-color 0.16s ease, color 0.16s ease;
-  }
-}
-
-.sidebar-container .el-menu .el-menu-item:focus-visible,
-.sidebar-container .el-menu .el-submenu__title:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: -2px;
-}
-
-/* ---------- 左侧「总」导航栏（域切换） ---------- */
+/* ---------- 左侧「总」导航栏（域切换）：圆角浮岛 ---------- */
 .rail {
   position: fixed;
-  left: 0;
-  top: 50px;
-  bottom: 0;
+  left: 12px;
+  top: 12px !important;
+  bottom: 12px;
   width: 72px;
   z-index: 1001;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 10px 0;
-  background: #ffffff;
-  border-right: 1px solid var(--color-border);
+  background: $mes-sidebar;
+  border-right: none;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.06);
   overflow-y: auto;
 
   .rail-item {
-    position: relative;
     width: 60px;
-    padding: 8px 0 6px;
+    padding: 8px 0 7px;
     margin-bottom: 4px;
-    border-radius: 8px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     cursor: pointer;
-    color: #5b6472;
-    transition: background-color var(--transition-control), color var(--transition-control);
-
-    // 联动提醒蓝点：该域下有未读的自动生成任务时显示
-    &__dot {
-      position: absolute;
-      top: 6px;
-      right: 12px;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #2563eb;
-      box-shadow: 0 0 0 2px #ffffff;
-      animation: rail-dot-pulse 1.8s ease-in-out infinite;
-    }
+    color: #6d7f9e;
+    transition: background-color var(--transition-control);
 
     i {
       font-size: 19px;
-      color: #7a828e;
-      transition: color var(--transition-control);
+      color: #7c8aa5;
+      transition: color var(--transition-control), transform 0.2s ease;
     }
 
     &__text {
@@ -557,61 +596,84 @@ body {
     }
 
     &:hover {
-      background: #f4f7fb;
+      background: #e8eef8;
+
+      i {
+        color: #5b7fc7;
+        transform: translateY(-1px);
+      }
     }
 
     &.active {
-      background: var(--color-primary-bg);
-      color: var(--color-primary);
+      background: #dde7f6;
+      color: #3d5a91;
       font-weight: 600;
 
       i {
-        color: var(--color-primary);
+        color: #3d5a91;
       }
     }
   }
 }
 
-@keyframes rail-dot-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.25); opacity: 0.72; }
-}
-
-/* 侧边栏整体右移，给左栏让位 */
+/* ---------- 浅蓝灰底浮岛布局：rail / 侧边栏 / 顶栏 / 标签条 / 主区各自圆角 ----------
+ * rail 12~84px | 缝 12px | 侧边栏 96~296px | 缝 12px | 主区 308px~右12px
+ * 主区内：顶栏圆角浮岛（左右缩 12px）+ 8px 缝 + 标签条圆角浮岛 + 内容
+ */
 .app-wrapper .sidebar-container {
-  left: 72px !important;
-  top: 50px !important;
-  height: calc(100% - 50px) !important;
+  left: 96px !important;
+  top: 12px !important;
+  bottom: 12px;
+  height: calc(100vh - 24px) !important;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.06);
 }
 
 .app-wrapper .main-container {
-  margin-left: 272px !important;
+  margin: 12px 12px 12px 308px !important;
+  min-height: calc(100vh - 24px);
+  border-radius: 20px;
+  background: $mes-bg;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.06);
+  transition: margin-left 0.28s;
 }
 
 .app-wrapper.hideSidebar .main-container {
-  margin-left: 126px !important;
+  margin-left: 96px !important;
 }
 
 .app-wrapper .fixed-header {
-  left: 0;
-  width: 100% !important;
-  z-index: 1002;
+  top: 12px !important;
+  left: 308px !important;
+  right: 12px !important;
+  width: calc(100% - 320px) !important;
+  background: transparent !important;
+  border-radius: 0;
 }
 
-.app-wrapper .tags-view-container {
-  margin-left: 272px;
-  width: calc(100% - 272px) !important;
+.app-wrapper.hideSidebar .fixed-header {
+  left: 96px !important;
+  width: calc(100% - 108px) !important;
 }
 
-.app-wrapper.mobile .main-container,
+.app-wrapper.mobile .main-container {
+  margin: 12px !important;
+}
+
 .app-wrapper.mobile .fixed-header {
+  left: 12px !important;
   margin-left: 0 !important;
-  width: 100% !important;
+  width: calc(100% - 24px) !important;
 }
 
-.app-wrapper.mobile .tags-view-container {
-  margin-left: 0;
-  width: 100% !important;
+/* 顶栏浮岛(50px) + 8px 缝 + 标签条(34px) + 12px 留白，内容区让位 */
+.app-wrapper .fixed-header + .app-main {
+  padding-top: 104px !important;
+}
+
+.app-wrapper .app-main {
+  min-height: calc(100vh - 104px);
 }
 
 /* ---------- 可访问性：跳过导航链接（平时隐藏，聚焦时出现） ---------- */
@@ -639,6 +701,15 @@ body {
   display: none !important;
 }
 
+/* 移动端仍使用抽屉导航；保留菜单切换入口和联动提醒。 */
+.app-wrapper.mobile .hamburger-container { display: block !important; }
+.app-wrapper.mobile .rail { display: flex; top: 70px !important; bottom: 12px; transition: transform .28s; }
+.app-wrapper.mobile .sidebar-container { left: 96px !important; top: 70px !important; bottom: 12px; height: calc(100vh - 82px) !important; }
+.app-wrapper.mobile.hideSidebar .rail { transform: translate3d(-120%, 0, 0); pointer-events: none; }
+.app-wrapper.mobile.hideSidebar .sidebar-container { transform: translate3d(-155%, 0, 0) !important; }
+.rail-item { position: relative; }
+.rail-item__dot { position: absolute; top: 6px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: #ed876d; box-shadow: 0 0 0 2px #f2f6fb; }
+
 /* ---------- 加载稳定性（减少 CLS） ---------- */
 /* 列表加载完成前后高度基本一致，避免表格/分页插入时页面跳动 */
 .el-table {
@@ -664,40 +735,39 @@ img {
   max-width: 100%;
 }
 
-/* ---------- 首页欢迎区 Hero ---------- */
+/* ---------- 首页欢迎区 Hero（浅色卡片风） ---------- */
 .home-hero {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin: 16px 16px 4px;
   padding: 24px 28px;
-  border-radius: 12px;
-  color: #ffffff;
-  background-image:
-    linear-gradient(100deg, rgba(11, 18, 32, 0.92) 0%, rgba(24, 56, 120, 0.72) 46%, rgba(11, 18, 32, 0.5) 100%),
-    url('~@/assets/images/themer.png');
-  background-size: cover;
-  background-position: center;
-  box-shadow: 0 8px 24px rgba(17, 40, 84, 0.16);
+  border-radius: 14px;
+  color: $mes-text;
+  background: $mes-card;
+  border: 1px solid #eef1f7;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.04);
 
   &__title {
     margin: 0;
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
-    letter-spacing: 0.6px;
-    color: #ffffff;
+    letter-spacing: 0.4px;
+    color: $mes-text;
   }
 
   &__sub {
     margin: 8px 0 0;
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.82);
+    color: $mes-text-sub;
   }
 
   &__tip {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    font-weight: 600;
+    color: $mes-primary;
+    background: $mes-primary-bg;
+    border: none;
     border-radius: 999px;
     padding: 6px 14px;
     white-space: nowrap;
@@ -708,8 +778,269 @@ img {
 .dashboard-container .panel-group,
 .home .panel-group {
   .card-panel {
-    border-radius: 10px;
-    border: 1px solid #eef1f5;
-    box-shadow: 0 1px 3px rgba(17, 24, 39, 0.04);
+    border-radius: 14px;
   }
+}
+
+/* ---------- 排班日历（分类/班组/个人三个视图共用） ---------- */
+
+/* 左侧类型/班组选择列表：彩色圆角卡片 */
+.el-group-list.el-radio-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  border: none !important;
+  gap: 4px;
+
+  .el-radio-button {
+    border-bottom: none !important;
+
+    .el-radio-button__inner {
+      width: 100%;
+      text-align: left;
+      padding: 10px 14px;
+      border-radius: 10px !important;
+      border: none !important;
+      background: #ffffff;
+      color: #6b7280;
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(17, 24, 39, 0.05);
+      transition: all 0.2s ease;
+    }
+
+    &:hover .el-radio-button__inner {
+      background: #f2f6fb;
+      color: $mes-text;
+      transform: translateX(2px);
+    }
+
+    &.is-active .el-radio-button__inner {
+      background: linear-gradient(135deg, #e8f0fb, #dfe9f8) !important;
+      color: #3d5a91 !important;
+      font-weight: 600;
+      box-shadow: inset 0 0 0 1.5px #8fb0dd, 0 3px 8px rgba(91, 127, 199, 0.14) !important;
+    }
+  }
+}
+
+/* 日历主体 */
+.el-calendar {
+  background: transparent;
+
+  .el-calendar__header {
+    padding: 10px 4px;
+
+    .el-calendar__title {
+      color: $mes-text;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .el-calendar__button-group .el-button {
+      border-radius: 999px;
+      border-color: #eceae4;
+      color: #6b7280;
+
+      &:hover {
+        color: $mes-primary;
+        border-color: $mes-primary;
+        background: $mes-primary-bg;
+      }
+    }
+  }
+
+  .el-calendar__body {
+    padding: 4px 4px 14px;
+  }
+
+  /* 表头：淡蓝灰 */
+  thead th {
+    background: #eef2f8;
+    color: #5b6c8f;
+    padding: 9px 0;
+    font-weight: 600;
+    border-bottom: none;
+  }
+
+  /* 单元格：圆角小卡片 */
+  .el-calendar-table td {
+    border: none;
+
+    .el-calendar-day {
+      height: 92px;
+      padding: 8px 10px;
+      margin: 2px;
+      border-radius: 12px;
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        background: #f2f6fd;
+        box-shadow: 0 3px 10px rgba(91, 127, 199, 0.08);
+      }
+    }
+
+    &.is-selected .el-calendar-day {
+      background: #e8f0fb;
+    }
+  }
+
+  /* 今天：雾蓝描边圈 */
+  .el-calendar-table td.is-today {
+    background: transparent;
+
+    .el-calendar-day {
+      box-shadow: inset 0 0 0 2px #7b9bd4;
+      background: #ffffff;
+
+      &:hover {
+        background: #ffffff;
+      }
+    }
+
+    .solar {
+      color: #3d5a91;
+      font-weight: 700;
+    }
+  }
+
+  /* 周六列淡藕、周日列淡杏（柔和周末氛围） */
+  .el-calendar-table td:nth-child(7):not(.prev):not(.next) .el-calendar-day {
+    background: #f5f2f8;
+  }
+  .el-calendar-table td:nth-child(1):not(.prev):not(.next) .el-calendar-day {
+    background: #f8f5f0;
+  }
+
+  .el-calendar-table .prev, .el-calendar-table .next {
+    .el-calendar-day { background: transparent; }
+    .solar, .lunar { color: #c5cdd9; }
+  }
+}
+
+/* 日期数字与农历 */
+.el-calendar-table .el-calendar-day {
+  .solar {
+    font-size: 16px;
+    font-weight: 700;
+    color: $mes-text;
+    line-height: 22px;
+  }
+
+  .lunar {
+    color: #a8a29e;
+    font-size: 12px;
+    line-height: 20px;
+  }
+
+  /* 农历节日/节气：玫粉 */
+  .lunar.festival {
+    color: #f472b6 !important;
+    font-weight: 600;
+  }
+}
+
+.el-calendar-table .current:nth-last-child(-n+2) .solar {
+  color: #ef6c57;
+}
+
+/* 班/休胶囊（莫兰迪） */
+.day-pill {
+  display: inline-block;
+  min-width: 24px;
+  text-align: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 18px;
+}
+
+.day-work {
+  background: linear-gradient(135deg, #9dbde0, #7fa3cd);
+  box-shadow: 0 2px 6px rgba(127, 163, 205, 0.25);
+}
+
+.day-rest {
+  background: linear-gradient(135deg, #a8cbae, #88b391);
+  box-shadow: 0 2px 6px rgba(136, 179, 145, 0.25);
+}
+
+/* 班次 chip（莫兰迪柔和渐变）：早班杏橙 / 中班雾蓝 / 晚班藕紫 */
+.grid-content {
+  padding: 3px 0;
+}
+
+.shift-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 2px 10px;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  i {
+    font-size: 12px;
+    flex: 0 0 auto;
+  }
+}
+
+.shift-morning {
+  background: linear-gradient(135deg, #e5bd92, #d8a66f);
+  box-shadow: 0 2px 6px rgba(216, 166, 111, 0.28);
+}
+
+.shift-noon {
+  background: linear-gradient(135deg, #9dbde0, #7fa3cd);
+  box-shadow: 0 2px 6px rgba(127, 163, 205, 0.28);
+}
+
+.shift-night {
+  background: linear-gradient(135deg, #a99fc9, #8d80b5);
+  box-shadow: 0 2px 6px rgba(141, 128, 181, 0.28);
+}
+
+/* ---------- 个人中心 ---------- */
+.app-container .el-card {
+  .el-card__header {
+    border-bottom: 1px solid #eef2f8;
+    font-weight: 600;
+    color: #2c3a55;
+  }
+
+  .list-group-striped {
+    .list-group-item {
+      border-bottom: 1px solid #f2f5fa;
+      padding: 11px 0;
+      color: #6d7f9e;
+      font-size: 13px;
+
+      .svg-icon {
+        margin-right: 6px;
+        color: #8fb0dd;
+      }
+
+      .pull-right {
+        color: #2c3a55;
+        font-weight: 500;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+}
+
+/* 用户头像：雾蓝描边圆 */
+.text-center .user-avatar {
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 2px #c7d8ee, 0 6px 16px rgba(91, 127, 199, 0.18);
 }

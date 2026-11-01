@@ -84,6 +84,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="produceDate != null "> and produce_date = #{produceDate}</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
         </where>
+        order by create_time desc, record_id desc
     </select>
     
     <select id="selectWmProductProduceByRecordId" parameterType="Long" resultMap="WmProductProduceResult">

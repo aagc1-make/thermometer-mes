@@ -390,10 +390,32 @@ export default {
     };
   },
   created() {
-    this.getList();
+    this.refreshFromRoute();
     this.getWarehouseList();
   },
+  activated() {
+    if (this.$route.path === '/mes/wm/itemrecpt') this.refreshFromRoute();
+  },
+  watch: {
+    '$route.query'() {
+      if (this.$route.path === '/mes/wm/itemrecpt') this.refreshFromRoute();
+    }
+  },
   methods: {
+    refreshFromRoute() {
+      const query = this.$route.query || {};
+      if (query.recptCode) {
+        this.queryParams.recptCode = String(query.recptCode);
+        this._assistantRecptCode = String(query.recptCode);
+      } else if (this._assistantRecptCode) {
+        if (this.queryParams.recptCode === this._assistantRecptCode) this.queryParams.recptCode = null;
+        this._assistantRecptCode = null;
+      }
+      this.queryParams.pageNum = 1;
+      this.getList();
+      const id = String(query.openRecptId || '');
+      if (/^\d+$/.test(id) && this.$auth.hasPermi('mes:wm:itemrecpt:query')) this.handleView({ recptId: id }, true);
+    },
     handleCreateVendorReturn(row) {
       this.$modal.confirm('根据该入库单的可退批次生成退供草稿？').then(() => createFromReceipt(row.recptId)).then(response => {
         this.$modal.msgSuccess('退供草稿已生成，请到采购退货中调整数量并拣货');
@@ -402,11 +424,13 @@ export default {
     /** 查询物料入库单列表 */
     getList() {
       this.loading = true;
-      listItemrecpt(this.queryParams).then(response => {
+      const sequence = this._receiptRequestSequence = (this._receiptRequestSequence || 0) + 1;
+      listItemrecpt(Object.assign({}, this.queryParams)).then(response => {
+        if (sequence !== this._receiptRequestSequence) return;
         this.itemrecptList = response.rows;
         this.total = response.total;
         this.loading = false;
-      });
+      }).catch(() => { if (sequence === this._receiptRequestSequence) this.loading = false; });
     },
     getWarehouseList(){
       getTreeList().then( response =>{
@@ -494,10 +518,11 @@ export default {
       this.optType = "add";
     },
     // 查询明细按钮操作
-    handleView(row){
+    handleView(row, fromAssistant = false){
       this.reset();
       const recptIds = row.recptId
       getItemrecpt(recptIds).then(response => {
+        if (fromAssistant && (this.$route.path !== '/mes/wm/itemrecpt' || String((this.$route.query || {}).openRecptId) !== String(recptIds))) return;
         this.form = response.data;
         this.warehouseInfo[0] = response.data.warehouseId;
         this.warehouseInfo[1] = response.data.locationId;

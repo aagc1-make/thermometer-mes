@@ -11,6 +11,7 @@ import com.ktg.common.utils.DateUtils;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.WmProductSalesLine;
 import com.ktg.mes.wm.domain.tx.ProductSalesTxBean;
+import com.ktg.mes.wm.domain.vo.WorkorderProductSaleVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -210,5 +211,23 @@ public class WmProductSalesServiceImpl implements IWmProductSalesService
     public AjaxResult getSaleRecord(Long clientId) {
         List<WmProductSales> saleRecordVOS = wmProductSalesMapper.getSaleRecord(clientId);
         return AjaxResult.success(saleRecordVOS);
+    }
+
+    /**
+     * 查询"工单生成的产品"可售清单
+     *
+     * @param query 过滤条件（工单编号/产品编码/产品名称/是否只看可售/排除行）
+     * @return 工单成品可售清单
+     */
+    @Override
+    public List<WorkorderProductSaleVO> selectWorkorderProductsForSale(WorkorderProductSaleVO query) {
+        if (query == null) {
+            query = new WorkorderProductSaleVO();
+        }
+        if (StringUtils.isEmpty(query.getOnlyAvailable())) {
+            // 销售出库默认只列还能卖的数量，避免把已发完的工单也列出来
+            query.setOnlyAvailable("Y");
+        }
+        return wmProductSalesMapper.selectWorkorderProductForSale(query);
     }
 }

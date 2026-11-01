@@ -35,6 +35,9 @@ public interface WmMaterialStockMapper
      */
     public List<WmMaterialStock> selectWmMaterialStockList(WmMaterialStock wmMaterialStock);
 
+    /** 生产领料可拣库存；在调用方的库存锁事务内读取，不分页。 */
+    List<WmMaterialStock> selectIssuePickStocks(@Param("itemId") Long itemId);
+
     /**
      * 模糊查询库存记录列表
      *

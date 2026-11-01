@@ -12,6 +12,9 @@
 
     <panel-group />
 
+    <!-- 以工单为核心的流水线：13 步全链路，当前步高亮、下一步红点提醒 -->
+    <workorder-pipeline />
+
     <el-row :gutter="32" style="padding:16px 16px 0;margin-bottom:32px;">
         <el-card>
             <div slot="header" class="clearfix">
@@ -92,6 +95,7 @@ import {getHomeList} from "@/api/mes/pro/workorder";
 import {getMyCharts} from "@/api/mes/report/chart";
 import Chart from "./mes/report/chart/chart.vue"
 import PanelGroup from './dashboard/PanelGroup'
+import WorkorderPipeline from './dashboard/WorkorderPipeline'
 import LineChart from './dashboard/LineChart'
 import RaddarChart from './dashboard/RaddarChart'
 import PieChart from './dashboard/PieChart'
@@ -121,6 +125,7 @@ export default {
   components: {
     Chart,
     PanelGroup,
+    WorkorderPipeline,
     LineChart,
     RaddarChart,
     PieChart,
@@ -165,6 +170,10 @@ export default {
       if (row && row.workorderId) this.$router.push({ path: '/mes/pro/workorder', query: { openWorkorderId: String(row.workorderId) } }).catch(() => {});
     },
     getCharts(){
+      if (!this.$auth.hasPermi('mes:report:chart:list')) {
+        this.chartList = [];
+        return;
+      }
       getMyCharts().then(response => {
         this.chartList = response.data.map(item => {
             if(typeof item.options === 'string'){

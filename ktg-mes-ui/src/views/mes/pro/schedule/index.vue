@@ -81,6 +81,8 @@
         <GanttChar class="left-container" ref="ganttChar" :tasks="tasks"></GanttChar>
       </div>
     </div>
+    <p class="schedule-highlight-hint">黄色提示：最近 10 分钟创建、已确认且尚未排产的工单。</p>
+    <el-alert v-if="scheduleHighlightError" title="部分工单的排产状态暂时无法确认，已暂停对这些工单的高亮提示。" type="warning" :closable="false" show-icon />
     <el-table
       v-loading="loading"
       :data="workorderList"
@@ -274,6 +276,7 @@
 </template>
 
 <script>
+import pipelineWorkorderContext from '@/mixins/pipelineWorkorderContext'
 import { listWorkorder, getWorkorder, delWorkorder, addWorkorder, updateWorkorder } from "@/api/mes/pro/workorder";
 import {listGanttTaskList, listProtask} from "@/api/mes/pro/protask";
 import { listProductprocess } from "@/api/mes/pro/routeprocess";
@@ -283,6 +286,7 @@ import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
 export default {
+  mixins: [pipelineWorkorderContext],
   name: "Workorder",
   dicts: ['mes_order_status','mes_workorder_sourcetype'],
   components: {
@@ -308,8 +312,10 @@ export default {
       multiple: true,
       // 生产工单表格数据
       workorderList: [],
-      // 已排产的工单 ID 集合（用于高亮"待排产"的工单行）
-      scheduledWorkorderIds: [],
+      // 只对已查询确认无任务的新工单提示，查询失败不视为未排产。
+      unscheduledWorkorderIds: [],
+      scheduleHighlightError: false,
+      highlightClock: Date.now(),
       // 生产工单树选项
       workorderOptions: [],
       //当前生产工单中产品对应的工序列表
@@ -355,34 +361,72 @@ export default {
   created() {
     this.getList();
     this.getGanttTasks();
+    this.startHighlightTimer();
+  },
+  activated() {
+    if (this._scheduleDeactivated) {
+      this._scheduleDeactivated = false;
+      this.startHighlightTimer();
+      this.getList();
+    }
+  },
+  deactivated() {
+    this._scheduleDeactivated = true;
+    this.stopHighlightTimer();
+  },
+  beforeDestroy() {
+    this.stopHighlightTimer();
   },
   methods: {
-    /** 查询生产工单列表 */
-    getList() {
-      this.loading = true;
-      listWorkorder(this.queryParams).then(response => {
-        this.workorderList = this.handleTree(response.rows, "workorderId", "parentId");
-        this.total = response.total;
-        this.loading = false;
-        this.loadScheduledWorkorderIds();
-      });
+    startHighlightTimer() {
+      this.stopHighlightTimer();
+      this.highlightClock = Date.now();
+      this._highlightTimer = setInterval(() => { this.highlightClock = Date.now(); }, 15000);
     },
-    /** 拉取已有生产任务的工单 ID，用于区分"待排产"行 */
-    loadScheduledWorkorderIds() {
-      listProtask({ pageNum: 1, pageSize: 1000 }).then(response => {
-        const ids = (response.rows || []).map(item => item.workorderId);
-        this.scheduledWorkorderIds = [...new Set(ids)];
-      }).catch(() => {
-        this.scheduledWorkorderIds = [];
-      });
+    stopHighlightTimer() {
+      if (this._highlightTimer) clearInterval(this._highlightTimer);
+      this._highlightTimer = null;
+    },
+    isRecentConfirmed(row) {
+      if (!row || row.status !== 'CONFIRMED' || row.workorderId == null || !row.createTime) return false;
+      const time = new Date(typeof row.createTime === 'string' ? row.createTime.replace(' ', 'T') : row.createTime).getTime();
+      const age = Date.now() - time;
+      return Number.isFinite(time) && age >= 0 && age < 10 * 60 * 1000;
+    },
+    /** 查询生产工单列表 */
+    async getList() {
+      const sequence = this._scheduleRequestSequence = (this._scheduleRequestSequence || 0) + 1;
+      this.loading = true;
+      this.unscheduledWorkorderIds = [];
+      this.scheduleHighlightError = false;
+      try {
+        const response = await listWorkorder(Object.assign({}, this.queryParams));
+        if (sequence !== this._scheduleRequestSequence) return;
+        const rows = response.rows || [];
+        this.workorderList = this.handleTree(rows, "workorderId", "parentId");
+        this.total = response.total;
+        const candidates = rows.filter(row => this.isRecentConfirmed(row));
+        const results = await Promise.all(candidates.map(async row => {
+          try {
+            const result = await listProtask({ pageNum: 1, pageSize: 1, workorderId: row.workorderId });
+            if (!result || !Array.isArray(result.rows) || result.total == null || !Number.isFinite(Number(result.total)) || Number(result.total) < 0 || (Number(result.total) > 0 && !result.rows.length)) return { error: true };
+            return Number(result.total) === 0 && result.rows.length === 0 ? { id: String(row.workorderId) } : {};
+          } catch (e) { return { error: true }; }
+        }));
+        if (sequence !== this._scheduleRequestSequence) return;
+        this.unscheduledWorkorderIds = results.filter(result => result.id).map(result => result.id);
+        this.scheduleHighlightError = results.some(result => result.error);
+      } finally {
+        if (sequence === this._scheduleRequestSequence) this.loading = false;
+      }
     },
     /**
-     * 待排产行高亮：工单已确认（CONFIRMED）但还没有任何生产任务。
-     * 排产保存后重新拉取，高亮随之消失。
+     * 短暂提示新建且尚未排产的工单；任务查询和时间条件都必须满足。
      */
     isUnscheduled(row) {
-      if (!row || row.status !== 'CONFIRMED') return false;
-      return this.scheduledWorkorderIds.indexOf(row.workorderId) === -1;
+      // 读取响应式时钟，使页面停留时高亮也能自动到期。
+      void this.highlightClock;
+      return this.isRecentConfirmed(row) && this.unscheduledWorkorderIds.indexOf(String(row.workorderId)) !== -1;
     },
     rowClassName({ row }) {
       return this.isUnscheduled(row) ? 'row-unscheduled' : '';
@@ -482,6 +526,7 @@ export default {
     /** 重置按钮操作 */
     resetQuery() {
       this.resetForm("queryForm");
+      this.clearPipelineWorkorderContext();
       this.handleQuery();
     },
     //从BOM行中直接新增
@@ -641,6 +686,7 @@ export default {
   position: relative;
   height: 100%;
 }
+.schedule-highlight-hint { margin: 12px 0; color: #7a705c; font-size: 12px; }
 
 /* 待排产工单行：已确认但还没有生产任务，闪烁提醒计划员去排产 */
 ::v-deep .el-table .row-unscheduled > td {
@@ -653,5 +699,8 @@ export default {
 @keyframes unscheduled-flash {
   0%, 100% { background-color: #fff8e1; }
   50% { background-color: #ffe9a8; }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::v-deep .el-table .row-unscheduled > td { animation: none; }
 }
 </style>

@@ -182,6 +182,14 @@
     <!-- 添加或修改过程检验单对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="960px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-alert
+          v-if="optType !== 'view' && inspectionTip.text"
+          class="ipqc-auto-hint"
+          :closable="false"
+          show-icon
+          :type="inspectionTip.type"
+          :title="inspectionTip.text"
+        />
         <el-row>
           <el-col :span="8">
             <el-form-item label="检验单编号" prop="ipqcCode">
@@ -249,12 +257,12 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="检测数量" prop="quantityCheck">
-              <el-input-number v-model="form.quantityCheck" :max="99999999" placeholder="请输入检测数量" />
+              <el-input-number v-model="form.quantityCheck" :max="99999999" placeholder="请输入检测数量" @change="handleCheckQuantityChanged" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-collapse>
-          <el-collapse-item>
+        <el-collapse v-model="expandedSections">
+          <el-collapse-item name="moreInfo">
             <template slot="title">
               更多信息<i class="header-icon el-icon-info"></i>
             </template>
@@ -302,12 +310,12 @@
             <el-row>
               <el-col :span="8">
                 <el-form-item label="任务名称" prop="taskName">
-                  <el-input v-model="form.taskCode" placeholder="请输入任务编号" />
+                  <el-input v-model="form.taskName" placeholder="请输入任务名称" />
                 </el-form-item>
               </el-col>
               <el-col :span="8">
                 <el-form-item label="不合格数" prop="quantityUnqualified">
-                  <el-input-number v-model="form.quantityUnqualified" :max="99999999" placeholder="请输入不合格数" />
+                  <el-input-number v-model="form.quantityUnqualified" :max="99999999" placeholder="请输入不合格数" @change="handleUnqualifiedChanged" />
                 </el-form-item>
               </el-col>
               <el-col :span="8">
@@ -400,7 +408,7 @@
       </el-tabs>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
-        <el-button type="success" @click="handleFinish" v-if="form.status =='PREPARE' && optType !='view'  && form.ipqcId !=null">完成</el-button>
+        <el-button type="success" @click="handleFinish" v-if="form.status =='PREPARE' && optType !='view'">完成检验</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
@@ -408,13 +416,22 @@
 </template>
 
 <script>
+import pipelineWorkorderContext from '@/mixins/pipelineWorkorderContext'
 import { listIpqc, getIpqc, delIpqc, addIpqc, updateIpqc } from "@/api/mes/qc/ipqc";
+import { listFeedback } from "@/api/mes/pro/feedback";
+import { listProtask } from "@/api/mes/pro/protask";
+import { listProductproduceline } from "@/api/mes/wm/productproduceline";
+import { listProductprocess } from "@/api/mes/pro/routeprocess";
+import { pendingTasks } from "@/utils/feedbackDefaults";
+import { findOpenIpqc, inspectionDefaults, pickInspectionFeedback, pickProduceLine, qualifiedFromCheck } from "@/utils/ipqcDefaults";
 import {genCode} from "@/api/system/autocode/rule"
 import WorkorderSelect from "@/components/workorderSelect/single.vue"
 import WorkstationSelect from "@/components/workstationSelect/simpletableSingle.vue"
 import Ipqcline from "./line.vue"
 import QCResutl from "../qcresult/index.vue";
+import { getUserProfile } from "@/api/system/user";
 export default {
+  mixins: [pipelineWorkorderContext],
   name: "Ipqc",
   components: {WorkorderSelect,WorkstationSelect,Ipqcline,QCResutl},
   dicts: ['mes_pqc_type','mes_qc_result','mes_order_status'],
@@ -440,6 +457,7 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      expandedSections: ['moreInfo'],
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -481,6 +499,14 @@ export default {
       },
       // 表单参数
       form: {},
+      // 当前登录用户
+      user: {},
+      // 自动带出过程：来源、提示文案
+      inspectionLoading: false,
+      inspectionTip: {
+        type: "info",
+        text: "选择生产工单后，系统按待检报工自动带出工序、工作站和检测数量，核对结论后点「完成检验」。"
+      },
       // 表单校验
       rules: {
         ipqcCode: [
@@ -535,6 +561,7 @@ export default {
     },
     // 表单重置
     reset() {
+      this.expandedSections = ['moreInfo'];
       this.form = {
         ipqcId: null,
         ipqcCode: null,
@@ -585,6 +612,10 @@ export default {
         updateTime: null
       };
       this.autoGenFlag = false;
+      this.inspectionLoading = false;
+      this.inspectionTip = { type: "info", text: "" };
+      // 作废还在飞的取数请求，避免关闭弹窗后旧结果写回新表单
+      this._inspectionRequestSequence = (this._inspectionRequestSequence || 0) + 1;
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -595,6 +626,7 @@ export default {
     /** 重置按钮操作 */
     resetQuery() {
       this.resetForm("queryForm");
+      this.clearPipelineWorkorderContext();
       this.handleQuery();
     },
     // 多选框选中数据
@@ -603,12 +635,35 @@ export default {
       this.single = selection.length!==1
       this.multiple = !selection.length
     },
-    /** 新增按钮操作 */
-    handleAdd() {
+    /** 新增按钮操作：待检报工优先带出整张检验单，用户只需核对结论 */
+    async handleAdd() {
       this.reset();
       this.open = true;
       this.title = "添加过程检验单";
       this.optType = "add";
+      // 自制工序检验是过程检验的常见场景，编号直接自动生成，检测日期取当天
+      this.form.ipqcType = "IPQC";
+      this.form.inspectDate = this.formatDate(new Date(), "yyyy-MM-dd");
+      this.form.checkResult = "ACCEPT";
+      this.autoGenFlag = true;
+      this.handleAutoGenChange(true);
+      this.inspectionTip = { type: "info", text: "正在读取待检报工…" };
+      await this.ensureCurrentUser();
+      // 从首页流水线点进来时带着工单上下文，直接按该工单带出待检来源
+      const workorderId = Number(this.queryParams.workorderId);
+      await this.loadInspectionDefaults(workorderId > 0 ? workorderId : null);
+    },
+    /** 个人资料还没回来时补一次，检测人员默认当前用户 */
+    async ensureCurrentUser() {
+      if (!this.user || !this.user.userName) {
+        try {
+          const response = await getUserProfile();
+          this.user = response.data || this.user || {};
+        } catch (e) {
+          // 取不到就保持手工填写，不阻断新增
+        }
+      }
+      if (!this.form.inspector) this.form.inspector = this.user.nickName || this.user.userName || null;
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -616,6 +671,8 @@ export default {
       const ipqcId = row.ipqcId || this.ids
       getIpqc(ipqcId).then(response => {
         this.form = response.data;
+        // 库里带时分秒的日期先截成 yyyy-MM-dd，避免日期框回填成空
+        if (this.form.inspectDate) this.form.inspectDate = this.normalizeInspectDate(this.form.inspectDate);
         this.open = true;
         this.title = "修改过程检验单";
         this.optType = "edit";
@@ -627,6 +684,8 @@ export default {
       const ipqcIds = row.ipqcId
       getIpqc(ipqcIds).then(response => {
         this.form = response.data;
+        // 库里带时分秒的日期先截成 yyyy-MM-dd，避免日期框回填成空
+        if (this.form.inspectDate) this.form.inspectDate = this.normalizeInspectDate(this.form.inspectDate);
         this.open = true;
         this.title = "查看检验单信息";
         this.optType = "view";
@@ -653,23 +712,36 @@ export default {
         }
       });
     },
-    //点击完成
+    //点击完成：新建时先存草稿再置完成，一次点击走通"建单+放行报工"
     handleFinish(){
-      let that = this;
       if(this.form.checkResult == null){
-        this.$modal.msgError("请选择检测结果！");
+        this.$modal.msgError("请选择检测结论！");
         return;
       }
-
       this.$refs["form"].validate(valid => {
-        if (valid) {
-          this.$modal.confirm('是否完成检验单编制？【完成后将不能更改】').then(function(){
-            that.form.status = 'FINISHED';
-            that.submitForm();
-            that.open = false;
-          });
+        if (!valid) return;
+        const message = this.form.ipqcId == null
+          ? '确认保存并完成检验？【完成后将不能更改】'
+          : '是否完成检验单编制？【完成后将不能更改】';
+        this.$modal.confirm(message).then(() => this.finishInspection()).catch(() => {});
+      });
+    },
+    /** 完成检验：新建先落草稿，再由修改接口置为 FINISHED，联动才会按来源放行报工 */
+    async finishInspection(){
+      try {
+        if(this.form.ipqcId == null){
+          const response = await addIpqc(Object.assign({}, this.form, { status: "PREPARE" }));
+          this.form.ipqcId = response.data;
         }
-        });
+        await updateIpqc(Object.assign({}, this.form, { status: "FINISHED" }));
+        this.form.status = "FINISHED";
+        this.$modal.msgSuccess("检验完成");
+        this.open = false;
+        this.getList();
+      } catch (e) {
+        const message = (e && (e.msg || e.message)) || "完成检验失败，请刷新后重试";
+        this.$modal.msgError(message);
+      }
     },
 
     /** 删除按钮操作 */
@@ -693,18 +765,159 @@ export default {
       this.$refs.woSelect.handleOpen(this.form.workorderId)
     },
     onWorkorderSelected(row){
-      if(row != undefined && row != null){
-        this.form.workorderId = row.workorderId;
-        this.form.workorderCode = row.workorderCode;
-        this.form.workorderName = row.workorderName;
-        this.form.itemId = row.productId;
-        this.form.itemCode = row.productCode;
-        this.form.itemName = row.productName;
-        this.form.specification = row.productSpc;
-        this.form.unitOfMeasure = row.unitOfMeasure;
-        this.form.unitName = row.unitName
-
+      if(row == undefined || row == null) return;
+      this.form.workorderId = row.workorderId;
+      this.form.workorderCode = row.workorderCode;
+      this.form.workorderName = row.workorderName;
+      this.form.itemId = row.productId;
+      this.form.itemCode = row.productCode;
+      this.form.itemName = row.productName;
+      this.form.specification = row.productSpc;
+      this.form.unitOfMeasure = row.unitOfMeasure;
+      this.form.unitName = row.unitName;
+      // 换工单就重新带出待检来源，避免沿用上一个工单的工序和数量
+      this.clearInspectionSource();
+      this.loadInspectionDefaults(row.workorderId);
+    },
+    /** 清空来源相关字段（换工单时用） */
+    clearInspectionSource(){
+      Object.assign(this.form, {
+        taskId: null,
+        taskCode: null,
+        taskName: null,
+        workstationId: null,
+        workstationCode: null,
+        workstationName: null,
+        processId: null,
+        processCode: null,
+        processName: null,
+        quantityCheck: null,
+        quantityQualified: null,
+        quantityUnqualified: null,
+        quantityLaborScrap: 0,
+        quantityMaterialScrap: 0,
+        quantityOtherScrap: 0,
+        crQuantity: 0,
+        majQuantity: 0,
+        minQuantity: 0,
+        sourceDocType: null,
+        sourceDocId: null,
+        sourceDocCode: null,
+        sourceLineId: null
+      });
+    },
+    /**
+     * 按"待检报工 → 最近报工 → 待报工工序"的顺序带出检验单。
+     * 有产品产出行时一并写入来源单据：完成检验才会放行报工，否则只是一张孤儿单。
+     */
+    async loadInspectionDefaults(workorderId){
+      const sequence = this._inspectionRequestSequence = (this._inspectionRequestSequence || 0) + 1;
+      this.inspectionLoading = true;
+      try {
+        let feedbacks = [];
+        if(workorderId){
+          const response = await listFeedback({ workorderId: workorderId, pageNum: 1, pageSize: 50 });
+          feedbacks = (response && response.rows) || [];
+        }else{
+          // 没有工单上下文时，用最近一张待检报工作为默认检验对象
+          const response = await listFeedback({ status: "UNCHECK", pageNum: 1, pageSize: 10 });
+          feedbacks = (response && response.rows) || [];
+        }
+        if(sequence !== this._inspectionRequestSequence) return;
+        const feedback = pickInspectionFeedback(feedbacks);
+        const targetId = workorderId || (feedback && feedback.workorderId) || null;
+        if(!targetId){
+          this.inspectionTip = { type: "warning", text: "当前没有待检报工：先在生产报工执行报工，或在工单下拉里选工单后手工填写。" };
+          return;
+        }
+        this.form.workorderId = targetId;
+        if(feedback){
+          this.form.workorderCode = feedback.workorderCode;
+          this.form.workorderName = feedback.workorderName;
+        }
+        let line = null;
+        if(feedback && feedback.status === "UNCHECK"){
+          const lineResponse = await listProductproduceline({ feedbackId: feedback.recordId });
+          if(sequence !== this._inspectionRequestSequence) return;
+          line = pickProduceLine((lineResponse && lineResponse.rows) || [], feedback);
+          if(line){
+            const existingResponse = await listIpqc({ sourceLineId: line.lineId, pageNum: 1, pageSize: 10 });
+            if(sequence !== this._inspectionRequestSequence) return;
+            const opened = findOpenIpqc((existingResponse && existingResponse.rows) || [], line);
+            if(opened){
+              // 报工执行时已自动建单：直接打开它，别再建一张放行不了的重复单
+              this.form = opened;
+              this.optType = "edit";
+              this.autoGenFlag = false;
+              this.title = "填写过程检验单（系统已自动生成 " + opened.ipqcCode + "）";
+              this.fillInspectionResult();
+              this.inspectionTip = { type: "success", text: "已打开系统为该报工自动生成的检验单 " + opened.ipqcCode + "，合格数已按检测数量填好，核对后点「完成检验」。" };
+              return;
+            }
+          }
+        }
+        let task = null;
+        if(!feedback){
+          const taskResponse = await listProtask({ workorderId: targetId, pageNum: 1, pageSize: 200 });
+          if(sequence !== this._inspectionRequestSequence) return;
+          const rows = (taskResponse && taskResponse.rows) || [];
+          const processes = await this.loadRouteProcessOrder(rows);
+          if(sequence !== this._inspectionRequestSequence) return;
+          task = pendingTasks(rows, processes)[0] || null;
+        }
+        Object.assign(this.form, inspectionDefaults({
+          feedback: feedback,
+          task: task,
+          line: line,
+          inspector: this.form.inspector,
+          today: this.form.inspectDate
+        }));
+        if(line){
+          this.inspectionTip = { type: "success", text: "已按待检报工 " + feedback.feedbackCode + " 带出「" + (this.form.processName || this.form.itemName) + "」与工作站「" + (this.form.workstationName || this.form.workstationCode || "-") + "」，检测数量 " + this.form.quantityCheck + "；核对结论后点「完成检验」。" };
+        }else if(task){
+          this.inspectionTip = { type: "info", text: "该工单还没有待检报工，已按待报工工序「" + (task.processName || task.taskName) + "」带出检测数量 " + this.form.quantityCheck + "。" };
+        }else if(feedback){
+          this.inspectionTip = { type: "info", text: "已按报工 " + (feedback.feedbackCode || "-") + " 带出检测数量 " + this.form.quantityCheck + "；该报工没有待检产出行，本次只作为手工检验记录。" };
+        }else{
+          this.inspectionTip = { type: "info", text: "该工单还没有排产任务，请手工填写工序、工作站和检测数量。" };
+        }
+      } catch (e) {
+        if(sequence === this._inspectionRequestSequence){
+          this.inspectionTip = { type: "warning", text: "待检来源读取失败，请刷新后重试，或手工选择工单、工序和数量。" };
+        }
+      } finally {
+        if(sequence === this._inspectionRequestSequence) this.inspectionLoading = false;
       }
+    },
+    /** 工艺路线顺序，用于挑"第一道待报工工序" */
+    async loadRouteProcessOrder(tasks){
+      const productId = (tasks[0] || {}).itemId || this.form.itemId;
+      if(productId == undefined || productId == null) return [];
+      try {
+        const response = await listProductprocess(productId);
+        return (response && response.data) || [];
+      } catch (e) {
+        return [];
+      }
+    },
+    /** 打开已有的自动检验单时，把结果类字段补成可直接完成的默认值 */
+    fillInspectionResult(){
+      const quantityCheck = Number(this.form.quantityCheck) || 0;
+      if(!this.form.inspector) this.form.inspector = this.user.nickName || this.user.userName || null;
+      this.form.inspectDate = this.normalizeInspectDate(this.form.inspectDate);
+      if(!this.form.checkResult) this.form.checkResult = "ACCEPT";
+      const qualified = Number(this.form.quantityQualified) || 0;
+      const unqualified = Number(this.form.quantityUnqualified) || 0;
+      if(qualified + unqualified === 0 && quantityCheck > 0){
+        this.form.quantityQualified = quantityCheck;
+        this.form.quantityUnqualified = 0;
+      }
+    },
+    /** 日期选择器只认 yyyy-MM-dd，库里带时分秒的值先截断，避免回填后显示空 */
+    normalizeInspectDate(value){
+      const text = value == null ? "" : String(value);
+      const matched = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return matched ? matched[1] + "-" + matched[2] + "-" + matched[3] : this.formatDate(new Date(), "yyyy-MM-dd");
     },
     handleWorkstationSelect(){
       this.$refs.wsSelect.handleOpen(this.form.workstationId)
@@ -717,7 +930,17 @@ export default {
       }
     },
     handleScrapChanged(){
-      this.form.quantityUnqualified = this.form.quantityLaborScrap + this.form.quantityMaterialScrap + this.form.quantityOtherScrap;
+      this.form.quantityUnqualified = (Number(this.form.quantityLaborScrap) || 0) +
+        (Number(this.form.quantityMaterialScrap) || 0) +
+        (Number(this.form.quantityOtherScrap) || 0);
+      this.handleUnqualifiedChanged();
+    },
+    /** 检测数量变化时按"合格 = 检测 - 不合格"配平，保存和完成都要求三者相等 */
+    handleCheckQuantityChanged(){
+      this.form.quantityQualified = qualifiedFromCheck(this.form.quantityCheck, this.form.quantityUnqualified);
+    },
+    handleUnqualifiedChanged(){
+      this.form.quantityQualified = qualifiedFromCheck(this.form.quantityCheck, this.form.quantityUnqualified);
     },
     //自动生成编码
     handleAutoGenChange(autoGenFlag){
@@ -742,6 +965,10 @@ export default {
 </script>
 
 <style scoped>
+.ipqc-auto-hint {
+  margin-bottom: 14px;
+}
+
 ::v-deep .el-table .row-auto-pending > td {
   background-color: #fff8e1 !important;
   animation: auto-pending-flash 1.6s ease-in-out infinite;

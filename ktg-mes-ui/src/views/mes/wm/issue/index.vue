@@ -121,8 +121,14 @@
           <dict-tag :options="dict.type.mes_issue_status" :value="scope.row.status"/>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="210" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button
+            v-if="['PREPARE', 'APPROVING'].includes(scope.row.status)"
+            type="text" size="mini" icon="el-icon-magic-stick"
+            :loading="picking && form.issueId === scope.row.issueId" :disabled="picking"
+            @click="handleQuickPick(scope.row)" v-hasPermi="['mes:wm:issueheader:edit']"
+          >一键拣货</el-button>
           <el-button
             size="mini"
             type="text"
@@ -135,10 +141,10 @@
             size="mini"
             type="text"
             icon="el-icon-shopping-cart-2"
-            v-if="scope.row.status =='APPROVING'"
+            v-if="['APPROVING', 'APPROVED'].includes(scope.row.status)"
             @click="handleStocking(scope.row)"
             v-hasPermi="['mes:wm:issueheader:edit']"
-          >执行拣货</el-button>   
+          >分配详情</el-button>
           <el-button
             size="mini"
             type="text"
@@ -168,12 +174,13 @@
     />
 
     <!-- 添加或修改生产领料单头对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="960px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+    <el-dialog :title="title" :visible.sync="open" width="1120px" class="issue-dialog" append-to-body
+      :close-on-click-modal="!picking" :close-on-press-escape="!picking" :show-close="!picking">
+      <el-form v-if="form.status === 'PREPARE'" ref="form" :model="form" :rules="rules" label-width="100px" :disabled="optType === 'view' || picking">
         <el-row>
           <el-col :span="8">
             <el-form-item label="领料单编号" prop="issueCode">
-              <el-input v-model="form.issueCode" placeholder="请输入领料单编号" />
+              <el-input v-model="form.issueCode" :readonly="autoGenFlag" placeholder="自动生成领料单编号" />
             </el-form-item>
           </el-col>
           <el-col :span="4">
@@ -187,7 +194,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="领料单名称" prop="issueName">
-              <el-input v-model="form.issueName" placeholder="请输入领料单名称" />
+              <el-input v-model="form.issueName" placeholder="选择工单后自动带入" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -204,7 +211,7 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="生产工单" prop="workorderCode">
-              <el-input v-model="form.workorderCode" placeholder="请选择生产工单" >
+              <el-input v-model="form.workorderCode" readonly placeholder="请选择生产工单" >
                 <el-button slot="append" icon="el-icon-search" @click="handleWorkorderSelect"></el-button>
               </el-input>
             </el-form-item>
@@ -212,7 +219,7 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="工作站" prop="workstationCode">
-              <el-input v-model="form.workstationCode" placeholder="请选择工作站" >
+              <el-input v-model="form.workstationCode" readonly placeholder="未指定，可按需选择" >
                 <el-button slot="append" icon="el-icon-search" @click="handleWorkstationSelect"></el-button>
               </el-input>
             </el-form-item>
@@ -247,26 +254,53 @@
           </el-col>
         </el-row>
       </el-form>
+      <div v-else class="issue-context">
+        <div class="issue-context__title">
+          <div><span class="issue-eyebrow">生产领料单</span><h3>{{ form.issueName || form.issueCode }}</h3></div>
+          <dict-tag :options="dict.type.mes_issue_status" :value="form.status" />
+        </div>
+        <div class="issue-context__fields">
+          <div><span>领料单号</span><strong>{{ form.issueCode }}</strong></div>
+          <div><span>生产工单</span><strong>{{ form.workorderCode || '未关联' }}</strong></div>
+          <div><span>工作站</span><strong>{{ form.workstationName || '随工单安排' }}</strong></div>
+          <div><span>需求时间</span><strong>{{ parseTime(form.requiredTime, '{y}-{m}-{d} {h}:{i}') || '未指定' }}</strong></div>
+          <div v-if="form.clientName"><span>客户</span><strong>{{ form.clientName }}</strong></div>
+        </div>
+      </div>
+      <div v-if="form.issueId && optType !== 'view' && ['PREPARE', 'APPROVING', 'APPROVED'].includes(form.status)" class="issue-pick-bar">
+        <div class="issue-pick-bar__icon"><i :class="form.status === 'APPROVED' ? 'el-icon-circle-check' : 'el-icon-magic-stick'"></i></div>
+        <div class="issue-pick-bar__content">
+          <h3>{{ form.status === 'APPROVED' ? '物料已拣齐，可以领出' : '整单物料，一键备齐' }}</h3>
+          <p>{{ form.status === 'APPROVED' ? '批次、库位与数量已填写完成，展开物料可核对分配明细。' : '自动按先进先出匹配批次和库位，补足剩余需求，拣齐后自动进入待领出。' }}</p>
+        </div>
+        <el-button v-if="form.status !== 'APPROVED'" type="primary" icon="el-icon-magic-stick" :loading="picking" @click="handleAutoPick" v-hasPermi="['mes:wm:issueheader:edit']">{{ picking ? '正在匹配整单库存' : '一键拣货' }}</el-button>
+        <template v-else>
+          <el-button :disabled="picking" icon="el-icon-edit" @click="handleAdjustPick" v-hasPermi="['mes:wm:issueheader:edit']">调整分配</el-button>
+          <el-button :disabled="picking" type="primary" icon="el-icon-video-play" @click="handleExecute(form)" v-hasPermi="['mes:wm:issueheader:edit']">执行领出</el-button>
+        </template>
+      </div>
+      <el-alert v-if="pickError" :title="pickError" type="warning" show-icon :closable="false" class="issue-pick-error" />
       <el-divider v-if="form.issueId !=null" content-position="center">物料信息</el-divider>
-      <el-card shadow="always" v-if="form.issueId !=null && form.status =='PREPARE'" class="box-card">
+      <el-card shadow="never" v-if="form.issueId !=null && form.status =='PREPARE'" class="box-card">
         <Issueline ref="line" :issueId="form.issueId" :warehouseId="form.warehouseId" :locationId="form.locationId" :areaId="form.areaId" :optType="optType"></Issueline>
       </el-card>
-      <el-card shadow="always" v-if="form.issueId !=null && form.status !='PREPARE'" class="box-card">
-        <IssueDetail ref="detail" :issueId="form.issueId" :optType="optType"></IssueDetail>
+      <el-card shadow="never" v-if="form.issueId !=null && form.status !='PREPARE'" class="box-card">
+        <IssueDetail ref="detail" :issueId="form.issueId" :status="form.status" :optType="optType"></IssueDetail>
       </el-card>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="saveForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
         <el-button type="warning" @click="submitToStock" v-if="form.status =='PREPARE' && form.issueId !=null && optType !='view' ">提 交</el-button>
-        <el-button type="warning" @click="submitToExecute" v-if="form.status =='APPROVING' && form.issueId !=null && optType !='view' ">提 交</el-button>
-        <el-button type="danger" @click="cancel"  v-if="form.status !='PREPARE' && form.status !='FINISHED' && optType !='view' " >取 消</el-button>
-        <el-button @click="close">关 闭</el-button>
+        <el-button :disabled="picking" @click="submitToExecute" v-if="form.status =='APPROVING' && form.issueId !=null && optType !='view' ">完成手工拣货</el-button>
+        <el-button :disabled="picking" type="text" @click="cancel" v-if="['APPROVING', 'APPROVED'].includes(form.status) && optType !='view'">撤销领料单</el-button>
+        <el-button :disabled="picking" @click="close">关 闭</el-button>
       </div>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { listIssueheader, getIssueheader, checkQuantity, delIssueheader, addIssueheader, updateIssueheader, execute } from "@/api/mes/wm/issueheader";
+import pipelineWorkorderContext from '@/mixins/pipelineWorkorderContext'
+import { listIssueheader, getIssueheader, checkQuantity, delIssueheader, addIssueheader, updateIssueheader, execute, autoPickIssue } from "@/api/mes/wm/issueheader";
 import WorkstationSelect from "@/components/workstationSelect/simpletableSingle.vue"
 import WorkorderSelect from "@/components/workorderSelect/single.vue"
 import {getTreeList} from "@/api/mes/wm/warehouse"
@@ -274,12 +308,16 @@ import {genCode} from "@/api/system/autocode/rule"
 import Issueline from "./line.vue";
 import IssueDetail from "./detail.vue";
 export default {
+  mixins: [pipelineWorkorderContext],
   name: "Issueheader",
   dicts: ['mes_issue_status'],
   components: {Issueline,IssueDetail,WorkstationSelect,WorkorderSelect},
   data() {
     return {
       autoGenFlag:false,
+      picking: false,
+      pickError: '',
+      defaultRequiredTime: null,
       optType: undefined,
       warehouseInfo:[],
       warehouseOptions:[],
@@ -396,6 +434,8 @@ export default {
     },
     // 表单重置
     reset() {
+      this.pickError = '';
+      this.defaultRequiredTime = this.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss");
       this.form = {
         issueId: null,
         issueCode: null,
@@ -420,7 +460,7 @@ export default {
         areaId: null,
         areaCode: null,
         areaName: null,
-        requiredTime: null,
+        requiredTime: this.defaultRequiredTime,
         issueDate: this.formatDate(new Date(),"yyyy-MM-dd HH:mm:ss"),
         status: 'PREPARE',
         remark: null,
@@ -444,6 +484,7 @@ export default {
     /** 重置按钮操作 */
     resetQuery() {
       this.resetForm("queryForm");
+      this.clearPipelineWorkorderContext();
       this.handleQuery();
     },
     // 多选框选中数据
@@ -453,11 +494,13 @@ export default {
       this.multiple = !selection.length
     },
     /** 新增按钮操作 */
-    handleAdd() {
+    async handleAdd() {
       this.reset();
       this.open = true;
       this.title = "添加生产领料单";
       this.optType = "add";
+      this.autoGenFlag = true;
+      await this.handleAutoGenChange(true);
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -483,6 +526,60 @@ export default {
         this.title = "领料单拣货";
         this.optType = "edit";
       });
+    },
+
+    async handleQuickPick(row) {
+      if (this.picking) return;
+      this.picking = true;
+      try {
+        const response = await getIssueheader(row.issueId);
+        this.form = response.data;
+        this.pickError = '';
+        this.optType = 'edit';
+        this.title = '生产领料 · 一键拣货';
+        this.open = true;
+        await this.$nextTick();
+      } finally {
+        this.picking = false;
+      }
+      await this.handleAutoPick();
+    },
+
+    async handleAutoPick() {
+      if (this.picking || !this.form.issueId) return;
+      this.picking = true;
+      this.pickError = '';
+      try {
+        if (this.form.status === 'PREPARE') {
+          const valid = await new Promise(resolve => this.$refs.form.validate(resolve));
+          if (!valid) return;
+          await updateIssueheader(this.form);
+        }
+        const response = await autoPickIssue(this.form.issueId);
+        this.form.status = response.data.status;
+        this.$modal.msgSuccess(`已完成 ${response.data.lineCount} 项物料拣货，可直接执行领出`);
+        this.$nextTick(() => { if (this.$refs.detail) this.$refs.detail.getListWithDetail(); });
+        this.getList();
+      } catch (error) {
+        this.pickError = error && error.message || '拣货未完成，请刷新核对库存后重试';
+      } finally {
+        this.picking = false;
+      }
+    },
+
+    async handleAdjustPick() {
+      if (this.picking) return;
+      this.picking = true;
+      this.pickError = '';
+      try {
+        await updateIssueheader({ issueId: this.form.issueId, status: 'APPROVING' });
+        this.form.status = 'APPROVING';
+        this.getList();
+      } catch (error) {
+        this.pickError = error && error.message || '暂时无法调整分配，请刷新后重试';
+      } finally {
+        this.picking = false;
+      }
     },
 
      // 查询明细按钮操作
@@ -595,6 +692,7 @@ export default {
         return execute(issueIds)//执行入库
       }).then(() => {
         this.getList();
+        if (this.open && this.form.issueId === issueIds) this.form.status = 'FINISHED';
         this.$modal.msgSuccess("出库成功");
       }).catch(() => {});
     },
@@ -627,7 +725,6 @@ export default {
       this.$refs.wsSelect.handleOpen(this.form.workstationId)
     },
     onWorkstationSelected(row){
-      debugger;
       if(row != undefined && row != null){
         this.form.workstationId = row.workstationId;
         this.form.workstationCode = row.workstationCode;
@@ -640,6 +737,14 @@ export default {
     },
     onWorkorderSelected(row){
       if(row != undefined && row != null){
+        const previousName = ((this.form.workorderName || this.form.workorderCode || '') + '领料').slice(0, 100);
+        if (!this.form.issueName || this.form.issueName === previousName) {
+          this.form.issueName = ((row.workorderName || row.workorderCode || '') + '领料').slice(0, 100);
+        }
+        if (!this.form.requiredTime || this.form.requiredTime === this.defaultRequiredTime) {
+          this.form.requiredTime = row.requestDate ? this.parseTime(row.requestDate, '{y}-{m}-{d} {h}:{i}:{s}') : this.defaultRequiredTime;
+          this.defaultRequiredTime = this.form.requiredTime;
+        }
         this.form.workorderId = row.workorderId;
         this.form.workorderCode = row.workorderCode;
         this.form.workorderName = row.workorderName;
@@ -651,8 +756,9 @@ export default {
     //自动生成编码
     handleAutoGenChange(autoGenFlag){
       if(autoGenFlag){
-        genCode('ISSUE_CODE').then(response =>{
-          this.form.issueCode = response;
+        const target = this.form;
+        return genCode('ISSUE_CODE').then(response =>{
+          if (target === this.form && this.autoGenFlag) this.form.issueCode = response;
         });
       }else{
         this.form.issueCode = null;
@@ -661,3 +767,27 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.issue-context { padding: 0 4px 22px; }
+.issue-context__title { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.issue-eyebrow { color: #8492a6; font-size: 12px; }
+.issue-context h3 { margin: 8px 0 20px; color: #25344a; font-size: 20px; }
+.issue-context__fields { display: flex; flex-wrap: wrap; gap: 20px 36px; }
+.issue-context__fields span { display: block; color: #8492a6; font-size: 12px; margin-bottom: 8px; }
+.issue-context__fields strong { color: #4a586c; font-size: 13px; font-weight: 500; }
+.issue-pick-bar { display: flex; align-items: center; gap: 18px; padding: 22px 24px; background: #f2f7ff; border-radius: 10px; margin: 8px 0 20px; }
+.issue-pick-bar__icon { color: #2276d2; font-size: 30px; }
+.issue-pick-bar__content { flex: 1; }
+.issue-pick-bar h3 { margin: 0 0 8px; color: #25344a; font-size: 17px; }
+.issue-pick-bar p { margin: 0; color: #738297; font-size: 13px; line-height: 1.7; }
+.issue-pick-error { margin-bottom: 18px; }
+.issue-dialog ::v-deep .el-dialog { max-width: calc(100vw - 40px); }
+.issue-dialog ::v-deep .el-dialog__body { padding-top: 16px; }
+.issue-dialog ::v-deep .el-card__body { padding: 8px; }
+@media (max-width: 760px) {
+  .issue-pick-bar { flex-wrap: wrap; padding: 18px; }
+  .issue-pick-bar__content { min-width: 180px; }
+  .issue-pick-bar > .el-button { width: 100%; margin: 0; }
+}
+</style>

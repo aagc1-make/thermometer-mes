@@ -150,7 +150,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="salesDate != null "> and sales_date = #{salesDate}</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
         </where>
-        order by create_time desc
+        order by create_time desc, sales_id desc
     </select>
     
     <select id="selectWmProductSalesBySalesId" parameterType="Long" resultMap="WmProductSalesResult">
@@ -185,6 +185,75 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectWmProductSalesVo"/>
         where
             client_id = #{clientId}
+    </select>
+
+    <!--
+      工单成品可售清单：已入库（FINISHED 产品入库行）− 已开单（未取消的销售出库行）。
+      行级 workorder_id 为空的历史数据回退到入库单头的 workorder_id；批次仅在唯一时回填，
+      多批次时留空由拣货按实际库存选择，避免把出库行锁死到无库存的批次。
+    -->
+    <select id="selectWorkorderProductForSale"
+            parameterType="com.ktg.mes.wm.domain.vo.WorkorderProductSaleVO"
+            resultType="com.ktg.mes.wm.domain.vo.WorkorderProductSaleVO">
+        select
+            r.workorder_id as workorderId,
+            w.workorder_code as workorderCode,
+            w.workorder_name as workorderName,
+            w.status as workorderStatus,
+            r.item_id as itemId,
+            w.product_code as itemCode,
+            w.product_name as itemName,
+            w.product_spc as specification,
+            w.unit_of_measure as unitOfMeasure,
+            w.unit_name as unitName,
+            r.batch_id as batchId,
+            r.batch_code as batchCode,
+            r.recpt_code as recptCode,
+            r.recpt_date as recptDate,
+            r.received_quantity as receivedQuantity,
+            coalesce(s.issued_quantity, 0) as issuedQuantity,
+            r.received_quantity - coalesce(s.issued_quantity, 0) as availableQuantity
+        from (
+            select coalesce(rl.workorder_id, rt.workorder_id) as workorder_id,
+                   rl.item_id as item_id,
+                   sum(rl.quantity_recived) as received_quantity,
+                   case when count(distinct rl.batch_code) = 1 then max(rl.batch_id) end as batch_id,
+                   case when count(distinct rl.batch_code) = 1 then max(rl.batch_code) end as batch_code,
+                   max(rt.recpt_date) as recpt_date,
+                   substring_index(group_concat(rt.recpt_code order by rt.recpt_id desc), ',', 1) as recpt_code
+            from wm_product_recpt_line rl
+                     inner join wm_product_recpt rt on rt.recpt_id = rl.recpt_id
+            where rt.status = 'FINISHED'
+              and coalesce(rl.workorder_id, rt.workorder_id) is not null
+            group by coalesce(rl.workorder_id, rt.workorder_id), rl.item_id
+        ) r
+        inner join pro_workorder w on w.workorder_id = r.workorder_id
+        left join (
+            select sl.workorder_id as workorder_id, sl.item_id as item_id, sum(sl.quantity_sales) as issued_quantity
+            from wm_product_sales_line sl
+                     inner join wm_product_sales sa on sa.sales_id = sl.sales_id
+            where sl.workorder_id is not null
+              and (sa.status is null or sa.status &lt;&gt; 'CANCELED')
+            <if test="excludeLineId != null">
+              and sl.line_id &lt;&gt; #{excludeLineId}
+            </if>
+            group by sl.workorder_id, sl.item_id
+        ) s on s.workorder_id = r.workorder_id and s.item_id = r.item_id
+        <where>
+            <if test="workorderCodeLike != null and workorderCodeLike != ''">
+                and w.workorder_code like concat('%', #{workorderCodeLike}, '%')
+            </if>
+            <if test="itemCodeLike != null and itemCodeLike != ''">
+                and w.product_code like concat('%', #{itemCodeLike}, '%')
+            </if>
+            <if test="itemNameLike != null and itemNameLike != ''">
+                and w.product_name like concat('%', #{itemNameLike}, '%')
+            </if>
+            <if test='onlyAvailable != null and onlyAvailable == "Y"'>
+                and r.received_quantity - coalesce(s.issued_quantity, 0) &gt; 0
+            </if>
+        </where>
+        order by w.workorder_code desc
     </select>
 
     <insert id="insertWmProductSales" parameterType="WmProductSales" useGeneratedKeys="true" keyProperty="salesId">

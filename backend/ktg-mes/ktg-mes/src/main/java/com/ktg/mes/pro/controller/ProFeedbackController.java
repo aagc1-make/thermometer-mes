@@ -4,6 +4,7 @@ import com.ktg.mes.wm.mapper.PostingLockMapper;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.collection.CollectionUtil;
@@ -19,6 +20,7 @@ import com.ktg.mes.pro.domain.*;
 import com.ktg.mes.pro.service.IProRouteProcessService;
 import com.ktg.mes.pro.service.IProTaskService;
 import com.ktg.mes.pro.service.IProWorkorderService;
+import com.ktg.mes.pro.service.FeedbackBatchScopeService;
 import com.ktg.mes.linkage.ProductionQualityLinkageService;
 import com.ktg.mes.linkage.ProductReceiptLinkageService;
 import com.ktg.mes.linkage.FormLinkagePolicy;
@@ -103,6 +105,9 @@ public class ProFeedbackController extends BaseController
 
     @Autowired
     private ProductReceiptLinkageService productReceiptLinkageService;
+
+    @Autowired
+    private FeedbackBatchScopeService feedbackBatchScopeService;
 
     @Autowired
     private IStorageCoreService storageCoreService;
@@ -296,6 +301,23 @@ public class ProFeedbackController extends BaseController
     @Transactional
     @PutMapping("/{recordId}")
     public AjaxResult execute(@PathVariable("recordId") Long recordId){
+        return executeInternal(recordId, null);
+    }
+
+    /** 在原有执行链中增加本次允许消耗的来源批次，所有质量及库存校验仍由原链执行。 */
+    @PreAuthorize("@ss.hasPermi('mes:pro:feedback:edit')")
+    @Log(title = "生产报工执行（指定批次）", businessType = BusinessType.UPDATE)
+    @Transactional
+    @PutMapping("/{recordId}/with-batches")
+    public AjaxResult executeWithBatches(@PathVariable("recordId") Long recordId,
+                                         @RequestBody Map<String, List<String>> allowedBatches) {
+        if (allowedBatches == null) {
+            throw new ServiceException("请提供报工消耗批次范围");
+        }
+        return executeInternal(recordId, allowedBatches);
+    }
+
+    private AjaxResult executeInternal(Long recordId, Map<String, List<String>> allowedBatches) {
 
         if(!StringUtils.isNotNull(recordId)){
             return AjaxResult.error("请先保存单据");
@@ -342,7 +364,18 @@ public class ProFeedbackController extends BaseController
 
         //根据当前工序的物料BOM配置，进行物料消耗
         //先生成消耗单
-        WmItemConsume itemConsume = wmItemConsumeService.generateItemConsume(feedback);
+        WmItemConsume itemConsume;
+        if (allowedBatches == null) {
+            itemConsume = wmItemConsumeService.generateItemConsume(feedback);
+        } else {
+            Map<String, List<String>> validated = feedbackBatchScopeService.validate(feedback, allowedBatches);
+            feedback.getParams().put(FeedbackBatchScopeService.PARAM_KEY, validated);
+            try {
+                itemConsume = wmItemConsumeService.generateItemConsume(feedback);
+            } finally {
+                feedback.getParams().remove(FeedbackBatchScopeService.PARAM_KEY);
+            }
+        }
         if(StringUtils.isNotNull(itemConsume)){
             //再执行库存消耗动作
             executeItemConsume(itemConsume);

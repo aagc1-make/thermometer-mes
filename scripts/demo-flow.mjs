@@ -1,5 +1,5 @@
 /**
- * 红外测温枪 MES —— 生产 10 台、销售 6 台、结存 4 台全流程演示脚本
+ * 红外测温枪 MES —— 生产 10 台、销售 6 台、结存 4 台全流程贯通脚本
  *
  * 依次执行：采购到货 → 来料检验(IQC) → 采购入库 → 生产工单 → 排产 →
  *          生产领料 → 生产报工 → 过程检验(IPQC) → 成品入库 → 出货检验(OQC) → 销售出库
@@ -177,7 +177,7 @@ async function createArrival({ code, name, vendorId, vendorCode, vendorName, lin
     await post('/mes/wm/arrivalnoticeline', {
       noticeId: notice.noticeId, itemId: ln.itemId, itemCode: ln.code, itemName: ln.name,
       specification: ln.spec, unitOfMeasure: ln.unit, unitName: ln.unitName,
-      quantityArrival: ln.qty, iqcCheck: 'Y', remark: '演示到货'
+      quantityArrival: ln.qty, iqcCheck: 'Y', remark: '首批到货'
     }, `新增到货行 ${ln.code}`);
   }
 
@@ -201,7 +201,7 @@ async function iqcArrival(notice) {
       vendorId: notice.vendorId, vendorCode: notice.vendorCode, vendorName: notice.vendorName,
       quantityRecived: ln.quantityArrival, quantityCheck: ln.quantityArrival,
       quantityQualified: ln.quantityArrival, quantityUnqualified: 0,
-      inspectDate: '2026-10-24 10:00:00', status: 'PREPARE', remark: '演示来料检验'
+      inspectDate: '2026-10-24 10:00:00', status: 'PREPARE', remark: '来料检验放行'
     }, `新增IQC ${ln.itemCode}`);
     const iqcId = created.data;
     const iqc = (await get(`/mes/qc/iqc/${iqcId}`)).data;
@@ -224,7 +224,7 @@ async function purchaseIn(notice, areaId, locId) {
     recptCode, recptName: notice.noticeName + ' 采购入库',
     noticeId: notice.noticeId, noticeCode: notice.noticeCode, poCode: notice.poCode,
     vendorId: notice.vendorId, vendorCode: notice.vendorCode, vendorName: notice.vendorName,
-    recptDate: '2026-10-24 10:30:00', remark: '演示采购入库'
+    recptDate: '2026-10-24 10:30:00', remark: '采购入库'
   }, '新增采购入库单');
 
   const recpt = (await rows('/mes/wm/itemrecpt/list', { recptCode }))[0];
@@ -252,7 +252,7 @@ async function purchaseIn(notice, areaId, locId) {
       quantity: rl.quantityRecived,
       batchId: rl.batchId, batchCode: rl.batchCode,
       warehouseId: WH.raw, warehouseCode: 'WH-RAW', warehouseName: '原料仓',
-      locationId: locId, areaId, remark: '演示上架'
+      locationId: locId, areaId, remark: '首批上架'
     }, `上架 ${rl.itemCode}`);
   }
 
@@ -281,7 +281,7 @@ async function createWorkorder({ code, name, productId, productCode, productName
     productId, productCode, productName, unitOfMeasure: unit,
     quantity: qty, requestDate: '2026-11-05 00:00:00',
     workorderType: 'SELF', clientId: CLIENT, clientCode: 'C-TG-001', clientName: '华东医疗器械经销有限公司',
-    remark: '测温枪演示工单'
+    remark: '测温枪首批生产工单'
   }, `新增工单 ${code}`);
   const workorderId = r.data;
   const wb = await rows('/mes/pro/workorderbom/list', { workorderId });
@@ -306,7 +306,7 @@ async function schedule(wo, routeId, tasks) {
       workstationId: t.station, routeId, processId: t.process,
       quantity: wo.detail.quantity, duration: t.duration,
       startTime: fmt(start), requestDate,
-      colorCode: t.color || '#00AEF3', isCheck: t.isCheck, remark: '演示排产'
+      colorCode: t.color || '#00AEF3', isCheck: t.isCheck, remark: '首批排产'
     }, `排产工序 ${t.process}`);
     created.push(t);
   }
@@ -323,7 +323,7 @@ async function issueMaterial(wo, task, lines) {
     workorderId: wo.workorderId, workorderCode: wo.detail.workorderCode,
     taskId: task.taskId, taskCode: task.taskCode,
     workstationId: task.workstationId, workstationCode: task.workstationCode, workstationName: task.workstationName,
-    issueDate: '2026-10-26 08:30:00', requiredTime: '2026-10-26 09:00:00', remark: '演示生产领料'
+    issueDate: '2026-10-26 08:30:00', requiredTime: '2026-10-26 09:00:00', remark: '生产领料'
   }, '新增领料单');
 
   const issue = (await rows('/mes/wm/issueheader/list', { issueCode }))[0];
@@ -333,7 +333,7 @@ async function issueMaterial(wo, task, lines) {
     await post('/mes/wm/issueline', {
       issueId: issue.issueId, itemId: ln.itemId, itemCode: ln.code, itemName: ln.name,
       specification: ln.spec, unitOfMeasure: ln.unit, unitName: ln.unitName,
-      quantityIssued: ln.qty, remark: '演示领料'
+      quantityIssued: ln.qty, remark: '首批领料'
     }, `新增领料行 ${ln.code}`);
   }
 
@@ -377,7 +377,7 @@ async function issueMaterial(wo, task, lines) {
       warehouseId: st.warehouseId, warehouseCode: st.warehouseCode, warehouseName: st.warehouseName,
       locationId: st.locationId, locationCode: st.locationCode, locationName: st.locationName,
       areaId: st.areaId, areaCode: st.areaCode, areaName: st.areaName,
-      remark: '演示领料明细'
+      remark: '首批领料明细'
     }, `领料明细 ${il.itemCode}`);
   }
 
@@ -408,7 +408,7 @@ async function feedback(wo, task, qty, isCheck, qualified, unqualified) {
     quantityFeedback: qty, quantityQualified: qualified,
     quantityUnquanlified: unqualified, quantityUncheck: 0,
     isCheck, feedbackTime: '2026-10-26 10:00:00',
-    lotNumber: 'TG-LOT-' + TS, status: 'PREPARE', remark: '演示报工'
+    lotNumber: 'TG-LOT-' + TS, status: 'PREPARE', remark: '首批报工'
   }, `新增报工 ${task.processName}`);
 
   const fb = (await rows('/mes/pro/feedback/list', { taskId: task.taskId }))[0];
@@ -440,7 +440,7 @@ async function ipqc(wo, fbRecord) {
     sourceDocType: 'FEEDBACK', sourceDocId: produce.recordId, sourceDocCode: produce.workorderCode,
     sourceLineId: pl.lineId,
     quantityCheck: qty, quantityQualified: qty, quantityUnqualified: 0,
-    inspectDate: '2026-10-26 11:00:00', status: 'PREPARE', remark: '演示过程检验'
+    inspectDate: '2026-10-26 11:00:00', status: 'PREPARE', remark: '过程检验'
   }, '新增过程检验单');
 
   const ipqcId = created.data;
@@ -461,7 +461,7 @@ async function productIn(wo, qty) {
     workorderId: wo.workorderId, workorderCode: wo.detail.workorderCode, workorderName: wo.detail.workorderName,
     itemId: ITEM.fg, itemCode: 'TG-FG-001', itemName: '红外测温枪整机',
     specification: 'TG-300 便携式红外测温枪', unitOfMeasure: 'TAI', unitName: '台',
-    recptDate: '2026-10-26 14:00:00', remark: '演示成品入库'
+    recptDate: '2026-10-26 14:00:00', remark: '成品入库'
   }, '新增成品入库单');
 
   const recpt = (await rows('/mes/wm/productrecpt/list', { recptCode }))[0];
@@ -474,7 +474,7 @@ async function productIn(wo, qty) {
   await post('/mes/wm/productrecptline', {
     recptId: recpt.recptId, itemId: ITEM.fg, itemCode: 'TG-FG-001', itemName: '红外测温枪整机',
     specification: 'TG-300 便携式红外测温枪', unitOfMeasure: 'TAI', unitName: '台',
-    quantityRecived: qty, batchId: st.batchId, batchCode: st.batchCode, remark: '演示入库行'
+    quantityRecived: qty, batchId: st.batchId, batchCode: st.batchCode, remark: '入库行'
   }, '新增成品入库行');
 
   let head = (await get(`/mes/wm/productrecpt/${recpt.recptId}`)).data;
@@ -490,7 +490,7 @@ async function productIn(wo, qty) {
       quantity: rl.quantityRecived, batchId: rl.batchId, batchCode: rl.batchCode,
       warehouseId: WH.fg, warehouseCode: 'WH-FG', warehouseName: '成品仓',
       locationId: LOC.fg, locationCode: 'L-FG', locationName: '成品区',
-      areaId: AREA.fg, areaCode: 'FG-01', areaName: '成品库位', remark: '演示成品上架'
+      areaId: AREA.fg, areaCode: 'FG-01', areaName: '成品库位', remark: '成品上架'
     }, '成品上架');
   }
 
@@ -511,7 +511,7 @@ async function sales(qty) {
     clientId: CLIENT, clientCode: 'C-TG-001', clientName: '华东医疗器械经销有限公司',
     clientNick: '华东医疗', salesDate: '2026-10-27 09:00:00', soCode: 'SO' + TS,
     recipient: '陈经理', tel: '13900001001', address: '上海市浦东新区张江路 88 号',
-    carrier: '顺丰速运', shippingNumber: 'SF' + TS, status: 'PREPARE', remark: '演示销售出库'
+    carrier: '顺丰速运', shippingNumber: 'SF' + TS, status: 'PREPARE', remark: '销售出库'
   }, '新增销售出库单');
 
   const sale = (await rows('/mes/wm/productsales/list', { salesCode }))[0];
@@ -524,7 +524,7 @@ async function sales(qty) {
   await post('/mes/wm/productsalesline', {
     salesId: sale.salesId, itemId: ITEM.fg, itemCode: 'TG-FG-001', itemName: '红外测温枪整机',
     specification: 'TG-300 便携式红外测温枪', unitOfMeasure: 'TAI', unitName: '台',
-    quantitySales: qty, oqcCheck: 'Y', qualityStatus: '', batchCode: st.batchCode, remark: '演示销售行'
+    quantitySales: qty, oqcCheck: 'Y', qualityStatus: '', batchCode: st.batchCode, remark: '试产销售行'
   }, '新增销售出库行');
 
   const sl = (await rows('/mes/wm/productsalesline/list', { salesId: sale.salesId }))[0];
@@ -536,7 +536,7 @@ async function sales(qty) {
     quantity: qty, batchId: st.batchId, batchCode: st.batchCode,
     warehouseId: st.warehouseId, warehouseCode: st.warehouseCode, warehouseName: st.warehouseName,
     locationId: st.locationId, locationCode: st.locationCode, locationName: st.locationName,
-    areaId: st.areaId, areaCode: st.areaCode, areaName: st.areaName, remark: '演示拣货'
+    areaId: st.areaId, areaCode: st.areaCode, areaName: st.areaName, remark: '试产拣货'
   }, '新增销售拣货明细');
 
   const oqcCreated = await post('/mes/qc/oqc', {
@@ -547,7 +547,7 @@ async function sales(qty) {
     itemId: ITEM.fg, itemCode: 'TG-FG-001', itemName: '红外测温枪整机',
     specification: 'TG-300 便携式红外测温枪', unitOfMeasure: 'TAI',
     quantityOut: qty, quantityCheck: qty, quantityQualified: qty, quantityUnqualified: 0,
-    inspectDate: '2026-10-27 10:00:00', status: 'PREPARE', remark: '演示出货检验'
+    inspectDate: '2026-10-27 10:00:00', status: 'PREPARE', remark: '出货检验'
   }, '新增出货检验单');
   const oqcId = oqcCreated.data;
   const oqc = (await get(`/mes/qc/oqc/${oqcId}`)).data;
@@ -570,7 +570,7 @@ async function sales(qty) {
 
 // ---------- 主流程 ----------
 (async () => {
-  console.log('=== 红外测温枪 MES 全流程演示（生产 10 台 / 销售 6 台 / 结存 4 台）===\n');
+  console.log('=== 红外测温枪 MES 全流程试产（生产 10 台 / 销售 6 台 / 结存 4 台）===\n');
   await login();
 
   // A. 采购到货 + IQC + 采购入库
@@ -711,7 +711,7 @@ async function sales(qty) {
   for (const code of ['TG-EL-001', 'TG-EL-002', 'TG-ST-001', 'TG-FG-001']) {
     const ss = await rows('/mes/wm/wmstock/list', { itemCode: code });
     const total = ss.reduce((v, s) => v + Number(s.quantityOnhand || 0), 0);
-    console.log(`  ${code}: 跨仓合计 ${Math.round(total * 100) / 100}${Math.abs(total) < 0.001 ? '（已结零，账实相符）' : '（有结存，可继续演示出库）'}`);
+    console.log(`  ${code}: 跨仓合计 ${Math.round(total * 100) / 100}${Math.abs(total) < 0.001 ? '（已结零，账实相符）' : '（有结存，可继续试产出库）'}`);
   }
 
   // 落盘，供答辩时照着讲

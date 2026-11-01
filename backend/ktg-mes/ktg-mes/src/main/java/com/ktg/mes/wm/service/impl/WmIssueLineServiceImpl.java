@@ -30,8 +30,8 @@ public class WmIssueLineServiceImpl implements IWmIssueLineService
     private void lockEditable(Long issueId) {
         if (issueId == null) throw new ServiceException("领料行必须关联领料单");
         String status = postingLockMapper.issue(issueId);
-        if (status == null || "FINISHED".equals(status) || "CANCELED".equals(status))
-            throw new ServiceException("领料单不存在、已执行或已取消，不能修改领料行");
+        if (status == null || "APPROVED".equals(status) || "FINISHED".equals(status) || "CANCELED".equals(status))
+            throw new ServiceException("领料单不存在、已完成拣货、已执行或已取消，不能修改领料行");
     }
     private WmIssueLine existing(Long id) {
         WmIssueLine line = id == null ? null : wmIssueLineMapper.selectWmIssueLineByLineId(id);

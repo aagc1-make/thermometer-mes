@@ -41,6 +41,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="operationFlag != null  and operationFlag != ''"> and operation_flag = #{operationFlag}</if>
             <if test="operationTime != null "> and operation_time = #{operationTime}</if>
         </where>
+        order by create_time desc, record_id desc
     </select>
     
     <select id="selectProWorkrecordByRecordId" parameterType="Long" resultMap="ProWorkrecordResult">

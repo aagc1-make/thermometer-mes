@@ -64,6 +64,9 @@ public class CalCalendarController extends BaseController {
      * @return
      */
     private List<CalCalendar> getCalendarsWithoutHoliday(List<CalCalendar> days){
+        if (days == null) {
+            return java.util.Collections.emptyList();
+        }
         CalHoliday param = new CalHoliday();
         List<CalHoliday> holidays = calHolidayService.selectCalHolidayList(param);
         if(CollUtil.isNotEmpty(holidays)){

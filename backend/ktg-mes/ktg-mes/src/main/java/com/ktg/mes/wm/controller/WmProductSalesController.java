@@ -10,6 +10,7 @@ import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ProductSalesTxBean;
+import com.ktg.mes.wm.domain.vo.WorkorderProductSaleVO;
 import com.ktg.mes.wm.service.*;
 import com.ktg.mes.linkage.FormLinkagePolicy;
 import com.ktg.mes.linkage.SalesQualityLinkageService;
@@ -260,5 +261,20 @@ public class WmProductSalesController extends BaseController
     @Log(title = "根据客户 id 获取销售记录数据")
     public AjaxResult getSaleRecord(@PathVariable Long clientId) {
         return wmProductSalesService.getSaleRecord(clientId);
+    }
+
+    /**
+     * 工单成品可售清单：销售出库单添加"工单生成的产品"时使用
+     *
+     * <p>已入库（产品入库单 FINISHED）− 已开单（未取消的销售出库行），
+     * 只读查询，不生成任何单据。默认只返回仍有可售数量的工单，传 onlyAvailable=N 可全部列出。</p>
+     */
+    @PreAuthorize("@ss.hasPermi('mes:wm:productsales:list')")
+    @GetMapping("/workorderProducts")
+    public TableDataInfo workorderProducts(WorkorderProductSaleVO query)
+    {
+        startPage();
+        List<WorkorderProductSaleVO> list = wmProductSalesService.selectWorkorderProductsForSale(query);
+        return getDataTable(list);
     }
 }

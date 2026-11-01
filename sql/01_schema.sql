@@ -1,4 +1,4 @@
-﻿-- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: j2eedb
 -- ------------------------------------------------------
@@ -5205,6 +5205,8 @@ CREATE TABLE `wm_product_sales_line` (
   `oqc_id` bigint DEFAULT NULL COMMENT '出货检验单ID',
   `oqc_code` varchar(64) DEFAULT NULL COMMENT '出货检验单编号',
   `quality_status` varchar(64) DEFAULT NULL COMMENT '质量状态',
+  `workorder_id` bigint DEFAULT NULL COMMENT '生产工单ID（成品来源工单）',
+  `workorder_code` varchar(64) DEFAULT NULL COMMENT '生产工单编号（成品来源工单）',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
   `attr2` varchar(255) DEFAULT NULL COMMENT '预留字段2',
@@ -5214,7 +5216,8 @@ CREATE TABLE `wm_product_sales_line` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`line_id`)
+  PRIMARY KEY (`line_id`),
+  KEY `idx_wm_product_sales_line_workorder` (`workorder_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=210 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='产品销售出库行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
