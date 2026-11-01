@@ -248,8 +248,8 @@ SN 是单件序列号；批次是一组具有共同来源或生产属性的货�
 
 ## 十二、参考资料与代码入口
 
-- 业务目标：[表单联动改进计划书](<C:/Users/LEnovo/Downloads/表单联动改进计划书.md>)、[系统侧边栏业务流程图](<C:/Users/LEnovo/Downloads/系统侧边栏业务流程图.md>)。
-- 项目核对记录：[表单联动核对清单](表单联动核对清单.md)、[表单联动改造交付说明](表单联动改造交付说明-20261028.md)。这些记录可能早于最新代码，应结合当前工作区复核。
+- 业务目标：[系统侧边栏业务流程图](系统侧边栏业务流程图.md)、[系统表单业务流程图](系统表单业务流程图.md)。
+- 表单联动改造的过程记录（计划书、核对清单、交付说明）属于本机归档资料，不随仓库分发；核对时以当前工作区和 `docs/业务流程说明.md` 为准。
 - 采购与 IQC：[采购入库业务服务](backend/ktg-mes/ktg-mes/src/main/java/com/ktg/mes/wm/service/impl/ItemRecptWorkflowService.java)、[IQC 完成服务](backend/ktg-mes/ktg-mes/src/main/java/com/ktg/mes/qc/service/impl/QcIqcCompletionService.java)。
 - 生产与成品：[领料草稿联动](backend/ktg-mes/ktg-mes/src/main/java/com/ktg/mes/linkage/IssueDraftLinkageService.java)、[产品入库草稿联动](backend/ktg-mes/ktg-mes/src/main/java/com/ktg/mes/linkage/ProductReceiptLinkageService.java)。
 - 销售与质量：[销售出库控制器](backend/ktg-mes/ktg-mes/src/main/java/com/ktg/mes/wm/controller/WmProductSalesController.java)、[OQC 服务](backend/ktg-mes/ktg-mes/src/main/java/com/ktg/mes/qc/service/impl/QcOqcServiceImpl.java)。
