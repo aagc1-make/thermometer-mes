@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.collection.CollUtil;
 import com.ktg.common.constant.UserConstants;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.wm.domain.WmIssueHeader;
 import com.ktg.mes.wm.domain.WmIssueLine;
 import com.ktg.mes.wm.domain.WmOutsourceIssueLine;
@@ -45,6 +46,8 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/wm/outsourceissue")
 public class WmOutsourceIssueController extends BaseController
 {
+    @Autowired
+    private CodeSequenceService codeSequenceService;
     @Autowired
     private IWmOutsourceIssueService wmOutsourceIssueService;
 
@@ -100,6 +103,8 @@ public class WmOutsourceIssueController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmOutsourceIssue wmOutsourceIssue)
     {
+        // 外协领用单号由服务端统一取号，忽略前端传入值
+        wmOutsourceIssue.setIssueCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_OUTSOURCE_ISSUE, wmOutsourceIssue.getIssueCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmOutsourceIssueService.checkIssueCodeUnique(wmOutsourceIssue))){
             return  AjaxResult.error("编号已存在！");
         }

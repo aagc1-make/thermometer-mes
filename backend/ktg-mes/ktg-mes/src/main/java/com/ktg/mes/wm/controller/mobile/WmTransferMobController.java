@@ -14,7 +14,7 @@ import com.ktg.mes.wm.domain.WmTransferLine;
 import com.ktg.mes.wm.domain.WmWarehouse;
 import com.ktg.mes.wm.domain.tx.TransferTxBean;
 import com.ktg.mes.wm.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +46,7 @@ public class WmTransferMobController extends BaseController {
     private IStorageCoreService storageCoreService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     /**
      * 查询转移单列表
@@ -86,7 +86,7 @@ public class WmTransferMobController extends BaseController {
                 return AjaxResult.error("单据编号已存在");
             }
         }else {
-            wmTransfer.setTransferCode(autoCodeUtil.genSerialCode(UserConstants.TRANSFER_CODE,""));
+            wmTransfer.setTransferCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_TRANSFER));
         }
 
         wmTransfer.setCreateBy(getUsername());

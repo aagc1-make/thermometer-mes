@@ -37,7 +37,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="planName != null  and planName != ''"> and plan_name like concat('%', #{planName}, '%')</if>
             <if test="calendarType != null  and calendarType != ''"> and calendar_type =#{calendarType}</if>
             <if test="startDate != null "> and start_date &gt;= #{startDate}</if>
-            <if test="endDate != null "> and end_date $lt; #{endDate}</if>
+            <if test="endDate != null "> and end_date &lt; #{endDate}</if>
             <if test="shiftType != null  and shiftType != ''"> and shift_type = #{shiftType}</if>
             <if test="shiftMethod != null  and shiftMethod != ''"> and shift_method = #{shiftMethod}</if>
             <if test="shiftCount != null "> and shift_count = #{shiftCount}</if>

@@ -1,11 +1,16 @@
 package com.ktg.mes.dv.controller;
 
 import java.util.List;
+import java.util.Objects;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.constant.UserConstants;
 import com.ktg.mes.dv.domain.DvCheckRecordLine;
 import com.ktg.mes.dv.domain.DvCheckSubject;
+import com.ktg.mes.dv.domain.DvCheckPlan;
+import com.ktg.mes.dv.domain.DvCheckMachinery;
+import com.ktg.mes.dv.service.IDvCheckPlanService;
+import com.ktg.mes.dv.service.IDvCheckMachineryService;
 import com.ktg.mes.dv.service.IDvCheckRecordLineService;
 import com.ktg.mes.dv.service.IDvCheckSubjectService;
 import org.apache.commons.collections.CollectionUtils;
@@ -47,6 +52,55 @@ public class DvCheckRecordController extends BaseController
 
     @Autowired
     private IDvCheckRecordLineService dvCheckRecordLineService;
+
+    @Autowired
+    private IDvCheckPlanService dvCheckPlanService;
+
+    @Autowired
+    private IDvCheckMachineryService dvCheckMachineryService;
+
+    private String validatePlan(DvCheckRecord record) {
+        if (record.getPlanId() == null || record.getMachineryId() == null ||
+                record.getMachineryCode() == null || record.getMachineryCode().trim().isEmpty()) {
+            return "请选择点检方案和设备";
+        }
+        DvCheckPlan plan = dvCheckPlanService.selectDvCheckPlanByPlanId(record.getPlanId());
+        if (plan == null || !UserConstants.DV_PLAN_TYPE_CHECK.equals(plan.getPlanType()) ||
+                !(UserConstants.ORDER_STATUS_FINISHED.equals(plan.getStatus()) ||
+                  UserConstants.ORDER_STATUS_CONFIRMED.equals(plan.getStatus()))) {
+            return "点检方案不存在或未启用";
+        }
+        DvCheckMachinery query = new DvCheckMachinery();
+        query.setPlanId(record.getPlanId());
+        query.setMachineryId(record.getMachineryId());
+        query.setMachineryCode(record.getMachineryCode());
+        if (CollectionUtils.isEmpty(dvCheckMachineryService.selectDvCheckMachineryList(query))) {
+            return "所选设备不属于该点检方案";
+        }
+        record.setPlanCode(plan.getPlanCode());
+        record.setPlanName(plan.getPlanName());
+        record.setPlanType(plan.getPlanType());
+        return null;
+    }
+
+    /** 提交完成前必须逐项填写点检结果：O/空 均视为未检查 */
+    private String validateLineResults(List<DvCheckRecordLine> lineList) {
+        if (CollectionUtils.isEmpty(lineList)) {
+            return "请添加设备点检项目结果信息";
+        }
+        int unchecked = 0;
+        for (DvCheckRecordLine line : lineList) {
+            String status = line.getCheckStatus();
+            if (status == null || status.trim().isEmpty() ||
+                    UserConstants.DV_CHECK_STATUS_NOTCHECK.equals(status)) {
+                unchecked++;
+            }
+        }
+        if (unchecked > 0) {
+            return "还有 " + unchecked + " 项点检结果未填写，请填写后再提交";
+        }
+        return null;
+    }
 
     /**
      * 查询设备点检记录列表
@@ -92,6 +146,8 @@ public class DvCheckRecordController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody DvCheckRecord dvCheckRecord)
     {
+        String error = validatePlan(dvCheckRecord);
+        if (error != null) return AjaxResult.error(error);
         dvCheckRecordService.insertDvCheckRecord(dvCheckRecord);
 
         if(dvCheckRecord.getPlanId()!= null){
@@ -104,11 +160,12 @@ public class DvCheckRecordController extends BaseController
                     DvCheckRecordLine line = new DvCheckRecordLine();
                     line.setRecordId(dvCheckRecord.getRecordId());
                     line.setSubjectId(subject.getSubjectId());
+                    line.setSubjectCode(subject.getSubjectCode());
                     line.setSubjectName(subject.getSubjectName());
                     line.setSubjectType(subject.getSubjectType());
                     line.setSubjectContent(subject.getSubjectContent());
                     line.setSubjectStandard(subject.getSubjectStandard());
-                    line.setCheckStatus(UserConstants.YES);
+                    line.setCheckStatus(UserConstants.DV_CHECK_STATUS_NOTCHECK);
                     // 原实现只构造了行对象却没有落库，导致点检记录永远没有明细
                     dvCheckRecordLineService.insertDvCheckRecordLine(line);
                 }
@@ -131,13 +188,32 @@ public class DvCheckRecordController extends BaseController
             DvCheckRecordLine param = new DvCheckRecordLine();
             param.setRecordId(dvCheckRecord.getRecordId());
             List<DvCheckRecordLine> lineList = dvCheckRecordLineService.selectDvCheckRecordLineList(param);
-            if(CollectionUtils.isEmpty(lineList)){
-                return AjaxResult.error("请添加设备点检项目结果信息");
+            String lineError = validateLineResults(lineList);
+            if (lineError != null) {
+                return AjaxResult.error(lineError);
             }
         }
 
         DvCheckRecord oldRecord = dvCheckRecordService.selectDvCheckRecordByRecordId(dvCheckRecord.getRecordId());
-        if(oldRecord.getPlanId() != null && dvCheckRecord.getPlanId() != null && !dvCheckRecord.getPlanId().equals(oldRecord.getPlanId())){
+        if (oldRecord == null) return AjaxResult.error("点检记录不存在");
+        if (UserConstants.ORDER_STATUS_FINISHED.equals(dvCheckRecord.getStatus()) &&
+                ((dvCheckRecord.getPlanId() != null && !Objects.equals(dvCheckRecord.getPlanId(), oldRecord.getPlanId())) ||
+                 (dvCheckRecord.getMachineryId() != null && !Objects.equals(dvCheckRecord.getMachineryId(), oldRecord.getMachineryId())) ||
+                 (dvCheckRecord.getMachineryCode() != null && !Objects.equals(dvCheckRecord.getMachineryCode(), oldRecord.getMachineryCode())))) {
+            return AjaxResult.error("完成点检时不能更改方案或设备，请先保存修改并检查明细");
+        }
+        if (dvCheckRecord.getPlanId() != null || dvCheckRecord.getMachineryId() != null || dvCheckRecord.getMachineryCode() != null) {
+            if (dvCheckRecord.getPlanId() == null) dvCheckRecord.setPlanId(oldRecord.getPlanId());
+            if (dvCheckRecord.getMachineryId() == null) dvCheckRecord.setMachineryId(oldRecord.getMachineryId());
+            if (dvCheckRecord.getMachineryCode() == null) dvCheckRecord.setMachineryCode(oldRecord.getMachineryCode());
+            String error = validatePlan(dvCheckRecord);
+            if (error != null) return AjaxResult.error(error);
+        } else {
+            dvCheckRecord.setPlanCode(oldRecord.getPlanCode());
+            dvCheckRecord.setPlanName(oldRecord.getPlanName());
+            dvCheckRecord.setPlanType(oldRecord.getPlanType());
+        }
+        if(dvCheckRecord.getPlanId() != null && !dvCheckRecord.getPlanId().equals(oldRecord.getPlanId())){
             dvCheckRecordLineService.deleteDvCheckRecordLineByRecordId(dvCheckRecord.getRecordId());
             //根据选择的点检计划自动生成对应的行信息
             DvCheckSubject param = new DvCheckSubject();
@@ -148,11 +224,12 @@ public class DvCheckRecordController extends BaseController
                     DvCheckRecordLine line = new DvCheckRecordLine();
                     line.setRecordId(dvCheckRecord.getRecordId());
                     line.setSubjectId(subject.getSubjectId());
+                    line.setSubjectCode(subject.getSubjectCode());
                     line.setSubjectName(subject.getSubjectName());
                     line.setSubjectType(subject.getSubjectType());
                     line.setSubjectContent(subject.getSubjectContent());
                     line.setSubjectStandard(subject.getSubjectStandard());
-                    line.setCheckStatus(UserConstants.YES);
+                    line.setCheckStatus(UserConstants.DV_CHECK_STATUS_NOTCHECK);
                     // 同上：换方案重建明细时必须真正插入，否则 delete 之后记录会变成“无明细”
                     dvCheckRecordLineService.insertDvCheckRecordLine(line);
                 }

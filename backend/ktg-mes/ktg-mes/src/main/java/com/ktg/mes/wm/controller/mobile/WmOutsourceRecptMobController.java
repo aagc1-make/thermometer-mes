@@ -17,7 +17,7 @@ import com.ktg.mes.wm.service.IStorageCoreService;
 import com.ktg.mes.wm.service.IWmOutsourceRecptDetailService;
 import com.ktg.mes.wm.service.IWmOutsourceRecptLineService;
 import com.ktg.mes.wm.service.IWmOutsourceRecptService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,7 +49,7 @@ public class WmOutsourceRecptMobController extends BaseController {
     private IProWorkorderService proWorkorderService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
 
     /**
@@ -87,7 +87,7 @@ public class WmOutsourceRecptMobController extends BaseController {
                 return  AjaxResult.error("编号已存在！");
             }
         }else{
-            wmOutsourceRecpt.setRecptCode(autoCodeUtil.genSerialCode(UserConstants.WM_OUTSOURCE_RECPT_CODE,""));
+            wmOutsourceRecpt.setRecptCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_OUTSOURCE_RECPT));
         }
 
         wmOutsourceRecpt.setCreateBy(getUsername());

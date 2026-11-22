@@ -98,6 +98,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter
                 .authorizeRequests()
                 // 对于登录login 注册register 验证码captchaImage 允许匿名访问
                 .antMatchers("/login", "/register", "/captchaImage").anonymous()
+                // 人脸登录：只提交特征向量，校验通过后签发同样的 JWT
+                .antMatchers("/faceLogin").anonymous()
                 .antMatchers("/mobile/login/**").permitAll()
                 .antMatchers(
                         HttpMethod.GET,

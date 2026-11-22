@@ -85,6 +85,18 @@ public class WmProductSalesLine extends BaseEntity
      */
     private String qualityStatus;
 
+    /** 生产工单ID（成品来源工单；空表示非工单成品或历史行） */
+    private Long workorderId;
+
+    /** 生产工单编号（成品来源工单） */
+    private String workorderCode;
+
+    /** 所属销售出库单编号（只读关联字段，不落库） */
+    private String salesCode;
+
+    /** 所属销售出库单状态（只读关联字段，不落库） */
+    private String salesStatus;
+
     /** 预留字段1 */
     private String attr1;
 
@@ -238,6 +250,38 @@ public class WmProductSalesLine extends BaseEntity
         this.oqcCode = oqcCode;
     }
 
+    public Long getWorkorderId() {
+        return workorderId;
+    }
+
+    public void setWorkorderId(Long workorderId) {
+        this.workorderId = workorderId;
+    }
+
+    public String getWorkorderCode() {
+        return workorderCode;
+    }
+
+    public void setWorkorderCode(String workorderCode) {
+        this.workorderCode = workorderCode;
+    }
+
+    public String getSalesCode() {
+        return salesCode;
+    }
+
+    public void setSalesCode(String salesCode) {
+        this.salesCode = salesCode;
+    }
+
+    public String getSalesStatus() {
+        return salesStatus;
+    }
+
+    public void setSalesStatus(String salesStatus) {
+        this.salesStatus = salesStatus;
+    }
+
     public void setAttr1(String attr1)
     {
         this.attr1 = attr1;
@@ -307,6 +351,8 @@ public class WmProductSalesLine extends BaseEntity
                 ", oqcCheck='" + oqcCheck + '\'' +
                 ", oqcId=" + oqcId +
                 ", oqcCode='" + oqcCode + '\'' +
+                ", workorderId=" + workorderId +
+                ", workorderCode='" + workorderCode + '\'' +
                 ", attr1='" + attr1 + '\'' +
                 ", attr2='" + attr2 + '\'' +
                 ", attr3=" + attr3 +

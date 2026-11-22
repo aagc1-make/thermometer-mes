@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.TransferTxBean;
 import com.ktg.mes.wm.service.*;
@@ -40,6 +41,9 @@ public class WmTransferController extends BaseController
 {
     @Autowired
     private IWmTransferService wmTransferService;
+
+    @Autowired
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private IWmTransferLineService wmTransferLineService;
@@ -96,6 +100,8 @@ public class WmTransferController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmTransfer wmTransfer)
     {
+        // 转移单号由服务端统一取号，忽略前端传入值
+        wmTransfer.setTransferCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_TRANSFER, wmTransfer.getTransferCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmTransferService.checkUnique(wmTransfer))){
             return AjaxResult.error("转移单编号已存在");
         }

@@ -15,7 +15,7 @@ import com.ktg.mes.wm.service.IStorageCoreService;
 import com.ktg.mes.wm.service.IWmOutsourceIssueDetailService;
 import com.ktg.mes.wm.service.IWmOutsourceIssueLineService;
 import com.ktg.mes.wm.service.IWmOutsourceIssueService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,7 +42,7 @@ public class WmOutsourceIssueMobController extends BaseController {
     private IStorageCoreService storageCoreService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
 
     /**
@@ -81,7 +81,7 @@ public class WmOutsourceIssueMobController extends BaseController {
                 return  AjaxResult.error("编号已存在！");
             }
         }else {
-            wmOutsourceIssue.setIssueCode(autoCodeUtil.genSerialCode(UserConstants.WM_OUTSOURCE_ISSUE_CODE,""));
+            wmOutsourceIssue.setIssueCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_OUTSOURCE_ISSUE));
         }
         wmOutsourceIssue.setCreateBy(getUsername());
         wmOutsourceIssueService.insertWmOutsourceIssue(wmOutsourceIssue);

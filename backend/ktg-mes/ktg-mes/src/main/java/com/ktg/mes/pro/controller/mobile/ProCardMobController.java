@@ -11,7 +11,7 @@ import com.ktg.mes.pro.domain.ProWorkorder;
 import com.ktg.mes.pro.service.IProCardService;
 import com.ktg.mes.pro.service.IProWorkorderService;
 import com.ktg.mes.wm.utils.WmBarCodeUtil;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +38,7 @@ public class ProCardMobController extends BaseController {
     private IProWorkorderService proWorkorderService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private WmBarCodeUtil wmBarCodeUtil;
@@ -115,7 +115,7 @@ public class ProCardMobController extends BaseController {
             return AjaxResult.error("生产工单无效!");
         }
 
-        proCard.setCardCode(autoCodeUtil.genSerialCode(UserConstants.CARD_CODE,null));
+        proCard.setCardCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_CARD));
         proCard.setWorkorderCode(workorder.getWorkorderCode());
         proCard.setWorkorderName(workorder.getWorkorderName());
         proCard.setItemId(workorder.getProductId());

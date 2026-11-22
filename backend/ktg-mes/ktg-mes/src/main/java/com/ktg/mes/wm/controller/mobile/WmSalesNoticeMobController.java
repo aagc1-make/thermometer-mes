@@ -9,7 +9,7 @@ import com.ktg.common.enums.BusinessType;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.WmSalesNotice;
 import com.ktg.mes.wm.service.IWmSalesNoticeService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,7 +26,7 @@ public class WmSalesNoticeMobController extends BaseController {
     private IWmSalesNoticeService wmSalesNoticeService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     /**
      * 查询发货通知单列表
@@ -63,7 +63,7 @@ public class WmSalesNoticeMobController extends BaseController {
                 return AjaxResult.error("单据编号已存在");
             }
         }else{
-            wmSalesNotice.setNoticeCode(autoCodeUtil.genSerialCode(UserConstants.SALES_NOTICE_CODE,""));
+            wmSalesNotice.setNoticeCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_SALES_NOTICE));
         }
 
         if(StringUtils.isNull(wmSalesNotice.getClientId())){
@@ -90,7 +90,7 @@ public class WmSalesNoticeMobController extends BaseController {
                 return AjaxResult.error("单据编号已存在");
             }
         }else{
-            wmSalesNotice.setNoticeCode(autoCodeUtil.genSerialCode(UserConstants.SALES_NOTICE_CODE,""));
+            wmSalesNotice.setNoticeCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_SALES_NOTICE));
         }
 
         if(StringUtils.isNull(wmSalesNotice.getClientId())){

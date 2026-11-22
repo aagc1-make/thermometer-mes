@@ -13,7 +13,7 @@ import com.ktg.mes.qc.service.IQcTemplateIndexService;
 import com.ktg.mes.qc.service.IQcTemplateService;
 import com.ktg.mes.wm.domain.WmProductProduce;
 import com.ktg.mes.wm.domain.WmProductProduceLine;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,20 +30,20 @@ public class ProductionQualityLinkageService {
     private final IQcTemplateService templateService;
     private final IQcTemplateIndexService templateIndexService;
     private final IQcIpqcLineService ipqcLineService;
-    private final AutoCodeUtil autoCodeUtil;
+    private final CodeSequenceService codeSequenceService;
     private final MenuLinkageNoticeService menuNoticeService;
 
     public ProductionQualityLinkageService(IQcIpqcService ipqcService,
                                            IQcTemplateService templateService,
                                            IQcTemplateIndexService templateIndexService,
                                            IQcIpqcLineService ipqcLineService,
-                                           AutoCodeUtil autoCodeUtil,
+                                           CodeSequenceService codeSequenceService,
                                            MenuLinkageNoticeService menuNoticeService) {
         this.ipqcService = ipqcService;
         this.templateService = templateService;
         this.templateIndexService = templateIndexService;
         this.ipqcLineService = ipqcLineService;
-        this.autoCodeUtil = autoCodeUtil;
+        this.codeSequenceService = codeSequenceService;
         this.menuNoticeService = menuNoticeService;
     }
 
@@ -69,7 +69,7 @@ public class ProductionQualityLinkageService {
         }
 
         QcIpqc draft = new QcIpqc();
-        draft.setIpqcCode(autoCodeUtil.genSerialCode(UserConstants.QC_PQC_CODE, null));
+        draft.setIpqcCode(codeSequenceService.generateChainCode(UserConstants.CODE_RULE_IPQC, feedback.getWorkorderCode()));
         draft.setIpqcName("生产报工" + feedback.getFeedbackCode() + "-" + source.getItemName());
         draft.setIpqcType(IPQC_TYPE);
         draft.setTemplateId(template.getTemplateId());

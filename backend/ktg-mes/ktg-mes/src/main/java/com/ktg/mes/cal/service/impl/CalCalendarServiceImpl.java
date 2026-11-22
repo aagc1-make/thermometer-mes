@@ -83,14 +83,17 @@ public class CalCalendarServiceImpl implements ICalCalendarService {
 
     @Override
     public List<CalCalendar> getCalendarByUser(Date day, Long userId) {
-        List<CalCalendar>  calendars = null;
+        List<CalCalendar> calendars = CalendarUtil.getDays(day);
+
+        if (userId == null) {
+            return calendars;
+        }
 
         CalTeamMember param = new CalTeamMember();
         param.setUserId(userId);
         List<CalTeamMember> members = calTeamMemberMapper.selectCalTeamMemberList(param);
         if(CollUtil.isNotEmpty(members)){
             Long teamId = members.get(0).getTeamId();
-            calendars = CalendarUtil.getDays(day);
             for (CalCalendar cal:calendars
                     ) {
                 CalTeamshift param2 = new CalTeamshift();

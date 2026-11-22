@@ -4,6 +4,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.constant.UserConstants;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.linkage.SalesNoticeLinkageService;
 import com.ktg.mes.wm.domain.WmSalesNoticeLine;
 import com.ktg.mes.wm.service.IWmSalesNoticeLineService;
@@ -41,6 +42,9 @@ public class WmSalesNoticeController extends BaseController
 {
     @Autowired
     private IWmSalesNoticeService wmSalesNoticeService;
+
+    @Autowired
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private IWmSalesNoticeLineService wmSalesNoticeLineService;
@@ -91,6 +95,8 @@ public class WmSalesNoticeController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmSalesNotice wmSalesNotice)
     {
+        // 发货通知单号由服务端统一取号，忽略前端传入值
+        wmSalesNotice.setNoticeCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_SALES_NOTICE, wmSalesNotice.getNoticeCode()));
         return toAjax(wmSalesNoticeService.insertWmSalesNotice(wmSalesNotice));
     }
 

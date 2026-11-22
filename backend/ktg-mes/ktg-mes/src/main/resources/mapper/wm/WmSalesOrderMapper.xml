@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ktg.mes.wm.mapper.WmSalesOrderMapper">
+
+    <resultMap type="WmSalesOrder" id="WmSalesOrderResult">
+        <result property="orderId"        column="order_id"         />
+        <result property="orderCode"      column="order_code"       />
+        <result property="orderName"      column="order_name"       />
+        <result property="clientId"       column="client_id"        />
+        <result property="clientCode"     column="client_code"      />
+        <result property="clientName"     column="client_name"      />
+        <result property="clientNick"     column="client_nick"      />
+        <result property="orderDate"      column="order_date"       />
+        <result property="deliveryDate"   column="delivery_date"    />
+        <result property="recipient"      column="recipient"        />
+        <result property="tel"            column="tel"              />
+        <result property="address"        column="address"          />
+        <result property="totalQuantity"  column="total_quantity"   />
+        <result property="totalAmount"    column="total_amount"     />
+        <result property="status"         column="status"           />
+        <result property="noticeId"       column="notice_id"        />
+        <result property="noticeCode"     column="notice_code"      />
+        <result property="workorderCodes" column="workorder_codes"  />
+        <result property="oqcCodes"       column="oqc_codes"        />
+        <result property="remark"         column="remark"           />
+        <result property="attr1"          column="attr1"            />
+        <result property="attr2"          column="attr2"            />
+        <result property="attr3"          column="attr3"            />
+        <result property="attr4"          column="attr4"            />
+        <result property="createBy"       column="create_by"        />
+        <result property="createTime"     column="create_time"      />
+        <result property="updateBy"       column="update_by"        />
+        <result property="updateTime"     column="update_time"      />
+    </resultMap>
+
+    <sql id="selectWmSalesOrderVo">
+        select o.order_id, o.order_code, o.order_name, o.client_id, o.client_code, o.client_name, o.client_nick,
+               o.order_date, o.delivery_date, o.recipient, o.tel, o.address, o.total_quantity, o.total_amount,
+               o.status, o.notice_id, o.notice_code, o.remark, o.attr1, o.attr2, o.attr3, o.attr4,
+               o.create_by, o.create_time, o.update_by, o.update_time,
+               (select group_concat(l.workorder_code order by l.line_id separator ',')
+                  from wm_sales_order_line l where l.order_id = o.order_id) as workorder_codes,
+               (select group_concat(l.oqc_code order by l.line_id separator ',')
+                  from wm_sales_order_line l where l.order_id = o.order_id) as oqc_codes
+        from wm_sales_order o
+    </sql>
+
+    <select id="selectWmSalesOrderList" parameterType="WmSalesOrder" resultMap="WmSalesOrderResult">
+        <include refid="selectWmSalesOrderVo"/>
+        <where>
+            <if test="orderCode != null and orderCode != ''"> and order_code like concat('%', #{orderCode}, '%')</if>
+            <if test="orderName != null and orderName != ''"> and order_name like concat('%', #{orderName}, '%')</if>
+            <if test="clientId != null"> and client_id = #{clientId}</if>
+            <if test="clientCode != null and clientCode != ''"> and client_code = #{clientCode}</if>
+            <if test="clientName != null and clientName != ''"> and client_name like concat('%', #{clientName}, '%')</if>
+            <if test="status != null and status != ''"> and status = #{status}</if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                and date_format(create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                and date_format(create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+            </if>
+        </where>
+        order by order_id desc
+    </select>
+
+    <select id="selectWmSalesOrderByOrderId" parameterType="Long" resultMap="WmSalesOrderResult">
+        <include refid="selectWmSalesOrderVo"/>
+        where order_id = #{orderId}
+    </select>
+
+    <select id="checkOrderCodeUnique" parameterType="WmSalesOrder" resultMap="WmSalesOrderResult">
+        <include refid="selectWmSalesOrderVo"/>
+        where order_code = #{orderCode} limit 1
+    </select>
+
+    <insert id="insertWmSalesOrder" parameterType="WmSalesOrder" useGeneratedKeys="true" keyProperty="orderId">
+        insert into wm_sales_order
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="orderCode != null and orderCode != ''">order_code,</if>
+            <if test="orderName != null and orderName != ''">order_name,</if>
+            <if test="clientId != null">client_id,</if>
+            <if test="clientCode != null">client_code,</if>
+            <if test="clientName != null">client_name,</if>
+            <if test="clientNick != null">client_nick,</if>
+            <if test="orderDate != null">order_date,</if>
+            <if test="deliveryDate != null">delivery_date,</if>
+            <if test="recipient != null">recipient,</if>
+            <if test="tel != null">tel,</if>
+            <if test="address != null">address,</if>
+            <if test="totalQuantity != null">total_quantity,</if>
+            <if test="totalAmount != null">total_amount,</if>
+            <if test="status != null">status,</if>
+            <if test="noticeId != null">notice_id,</if>
+            <if test="noticeCode != null">notice_code,</if>
+            <if test="remark != null">remark,</if>
+            <if test="attr1 != null">attr1,</if>
+            <if test="attr2 != null">attr2,</if>
+            <if test="attr3 != null">attr3,</if>
+            <if test="attr4 != null">attr4,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="orderCode != null and orderCode != ''">#{orderCode},</if>
+            <if test="orderName != null and orderName != ''">#{orderName},</if>
+            <if test="clientId != null">#{clientId},</if>
+            <if test="clientCode != null">#{clientCode},</if>
+            <if test="clientName != null">#{clientName},</if>
+            <if test="clientNick != null">#{clientNick},</if>
+            <if test="orderDate != null">#{orderDate},</if>
+            <if test="deliveryDate != null">#{deliveryDate},</if>
+            <if test="recipient != null">#{recipient},</if>
+            <if test="tel != null">#{tel},</if>
+            <if test="address != null">#{address},</if>
+            <if test="totalQuantity != null">#{totalQuantity},</if>
+            <if test="totalAmount != null">#{totalAmount},</if>
+            <if test="status != null">#{status},</if>
+            <if test="noticeId != null">#{noticeId},</if>
+            <if test="noticeCode != null">#{noticeCode},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="attr1 != null">#{attr1},</if>
+            <if test="attr2 != null">#{attr2},</if>
+            <if test="attr3 != null">#{attr3},</if>
+            <if test="attr4 != null">#{attr4},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateWmSalesOrder" parameterType="WmSalesOrder">
+        update wm_sales_order
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="orderCode != null and orderCode != ''">order_code = #{orderCode},</if>
+            <if test="orderName != null and orderName != ''">order_name = #{orderName},</if>
+            <if test="clientId != null">client_id = #{clientId},</if>
+            <if test="clientCode != null">client_code = #{clientCode},</if>
+            <if test="clientName != null">client_name = #{clientName},</if>
+            <if test="clientNick != null">client_nick = #{clientNick},</if>
+            <if test="orderDate != null">order_date = #{orderDate},</if>
+            <if test="deliveryDate != null">delivery_date = #{deliveryDate},</if>
+            <if test="recipient != null">recipient = #{recipient},</if>
+            <if test="tel != null">tel = #{tel},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="totalQuantity != null">total_quantity = #{totalQuantity},</if>
+            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="noticeId != null">notice_id = #{noticeId},</if>
+            <if test="noticeCode != null">notice_code = #{noticeCode},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="attr1 != null">attr1 = #{attr1},</if>
+            <if test="attr2 != null">attr2 = #{attr2},</if>
+            <if test="attr3 != null">attr3 = #{attr3},</if>
+            <if test="attr4 != null">attr4 = #{attr4},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where order_id = #{orderId}
+    </update>
+
+    <delete id="deleteWmSalesOrderByOrderIds" parameterType="Long">
+        delete from wm_sales_order where order_id in
+        <foreach item="orderId" collection="array" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+    </delete>
+</mapper>

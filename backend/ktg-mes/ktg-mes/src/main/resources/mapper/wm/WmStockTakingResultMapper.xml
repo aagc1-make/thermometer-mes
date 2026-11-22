@@ -67,6 +67,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="areaCode != null  and areaCode != ''"> and area_code = #{areaCode}</if>
             <if test="areaName != null  and areaName != ''"> and area_name like concat('%', #{areaName}, '%')</if>
         </where>
+        order by create_time desc, result_id desc
     </select>
     
     <select id="selectWmStockTakingResultByResultId" parameterType="Long" resultMap="WmStockTakingResultResult">

@@ -130,9 +130,50 @@ public class UserConstants
     public static final String QC_IQC_CODE ="QC_IQC_CODE"; //来料检验单
     public static final String QC_PQC_CODE ="QC_PQC_CODE"; //过程检验单
     public static final String QC_OQC_CODE ="QC_OQC_CODE"; //出货检验单
+    public static final String QC_RQC_CODE ="QC_RQC_CODE"; //退料检验单
     public static final String QC_RESULT_CODE ="QC_RESULT_CODE"; //检验结果编号(样品编号)
-    public static final String BATCH_CODE ="BATCH_CODE"; //批次编号
+    public static final String BATCH_CODE ="BATCH_CODE"; //批次编号（旧规则，已由 sys_code_rule 逐步替代）
     public static final String DV_REPAIR_CODE ="DV_REPAIR_CODE"; //维修单
+
+    /**
+     * 新取号器（sys_code_rule.rule_code）规则编码。
+     * 单号由 CodeSequenceService 生成：前缀 + 日期 + 定长流水。
+     */
+    public static final String CODE_RULE_WORKORDER = "GD";          //生产工单号 gd2026110200001
+    public static final String CODE_RULE_BATCH_WORKORDER = "PCGD";  //工单产出批次 pcgd2026110200001
+    public static final String CODE_RULE_BATCH_PURCHASE = "PCCG";   //采购来料批次 pccg2026110200001
+    public static final String CODE_RULE_BATCH_OUTSOURCE = "PCWS";  //外协入库批次 pcws2026110200001
+    public static final String CODE_RULE_INBOUND_QC = "RKZJGD";     //成品入库质检 rkzjgd2026110200001
+    public static final String CODE_RULE_ITEM_RECPT = "RKCG";       //采购入库单 rkcg2026110200001
+    public static final String CODE_RULE_IQC = "ZJ";                //来料检验单 zj2026111400001（质检单统一规则）
+    public static final String CODE_RULE_TXN = "TXN";               //库存事务号 txn2026110200001
+    // 以下为 20261114 补齐的单据编码（原走 AutoCodeUtil / sys_auto_code_rule）
+    public static final String CODE_RULE_ARRIVAL_NOTICE = "DHTZ";   //到货通知单 dhtz2026111400001
+    public static final String CODE_RULE_ISSUE = "LL";              //生产领料单 ll2026111400001
+    public static final String CODE_RULE_RT_ISSUE = "TL";           //生产退料单 tl2026111400001
+    public static final String CODE_RULE_RT_VENDOR = "CTH";         //采购退货单 cth2026111400001
+    public static final String CODE_RULE_OUTSOURCE_ISSUE = "WXLL";  //外协领用单 wxll2026111400001
+    public static final String CODE_RULE_OUTSOURCE_RECPT = "WXRK";  //外协入库单 wxrk2026111400001
+    public static final String CODE_RULE_PRODUCT_RECPT = "CPRK";    //产品入库单 cprk2026111400001
+    public static final String CODE_RULE_PRODUCT_SALES = "XSCK";    //销售出库单 xsck2026111400001
+    public static final String CODE_RULE_RT_SALES = "XSTH";         //销售退货单 xsth2026111400001
+    public static final String CODE_RULE_SALES_NOTICE = "FHTZ";     //发货通知单 fhtz2026111400001
+    public static final String CODE_RULE_TRANSFER = "YKD";          //移库单 ykd2026111400001
+    public static final String CODE_RULE_STOCK_TAKING = "PD";       //库存盘点单 pd2026111400001
+    public static final String CODE_RULE_FEEDBACK = "BG";           //生产报工单 bg2026111400001
+    public static final String CODE_RULE_IPQC = "ZJ";               //过程检验单 zj2026111400001（质检单统一规则）
+    public static final String CODE_RULE_OQC = "ZJ";                //出货检验单 zj2026111400001（质检单统一规则）
+    public static final String CODE_RULE_QC_RESULT = "JYYP";        //检验样品编号 jyyp2026111400001
+    public static final String CODE_RULE_TASK = "RW";               //生产任务号 rw2026111400001
+    public static final String CODE_RULE_TRANS_ORDER = "LZK";       //流转卡号 lzk2026111400001
+    public static final String CODE_RULE_CARD = "SCK";              //生产卡号 sck2026111400001
+    public static final String CODE_RULE_DV_REPAIR = "WXD";         //设备维修单号 wxd2026111400001
+    public static final String CODE_RULE_RQC = "ZJ";                //退料检验单号 zj2026111400001（质检单统一规则）
+    public static final String CODE_RULE_MISC_ISSUE = "ZCL";        //杂项出库单号 zcl2026111400001
+    public static final String CODE_RULE_MISC_RECPT = "ZCR";        //杂项入库单号 zcr2026111400001
+    public static final String CODE_RULE_PACKAGE = "BZ";            //装箱单号 bz2026111400001
+    public static final String CODE_RULE_STOCK_TAKING_PLAN = "PDJH";//盘点方案号 pdjh2026111400001
+    public static final String CODE_RULE_SALES_ORDER = "XSDD";      //客户销售订单号 dd2026111400001
 
     /**
      * 单据的状态类型
@@ -143,6 +184,7 @@ public class UserConstants
     public static final String ORDER_STATUS_APPROVED="APPROVED";
     public static final String ORDER_STATUS_FINISHED="FINISHED";
     public static final String ORDER_STATUS_CANCELED="CANCELED";
+    public static final String ORDER_STATUS_PRODUCING="PRODUCING";
 
     /**
      * 物资类型
@@ -368,6 +410,7 @@ public class UserConstants
     public static final String SOURCE_DOC_TYPE_RTSALSE = "RT_SALES"; //销售退货单
     public static final String SOURCE_DOC_TYPE_FEEDBACK = "FEEDBACK"; //生产报工单
     public static final String SOURCE_DOC_TYPE_OUTSOURCE_RECPT = "OUTSOURCE_RECPT"; //外协入库单
+    public static final String SOURCE_DOC_TYPE_ITEM_RECPT = "IR"; //物料入库单（wm_item_recpt）
 
 
     /**

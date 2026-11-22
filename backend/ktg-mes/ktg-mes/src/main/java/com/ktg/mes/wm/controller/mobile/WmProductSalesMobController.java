@@ -15,7 +15,7 @@ import com.ktg.mes.md.service.IMdClientService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ProductSalesTxBean;
 import com.ktg.mes.wm.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.collections.CollectionUtils;
@@ -50,7 +50,7 @@ public class WmProductSalesMobController extends BaseController {
     private IMdClientService mdClientService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private SalesQualityLinkageService salesQualityLinkageService;
@@ -111,7 +111,7 @@ public class WmProductSalesMobController extends BaseController {
                 return AjaxResult.error("出库单编号已存在！");
             }
         }else {
-            wmProductSales.setSalesCode(autoCodeUtil.genSerialCode(UserConstants.PRODUCTSALSE_CODE,""));
+            wmProductSales.setSalesCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_PRODUCT_SALES));
         }
 
         if(StringUtils.isNotNull(wmProductSales.getClientId())){

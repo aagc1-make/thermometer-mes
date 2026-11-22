@@ -10,7 +10,7 @@ import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -59,7 +59,7 @@ public class WmStockTakingMobController extends BaseController
     private IWmMaterialStockService wmMaterialStockService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     /**
      * 查询库存盘点记录列表
@@ -100,7 +100,7 @@ public class WmStockTakingMobController extends BaseController
                 return AjaxResult.error("单据编号已存在!");
             }
         }else {
-            wmStockTaking.setTakingCode(autoCodeUtil.genSerialCode(UserConstants.STOCKTAKING_CODE,""));
+            wmStockTaking.setTakingCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_STOCK_TAKING));
         }
         wmStockTaking.setCreateBy(getUsername());
         wmStockTakingService.insertWmStockTaking(wmStockTaking);

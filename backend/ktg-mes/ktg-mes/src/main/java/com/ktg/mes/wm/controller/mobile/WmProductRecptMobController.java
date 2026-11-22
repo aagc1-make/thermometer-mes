@@ -14,7 +14,7 @@ import com.ktg.mes.pro.service.IProWorkorderService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ProductRecptTxBean;
 import com.ktg.mes.wm.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,10 +46,13 @@ public class WmProductRecptMobController extends BaseController {
     private IProWorkorderService proWorkorderService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private com.ktg.mes.wm.service.impl.ProductReceiptGuardService productReceiptGuardService;
+
+    @Autowired
+    private IWmProductStockingService wmProductStockingService;
 
     /**
      * 查询产品入库录列表
@@ -94,7 +97,7 @@ public class WmProductRecptMobController extends BaseController {
                 return AjaxResult.error("入库单编号已存在！");
             }
         }else {
-            wmProductRecpt.setRecptCode(autoCodeUtil.genSerialCode(UserConstants.PRODUCTRECPT_CODE,""));
+            wmProductRecpt.setRecptCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_PRODUCT_RECPT));
         }
 
 
@@ -150,6 +153,12 @@ public class WmProductRecptMobController extends BaseController {
             ProWorkorder workorder = proWorkorderService.selectProWorkorderByWorkorderId(wmProductRecpt.getWorkorderId());
             wmProductRecpt.setWorkorderCode(workorder.getWorkorderCode());
             wmProductRecpt.setWorkorderName(workorder.getWorkorderName());
+        }
+
+        // 与 PC 一致：待上架 → 已上架 必须齐套，且余量/混放复校验通过
+        if (UserConstants.ORDER_STATUS_APPROVED.equals(wmProductRecpt.getStatus())
+                && !UserConstants.ORDER_STATUS_APPROVED.equals(previousStatus)) {
+            wmProductStockingService.assertReadyToStock(wmProductRecpt.getRecptId());
         }
 
         return toAjax(wmProductRecptService.updateWmProductRecpt(wmProductRecpt));

@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.qc.domain.QcTemplate;
 import com.ktg.mes.qc.service.IQcTemplateService;
 import com.ktg.mes.linkage.ArrivalQualityLinkageService;
@@ -43,6 +44,9 @@ public class WmArrivalNoticeController extends BaseController
 {
     @Autowired
     private IWmArrivalNoticeService wmArrivalNoticeService;
+
+    @Autowired
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private IWmArrivalNoticeLineService wmArrivalNoticeLineService;
@@ -96,6 +100,8 @@ public class WmArrivalNoticeController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmArrivalNotice wmArrivalNotice)
     {
+        // 通知单号由服务端统一取号，忽略前端传入值，避免人工填写/重号
+        wmArrivalNotice.setNoticeCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_ARRIVAL_NOTICE, wmArrivalNotice.getNoticeCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmArrivalNoticeService.checkRnCodeUnique(wmArrivalNotice))){
             return AjaxResult.error("单据编号已存在");
         }

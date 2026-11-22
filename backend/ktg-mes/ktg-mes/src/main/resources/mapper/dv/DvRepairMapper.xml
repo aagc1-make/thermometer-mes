@@ -68,7 +68,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="sourceDocId != null "> and source_doc_id = #{sourceDocId}</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
         </where>
-        order by create_time desc
+        order by create_time desc, repair_id desc
     </select>
     
     <select id="selectDvRepairByRepairId" parameterType="Long" resultMap="DvRepairResult">

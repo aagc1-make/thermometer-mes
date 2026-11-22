@@ -15,7 +15,7 @@ import com.ktg.mes.linkage.IssueDraftLinkageService;
 import com.ktg.mes.linkage.ProductionNextStepLinkageService;
 import com.ktg.mes.md.domain.MdWorkstation;
 import com.ktg.mes.md.service.IMdWorkstationService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
@@ -69,7 +69,7 @@ public class ProTaskController extends BaseController
     private IMdWorkstationService mdWorkstationService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     /**
      * 查询生产任务列表
@@ -269,7 +269,7 @@ public class ProTaskController extends BaseController
 
 
         //自动生成任务编号和名称
-        proTask.setTaskCode(autoCodeUtil.genSerialCode(UserConstants.TASK_CODE,null));
+        proTask.setTaskCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_TASK, proTask.getTaskCode()));
         proTask.setTaskName(new StringBuilder().append(proTask.getItemName()).append("【").append(proTask.getQuantity().toString()).append("】").append(proTask.getUnitOfMeasure()).toString());
 
 

@@ -4,6 +4,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.constant.UserConstants;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.wm.utils.WmBarCodeUtil;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,8 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/pro/transorder")
 public class ProTransOrderController extends BaseController
 {
+    @Autowired
+    private CodeSequenceService codeSequenceService;
     @Autowired
     private IProTransOrderService proTransOrderService;
 
@@ -82,6 +85,8 @@ public class ProTransOrderController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody ProTransOrder proTransOrder)
     {
+        // 流转单号由服务端统一取号，忽略前端传入值
+        proTransOrder.setTransOrderCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_TRANS_ORDER, proTransOrder.getTransOrderCode()));
         proTransOrderService.insertProTransOrder(proTransOrder);
         wmBarCodeUtil.generateBarCode(UserConstants.BARCODE_TYPE_TRANSORDER,proTransOrder.getTransOrderId(),proTransOrder.getTransOrderCode(),null);
         proTransOrder.setCreateBy(getUsername());

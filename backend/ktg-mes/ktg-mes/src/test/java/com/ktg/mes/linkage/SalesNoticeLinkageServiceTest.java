@@ -8,7 +8,7 @@ import com.ktg.mes.wm.domain.WmSalesNoticeLine;
 import com.ktg.mes.wm.service.IWmProductSalesLineService;
 import com.ktg.mes.wm.service.IWmProductSalesService;
 import com.ktg.mes.wm.service.IWmSalesNoticeService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -27,7 +27,7 @@ class SalesNoticeLinkageServiceTest {
 
     private IWmProductSalesService salesService;
     private IWmProductSalesLineService salesLineService;
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
     private MenuLinkageNoticeService menuNoticeService;
     private IWmSalesNoticeService salesNoticeService;
     private SalesNoticeLinkageService linkageService;
@@ -36,18 +36,18 @@ class SalesNoticeLinkageServiceTest {
     void setUp() {
         salesService = mock(IWmProductSalesService.class);
         salesLineService = mock(IWmProductSalesLineService.class);
-        autoCodeUtil = mock(AutoCodeUtil.class);
+        codeSequenceService = mock(CodeSequenceService.class);
         menuNoticeService = mock(MenuLinkageNoticeService.class);
         salesNoticeService = mock(IWmSalesNoticeService.class);
         linkageService = new SalesNoticeLinkageService(
-                salesService, salesLineService, autoCodeUtil, menuNoticeService, salesNoticeService);
+                salesService, salesLineService, codeSequenceService, menuNoticeService, salesNoticeService);
     }
 
     @Test
     void confirmingNoticeCreatesSalesDraftAndLines() {
         when(salesService.selectWmProductSalesList(any(WmProductSales.class)))
                 .thenReturn(Collections.emptyList());
-        when(autoCodeUtil.genSerialCode(UserConstants.PRODUCTSALSE_CODE, ""))
+        when(codeSequenceService.generateCode(UserConstants.CODE_RULE_PRODUCT_SALES))
                 .thenReturn("SALE-001");
         when(salesService.insertWmProductSales(any(WmProductSales.class))).thenAnswer(invocation -> {
             invocation.<WmProductSales>getArgument(0).setSalesId(100L);

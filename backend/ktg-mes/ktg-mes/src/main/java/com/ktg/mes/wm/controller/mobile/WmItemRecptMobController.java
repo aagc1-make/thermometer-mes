@@ -13,7 +13,7 @@ import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ItemRecptTxBean;
 import com.ktg.mes.wm.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +50,7 @@ public class WmItemRecptMobController extends BaseController {
     private com.ktg.mes.wm.service.impl.ItemRecptWorkflowService itemRecptWorkflowService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     /**
      * 查询物料入库单列表
@@ -76,13 +76,8 @@ public class WmItemRecptMobController extends BaseController {
     @PostMapping
     public AjaxResult add(@RequestBody WmItemRecpt wmItemRecpt)
     {
-        if(StringUtils.isNotNull(wmItemRecpt.getRecptCode())){
-            if(UserConstants.NOT_UNIQUE.equals(wmItemRecptService.checkRecptCodeUnique(wmItemRecpt))){
-                return  AjaxResult.error("单据编号已存在！");
-            }
-        }else {
-            wmItemRecpt.setRecptCode(autoCodeUtil.genSerialCode(UserConstants.ITEMRECPT_CODE,""));
-        }
+        // 入库单号一律由服务端生成，忽略前端传入的 recptCode
+        wmItemRecpt.setRecptCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_ITEM_RECPT));
 
         if(StringUtils.isNull(wmItemRecpt.getVendorId())){
             return AjaxResult.error("请选择供应商！");

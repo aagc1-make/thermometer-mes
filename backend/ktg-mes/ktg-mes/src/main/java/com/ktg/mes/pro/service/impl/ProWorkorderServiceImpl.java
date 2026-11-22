@@ -12,13 +12,16 @@ import com.ktg.mes.pro.domain.ProFeedback;
 import com.ktg.mes.pro.domain.ProRouteProcess;
 import com.ktg.mes.pro.domain.ProRouteProduct;
 import com.ktg.mes.pro.domain.ProWorkorder;
+import com.ktg.mes.pro.mapper.ProWorkorderLineMapper;
 import com.ktg.mes.pro.mapper.ProWorkorderMapper;
 import com.ktg.mes.pro.service.IProFeedbackService;
 import com.ktg.mes.pro.service.IProRouteProcessService;
 import com.ktg.mes.pro.service.IProRouteProductService;
+import com.ktg.mes.pro.service.IProWorkorderLineService;
 import com.ktg.mes.pro.service.IProWorkorderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -47,6 +50,12 @@ public class ProWorkorderServiceImpl implements IProWorkorderService
 
     @Autowired
     private IProFeedbackService proFeedbackService;
+
+    @Autowired
+    private IProWorkorderLineService proWorkorderLineService;
+
+    @Autowired
+    private ProWorkorderLineMapper proWorkorderLineMapper;
 
     /**
      * 查询生产工单
@@ -81,6 +90,11 @@ public class ProWorkorderServiceImpl implements IProWorkorderService
     @Override
     public List<ProWorkorder> selectProWorkorderList(ProWorkorder proWorkorder)
     {
+        // 下拉搜索关键字按 LIKE 使用，需转义 % _ \，避免用户输入被当成通配符
+        if (proWorkorder != null && StringUtils.isNotEmpty(proWorkorder.getKeyword())) {
+            proWorkorder.setKeyword(proWorkorder.getKeyword().trim()
+                    .replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_"));
+        }
         return proWorkorderMapper.selectProWorkorderList(proWorkorder);
     }
 
@@ -112,7 +126,14 @@ public class ProWorkorderServiceImpl implements IProWorkorderService
         }
 
         proWorkorder.setCreateTime(DateUtils.getNowDate());
-        return proWorkorderMapper.insertProWorkorder(proWorkorder);
+        int rows = proWorkorderMapper.insertProWorkorder(proWorkorder);
+        if (rows > 0) {
+            // 一工单一行项目：建单即建行，保证后续报工/批次/入库永远有 line 可挂。
+            // 此处不加 @Transactional，避免 addSubBatch 内捕获重复键异常时被标记回滚；
+            // 新建工单入口（Controller.add）已加事务，保证工单与行同时成功或同时失败。
+            proWorkorderLineService.createDefaultLine(proWorkorder);
+        }
+        return rows;
     }
 
     /**
@@ -129,15 +150,22 @@ public class ProWorkorderServiceImpl implements IProWorkorderService
     }
 
     /**
-     * 批量删除生产工单
+     * 批量删除生产工单（软删除）
+     *
+     * <p>不物理删除：把 status 标记为 DELETED，单号继续占用以保证审计可追溯；
+     * 默认列表不显示，超级管理员可通过“显示已删除”开关查看。</p>
      *
      * @param workorderIds 需要删除的生产工单主键
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int deleteProWorkorderByWorkorderIds(Long[] workorderIds)
     {
-        return proWorkorderMapper.deleteProWorkorderByWorkorderIds(workorderIds);
+        if (workorderIds == null || workorderIds.length == 0) {
+            return 0;
+        }
+        return proWorkorderMapper.softDeleteProWorkorderByWorkorderIds(workorderIds);
     }
 
     /**
@@ -147,9 +175,10 @@ public class ProWorkorderServiceImpl implements IProWorkorderService
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int deleteProWorkorderByWorkorderId(Long workorderId)
     {
-        return proWorkorderMapper.deleteProWorkorderByWorkorderId(workorderId);
+        return deleteProWorkorderByWorkorderIds(new Long[]{workorderId});
     }
 
     @Override

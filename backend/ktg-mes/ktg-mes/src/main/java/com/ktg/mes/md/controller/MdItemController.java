@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -211,8 +212,8 @@ public class MdItemController extends BaseController {
             mdItem.setItemOrProduct(type.getItemOrProduct());
         }
         if(StringUtils.isNotNull(mdItem.getSafeStockFlag())&& "N".equals(mdItem.getSafeStockFlag())){
-            mdItem.setMinStock(0D);
-            mdItem.setMaxStock(0D);
+            mdItem.setMinStock(BigDecimal.ZERO);
+            mdItem.setMaxStock(BigDecimal.ZERO);
         }
         MdUnitMeasure measure = mdUnitMeasureService.selectMdUnitByCode(mdItem.getUnitOfMeasure());
         if(StringUtils.isNotNull(measure)){

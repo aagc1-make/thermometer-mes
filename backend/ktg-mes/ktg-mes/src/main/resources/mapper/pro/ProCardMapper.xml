@@ -58,7 +58,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="attr3 != null "> and attr3 = #{attr3}</if>
             <if test="attr4 != null "> and attr4 = #{attr4}</if>
         </where>
-        order by create_time desc
+        order by create_time desc, card_id desc
     </select>
     
     <select id="selectProCardByCardId" parameterType="Long" resultMap="ProCardResult">

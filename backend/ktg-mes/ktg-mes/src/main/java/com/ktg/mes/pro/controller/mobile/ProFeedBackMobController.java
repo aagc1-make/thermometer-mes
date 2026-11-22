@@ -18,7 +18,6 @@ import com.ktg.mes.pro.service.IProFeedbackService;
 import com.ktg.mes.pro.service.IProRouteProcessService;
 import com.ktg.mes.pro.service.IProTaskService;
 import com.ktg.mes.pro.service.IProWorkorderService;
-import com.ktg.system.strategy.AutoCodeUtil;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -51,9 +50,6 @@ public class ProFeedBackMobController extends BaseController {
 
     @Autowired
     private IProWorkorderService proWorkorderService;
-
-    @Autowired
-    private AutoCodeUtil autoCodeUtil;
 
     /**
      * 获取生产报工记录详细信息
@@ -113,11 +109,10 @@ public class ProFeedBackMobController extends BaseController {
                 return AjaxResult.error("请输入合格品和不良品数量！");
             }
         }
-        String feedbackCode = autoCodeUtil.genSerialCode(UserConstants.FEEDBACK_CODE,"");
         proFeedback.setFeedbackTime(new Date());
-        proFeedback.setFeedbackCode(feedbackCode);
+        // 报工单号由服务端生成：父工单号-bg三位序号（如 gd2026112100003-bg012）
         proFeedback.setCreateBy(getUsername());
-        proFeedbackService.insertProFeedback(proFeedback);
+        proFeedbackService.insertProFeedbackWithCode(proFeedback, workorder.getWorkorderCode());
         return AjaxResult.success(proFeedback);
     }
 

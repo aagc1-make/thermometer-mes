@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.collection.CollUtil;
 import com.ktg.common.constant.UserConstants;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.common.utils.bean.BeanUtils;
 import com.ktg.mes.pro.domain.ProFeedback;
@@ -53,6 +54,8 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/qc/ipqc")
 public class QcIpqcController extends BaseController
 {
+    @Autowired
+    private CodeSequenceService codeSequenceService;
     @Autowired
     private PostingLockMapper postingLockMapper;
 
@@ -146,6 +149,8 @@ public class QcIpqcController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody QcIpqc qcIpqc)
     {
+        // 过程检验单号由服务端统一取号，忽略前端传入值
+        qcIpqc.setIpqcCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_IPQC, qcIpqc.getIpqcCode()));
         if(UserConstants.NOT_UNIQUE.equals(qcIpqcService.checkIpqcCodeUnique(qcIpqc))){
             return AjaxResult.error("检测单编码已存在！");
         }

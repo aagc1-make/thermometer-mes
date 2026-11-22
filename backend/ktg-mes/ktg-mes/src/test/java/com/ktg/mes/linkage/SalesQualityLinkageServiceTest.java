@@ -11,7 +11,7 @@ import com.ktg.mes.qc.service.IQcTemplateProductService;
 import com.ktg.mes.wm.domain.WmProductSales;
 import com.ktg.mes.wm.domain.WmProductSalesLine;
 import com.ktg.mes.wm.service.IWmProductSalesService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -32,7 +32,7 @@ class SalesQualityLinkageServiceTest {
     private IQcTemplateProductService templateProductService;
     private IQcTemplateIndexService templateIndexService;
     private IQcOqcLineService oqcLineService;
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
     private MenuLinkageNoticeService menuNoticeService;
     private IWmProductSalesService productSalesService;
     private SalesQualityLinkageService linkageService;
@@ -43,11 +43,11 @@ class SalesQualityLinkageServiceTest {
         templateProductService = mock(IQcTemplateProductService.class);
         templateIndexService = mock(IQcTemplateIndexService.class);
         oqcLineService = mock(IQcOqcLineService.class);
-        autoCodeUtil = mock(AutoCodeUtil.class);
+        codeSequenceService = mock(CodeSequenceService.class);
         menuNoticeService = mock(MenuLinkageNoticeService.class);
         productSalesService = mock(IWmProductSalesService.class);
         linkageService = new SalesQualityLinkageService(oqcService, templateProductService,
-                templateIndexService, oqcLineService, autoCodeUtil, menuNoticeService, productSalesService);
+                templateIndexService, oqcLineService, codeSequenceService, menuNoticeService, productSalesService);
     }
 
     @Test
@@ -61,7 +61,7 @@ class SalesQualityLinkageServiceTest {
                 .thenReturn(Collections.singletonList(template));
         when(templateIndexService.selectQcTemplateIndexList(any(QcTemplateIndex.class)))
                 .thenReturn(Collections.singletonList(index));
-        when(autoCodeUtil.genSerialCode(UserConstants.QC_OQC_CODE, null)).thenReturn("OQC-001");
+        when(codeSequenceService.generateCode(UserConstants.CODE_RULE_OQC)).thenReturn("OQC-001");
         when(oqcService.insertQcOqc(any(QcOqc.class))).thenAnswer(invocation -> {
             invocation.<QcOqc>getArgument(0).setOqcId(99L);
             return 1;

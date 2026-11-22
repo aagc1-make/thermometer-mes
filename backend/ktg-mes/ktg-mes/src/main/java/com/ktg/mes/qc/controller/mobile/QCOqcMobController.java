@@ -18,7 +18,7 @@ import com.ktg.mes.qc.service.IQcTemplateIndexService;
 import com.ktg.mes.qc.service.IQcTemplateProductService;
 import com.ktg.mes.wm.domain.WmProductSalesLine;
 import com.ktg.mes.wm.service.IWmProductSalesLineService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +38,7 @@ public class QCOqcMobController extends BaseController {
     private IQcOqcService qcOqcService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private IQcOqcLineService qcOqcLineService;
@@ -82,7 +82,7 @@ public class QCOqcMobController extends BaseController {
     public AjaxResult add(@RequestBody QcOqc qcOqc)
     {
         //质量的质检记录编码自动生成
-        String resultCode = autoCodeUtil.genSerialCode(UserConstants.QC_OQC_CODE,null);
+        String resultCode = codeSequenceService.generateCode(UserConstants.CODE_RULE_OQC);
         qcOqc.setOqcCode(resultCode);
 
         //自动获取对应的检测模板
@@ -144,7 +144,11 @@ public class QCOqcMobController extends BaseController {
         qcOqc.setInspector(getUsername());
 
         // ===== 2. 完成：与 PC 共用同一事务编排（含并发防重与合格判定）=====
-        if(UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())){
+        // 与 PC 一致：CONFIRMED（页面“完成”）同样视为完成请求，归一为 FINISHED 后走同一服务
+        boolean finishRequested = UserConstants.ORDER_STATUS_FINISHED.equals(qcOqc.getStatus())
+                || UserConstants.ORDER_STATUS_CONFIRMED.equalsIgnoreCase(qcOqc.getStatus());
+        if(finishRequested){
+            qcOqc.setStatus(UserConstants.ORDER_STATUS_FINISHED);
             qcOqcService.completeOqc(qcOqc);
             return AjaxResult.success("出货检验已完成");
         }

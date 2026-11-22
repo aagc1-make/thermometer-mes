@@ -4,6 +4,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.constant.UserConstants;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.WmBarcode;
 import com.ktg.mes.wm.service.IWmBarcodeService;
@@ -36,6 +37,8 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/wm/package")
 public class WmPackageController extends BaseController
 {
+    @Autowired
+    private CodeSequenceService codeSequenceService;
     @Autowired
     private IWmPackageService wmPackageService;
 
@@ -84,6 +87,8 @@ public class WmPackageController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmPackage wmPackage)
     {
+        // 装箱单号由服务端统一取号，忽略前端传入值
+        wmPackage.setPackageCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_PACKAGE, wmPackage.getPackageCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmPackageService.checkPackgeCodeUnique(wmPackage))){
             return AjaxResult.error("装箱单编号已存在!");
         }

@@ -163,8 +163,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			<if test="itemOrProduct !=null and itemOrProduct !=''">item_or_product = #{itemOrProduct},</if>
 			<if test="enableFlag !=null and enableFlag !=''">enable_flag = #{enableFlag},</if>
 			<if test="safeStockFlag !=null and safeStockFlag !=''">safe_stock_flag = #{safeStockFlag},</if>
-			<if test="minStock !=null and minStock !=''">min_stock = #{minStock},</if>
-			<if test="maxStock !=null and maxStock !=''">max_stock = #{maxStock},</if>
+			<if test="minStock !=null">min_stock = #{minStock},</if>
+			<if test="maxStock !=null">max_stock = #{maxStock},</if>
 			<if test="highValue !=null and highValue !=''">high_value = #{highValue},</if>
 			<if test="batchFlag !=null and batchFlag !=''">batch_flag = #{batchFlag},</if>
 			<if test="remark !=null and remark !=''">remark = #{remark},</if>

@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.RtSalesTxBean;
 import com.ktg.mes.wm.service.*;
@@ -40,6 +41,9 @@ public class WmRtSalesController extends BaseController
 {
     @Autowired
     private IWmRtSalesService wmRtSalesService;
+
+    @Autowired
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private IWmRtSalesLineService wmRtSalesLineService;
@@ -102,6 +106,8 @@ public class WmRtSalesController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmRtSales wmRtSales)
     {
+        // 退货单号由服务端统一取号，忽略前端传入值
+        wmRtSales.setRtCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_RT_SALES, wmRtSales.getRtCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmRtSalesService.checkUnique(wmRtSales))){
             return AjaxResult.error("退货单号已存在!");
         }

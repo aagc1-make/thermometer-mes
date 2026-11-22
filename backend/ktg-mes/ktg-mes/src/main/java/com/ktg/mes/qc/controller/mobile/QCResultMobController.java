@@ -11,7 +11,7 @@ import com.ktg.common.utils.bean.BeanUtils;
 import com.ktg.common.utils.poi.ExcelUtil;
 import com.ktg.mes.qc.domain.*;
 import com.ktg.mes.qc.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -37,7 +37,7 @@ public class QCResultMobController extends BaseController
     private IQcResultDetailService qcResultDetailService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private IQcIqcService qcIqcService;
@@ -98,7 +98,7 @@ public class QCResultMobController extends BaseController
     public AjaxResult add(@RequestBody QcResult qcResult)
     {
         //质量的质检记录编码自动生成
-        String resultCode = autoCodeUtil.genSerialCode(UserConstants.QC_RESULT_CODE,null);
+        String resultCode = codeSequenceService.generateCode(UserConstants.CODE_RULE_QC_RESULT);
         qcResult.setResultCode(resultCode);
 
         //根据传入的sourceDocId和sourceDocType初始化其他信息

@@ -12,7 +12,7 @@ import com.ktg.mes.qc.domain.*;
 import com.ktg.mes.qc.service.*;
 import com.ktg.mes.wm.domain.WmItemRecptLine;
 import com.ktg.mes.wm.service.IWmItemRecptLineService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +32,7 @@ public class QCIqcMobController extends BaseController {
     private IQcIqcService qcIqcService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private IQcTemplateProductService qcTemplateProductService;
@@ -85,8 +85,8 @@ public class QCIqcMobController extends BaseController {
     @PostMapping
     public AjaxResult add(@RequestBody QcIqc qcIqc)
     {
-        //质量的质检记录编码自动生成
-        String resultCode = autoCodeUtil.genSerialCode(UserConstants.QC_IQC_CODE,null);
+        //质量的质检记录编码自动生成（忽略前端传入的 iqcCode）
+        String resultCode = codeSequenceService.generateCode(UserConstants.CODE_RULE_IQC);
         qcIqc.setIqcCode(resultCode);
 
         QcTemplateProduct param = new QcTemplateProduct();

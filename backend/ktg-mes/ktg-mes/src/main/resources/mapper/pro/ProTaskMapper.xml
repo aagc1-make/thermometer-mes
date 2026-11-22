@@ -116,6 +116,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="quantityQuanlify != null "> and t.quantity_quanlify = #{quantityQuanlify}</if>
             <if test="quantityUnquanlify != null "> and t.quantity_unquanlify = #{quantityUnquanlify}</if>
         </where>
+        order by t.create_time desc, t.task_id desc
     </select>
     
     <select id="selectProTaskByTaskId" parameterType="Long" resultMap="ProTaskResult">

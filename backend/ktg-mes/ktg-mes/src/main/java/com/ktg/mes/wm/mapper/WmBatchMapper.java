@@ -1,6 +1,9 @@
 package com.ktg.mes.wm.mapper;
 
 import java.util.List;
+import java.util.Map;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import com.ktg.mes.wm.domain.WmBatch;
 
 /**
@@ -97,4 +100,32 @@ public interface WmBatchMapper
      */
     public WmBatch checkBatchCodeByBatchAndProperties(WmBatch wmBatch);
 
+
+    /* ===== 只读批次追溯（来源键关联，不做名称/时间推断）===== */
+    @Select("select rl.batch_code batchCode, r.recpt_id recptId, r.recpt_code recptCode, r.status, "
+          + "r.workorder_id workorderId, r.workorder_code workorderCode, rl.item_code itemCode, rl.item_name itemName, "
+          + "rl.quantity_recived qty from wm_product_recpt_line rl "
+          + "join wm_product_recpt r on r.recpt_id=rl.recpt_id where rl.batch_code=#{batchCode}")
+    List<Map<String,Object>> traceReceipts(@Param("batchCode") String batchCode);
+
+    @Select("select i.issue_id issueId, i.issue_code issueCode, i.workorder_id workorderId, i.workorder_code workorderCode, "
+          + "d.item_code itemCode, d.item_name itemName, d.batch_code materialBatch, d.quantity qty "
+          + "from wm_issue_header i join wm_issue_detail d on d.issue_id=i.issue_id "
+          + "where i.workorder_code in (select r.workorder_code from wm_product_recpt_line rl "
+          + "join wm_product_recpt r on r.recpt_id=rl.recpt_id where rl.batch_code=#{batchCode} and r.workorder_code is not null)")
+    List<Map<String,Object>> traceIssueLines(@Param("batchCode") String batchCode);
+
+    @Select("select t.source_doc_code sourceDocCode, t.source_doc_type sourceDocType, t.batch_code batchCode, "
+          + "t.item_code itemCode, t.transaction_type transactionType, t.transaction_quantity qty, t.create_time createTime "
+          + "from wm_transaction t where t.batch_code=#{batchCode} or t.source_doc_code in ("
+          + "select i.issue_code from wm_issue_header i join wm_issue_detail d on d.issue_id=i.issue_id "
+          + "where i.workorder_code in (select r.workorder_code from wm_product_recpt_line rl "
+          + "join wm_product_recpt r on r.recpt_id=rl.recpt_id where rl.batch_code=#{batchCode} and r.workorder_code is not null)) "
+          + "order by t.transaction_id")
+    List<Map<String,Object>> traceTransactions(@Param("batchCode") String batchCode);
+
+    @Select("select s.sales_id salesId, s.sales_code salesCode, s.status, d.batch_code batchCode, d.item_code itemCode, "
+          + "d.quantity qty from wm_product_sales_detail d join wm_product_sales s on s.sales_id=d.sales_id "
+          + "where d.batch_code=#{batchCode}")
+    List<Map<String,Object>> traceSales(@Param("batchCode") String batchCode);
 }

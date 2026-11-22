@@ -53,11 +53,10 @@ public class FileUploadUtils
     /**
      * Minio默认上传的地址
      */
-    private static String bucketName = MinioConfig.getBucketName();
-
     public static String getBucketName()
     {
-        return bucketName;
+        // 运行时读取，避免类加载早于 Spring 配置绑定时拿到 null。
+        return MinioConfig.getBucketName();
     }
 
     /**

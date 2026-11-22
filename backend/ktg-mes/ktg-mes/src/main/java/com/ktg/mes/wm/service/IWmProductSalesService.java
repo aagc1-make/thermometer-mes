@@ -5,6 +5,7 @@ import java.util.List;
 import com.ktg.common.core.domain.AjaxResult;
 import com.ktg.mes.wm.domain.WmProductSales;
 import com.ktg.mes.wm.domain.tx.ProductSalesTxBean;
+import com.ktg.mes.wm.domain.vo.WorkorderProductSaleVO;
 
 /**
  * 销售出库单Service接口
@@ -101,4 +102,14 @@ public interface IWmProductSalesService
      * @return
      */
     AjaxResult getSaleRecord(Long clientId);
+
+    /**
+     * 查询"工单生成的产品"可售清单
+     *
+     * <p>已入库（FINISHED 产品入库行）减去未取消的销售出库行数量，供销售出库单添加行时选择。</p>
+     *
+     * @param query 过滤条件
+     * @return 工单成品可售清单
+     */
+    List<WorkorderProductSaleVO> selectWorkorderProductsForSale(WorkorderProductSaleVO query);
 }

@@ -40,6 +40,12 @@ public class WmProductRecptDetailMobController extends BaseController {
     @Autowired
     private IWmStorageAreaService wmStorageAreaService;
 
+    @Autowired
+    private com.ktg.mes.wm.service.IWmProductRecptLineService wmProductRecptLineService;
+
+    @Autowired
+    private com.ktg.mes.wm.service.IWmProductStockingService wmProductStockingService;
+
     /**
      * 查询产品入库记录明细列表
      */
@@ -111,6 +117,22 @@ public class WmProductRecptDetailMobController extends BaseController {
             return AjaxResult.error("入库数量必须大于0!");
         }
 
+        // 与 PC 一致：上架数量/库位余量/混放由服务端校验
+        com.ktg.mes.wm.domain.WmProductRecptLine line =
+                wmProductRecptLineService.selectWmProductRecptLineByLineId(wmProductRecptDetail.getLineId());
+        if (line == null) {
+            return AjaxResult.error("产品入库行不存在，无法上架");
+        }
+        if (wmProductRecptDetail.getItemId() == null) {
+            wmProductRecptDetail.setItemId(line.getItemId());
+        }
+        if (wmProductRecptDetail.getBatchId() == null) {
+            wmProductRecptDetail.setBatchId(line.getBatchId());
+        }
+        if (StringUtils.isEmpty(wmProductRecptDetail.getBatchCode())) {
+            wmProductRecptDetail.setBatchCode(line.getBatchCode());
+        }
+        wmProductStockingService.assertDetailAllowed(wmProductRecptDetail);
 
         return toAjax(wmProductRecptDetailService.insertWmProductRecptDetail(wmProductRecptDetail));
     }
@@ -141,6 +163,7 @@ public class WmProductRecptDetailMobController extends BaseController {
             wmProductRecptDetail.setAreaCode(area.getAreaCode());
             wmProductRecptDetail.setAreaName(area.getAreaName());
         }
+        wmProductStockingService.assertDetailAllowed(wmProductRecptDetail);
         return toAjax(wmProductRecptDetailService.updateWmProductRecptDetail(wmProductRecptDetail));
     }
 

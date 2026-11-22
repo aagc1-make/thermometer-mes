@@ -12,7 +12,7 @@ import com.ktg.mes.wm.domain.WmItemRecptLine;
 import com.ktg.mes.wm.service.IWmBatchService;
 import com.ktg.mes.wm.service.IWmItemRecptLineService;
 import com.ktg.mes.wm.service.IWmItemRecptService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,20 +38,20 @@ public class PurchaseReceiptLinkageService {
     private final IWmItemRecptService receiptService;
     private final IWmItemRecptLineService receiptLineService;
     private final IWmBatchService batchService;
-    private final AutoCodeUtil autoCodeUtil;
+    private final CodeSequenceService codeSequenceService;
     private final MenuLinkageNoticeService menuNoticeService;
     private final IQcIqcService iqcService;
 
     public PurchaseReceiptLinkageService(IWmItemRecptService receiptService,
                                          IWmItemRecptLineService receiptLineService,
                                          IWmBatchService batchService,
-                                         AutoCodeUtil autoCodeUtil,
+                                         CodeSequenceService codeSequenceService,
                                          MenuLinkageNoticeService menuNoticeService,
                                          IQcIqcService iqcService) {
         this.receiptService = receiptService;
         this.receiptLineService = receiptLineService;
         this.batchService = batchService;
-        this.autoCodeUtil = autoCodeUtil;
+        this.codeSequenceService = codeSequenceService;
         this.menuNoticeService = menuNoticeService;
         this.iqcService = iqcService;
     }
@@ -103,7 +103,7 @@ public class PurchaseReceiptLinkageService {
         }
 
         WmItemRecpt receipt = new WmItemRecpt();
-        receipt.setRecptCode(autoCodeUtil.genSerialCode(UserConstants.ITEMRECPT_CODE, ""));
+        receipt.setRecptCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_ITEM_RECPT));
         receipt.setRecptName("到货通知" + notice.getNoticeCode() + "采购入库");
         receipt.setNoticeId(notice.getNoticeId());
         receipt.setNoticeCode(notice.getNoticeCode());
@@ -206,6 +206,10 @@ public class PurchaseReceiptLinkageService {
         batchQuery.setVendorCode(notice.getVendorCode());
         batchQuery.setVendorName(notice.getVendorName());
         batchQuery.setVendorNick(notice.getVendorNick());
+        // 批次来源固定为采购来料，前缀 pccg
+        batchQuery.setBatchSource("PURCHASE");
+        // TODO 主链：到货通知/入库行没有工单行概念，workorderLineId 暂为 NULL；
+        //  若后续按工单采购，需要把工单行 ID 从上游一路传到这里。
         WmBatch batch = batchService.getOrGenerateBatchCode(batchQuery);
         if (batch != null) {
             line.setBatchId(batch.getBatchId());

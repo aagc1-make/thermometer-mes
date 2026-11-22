@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author yinjinlu
@@ -76,11 +77,11 @@ public class DvCheckRecordMobController extends BaseController {
     @PostMapping
     public AjaxResult add(@RequestBody DvCheckRecord dvCheckRecord)
     {
-        dvCheckRecordService.insertDvCheckRecord(dvCheckRecord);
         //查找生效的点检方案，生成对应的行信息
         DvCheckPlan plan = dvCheckPlanService.selectDvCheckPlanByMachineryCodeAndType(dvCheckRecord.getMachineryCode(),UserConstants.DV_PLAN_TYPE_CHECK);
 
         if(StringUtils.isNotNull(plan)){
+            dvCheckRecordService.insertDvCheckRecord(dvCheckRecord);
             dvCheckRecord.setPlanId(plan.getPlanId());
             dvCheckRecord.setPlanCode(plan.getPlanCode());
             dvCheckRecord.setPlanName(plan.getPlanName());
@@ -127,14 +128,33 @@ public class DvCheckRecordMobController extends BaseController {
             if(CollectionUtils.isEmpty(lineList)){
                 return AjaxResult.error("请添加设备点检项目结果信息");
             }
+            int unchecked = 0;
+            for (DvCheckRecordLine line : lineList) {
+                String status = line.getCheckStatus();
+                if (status == null || status.trim().isEmpty() ||
+                        UserConstants.DV_CHECK_STATUS_NOTCHECK.equals(status)) {
+                    unchecked++;
+                }
+            }
+            if (unchecked > 0) {
+                return AjaxResult.error("还有 " + unchecked + " 项点检结果未填写，请填写后再提交");
+            }
         }
         //如果设备不同则重新生成对应的点检行信息
         DvCheckRecord oldRecord = dvCheckRecordService.selectDvCheckRecordByRecordId(dvCheckRecord.getRecordId());
-        if(!oldRecord.getMachineryCode().equals(dvCheckRecord.getMachineryCode())){
-            dvCheckRecordLineService.deleteDvCheckRecordLineByRecordId(dvCheckRecord.getRecordId());
+        if (oldRecord == null) return AjaxResult.error("点检记录不存在");
+        boolean machineChanged = dvCheckRecord.getMachineryCode() != null &&
+                !Objects.equals(oldRecord.getMachineryCode(), dvCheckRecord.getMachineryCode());
+        if (UserConstants.ORDER_STATUS_FINISHED.equals(dvCheckRecord.getStatus()) &&
+                (machineChanged || (dvCheckRecord.getMachineryId() != null &&
+                 !Objects.equals(oldRecord.getMachineryId(), dvCheckRecord.getMachineryId())))) {
+            return AjaxResult.error("完成点检时不能更改设备，请先保存修改并检查明细");
+        }
+        if(machineChanged){
             DvCheckPlan plan = dvCheckPlanService.selectDvCheckPlanByMachineryCodeAndType(dvCheckRecord.getMachineryCode(),UserConstants.DV_PLAN_TYPE_CHECK);
 
             if(StringUtils.isNotNull(plan)){
+                dvCheckRecordLineService.deleteDvCheckRecordLineByRecordId(dvCheckRecord.getRecordId());
                 dvCheckRecord.setPlanId(plan.getPlanId());
                 dvCheckRecord.setPlanCode(plan.getPlanCode());
                 dvCheckRecord.setPlanName(plan.getPlanName());
@@ -161,6 +181,11 @@ public class DvCheckRecordMobController extends BaseController {
             }else{
                 return AjaxResult.error("当前设备未找到有效的点检方案，请先添加点检方案");
             }
+        } else {
+            dvCheckRecord.setPlanId(oldRecord.getPlanId());
+            dvCheckRecord.setPlanCode(oldRecord.getPlanCode());
+            dvCheckRecord.setPlanName(oldRecord.getPlanName());
+            dvCheckRecord.setPlanType(oldRecord.getPlanType());
         }
         return toAjax(dvCheckRecordService.updateDvCheckRecord(dvCheckRecord));
     }

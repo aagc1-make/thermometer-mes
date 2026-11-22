@@ -13,7 +13,7 @@ import com.ktg.mes.qc.service.IQcTemplateProductService;
 import com.ktg.mes.wm.domain.WmProductSales;
 import com.ktg.mes.wm.domain.WmProductSalesLine;
 import com.ktg.mes.wm.service.IWmProductSalesService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +30,7 @@ public class SalesQualityLinkageService {
     private final IQcTemplateProductService templateProductService;
     private final IQcTemplateIndexService templateIndexService;
     private final IQcOqcLineService oqcLineService;
-    private final AutoCodeUtil autoCodeUtil;
+    private final CodeSequenceService codeSequenceService;
     private final MenuLinkageNoticeService menuNoticeService;
     private final IWmProductSalesService productSalesService;
 
@@ -38,14 +38,14 @@ public class SalesQualityLinkageService {
                                       IQcTemplateProductService templateProductService,
                                       IQcTemplateIndexService templateIndexService,
                                       IQcOqcLineService oqcLineService,
-                                      AutoCodeUtil autoCodeUtil,
+                                      CodeSequenceService codeSequenceService,
                                       MenuLinkageNoticeService menuNoticeService,
                                       IWmProductSalesService productSalesService) {
         this.oqcService = oqcService;
         this.templateProductService = templateProductService;
         this.templateIndexService = templateIndexService;
         this.oqcLineService = oqcLineService;
-        this.autoCodeUtil = autoCodeUtil;
+        this.codeSequenceService = codeSequenceService;
         this.menuNoticeService = menuNoticeService;
         this.productSalesService = productSalesService;
     }
@@ -106,7 +106,7 @@ public class SalesQualityLinkageService {
                               QcTemplateProduct template,
                               String operator) {
         QcOqc draft = new QcOqc();
-        draft.setOqcCode(autoCodeUtil.genSerialCode(UserConstants.QC_OQC_CODE, null));
+        draft.setOqcCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_OQC));
         draft.setOqcName("销售出库" + sales.getSalesCode() + "-" + source.getItemName());
         draft.setTemplateId(template.getTemplateId());
         draft.setSourceDocId(sales.getSalesId());

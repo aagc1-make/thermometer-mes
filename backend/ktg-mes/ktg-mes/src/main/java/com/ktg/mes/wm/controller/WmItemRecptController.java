@@ -15,6 +15,7 @@ import com.ktg.mes.linkage.FormLinkagePolicy;
 import com.ktg.mes.linkage.MenuLinkageNoticePaths;
 import com.ktg.mes.linkage.MenuLinkageNoticeService;
 import com.ktg.mes.linkage.ProductionNextStepLinkageService;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,6 +86,9 @@ public class WmItemRecptController extends BaseController
     @Autowired
     private IStorageCoreService storageCoreService;
 
+    @Autowired
+    private CodeSequenceService codeSequenceService;
+
     /**
      * 查询物料入库单列表
      */
@@ -128,6 +132,9 @@ public class WmItemRecptController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmItemRecpt wmItemRecpt)
     {
+        // 入库单号由服务端统一取号，弹窗预取的合法单号原样沿用
+        wmItemRecpt.setRecptCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_ITEM_RECPT, wmItemRecpt.getRecptCode()));
+
         if(UserConstants.NOT_UNIQUE.equals(wmItemRecptService.checkRecptCodeUnique(wmItemRecpt))){
             return  AjaxResult.error("编号已存在！");
         }

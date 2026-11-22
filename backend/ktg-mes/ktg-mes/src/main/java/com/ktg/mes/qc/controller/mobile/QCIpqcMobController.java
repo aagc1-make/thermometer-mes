@@ -16,7 +16,7 @@ import com.ktg.mes.pro.service.IProFeedbackService;
 import com.ktg.mes.pro.service.IProWorkorderService;
 import com.ktg.mes.qc.domain.*;
 import com.ktg.mes.qc.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -39,7 +39,7 @@ public class QCIpqcMobController extends BaseController {
     private IQcIpqcService qcIpqcService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private IProWorkorderService proWorkorderService;
@@ -92,7 +92,7 @@ public class QCIpqcMobController extends BaseController {
     {
 
         //质量的质检记录编码自动生成
-        String resultCode = autoCodeUtil.genSerialCode(UserConstants.QC_PQC_CODE,null);
+        String resultCode = codeSequenceService.generateCode(UserConstants.CODE_RULE_IPQC);
         qcIpqc.setIpqcCode(resultCode);
 
         //过程检验、完工检验按物资搜索

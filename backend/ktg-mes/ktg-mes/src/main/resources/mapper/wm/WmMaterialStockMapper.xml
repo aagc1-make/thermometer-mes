@@ -119,6 +119,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
     </select>
     
+    <select id="selectIssuePickStocks" resultMap="WmMaterialStockResult">
+        select s.* from wm_material_stock s
+        inner join wm_warehouse w on w.warehouse_id = s.warehouse_id
+        inner join wm_storage_location l on l.location_id = s.location_id and l.warehouse_id = w.warehouse_id
+        inner join wm_storage_area a on a.area_id = s.area_id and a.location_id = l.location_id
+        inner join wm_batch b on b.batch_id = s.batch_id and b.item_id = s.item_id
+        where s.item_id = #{itemId} and s.quantity_onhand &gt; 0
+          and coalesce(s.frozen_flag, 'N') = 'N'
+          and coalesce(w.frozen_flag, 'N') = 'N'
+          and coalesce(l.frozen_flag, 'N') = 'N'
+          and coalesce(a.frozen_flag, 'N') = 'N' and a.enable_flag = 'Y'
+          and upper(w.warehouse_code) not like '%VIR%'
+          and (b.expire_date is null or b.expire_date &gt;= curdate())
+          and (b.quality_status is null or b.quality_status = '' or b.quality_status = 'OK')
+        order by s.recpt_date asc, s.material_stock_id asc
+        for update
+    </select>
+
     <select id="lockMaterialStockById" parameterType="Long" resultMap="WmMaterialStockResult">
         <include refid="selectWmMaterialStockVo"/> where material_stock_id = #{materialStockId} for update
     </select>
@@ -134,12 +152,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="itemId != null "> and item_id = #{itemId}</if>
             <if test="unitOfMeasure != null  and unitOfMeasure != ''"> and unit_of_measure = #{unitOfMeasure}</if>
             <choose>
-                <when test="batchCode != null and batchCode != ''">
-                    and batch_code = #{batchCode}
-                </when>
-                <otherwise>
-                    and batch_code is null
-                </otherwise>
+                <!-- 优先按 batch_id 精确匹配；老数据只有 batch_code 时兜底 -->
+                <when test="batchId != null"> and batch_id = #{batchId}</when>
+                <when test="batchCode != null and batchCode != ''"> and batch_code = #{batchCode}</when>
+                <otherwise> and batch_id is null and batch_code is null</otherwise>
             </choose>
             <if test="warehouseId != null "> and warehouse_id = #{warehouseId}</if>
             <if test="locationId != null "> and location_id = #{locationId}</if>
@@ -154,12 +170,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="itemId != null "> and item_id = #{itemId}</if>
             <if test="unitOfMeasure != null  and unitOfMeasure != ''"> and unit_of_measure = #{unitOfMeasure}</if>
             <choose>
-                <when test="batchCode != null and batchCode != ''">
-                    and batch_code = #{batchCode}
-                </when>
-                <otherwise>
-                    and batch_code is null
-                </otherwise>
+                <!-- 优先按 batch_id 精确匹配；老数据只有 batch_code 时兜底 -->
+                <when test="batchId != null"> and batch_id = #{batchId}</when>
+                <when test="batchCode != null and batchCode != ''"> and batch_code = #{batchCode}</when>
+                <otherwise> and batch_id is null and batch_code is null</otherwise>
             </choose>
             <if test="warehouseId != null "> and warehouse_id = #{warehouseId}</if>
             <if test="locationId != null "> and location_id = #{locationId}</if>
@@ -272,6 +286,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             update_time = NOW()
         </trim>
         where material_stock_id = #{materialStockId}
+    </update>
+
+    <!-- 按库存行增减数量，避免并发下用内存值覆盖数据库当前结存 -->
+    <update id="addQuantityOnhand">
+        update wm_material_stock
+        set quantity_onhand = quantity_onhand + #{delta},
+            update_time = NOW()
+        where material_stock_id = #{materialStockId}
+    </update>
+
+    <!-- 条件扣减：扣减后不得为负，0 行表示库存不足 -->
+    <update id="deductQuantityOnhandIfEnough">
+        update wm_material_stock
+        set quantity_onhand = quantity_onhand + #{delta},
+            update_time = NOW()
+        where material_stock_id = #{materialStockId}
+          and quantity_onhand + #{delta} &gt;= 0
     </update>
 
     <delete id="deleteWmMaterialStockByMaterialStockId" parameterType="Long">

@@ -17,6 +17,7 @@ import com.ktg.mes.pro.domain.ProWorkorder;
 import com.ktg.mes.pro.mapper.ProProcessMapper;
 import com.ktg.mes.pro.mapper.ProTaskMapper;
 import com.ktg.mes.pro.mapper.ProWorkorderMapper;
+import com.ktg.mes.pro.service.IProWorkorderLineService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ProductProductTxBean;
 import com.ktg.mes.wm.mapper.*;
@@ -58,6 +59,9 @@ public class WmProductProduceServiceImpl implements IWmProductProduceService
 
     @Autowired
     private ProWorkorderMapper proWorkorderMapper;
+
+    @Autowired
+    private IProWorkorderLineService proWorkorderLineService;
 
     @Autowired
     private ProTaskMapper proTaskMapper;
@@ -210,6 +214,14 @@ public class WmProductProduceServiceImpl implements IWmProductProduceService
         batch.setExpireDate(line.getExpireDate());
         batch.setCoCode(workorder.getSourceCode());
         batch.setWorkorderCode(workorder.getWorkorderCode());
+        // 报工产出批次必须挂到工单行：未显式传 lineId 时按“同工单 + 同产出物料 + 未关闭”唯一匹配，
+        // 匹配不到/多条直接报错，不允许静默写 NULL（否则工单-行-批次链路断链）。
+        batch.setWorkorderLineId(proWorkorderLineService.resolveLineId(
+                feedback.getWorkorderId(), null, line.getItemId()));
+        batch.setWorkorderId(feedback.getWorkorderId());
+        // 成品批次配置通常不把工单作为命名维度，批次属性过滤会清空工单字段；
+        // 这里显式声明来源为工单产出，保证批次号仍按工单产出规则(pcgd)取号。
+        batch.setBatchSource("WORKORDER");
         batch.setClientId(workorder.getClientId());
         batch.setClientCode(workorder.getClientCode());
         batch.setLotNumber(line.getLotNumber());

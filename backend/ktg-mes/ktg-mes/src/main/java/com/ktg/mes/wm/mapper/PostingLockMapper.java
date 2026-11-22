@@ -14,6 +14,28 @@ public interface PostingLockMapper {
     String itemRecpt(Long id);
     @Select("select status from wm_issue_header where issue_id=#{id} for update")
     String issue(Long id);
+    @Select("select status from wm_rt_issue where rt_id=#{id} for update")
+    String rtIssue(Long id);
+    @Select("select status from wm_rt_vendor where rt_id=#{id} for update")
+    String rtVendor(Long id);
+    @Select("select rt_id from wm_rt_vendor_line where line_id=#{id} for update")
+    Long rtVendorIdForLine(Long id);
+    @Select("select rt_id from wm_rt_vendor_detail where detail_id=#{id} for update")
+    Long rtVendorIdForDetail(Long id);
+    @Select("select status from qc_rqc where rqc_id=#{id} for update")
+    String rqc(Long id);
+    @Select("select source_doc_type from qc_rqc where rqc_id=#{id} for update")
+    String rqcSourceType(Long id);
+    @Select("select source_doc_id from qc_rqc where rqc_id=#{id} and source_doc_type='RT_ISSUE' for update")
+    Long rqcRtIssueSource(Long id);
+    @Select("select rt_id from wm_rt_issue_line where line_id=#{id} for update")
+    Long rtIssueIdForLine(Long id);
+    @Select("select rt_id from wm_rt_issue_detail where detail_id=#{id} for update")
+    Long rtIssueIdForDetail(Long id);
+    /** 退料行是否已存在未取消的检验单（存在则冻结物料/批次/数量）。 */
+    @Select("select rqc_id from qc_rqc where source_doc_type='RT_ISSUE' and source_line_id=#{lineId} "
+            + "and status<>'CANCELED' order by rqc_id limit 1")
+    Long rqcIdForRtIssueLine(@Param("lineId") Long lineId);
     @Select("select issue_id from wm_issue_detail where detail_id=#{id} for update")
     Long issueIdForDetail(Long id);
     @Select("select issue_id from wm_issue_line where line_id=#{id} for update")

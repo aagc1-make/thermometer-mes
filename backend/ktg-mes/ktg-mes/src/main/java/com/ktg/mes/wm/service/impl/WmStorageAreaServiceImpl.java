@@ -95,18 +95,30 @@ public class WmStorageAreaServiceImpl implements IWmStorageAreaService
         if(!CollectionUtils.isEmpty(stockList)){
             WmStorageArea area = wmStorageAreaMapper.selectWmStorageAreaByAreaId(areaId);
 
+            // 库位已存在“相同物料+相同批次”时允许继续入库：
+            // 避免历史遗留的同物料多批次库位（如成品库位已同时存在多个批次）导致正常归集被拦截。
+            for(WmMaterialStock stock : stockList){
+                boolean sameItem = itemId != null && stock.getItemId() != null
+                        && stock.getItemId().longValue() == itemId.longValue();
+                boolean sameBatch = batchId != null && stock.getBatchId() != null
+                        && stock.getBatchId().longValue() == batchId.longValue();
+                if(sameItem && sameBatch){
+                    return UserConstants.AREA_MIXING_CHECK_RESULT_OK;
+                }
+            }
+
             boolean materialMixingFlag = false;
             boolean batchMixingFlag = false;
 
             for(WmMaterialStock stock : stockList){
                 if(UserConstants.NO.equals(area.getProductMixing()) && itemId!= null){
-                    if(stock.getItemId().longValue() != itemId.longValue()){
+                    if(stock.getItemId() == null || stock.getItemId().longValue() != itemId.longValue()){
                         materialMixingFlag = true;
                     }
                 }
 
                 if(UserConstants.NO.equals(area.getBatchMixing()) && batchId!= null){
-                    if(stock.getBatchId().longValue() != batchId.longValue()){
+                    if(stock.getBatchId() == null || stock.getBatchId().longValue() != batchId.longValue()){
                         batchMixingFlag = true;
                     }
                 }

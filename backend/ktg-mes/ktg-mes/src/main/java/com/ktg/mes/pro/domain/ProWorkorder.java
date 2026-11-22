@@ -130,6 +130,21 @@ public class ProWorkorder extends TreeEntity
     @Excel(name = "单据状态")
     private String status;
 
+    /** 来源单据类型（SALES_ORDER 客户订单等） */
+    private String sourceDocType;
+
+    /** 来源单据ID */
+    private Long sourceDocId;
+
+    /** 来源单据号（快照） */
+    private String sourceDocCode;
+
+    /** 是否显示已删除单据（仅超级管理员查询时传 Y） */
+    private String showDeleted;
+
+    /** 下拉搜索关键字（工单号/工单日期/产品编码或名称），非表字段 */
+    private String keyword;
+
     /** 预留字段1 */
     private String attr1;
 
@@ -373,6 +388,57 @@ public class ProWorkorder extends TreeEntity
     {
         return status;
     }
+
+    public String getSourceDocType()
+    {
+        return sourceDocType;
+    }
+
+    public void setSourceDocType(String sourceDocType)
+    {
+        this.sourceDocType = sourceDocType;
+    }
+
+    public Long getSourceDocId()
+    {
+        return sourceDocId;
+    }
+
+    public void setSourceDocId(Long sourceDocId)
+    {
+        this.sourceDocId = sourceDocId;
+    }
+
+    public String getSourceDocCode()
+    {
+        return sourceDocCode;
+    }
+
+    public void setSourceDocCode(String sourceDocCode)
+    {
+        this.sourceDocCode = sourceDocCode;
+    }
+
+    public String getShowDeleted()
+    {
+        return showDeleted;
+    }
+
+    public void setShowDeleted(String showDeleted)
+    {
+        this.showDeleted = showDeleted;
+    }
+
+    public String getKeyword()
+    {
+        return keyword;
+    }
+
+    public void setKeyword(String keyword)
+    {
+        this.keyword = keyword;
+    }
+
     public void setAttr1(String attr1) 
     {
         this.attr1 = attr1;

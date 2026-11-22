@@ -14,7 +14,7 @@ import com.ktg.mes.pro.service.IProWorkorderService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.IssueTxBean;
 import com.ktg.mes.wm.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.collections.CollectionUtils;
@@ -49,7 +49,7 @@ public class WmIssueMobController extends BaseController {
     private IProWorkorderService proWorkorderService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     /**
      * 查询生产领料单头列表
@@ -91,7 +91,7 @@ public class WmIssueMobController extends BaseController {
                 return  AjaxResult.error("单据编号已存在！");
             }
         }else {
-            wmIssueHeader.setIssueCode(autoCodeUtil.genSerialCode(UserConstants.ISSUE_CODE,""));
+            wmIssueHeader.setIssueCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_ISSUE));
         }
 
         //根据领料单上的生产工单初始化客户信息

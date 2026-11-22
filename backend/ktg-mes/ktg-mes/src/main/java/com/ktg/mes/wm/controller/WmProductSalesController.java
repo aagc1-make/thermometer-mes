@@ -8,8 +8,10 @@ import javax.servlet.http.HttpServletResponse;
 import cn.hutool.core.collection.CollectionUtil;
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ProductSalesTxBean;
+import com.ktg.mes.wm.domain.vo.WorkorderProductSaleVO;
 import com.ktg.mes.wm.service.*;
 import com.ktg.mes.linkage.FormLinkagePolicy;
 import com.ktg.mes.linkage.SalesQualityLinkageService;
@@ -50,6 +52,9 @@ public class WmProductSalesController extends BaseController
     private IWmProductSalesService wmProductSalesService;
 
     @Autowired
+    private CodeSequenceService codeSequenceService;
+
+    @Autowired
     private IWmProductSalesLineService wmProductSalesLineService;
 
     @Autowired
@@ -63,6 +68,9 @@ public class WmProductSalesController extends BaseController
 
     @Autowired
     private FormLinkagePolicy formLinkagePolicy;
+
+    @Autowired
+    private IWmSalesNoticeService wmSalesNoticeService;
 
     /**
      * 查询销售出库单列表
@@ -125,6 +133,10 @@ public class WmProductSalesController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmProductSales wmProductSales)
     {
+        // 出库单号由服务端统一取号：有来源订单时沿用订单链号（dd...0002 -> xc...0002），忽略前端传入值
+        wmProductSales.setSalesCode(StringUtils.isNotEmpty(wmProductSales.getSoCode())
+                ? codeSequenceService.generateChainCode(UserConstants.CODE_RULE_PRODUCT_SALES, wmProductSales.getSoCode())
+                : codeSequenceService.ensureCode(UserConstants.CODE_RULE_PRODUCT_SALES, wmProductSales.getSalesCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmProductSalesService.checkUnique(wmProductSales))){
             return AjaxResult.error("出库单编号已存在！");
         }
@@ -247,6 +259,14 @@ public class WmProductSalesController extends BaseController
 
         sales.setStatus(UserConstants.ORDER_STATUS_FINISHED);
         wmProductSalesService.updateWmProductSales(sales);
+        // 出库完成即回写发货通知状态，避免“出库单已完成、发货通知仍待确认”的数据不一致。
+        if (sales.getNoticeId() != null) {
+            WmSalesNotice notice = wmSalesNoticeService.selectWmSalesNoticeByNoticeId(sales.getNoticeId());
+            if (notice != null && !UserConstants.ORDER_STATUS_FINISHED.equals(notice.getStatus())) {
+                notice.setStatus(UserConstants.ORDER_STATUS_FINISHED);
+                wmSalesNoticeService.updateWmSalesNotice(notice);
+            }
+        }
         return AjaxResult.success();
     }
 
@@ -260,5 +280,20 @@ public class WmProductSalesController extends BaseController
     @Log(title = "根据客户 id 获取销售记录数据")
     public AjaxResult getSaleRecord(@PathVariable Long clientId) {
         return wmProductSalesService.getSaleRecord(clientId);
+    }
+
+    /**
+     * 工单成品可售清单：销售出库单添加"工单生成的产品"时使用
+     *
+     * <p>已入库（产品入库单 FINISHED）− 已开单（未取消的销售出库行），
+     * 只读查询，不生成任何单据。默认只返回仍有可售数量的工单，传 onlyAvailable=N 可全部列出。</p>
+     */
+    @PreAuthorize("@ss.hasPermi('mes:wm:productsales:list')")
+    @GetMapping("/workorderProducts")
+    public TableDataInfo workorderProducts(WorkorderProductSaleVO query)
+    {
+        startPage();
+        List<WorkorderProductSaleVO> list = wmProductSalesService.selectWorkorderProductsForSale(query);
+        return getDataTable(list);
     }
 }

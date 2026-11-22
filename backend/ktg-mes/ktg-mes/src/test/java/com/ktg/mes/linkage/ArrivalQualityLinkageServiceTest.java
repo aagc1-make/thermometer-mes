@@ -11,7 +11,7 @@ import com.ktg.mes.qc.service.IQcTemplateProductService;
 import com.ktg.mes.wm.domain.WmArrivalNotice;
 import com.ktg.mes.wm.domain.WmArrivalNoticeLine;
 import com.ktg.mes.wm.service.IWmArrivalNoticeService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -32,7 +32,7 @@ class ArrivalQualityLinkageServiceTest {
     private IQcTemplateProductService templateProductService;
     private IQcTemplateIndexService templateIndexService;
     private IQcIqcLineService iqcLineService;
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
     private MenuLinkageNoticeService menuNoticeService;
     private IWmArrivalNoticeService arrivalNoticeService;
     private ArrivalQualityLinkageService linkageService;
@@ -43,11 +43,11 @@ class ArrivalQualityLinkageServiceTest {
         templateProductService = mock(IQcTemplateProductService.class);
         templateIndexService = mock(IQcTemplateIndexService.class);
         iqcLineService = mock(IQcIqcLineService.class);
-        autoCodeUtil = mock(AutoCodeUtil.class);
+        codeSequenceService = mock(CodeSequenceService.class);
         menuNoticeService = mock(MenuLinkageNoticeService.class);
         arrivalNoticeService = mock(IWmArrivalNoticeService.class);
         linkageService = new ArrivalQualityLinkageService(iqcService, templateProductService,
-                templateIndexService, iqcLineService, autoCodeUtil, menuNoticeService, arrivalNoticeService);
+                templateIndexService, iqcLineService, codeSequenceService, menuNoticeService, arrivalNoticeService);
     }
 
     @Test
@@ -64,7 +64,7 @@ class ArrivalQualityLinkageServiceTest {
                 .thenReturn(Collections.singletonList(template));
         when(templateIndexService.selectQcTemplateIndexList(any(QcTemplateIndex.class)))
                 .thenReturn(Collections.singletonList(index));
-        when(autoCodeUtil.genSerialCode(UserConstants.QC_IQC_CODE, null)).thenReturn("IQC-001");
+        when(codeSequenceService.generateCode(UserConstants.CODE_RULE_IQC)).thenReturn("IQC-001");
         when(iqcService.insertQcIqc(any(QcIqc.class))).thenAnswer(invocation -> {
             invocation.<QcIqc>getArgument(0).setIqcId(101L);
             return 1;
@@ -94,7 +94,7 @@ class ArrivalQualityLinkageServiceTest {
         linkageService.createDrafts(notice(), Collections.singletonList(line()), "tester");
 
         verify(iqcService, never()).insertQcIqc(any(QcIqc.class));
-        verify(autoCodeUtil, never()).genSerialCode(UserConstants.QC_IQC_CODE, null);
+        verify(codeSequenceService, never()).generateCode(UserConstants.CODE_RULE_IQC);
         verify(menuNoticeService, never()).markUnread(MenuLinkageNoticePaths.IQC);
     }
 

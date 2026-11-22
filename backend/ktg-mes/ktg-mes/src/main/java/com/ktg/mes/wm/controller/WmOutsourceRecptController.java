@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import ch.qos.logback.core.util.StringCollectionUtil;
 import com.ktg.common.constant.UserConstants;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.pro.domain.ProWorkorder;
 import com.ktg.mes.pro.service.IProWorkorderService;
@@ -49,6 +50,8 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/wm/outsourcerecpt")
 public class WmOutsourceRecptController extends BaseController
 {
+    @Autowired
+    private CodeSequenceService codeSequenceService;
     @Autowired
     private IWmOutsourceRecptService wmOutsourceRecptService;
 
@@ -108,6 +111,8 @@ public class WmOutsourceRecptController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmOutsourceRecpt wmOutsourceRecpt)
     {
+        // 外协入库单号由服务端统一取号，忽略前端传入值
+        wmOutsourceRecpt.setRecptCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_OUTSOURCE_RECPT, wmOutsourceRecpt.getRecptCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmOutsourceRecptService.checkIssueCodeUnique(wmOutsourceRecpt))){
             return  AjaxResult.error("编号已存在！");
         }

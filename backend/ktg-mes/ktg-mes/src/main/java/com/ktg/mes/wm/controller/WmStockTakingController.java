@@ -10,7 +10,7 @@ import com.ktg.common.enums.BusinessType;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,7 +44,7 @@ public class WmStockTakingController extends BaseController {
     private IWmMaterialStockService wmMaterialStockService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
 
 
@@ -79,12 +79,9 @@ public class WmStockTakingController extends BaseController {
     @PostMapping
     public AjaxResult add(@RequestBody WmStockTaking wmStockTaking)
     {
-        if(StringUtils.isNotNull(wmStockTaking.getTakingCode())){
-            if(UserConstants.NOT_UNIQUE.equals(wmStockTakingService.checkUnique(wmStockTaking))){
-                return AjaxResult.error("单据编号已存在!");
-            }
-        }else {
-            wmStockTaking.setTakingCode(autoCodeUtil.genSerialCode(UserConstants.STOCKTAKING_CODE,""));
+        wmStockTaking.setTakingCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_STOCK_TAKING, wmStockTaking.getTakingCode()));
+        if(UserConstants.NOT_UNIQUE.equals(wmStockTakingService.checkUnique(wmStockTaking))){
+            return AjaxResult.error("单据编号已存在!");
         }
         wmStockTaking.setCreateBy(getUsername());
         wmStockTakingService.insertWmStockTaking(wmStockTaking);

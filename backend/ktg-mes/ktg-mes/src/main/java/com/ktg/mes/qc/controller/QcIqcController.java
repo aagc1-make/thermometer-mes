@@ -19,6 +19,7 @@ import com.ktg.mes.wm.domain.WmItemRecptLine;
 import com.ktg.mes.wm.domain.WmOutsourceRecpt;
 import com.ktg.mes.wm.domain.WmOutsourceRecptLine;
 import com.ktg.mes.wm.service.*;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,6 +84,9 @@ public class QcIqcController extends BaseController
     @Autowired
     private com.ktg.mes.qc.service.impl.QcIqcCompletionService qcIqcCompletionService;
 
+    @Autowired
+    private CodeSequenceService codeSequenceService;
+
 
     /**
      * 查询来料检验单列表
@@ -127,6 +131,9 @@ public class QcIqcController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody QcIqc qcIqc)
     {
+        // 来料检验单号由服务端统一取号，弹窗预取的合法单号原样沿用
+        qcIqc.setIqcCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_IQC, qcIqc.getIqcCode()));
+
         if(UserConstants.NOT_UNIQUE.equals(qcIqcService.checkIqcCodeUnique(qcIqc))){
             return AjaxResult.error("单据编号已存在！");
         }

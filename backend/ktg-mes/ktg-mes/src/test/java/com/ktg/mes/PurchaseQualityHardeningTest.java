@@ -24,7 +24,7 @@ import com.ktg.mes.wm.service.IWmItemRecptService;
 import com.ktg.mes.wm.service.IWmOutsourceRecptLineService;
 import com.ktg.mes.wm.service.IWmOutsourceRecptService;
 import com.ktg.mes.wm.service.impl.ItemRecptWorkflowService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -40,6 +40,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * 采购质量链的阻断项回归（不连接数据库）。
@@ -273,7 +276,7 @@ public class PurchaseQualityHardeningTest {
         });
         IWmBatchService batch = fake(IWmBatchService.class, (proxy, method, args) -> null);
         PurchaseReceiptLinkageService service = new PurchaseReceiptLinkageService(receipts, receiptLines,
-                batch, autoCode(), null, null);
+                batch, codeSequence(), null, null);
 
         WmArrivalNotice notice = new WmArrivalNotice();
         notice.setNoticeId(1L);
@@ -342,14 +345,11 @@ public class PurchaseQualityHardeningTest {
         assertEquals("完成应触发一次下游草稿", 1, ctx.draftCalls.get());
     }
 
-    /** 编码工具桩：固定返回可预测的单号，避免测试触发真实编码规则。 */
-    private static AutoCodeUtil autoCode() {
-        return new AutoCodeUtil() {
-            @Override
-            public String genSerialCode(String ruleCode, String inputCharacter) {
-                return "IT-" + ruleCode;
-            }
-        };
+    /** 取号服务桩：固定返回可预测的单号，避免测试触发真实编码规则。 */
+    private static CodeSequenceService codeSequence() {
+        CodeSequenceService service = mock(CodeSequenceService.class);
+        when(service.generateCode(anyString())).thenAnswer(invocation -> "IT-" + invocation.getArgument(0));
+        return service;
     }
 
     /** 无来源的手工/历史检验单：允许完成，但不得回写或触发任何下游单。 */
@@ -444,7 +444,8 @@ public class PurchaseQualityHardeningTest {
                 return 1;
             });
             return new QcIqcCompletionService(iqcService, notices, arrivalLines, outsource, outsourceLines,
-                    draft, new FormLinkagePolicy(), lock, guard);
+                    draft, new FormLinkagePolicy(), lock, guard,
+                    org.mockito.Mockito.mock(com.ktg.mes.wm.service.impl.PreStockVendorReturnService.class));
         }
     }
 }

@@ -31,6 +31,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <resultMap type="WmIssueDetail" id="detailResult">
         <result property="detailId"    column="detail_id"    />
+        <result property="materialStockId" column="material_stock_id" />
         <result property="issueId"    column="issue_id"    />
         <result property="lineId"    column="line_id"    />
         <result property="itemId"    column="item_id"    />

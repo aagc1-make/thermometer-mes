@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ktg.mes.pro.mapper.ProWorkorderLineMapper">
+
+    <resultMap type="ProWorkorderLine" id="ProWorkorderLineResult">
+        <result property="lineId"              column="line_id"              />
+        <result property="workorderId"         column="workorder_id"         />
+        <result property="lineNo"              column="line_no"              />
+        <result property="itemId"              column="item_id"              />
+        <result property="itemCode"            column="item_code"            />
+        <result property="itemName"            column="item_name"            />
+        <result property="itemSpc"             column="item_spc"             />
+        <result property="unitOfMeasure"       column="unit_of_measure"      />
+        <result property="unitName"            column="unit_name"            />
+        <result property="planQuantity"        column="plan_quantity"        />
+        <result property="producedQuantity"    column="produced_quantity"    />
+        <result property="qualifiedQuantity"   column="qualified_quantity"   />
+        <result property="scrappedQuantity"    column="scrapped_quantity"    />
+        <result property="batchStrategy"       column="batch_strategy"       />
+        <result property="routeId"             column="route_id"             />
+        <result property="status"              column="status"               />
+        <result property="remark"              column="remark"               />
+        <result property="createBy"            column="create_by"            />
+        <result property="createTime"          column="create_time"          />
+        <result property="updateBy"            column="update_by"            />
+        <result property="updateTime"          column="update_time"          />
+    </resultMap>
+
+    <sql id="selectProWorkorderLineVo">
+        select line_id, workorder_id, line_no, item_id, item_code, item_name, item_spc,
+               unit_of_measure, unit_name, plan_quantity, produced_quantity, qualified_quantity,
+               scrapped_quantity, batch_strategy, route_id, status, remark,
+               create_by, create_time, update_by, update_time
+        from pro_workorder_line
+    </sql>
+
+    <select id="selectProWorkorderLineByLineId" parameterType="Long" resultMap="ProWorkorderLineResult">
+        <include refid="selectProWorkorderLineVo"/>
+        where line_id = #{lineId}
+    </select>
+
+    <select id="selectProWorkorderLineList" parameterType="ProWorkorderLine" resultMap="ProWorkorderLineResult">
+        <include refid="selectProWorkorderLineVo"/>
+        <where>
+            <if test="workorderId != null"> and workorder_id = #{workorderId}</if>
+            <if test="itemId != null"> and item_id = #{itemId}</if>
+            <if test="status != null and status != ''"> and status = #{status}</if>
+        </where>
+        order by workorder_id, line_no, line_id
+    </select>
+
+    <select id="selectOpenLinesByWorkorderAndItem" resultMap="ProWorkorderLineResult">
+        <include refid="selectProWorkorderLineVo"/>
+        where workorder_id = #{workorderId}
+          and item_id = #{itemId}
+          and status not in ('FINISHED', 'CANCELLED')
+        order by line_no, line_id
+    </select>
+
+    <select id="countByWorkorderId" parameterType="Long" resultType="int">
+        select count(1) from pro_workorder_line where workorder_id = #{workorderId}
+    </select>
+
+    <insert id="insertProWorkorderLine" parameterType="ProWorkorderLine" useGeneratedKeys="true" keyProperty="lineId">
+        insert into pro_workorder_line
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="workorderId != null">workorder_id,</if>
+            <if test="lineNo != null">line_no,</if>
+            <if test="itemId != null">item_id,</if>
+            <if test="itemCode != null">item_code,</if>
+            <if test="itemName != null">item_name,</if>
+            <if test="itemSpc != null">item_spc,</if>
+            <if test="unitOfMeasure != null">unit_of_measure,</if>
+            <if test="unitName != null">unit_name,</if>
+            <if test="planQuantity != null">plan_quantity,</if>
+            <if test="producedQuantity != null">produced_quantity,</if>
+            <if test="qualifiedQuantity != null">qualified_quantity,</if>
+            <if test="scrappedQuantity != null">scrapped_quantity,</if>
+            <if test="batchStrategy != null">batch_strategy,</if>
+            <if test="routeId != null">route_id,</if>
+            <if test="status != null">status,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="workorderId != null">#{workorderId},</if>
+            <if test="lineNo != null">#{lineNo},</if>
+            <if test="itemId != null">#{itemId},</if>
+            <if test="itemCode != null">#{itemCode},</if>
+            <if test="itemName != null">#{itemName},</if>
+            <if test="itemSpc != null">#{itemSpc},</if>
+            <if test="unitOfMeasure != null">#{unitOfMeasure},</if>
+            <if test="unitName != null">#{unitName},</if>
+            <if test="planQuantity != null">#{planQuantity},</if>
+            <if test="producedQuantity != null">#{producedQuantity},</if>
+            <if test="qualifiedQuantity != null">#{qualifiedQuantity},</if>
+            <if test="scrappedQuantity != null">#{scrappedQuantity},</if>
+            <if test="batchStrategy != null">#{batchStrategy},</if>
+            <if test="routeId != null">#{routeId},</if>
+            <if test="status != null">#{status},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <delete id="deleteProWorkorderLineByWorkorderIds" parameterType="String">
+        delete from pro_workorder_line where workorder_id in
+        <foreach item="workorderId" collection="array" open="(" separator="," close=")">
+            #{workorderId}
+        </foreach>
+    </delete>
+</mapper>

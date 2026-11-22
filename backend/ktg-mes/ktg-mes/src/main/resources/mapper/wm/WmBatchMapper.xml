@@ -37,6 +37,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="moldCode"    column="mold_code"    />
         <result property="lotNumber"    column="lot_number"    />
         <result property="qualityStatus"    column="quality_status"    />
+        <result property="workorderLineId"    column="workorder_line_id"    />
+        <result property="batchSource"    column="batch_source"    />
+        <result property="initialQuantity"    column="initial_quantity"    />
+        <result property="batchStatus"    column="batch_status"    />
         <result property="remark"    column="remark"    />
         <result property="attr1"    column="attr1"    />
         <result property="attr2"    column="attr2"    />
@@ -49,7 +53,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectWmBatchVo">
-        select batch_id, batch_code, item_id, item_code, item_name, specification, unit_of_measure, produce_date, expire_date, recpt_date, vendor_id, vendor_code, vendor_name, vendor_nick, client_id, client_code, client_name, client_nick, co_code, po_code, workorder_id, workorder_code, task_id, task_code, workstation_id, workstation_code, tool_id, tool_code, mold_id, mold_code, lot_number, quality_status, remark, attr1, attr2, attr3, attr4, create_by, create_time, update_by, update_time from wm_batch
+        select batch_id, batch_code, item_id, item_code, item_name, specification, unit_of_measure, produce_date, expire_date, recpt_date, vendor_id, vendor_code, vendor_name, vendor_nick, client_id, client_code, client_name, client_nick, co_code, po_code, workorder_id, workorder_code, task_id, task_code, workstation_id, workstation_code, tool_id, tool_code, mold_id, mold_code, lot_number, quality_status, workorder_line_id, batch_source, initial_quantity, batch_status, remark, attr1, attr2, attr3, attr4, create_by, create_time, update_by, update_time from wm_batch
     </sql>
 
     <select id="selectWmBatchList" parameterType="WmBatch" resultMap="WmBatchResult">
@@ -281,6 +285,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="moldCode != null">mold_code,</if>
             <if test="lotNumber != null">lot_number,</if>
             <if test="qualityStatus != null">quality_status,</if>
+            <if test="workorderLineId != null">workorder_line_id,</if>
+            <if test="batchSource != null">batch_source,</if>
+            <if test="initialQuantity != null">initial_quantity,</if>
+            <if test="batchStatus != null">batch_status,</if>
             <if test="remark != null">remark,</if>
             <if test="attr1 != null">attr1,</if>
             <if test="attr2 != null">attr2,</if>
@@ -323,6 +331,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="moldCode != null">#{moldCode},</if>
             <if test="lotNumber != null">#{lotNumber},</if>
             <if test="qualityStatus != null">#{qualityStatus},</if>
+            <if test="workorderLineId != null">#{workorderLineId},</if>
+            <if test="batchSource != null">#{batchSource},</if>
+            <if test="initialQuantity != null">#{initialQuantity},</if>
+            <if test="batchStatus != null">#{batchStatus},</if>
             <if test="remark != null">#{remark},</if>
             <if test="attr1 != null">#{attr1},</if>
             <if test="attr2 != null">#{attr2},</if>
@@ -369,6 +381,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="moldCode != null">mold_code = #{moldCode},</if>
             <if test="lotNumber != null">lot_number = #{lotNumber},</if>
             <if test="qualityStatus != null">quality_status = #{qualityStatus},</if>
+            <if test="workorderLineId != null">workorder_line_id = #{workorderLineId},</if>
+            <if test="batchSource != null">batch_source = #{batchSource},</if>
+            <if test="initialQuantity != null">initial_quantity = #{initialQuantity},</if>
+            <if test="batchStatus != null">batch_status = #{batchStatus},</if>
             <if test="remark != null">remark = #{remark},</if>
             <if test="attr1 != null">attr1 = #{attr1},</if>
             <if test="attr2 != null">attr2 = #{attr2},</if>

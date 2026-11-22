@@ -7,10 +7,12 @@ import javax.servlet.http.HttpServletResponse;
 import cn.hutool.core.collection.CollUtil;
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.IssueTxBean;
 import com.ktg.mes.wm.service.*;
 import com.ktg.mes.wm.service.impl.IssueExecuteValidator;
+import com.ktg.mes.wm.service.impl.IssueAutoPickService;
 import com.ktg.mes.linkage.MenuLinkageNoticePaths;
 import com.ktg.mes.linkage.MenuLinkageNoticeService;
 import com.ktg.mes.linkage.ProductionNextStepLinkageService;
@@ -46,6 +48,19 @@ public class WmIssueHeaderController extends BaseController
 {
     @Autowired
     private IssueExecuteValidator issueExecuteValidator;
+
+    @Autowired
+    private IssueAutoPickService issueAutoPickService;
+
+    @Autowired
+    private CodeSequenceService codeSequenceService;
+
+    @PreAuthorize("@ss.hasPermi('mes:wm:issueheader:edit')")
+    @Log(title = "生产领料一键拣货", businessType = BusinessType.UPDATE)
+    @PostMapping("/{issueId}/auto-pick")
+    public AjaxResult autoPick(@PathVariable Long issueId) {
+        return AjaxResult.success(issueAutoPickService.pick(issueId, getUsername()));
+    }
 
     @Autowired
     private PostingLockMapper postingLockMapper;
@@ -111,6 +126,8 @@ public class WmIssueHeaderController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmIssueHeader wmIssueHeader)
     {
+        // 领料单号由服务端统一取号，忽略前端传入值
+        wmIssueHeader.setIssueCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_ISSUE, wmIssueHeader.getIssueCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmIssueHeaderService.checkIssueCodeUnique(wmIssueHeader))){
             return AjaxResult.error("领料单编号已存在");
         }

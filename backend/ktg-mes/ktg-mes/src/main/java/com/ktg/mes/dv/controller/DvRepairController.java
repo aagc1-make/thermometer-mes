@@ -4,6 +4,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.constant.UserConstants;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.dv.domain.dto.DvRepairDTO;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,8 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/dv/repair")
 public class DvRepairController extends BaseController
 {
+    @Autowired
+    private CodeSequenceService codeSequenceService;
     @Autowired
     private IDvRepairService dvRepairService;
 
@@ -80,6 +83,8 @@ public class DvRepairController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody DvRepair dvRepair)
     {
+        // 维修单号由服务端统一取号，忽略前端传入值
+        dvRepair.setRepairCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_DV_REPAIR, dvRepair.getRepairCode()));
         if(UserConstants.NOT_UNIQUE.equals(dvRepairService.checkCodeUnique(dvRepair))){
             return AjaxResult.error("维修单编号已存！");
         }

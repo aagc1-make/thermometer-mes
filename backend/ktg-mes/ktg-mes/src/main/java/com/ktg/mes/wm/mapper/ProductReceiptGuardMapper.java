@@ -111,4 +111,19 @@ public interface ProductReceiptGuardMapper {
             + "join wm_product_recpt r on r.recpt_id=l.recpt_id "
             + "where r.workorder_id=#{workorderId} and r.status='FINISHED'")
     BigDecimal finishedProductRecptTotal(@Param("workorderId") Long workorderId);
+
+    /**
+     * 按订单成品已入库记录反查工单与批次，用于销售出库行自动绑定。
+     * 传批次时按批次精确锁定工单，避免同一订单多张工单时绑错。
+     */
+    @Select("<script>select r.workorder_id as workorderId, r.workorder_code as workorderCode, "
+            + "l.batch_id as batchId, l.batch_code as batchCode "
+            + "from wm_product_recpt_line l join wm_product_recpt r on r.recpt_id=l.recpt_id "
+            + "where r.status='FINISHED' and l.item_id=#{itemId} "
+            + "<if test=\"batchCode != null and batchCode != ''\"> and l.batch_code=#{batchCode}</if> "
+            + "and r.workorder_id in (select w.workorder_id from pro_workorder w where w.source_doc_code=#{soCode}) "
+            + "order by l.line_id limit 1</script>")
+    Map<String, Object> finishedRecptBinding(@Param("soCode") String soCode,
+                                             @Param("itemId") Long itemId,
+                                             @Param("batchCode") String batchCode);
 }

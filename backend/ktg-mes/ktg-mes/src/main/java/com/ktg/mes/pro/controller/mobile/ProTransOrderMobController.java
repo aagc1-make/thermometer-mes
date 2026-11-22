@@ -13,7 +13,7 @@ import com.ktg.mes.pro.service.IProTaskService;
 import com.ktg.mes.pro.service.IProTransOrderService;
 import com.ktg.mes.wm.domain.WmBarcode;
 import com.ktg.mes.wm.service.IWmBarcodeService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -33,7 +33,7 @@ public class ProTransOrderMobController extends BaseController {
     private IProTransOrderService proTransOrderService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private IProTaskService proTaskService;
@@ -85,7 +85,7 @@ public class ProTransOrderMobController extends BaseController {
     public AjaxResult add(@RequestBody ProTransOrder proTransOrder)
     {
         if(!StringUtils.isNotNull(proTransOrder.getTransOrderCode())){
-            String transOrderCdoe = autoCodeUtil.genSerialCode(UserConstants.TRANS_ORDER_CODE,"");
+            String transOrderCdoe = codeSequenceService.generateCode(UserConstants.CODE_RULE_TRANS_ORDER);
             proTransOrder.setTransOrderCode(transOrderCdoe);
         }
 

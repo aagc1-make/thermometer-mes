@@ -4,6 +4,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.constant.UserConstants;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.pro.domain.ProWorkorder;
 import com.ktg.mes.pro.service.IProWorkorderService;
@@ -38,6 +39,8 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/pro/procard")
 public class ProCardController extends BaseController
 {
+    @Autowired
+    private CodeSequenceService codeSequenceService;
     @Autowired
     private IProCardService proCardService;
 
@@ -87,6 +90,8 @@ public class ProCardController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody ProCard proCard)
     {
+        // 流转卡号由服务端统一取号，忽略前端传入值
+        proCard.setCardCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_CARD, proCard.getCardCode()));
         if(UserConstants.NOT_UNIQUE.equals(proCardService.checkCardCodeUnique(proCard))){
             return  AjaxResult.error("编号已存在！");
         }

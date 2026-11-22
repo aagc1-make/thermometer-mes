@@ -4,6 +4,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.constant.UserConstants;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.qc.domain.*;
 import com.ktg.mes.qc.service.*;
@@ -37,6 +38,8 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/qc/qcresult")
 public class QcResultController extends BaseController
 {
+    @Autowired
+    private CodeSequenceService codeSequenceService;
     @Autowired
     private IQcResultService qcResultService;
 
@@ -103,6 +106,8 @@ public class QcResultController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody QcResult qcResult)
     {
+        // 检测记录编号由服务端统一取号，忽略前端传入值
+        qcResult.setResultCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_QC_RESULT, qcResult.getResultCode()));
         List<QcResultDetail> items = qcResult.getItems();
         if(CollectionUtils.isEmpty(items)){
             return AjaxResult.error("检测项以及对应的结果值不能为空!");

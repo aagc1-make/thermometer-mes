@@ -9,7 +9,7 @@ import com.ktg.mes.wm.domain.WmItemRecptLine;
 import com.ktg.mes.wm.service.IWmBatchService;
 import com.ktg.mes.wm.service.IWmItemRecptLineService;
 import com.ktg.mes.wm.service.IWmItemRecptService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -30,7 +30,7 @@ class PurchaseReceiptLinkageServiceTest {
     private IWmItemRecptService receiptService;
     private IWmItemRecptLineService receiptLineService;
     private IWmBatchService batchService;
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
     private MenuLinkageNoticeService menuNoticeService;
     private PurchaseReceiptLinkageService linkageService;
 
@@ -39,10 +39,10 @@ class PurchaseReceiptLinkageServiceTest {
         receiptService = mock(IWmItemRecptService.class);
         receiptLineService = mock(IWmItemRecptLineService.class);
         batchService = mock(IWmBatchService.class);
-        autoCodeUtil = mock(AutoCodeUtil.class);
+        codeSequenceService = mock(CodeSequenceService.class);
         menuNoticeService = mock(MenuLinkageNoticeService.class);
         linkageService = new PurchaseReceiptLinkageService(
-                receiptService, receiptLineService, batchService, autoCodeUtil, menuNoticeService,
+                receiptService, receiptLineService, batchService, codeSequenceService, menuNoticeService,
                 com.ktg.mes.qc.service.IQcIqcService.class.cast(
                         mock(com.ktg.mes.qc.service.IQcIqcService.class)));
     }
@@ -56,7 +56,7 @@ class PurchaseReceiptLinkageServiceTest {
         batch.setBatchCode("B-001");
         when(receiptService.selectWmItemRecptList(any(WmItemRecpt.class)))
                 .thenReturn(Collections.emptyList());
-        when(autoCodeUtil.genSerialCode(UserConstants.ITEMRECPT_CODE, ""))
+        when(codeSequenceService.generateCode(UserConstants.CODE_RULE_ITEM_RECPT))
                 .thenReturn("REC-001");
         when(receiptService.insertWmItemRecpt(any(WmItemRecpt.class))).thenAnswer(invocation -> {
             invocation.<WmItemRecpt>getArgument(0).setRecptId(100L);

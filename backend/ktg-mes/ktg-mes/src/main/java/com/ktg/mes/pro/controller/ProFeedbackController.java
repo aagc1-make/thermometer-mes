@@ -4,6 +4,7 @@ import com.ktg.mes.wm.mapper.PostingLockMapper;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.collection.CollectionUtil;
@@ -19,6 +20,7 @@ import com.ktg.mes.pro.domain.*;
 import com.ktg.mes.pro.service.IProRouteProcessService;
 import com.ktg.mes.pro.service.IProTaskService;
 import com.ktg.mes.pro.service.IProWorkorderService;
+import com.ktg.mes.pro.service.FeedbackBatchScopeService;
 import com.ktg.mes.linkage.ProductionQualityLinkageService;
 import com.ktg.mes.linkage.ProductReceiptLinkageService;
 import com.ktg.mes.linkage.FormLinkagePolicy;
@@ -26,7 +28,6 @@ import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ItemConsumeTxBean;
 import com.ktg.mes.wm.domain.tx.ProductProductTxBean;
 import com.ktg.mes.wm.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -105,10 +106,10 @@ public class ProFeedbackController extends BaseController
     private ProductReceiptLinkageService productReceiptLinkageService;
 
     @Autowired
-    private IStorageCoreService storageCoreService;
+    private FeedbackBatchScopeService feedbackBatchScopeService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private IStorageCoreService storageCoreService;
 
     /**
      * 查询生产报工记录列表
@@ -192,10 +193,9 @@ public class ProFeedbackController extends BaseController
                 return AjaxResult.error("请输入合格品和不良品数量！");
             }
         }
-        String feedbackCode = autoCodeUtil.genSerialCode(UserConstants.FEEDBACK_CODE,"");
-        proFeedback.setFeedbackCode(feedbackCode);
+        // 报工单号由服务端生成：父工单号-bg三位序号（如 gd2026112100003-bg012），工单号已含日期，不再重复
         proFeedback.setCreateBy(getUsername());
-        return toAjax(proFeedbackService.insertProFeedback(proFeedback));
+        return toAjax(proFeedbackService.insertProFeedbackWithCode(proFeedback, workorder.getWorkorderCode()));
     }
 
     /**
@@ -296,6 +296,23 @@ public class ProFeedbackController extends BaseController
     @Transactional
     @PutMapping("/{recordId}")
     public AjaxResult execute(@PathVariable("recordId") Long recordId){
+        return executeInternal(recordId, null);
+    }
+
+    /** 在原有执行链中增加本次允许消耗的来源批次，所有质量及库存校验仍由原链执行。 */
+    @PreAuthorize("@ss.hasPermi('mes:pro:feedback:edit')")
+    @Log(title = "生产报工执行（指定批次）", businessType = BusinessType.UPDATE)
+    @Transactional
+    @PutMapping("/{recordId}/with-batches")
+    public AjaxResult executeWithBatches(@PathVariable("recordId") Long recordId,
+                                         @RequestBody Map<String, List<String>> allowedBatches) {
+        if (allowedBatches == null) {
+            throw new ServiceException("请提供报工消耗批次范围");
+        }
+        return executeInternal(recordId, allowedBatches);
+    }
+
+    private AjaxResult executeInternal(Long recordId, Map<String, List<String>> allowedBatches) {
 
         if(!StringUtils.isNotNull(recordId)){
             return AjaxResult.error("请先保存单据");
@@ -342,7 +359,18 @@ public class ProFeedbackController extends BaseController
 
         //根据当前工序的物料BOM配置，进行物料消耗
         //先生成消耗单
-        WmItemConsume itemConsume = wmItemConsumeService.generateItemConsume(feedback);
+        WmItemConsume itemConsume;
+        if (allowedBatches == null) {
+            itemConsume = wmItemConsumeService.generateItemConsume(feedback);
+        } else {
+            Map<String, List<String>> validated = feedbackBatchScopeService.validate(feedback, allowedBatches);
+            feedback.getParams().put(FeedbackBatchScopeService.PARAM_KEY, validated);
+            try {
+                itemConsume = wmItemConsumeService.generateItemConsume(feedback);
+            } finally {
+                feedback.getParams().remove(FeedbackBatchScopeService.PARAM_KEY);
+            }
+        }
         if(StringUtils.isNotNull(itemConsume)){
             //再执行库存消耗动作
             executeItemConsume(itemConsume);
@@ -380,6 +408,10 @@ public class ProFeedbackController extends BaseController
                 //工单完工后：为整机工单幂等生成产品入库草稿（半成品子工单不建）
                 productReceiptLinkageService.ensureDraftForFinishedWorkorder(feedback.getWorkorderId(), getUsername());
             }
+        }else{
+            // 非关键工序不生成产品产出单，但报工数量同样要推进任务/工单进度；
+            // 否则任务已报满仍显示“剩余可报”，报工页会重复带出该工序。
+            proFeedbackService.updateProTaskAndWorkorderByFeedback(feedback);
         }
 
         //更新报工单的状态

@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.alibaba.fastjson.JSON;
 import com.ktg.common.constant.UserConstants;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.mes.wm.domain.WmMaterialStock;
 import com.ktg.mes.wm.domain.WmStockTakingParam;
@@ -40,6 +41,8 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/wm/stocktakingplan")
 public class WmStockTakingPlanController extends BaseController
 {
+    @Autowired
+    private CodeSequenceService codeSequenceService;
     @Autowired
     private IWmStockTakingPlanService wmStockTakingPlanService;
 
@@ -89,6 +92,8 @@ public class WmStockTakingPlanController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmStockTakingPlan wmStockTakingPlan)
     {
+        // 盘点方案号由服务端统一取号，忽略前端传入值
+        wmStockTakingPlan.setPlanCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_STOCK_TAKING_PLAN, wmStockTakingPlan.getPlanCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmStockTakingPlanService.checkUnique(wmStockTakingPlan))){
             return AjaxResult.error("方案编号已存在！");
         }

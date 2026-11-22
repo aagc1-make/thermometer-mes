@@ -12,7 +12,7 @@ import com.ktg.mes.md.service.IMdClientService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.RtSalesTxBean;
 import com.ktg.mes.wm.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +44,7 @@ public class WmRtSalesMobController extends BaseController {
     private IMdClientService mdClientService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     /**
      * 查询产品销售退货单列表
@@ -85,7 +85,7 @@ public class WmRtSalesMobController extends BaseController {
                 return AjaxResult.error("退货单号已存在!");
             }
         }else {
-            wmRtSales.setRtCode(autoCodeUtil.genSerialCode(UserConstants.RTSALSE_CODE,""));
+            wmRtSales.setRtCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_RT_SALES));
         }
 
         if(StringUtils.isNotNull(wmRtSales.getClientId())){

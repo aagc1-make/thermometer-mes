@@ -51,7 +51,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="planName != null  and planName != ''"> and plan_name like concat('%', #{planName}, '%')</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
         </where>
-        order by create_time desc
+        order by create_time desc, taking_id desc
     </select>
     
     <select id="selectWmStockTakingByTakingId" parameterType="Long" resultMap="WmStockTakingResult">

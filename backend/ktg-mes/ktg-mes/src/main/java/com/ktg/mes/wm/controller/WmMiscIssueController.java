@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.collection.CollUtil;
 import com.ktg.common.constant.UserConstants;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.wm.domain.WmIssueHeader;
 import com.ktg.mes.wm.domain.WmIssueLine;
 import com.ktg.mes.wm.domain.WmMiscIssueLine;
@@ -43,6 +44,8 @@ import com.ktg.common.core.page.TableDataInfo;
 @RequestMapping("/mes/wm/miscissue")
 public class WmMiscIssueController extends BaseController
 {
+    @Autowired
+    private CodeSequenceService codeSequenceService;
     @Autowired
     private IWmMiscIssueService wmMiscIssueService;
 
@@ -95,6 +98,8 @@ public class WmMiscIssueController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmMiscIssue wmMiscIssue)
     {
+        // 杂项出库单号由服务端统一取号，忽略前端传入值
+        wmMiscIssue.setIssueCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_MISC_ISSUE, wmMiscIssue.getIssueCode()));
         if (UserConstants.NOT_UNIQUE.equals(wmMiscIssueService.checkUnique(wmMiscIssue))){
             return AjaxResult.error("编号已存在，请重新输入！");
         }

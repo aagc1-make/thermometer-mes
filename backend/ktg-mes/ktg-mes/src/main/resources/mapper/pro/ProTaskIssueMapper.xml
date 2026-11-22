@@ -57,6 +57,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="quantityAvailable != null "> and quantity_available = #{quantityAvailable}</if>
             <if test="quantityUsed != null "> and quantity_used = #{quantityUsed}</if>
         </where>
+        order by create_time desc, record_id desc
     </select>
     
     <select id="selectProTaskIssueByRecordId" parameterType="Long" resultMap="ProTaskIssueResult">

@@ -11,6 +11,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="workorderType"  column="workorder_type" />
         <result property="orderSource"    column="order_source"    />
         <result property="sourceCode"    column="source_code"    />
+        <result property="sourceDocType"    column="source_doc_type"    />
+        <result property="sourceDocId"    column="source_doc_id"    />
+        <result property="sourceDocCode"    column="source_doc_code"    />
         <result property="productId"    column="product_id"    />
         <result property="productCode"    column="product_code"    />
         <result property="productName"    column="product_name"    />
@@ -46,7 +49,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectProWorkorderVo">
-        select workorder_id, workorder_code, workorder_name, workorder_type, order_source, source_code, product_id, product_code, product_name, product_spc, unit_of_measure, unit_name, batch_code, quantity,quantity_produced, client_id, client_code, client_name, vendor_id, vendor_code, vendor_name, request_date, parent_id, ancestors, finish_date, cancel_date, status, remark, attr1, attr2, attr3, attr4, create_by, create_time, update_by, update_time from pro_workorder
+        select workorder_id, workorder_code, workorder_name, workorder_type, order_source, source_code, source_doc_type, source_doc_id, source_doc_code, product_id, product_code, product_name, product_spc, unit_of_measure, unit_name, batch_code, quantity,quantity_produced, client_id, client_code, client_name, vendor_id, vendor_code, vendor_name, request_date, parent_id, ancestors, finish_date, cancel_date, status, remark, attr1, attr2, attr3, attr4, create_by, create_time, update_by, update_time from pro_workorder
     </sql>
 
     <select id="selectProWorkorderList" parameterType="ProWorkorder" resultMap="ProWorkorderResult">
@@ -80,8 +83,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="parentId != null "> and parent_id = #{parentId}</if>
             <if test="ancestors != null  and ancestors != ''"> and ancestors = #{ancestors}</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="showDeleted == null or showDeleted != &quot;Y&quot;"> and (status is null or status &lt;&gt; 'DELETED')</if>
+            <!-- 下拉远程搜索：工单号 / 工单日期 / 产品编码或名称；日期把 - / . 归一化后比对，1121、11-21、11/21 都能命中 -->
+            <if test="keyword != null and keyword != ''">
+                and (
+                    workorder_code like concat('%', #{keyword}, '%')
+                    or workorder_code like concat('%', replace(replace(replace(#{keyword}, '-', ''), '/', ''), '.', ''), '%')
+                    or date_format(request_date, '%Y-%m-%d') like concat('%', #{keyword}, '%')
+                    or date_format(request_date, '%Y%m%d') like concat('%', replace(replace(replace(#{keyword}, '-', ''), '/', ''), '.', ''), '%')
+                    or product_code like concat('%', #{keyword}, '%')
+                    or product_name like concat('%', #{keyword}, '%')
+                )
+            </if>
         </where>
-        order by create_time desc
+        <choose>
+            <!-- 关键字检索按工单日期倒序并限制条数；不带关键字保持原有分页与排序，其他页面行为不变 -->
+            <when test="keyword != null and keyword != ''">order by request_date desc, workorder_id desc limit 50</when>
+            <otherwise>order by create_time desc, workorder_id desc</otherwise>
+        </choose>
     </select>
     
     <select id="selectProWorkorderByWorkorderId" parameterType="Long" resultMap="ProWorkorderResult">
@@ -91,7 +110,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectProWorkorderListByParentId" parameterType="Long" resultMap="ProWorkorderResult">
         <include refid="selectProWorkorderVo"/>
-        where parent_id = #{parentId}
+        where parent_id = #{parentId} and (status is null or status &lt;&gt; 'DELETED')
     </select>
 
     <select id="checkWorkorderCodeUnique" parameterType="ProWorkorder" resultMap="ProWorkorderResult">
@@ -107,6 +126,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="workorderType != null and workorderType != ''">workorder_type,</if>
             <if test="orderSource != null and orderSource != ''">order_source,</if>
             <if test="sourceCode != null">source_code,</if>
+            <if test="sourceDocType != null and sourceDocType != ''">source_doc_type,</if>
+            <if test="sourceDocId != null">source_doc_id,</if>
+            <if test="sourceDocCode != null and sourceDocCode != ''">source_doc_code,</if>
             <if test="productId != null">product_id,</if>
             <if test="productCode != null and productCode != ''">product_code,</if>
             <if test="productName != null and productName != ''">product_name,</if>
@@ -146,6 +168,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="workorderType != null and workorderType != ''">#{workorderType},</if>
             <if test="orderSource != null and orderSource != ''">#{orderSource},</if>
             <if test="sourceCode != null">#{sourceCode},</if>
+            <if test="sourceDocType != null and sourceDocType != ''">#{sourceDocType},</if>
+            <if test="sourceDocId != null">#{sourceDocId},</if>
+            <if test="sourceDocCode != null and sourceDocCode != ''">#{sourceDocCode},</if>
             <if test="productId != null">#{productId},</if>
             <if test="productCode != null and productCode != ''">#{productCode},</if>
             <if test="productName != null and productName != ''">#{productName},</if>
@@ -189,6 +214,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="workorderType != null and workorderType != ''">workorder_type = #{workorderType},</if>
             <if test="orderSource != null and orderSource != ''">order_source = #{orderSource},</if>
             <if test="sourceCode != null">source_code = #{sourceCode},</if>
+            <if test="sourceDocType != null and sourceDocType != ''">source_doc_type = #{sourceDocType},</if>
+            <if test="sourceDocId != null">source_doc_id = #{sourceDocId},</if>
+            <if test="sourceDocCode != null and sourceDocCode != ''">source_doc_code = #{sourceDocCode},</if>
             <if test="productId != null">product_id = #{productId},</if>
             <if test="productCode != null and productCode != ''">product_code = #{productCode},</if>
             <if test="productName != null and productName != ''">product_name = #{productName},</if>
@@ -234,5 +262,59 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <foreach item="workorderId" collection="array" open="(" separator="," close=")">
             #{workorderId}
         </foreach>
+    </delete>
+
+    <update id="softDeleteProWorkorderByWorkorderIds" parameterType="String">
+        update pro_workorder
+        set status = 'DELETED', update_time = now()
+        where workorder_id in
+        <foreach item="workorderId" collection="array" open="(" separator="," close=")">
+            #{workorderId}
+        </foreach>
+    </update>
+
+    <update id="clearReworkReference" parameterType="String">
+        update pro_workorder set rework_of_id = null where rework_of_id in
+        <foreach item="workorderId" collection="array" open="(" separator="," close=")">
+            #{workorderId}
+        </foreach>
+    </update>
+
+    <update id="clearQcInboundReference" parameterType="String">
+        update qc_inbound set workorder_id = null, rework_workorder_id = null
+        where workorder_id in
+        <foreach item="workorderId" collection="array" open="(" separator="," close=")">
+            #{workorderId}
+        </foreach>
+        or rework_workorder_id in
+        <foreach item="workorderId" collection="array" open="(" separator="," close=")">
+            #{workorderId}
+        </foreach>
+    </update>
+
+    <update id="clearBatchReference" parameterType="String">
+        update wm_batch set workorder_id = null, workorder_line_id = null
+        where workorder_id in
+        <foreach item="workorderId" collection="array" open="(" separator="," close=")">
+            #{workorderId}
+        </foreach>
+    </update>
+
+    <delete id="deleteBomByWorkorderIds" parameterType="String">
+        delete from pro_workorder_bom where workorder_line_id in (
+            select line_id from pro_workorder_line where workorder_id in
+            <foreach item="workorderId" collection="array" open="(" separator="," close=")">
+                #{workorderId}
+            </foreach>
+        )
+    </delete>
+
+    <delete id="deleteOperationByWorkorderIds" parameterType="String">
+        delete from pro_workorder_operation where line_id in (
+            select line_id from pro_workorder_line where workorder_id in
+            <foreach item="workorderId" collection="array" open="(" separator="," close=")">
+                #{workorderId}
+            </foreach>
+        )
     </delete>
 </mapper>

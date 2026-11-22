@@ -1,8 +1,8 @@
-﻿-- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.4.11, for Win64 (x86_64)
 --
--- Host: 127.0.0.1    Database: j2eedb
+-- Host: localhost    Database: j2eedb
 -- ------------------------------------------------------
--- Server version	8.0.44
+-- Server version	8.4.11
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -38,7 +38,7 @@ CREATE TABLE `cal_holiday` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`holiday_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='节假日设置';
+) ENGINE=InnoDB AUTO_INCREMENT=99 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='节假日设置';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -69,7 +69,7 @@ CREATE TABLE `cal_plan` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`plan_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9992 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='排班计划表';
+) ENGINE=InnoDB AUTO_INCREMENT=10020 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='排班计划表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -147,7 +147,7 @@ CREATE TABLE `cal_team` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`team_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9973 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='班组表';
+) ENGINE=InnoDB AUTO_INCREMENT=9985 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='班组表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -220,8 +220,8 @@ CREATE TABLE `db_test` (
   `area_code` varchar(64) NOT NULL COMMENT '库位编码',
   `area_name` varchar(255) NOT NULL COMMENT '库位名称',
   `location_id` bigint NOT NULL COMMENT '库区ID',
-  `area` double(8,2) DEFAULT NULL COMMENT '面积',
-  `max_loa` double(8,2) DEFAULT NULL COMMENT '最大载重量',
+  `area` decimal(8,2) DEFAULT NULL COMMENT '面积',
+  `max_loa` decimal(8,2) DEFAULT NULL COMMENT '最大载重量',
   `position_x` int DEFAULT NULL COMMENT '库位位置X',
   `position_y` int DEFAULT NULL COMMENT '库位位置y',
   `position_z` int DEFAULT NULL COMMENT '库位位置z',
@@ -295,7 +295,7 @@ CREATE TABLE `dv_check_plan` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`plan_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9944 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备点检保养计划头表';
+) ENGINE=InnoDB AUTO_INCREMENT=9950 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备点检保养计划头表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -331,7 +331,7 @@ CREATE TABLE `dv_check_record` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`record_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=216 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备点检记录表';
+) ENGINE=InnoDB AUTO_INCREMENT=223 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备点检记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -361,7 +361,7 @@ CREATE TABLE `dv_check_record_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=209 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备点检记录行表';
+) ENGINE=InnoDB AUTO_INCREMENT=216 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备点检记录行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -452,7 +452,7 @@ CREATE TABLE `dv_machinery_type` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`machinery_type_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9904 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备类型表';
+) ENGINE=InnoDB AUTO_INCREMENT=9910 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备类型表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -488,7 +488,7 @@ CREATE TABLE `dv_mainten_record` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`record_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=201 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备保养记录表';
+) ENGINE=InnoDB AUTO_INCREMENT=208 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备保养记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -518,7 +518,7 @@ CREATE TABLE `dv_mainten_record_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备保养记录行表';
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备保养记录行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -561,9 +561,48 @@ CREATE TABLE `dv_repair` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`repair_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备维修单';
+  PRIMARY KEY (`repair_id`),
+  UNIQUE KEY `uk_dv_repair_repair_code` (`repair_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=209 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备维修单';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_dv_repair_code_bi` BEFORE INSERT ON `dv_repair` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.repair_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_dv_repair_code_bu` BEFORE UPDATE ON `dv_repair` FOR EACH ROW BEGIN
+  IF NOT (OLD.repair_code <=> NEW.repair_code) AND fn_doc_code_valid(NEW.repair_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `dv_repair_line`
@@ -594,7 +633,7 @@ CREATE TABLE `dv_repair_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=201 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备维修单行';
+) ENGINE=InnoDB AUTO_INCREMENT=208 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备维修单行';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -622,7 +661,7 @@ CREATE TABLE `dv_subject` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`subject_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9935 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备点检保养项目表';
+) ENGINE=InnoDB AUTO_INCREMENT=9939 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备点检保养项目表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -807,7 +846,7 @@ CREATE TABLE `iot_model` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`model_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=201 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备模型表';
+) ENGINE=InnoDB AUTO_INCREMENT=229 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备模型表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -907,7 +946,7 @@ CREATE TABLE `md_client` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`client_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9755 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='客户表';
+) ENGINE=InnoDB AUTO_INCREMENT=9767 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='客户表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -929,8 +968,8 @@ CREATE TABLE `md_item` (
   `item_type_name` varchar(255) DEFAULT '' COMMENT '物料类型名称',
   `enable_flag` char(1) NOT NULL DEFAULT 'Y' COMMENT '是否启用',
   `safe_stock_flag` char(1) NOT NULL DEFAULT 'N' COMMENT '是否设置安全库存',
-  `min_stock` double(12,4) DEFAULT '0.0000' COMMENT '最低库存量',
-  `max_stock` double(12,4) DEFAULT '0.0000' COMMENT '最大库存量',
+  `min_stock` decimal(12,4) DEFAULT '0.0000' COMMENT '最低库存量',
+  `max_stock` decimal(12,4) DEFAULT '0.0000' COMMENT '最大库存量',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
   `attr2` varchar(64) DEFAULT NULL COMMENT '预留字段2',
@@ -944,7 +983,7 @@ CREATE TABLE `md_item` (
   `unit_name` varchar(64) DEFAULT NULL,
   `batch_flag` char(1) NOT NULL DEFAULT 'Y' COMMENT '是否批次管理',
   PRIMARY KEY (`item_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9218 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='物料产品表';
+) ENGINE=InnoDB AUTO_INCREMENT=10496 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='物料产品表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1030,7 +1069,7 @@ CREATE TABLE `md_product_bom` (
   `bom_item_spec` varchar(500) DEFAULT NULL COMMENT 'BOM物料规格',
   `unit_of_measure` varchar(64) NOT NULL COMMENT 'BOM物料单位',
   `item_or_product` varchar(20) NOT NULL COMMENT '产品物料标识',
-  `quantity` double(12,4) NOT NULL DEFAULT '0.0000' COMMENT '物料使用比例',
+  `quantity` decimal(12,4) NOT NULL DEFAULT '0.0000' COMMENT '物料使用比例',
   `enable_flag` char(1) NOT NULL DEFAULT 'Y' COMMENT '是否启用',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
@@ -1149,7 +1188,7 @@ CREATE TABLE `md_unit_measure` (
   `measure_name` varchar(255) NOT NULL COMMENT '单位名称',
   `primary_flag` char(1) NOT NULL DEFAULT 'Y' COMMENT '是否是主单位',
   `primary_id` bigint DEFAULT NULL COMMENT '主单位ID',
-  `change_rate` double(12,4) DEFAULT NULL COMMENT '与主单位换算比例',
+  `change_rate` decimal(12,4) DEFAULT NULL COMMENT '与主单位换算比例',
   `enable_flag` char(1) NOT NULL DEFAULT 'Y' COMMENT '是否启用',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
@@ -1203,7 +1242,7 @@ CREATE TABLE `md_vendor` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`vendor_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9765 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='供应商表';
+) ENGINE=InnoDB AUTO_INCREMENT=9771 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='供应商表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1217,7 +1256,7 @@ CREATE TABLE `md_workshop` (
   `workshop_id` bigint NOT NULL AUTO_INCREMENT COMMENT '车间ID',
   `workshop_code` varchar(64) NOT NULL COMMENT '车间编码',
   `workshop_name` varchar(255) NOT NULL COMMENT '车间名称',
-  `area` double(12,2) DEFAULT NULL COMMENT '面积',
+  `area` decimal(12,2) DEFAULT NULL COMMENT '面积',
   `charge` varchar(64) DEFAULT NULL COMMENT '负责人',
   `charge_id` bigint DEFAULT NULL COMMENT '负责人id',
   `enable_flag` char(1) NOT NULL DEFAULT 'Y' COMMENT '是否启用',
@@ -1231,7 +1270,7 @@ CREATE TABLE `md_workshop` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`workshop_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9502 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='车间表';
+) ENGINE=InnoDB AUTO_INCREMENT=9516 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='车间表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1357,6 +1396,351 @@ CREATE TABLE `md_workstation_worker` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `mes_inquiry_header`
+--
+
+DROP TABLE IF EXISTS `mes_inquiry_header`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mes_inquiry_header` (
+  `inquiry_id` bigint NOT NULL AUTO_INCREMENT COMMENT '询价单ID',
+  `inquiry_no` varchar(32) NOT NULL COMMENT '询价单号',
+  `client_id` bigint DEFAULT NULL COMMENT '客户ID',
+  `client_name` varchar(255) DEFAULT NULL COMMENT '客户名称',
+  `buyer` varchar(64) DEFAULT NULL COMMENT '采购联系人',
+  `contact_tel` varchar(64) DEFAULT NULL COMMENT '联系电话',
+  `status` varchar(20) NOT NULL DEFAULT 'SUBMITTED' COMMENT '状态：DRAFT草稿 SUBMITTED待报价 QUOTED已报价 CONFIRMED已转订单 CANCELED已取消',
+  `expected_date` date DEFAULT NULL COMMENT '期望交期',
+  `delivery_address` varchar(500) DEFAULT NULL COMMENT '收货地址',
+  `invoice_type` varchar(128) DEFAULT NULL COMMENT '开票方式',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  `item_count` int NOT NULL DEFAULT '0' COMMENT '品项数',
+  `total_qty` decimal(12,4) NOT NULL DEFAULT '0.0000' COMMENT '总数量',
+  `quote_amount` decimal(14,2) DEFAULT NULL COMMENT '报价总金额',
+  `quote_time` datetime DEFAULT NULL COMMENT '报价时间',
+  `quote_valid_until` date DEFAULT NULL COMMENT '报价有效期至',
+  `sales_name` varchar(64) DEFAULT NULL COMMENT '专属销售',
+  `sales_tel` varchar(64) DEFAULT NULL COMMENT '销售电话',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`inquiry_id`),
+  UNIQUE KEY `uk_inquiry_no` (`inquiry_no`),
+  KEY `idx_client_id` (`client_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='询价单头表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mes_inquiry_line`
+--
+
+DROP TABLE IF EXISTS `mes_inquiry_line`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mes_inquiry_line` (
+  `line_id` bigint NOT NULL AUTO_INCREMENT COMMENT '询价单行ID',
+  `inquiry_id` bigint NOT NULL COMMENT '询价单ID',
+  `line_no` int NOT NULL DEFAULT '1' COMMENT '行号',
+  `item_id` bigint DEFAULT NULL COMMENT '物料ID（md_item.item_id）',
+  `item_code` varchar(64) DEFAULT NULL COMMENT '物料编码（下单时快照）',
+  `item_name` varchar(255) DEFAULT NULL COMMENT '物料名称（下单时快照）',
+  `specification` varchar(500) DEFAULT NULL COMMENT '规格型号（下单时快照）',
+  `item_or_product` varchar(20) DEFAULT NULL COMMENT '产品物料标识：ITEM物料 PRODUCT成品',
+  `qty` decimal(12,4) NOT NULL DEFAULT '0.0000' COMMENT '询价数量',
+  `unit_name` varchar(64) DEFAULT NULL COMMENT '单位',
+  `moq` decimal(12,4) DEFAULT '0.0000' COMMENT '起订量',
+  `lead_days` int DEFAULT NULL COMMENT '参考交期（天）',
+  `quoted_price` decimal(14,4) DEFAULT NULL COMMENT '报价单价',
+  `delivery_date` date DEFAULT NULL COMMENT '承诺交期',
+  `line_amount` decimal(14,2) DEFAULT NULL COMMENT '行金额',
+  `remark` varchar(500) DEFAULT NULL COMMENT '行备注',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`line_id`),
+  KEY `idx_inquiry_id` (`inquiry_id`),
+  KEY `idx_item_id` (`item_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='询价单行表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mes_wx_user`
+--
+
+DROP TABLE IF EXISTS `mes_wx_user`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mes_wx_user` (
+  `wx_user_id` bigint NOT NULL AUTO_INCREMENT COMMENT '微信用户ID',
+  `open_id` varchar(64) NOT NULL COMMENT '微信openid',
+  `union_id` varchar(64) DEFAULT NULL COMMENT '微信unionid',
+  `client_id` bigint DEFAULT NULL COMMENT '绑定的客户ID(md_client)',
+  `nick_name` varchar(64) DEFAULT NULL COMMENT '昵称',
+  `avatar` varchar(500) DEFAULT NULL COMMENT '头像',
+  `phone` varchar(20) DEFAULT NULL COMMENT '手机号',
+  `company` varchar(200) DEFAULT NULL COMMENT '企业名称',
+  `contact` varchar(64) DEFAULT NULL COMMENT '采购联系人',
+  `last_login` datetime DEFAULT NULL COMMENT '最近登录',
+  `create_time` datetime DEFAULT NULL,
+  `update_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`wx_user_id`),
+  UNIQUE KEY `uk_open_id` (`open_id`),
+  KEY `idx_client` (`client_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序微信用户';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `miniapp_account`
+--
+
+DROP TABLE IF EXISTS `miniapp_account`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `miniapp_account` (
+  `account_id` bigint NOT NULL AUTO_INCREMENT COMMENT '账号ID',
+  `client_id` bigint NOT NULL COMMENT '所属客户ID',
+  `username` varchar(64) NOT NULL COMMENT '登录账号',
+  `password_hash` char(64) NOT NULL COMMENT 'SHA-256(salt+密码)',
+  `salt` varchar(32) NOT NULL COMMENT '密码盐',
+  `display_name` varchar(64) DEFAULT NULL COMMENT '显示名称',
+  `enabled` char(1) NOT NULL DEFAULT 'Y' COMMENT '是否启用（Y是 N否）',
+  `last_login_time` datetime DEFAULT NULL COMMENT '最近登录时间',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`account_id`),
+  UNIQUE KEY `uk_miniapp_account_username` (`username`),
+  KEY `idx_miniapp_account_client` (`client_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序登录账号';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `miniapp_address`
+--
+
+DROP TABLE IF EXISTS `miniapp_address`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `miniapp_address` (
+  `address_id` bigint NOT NULL AUTO_INCREMENT COMMENT '地址ID',
+  `client_id` bigint NOT NULL COMMENT '客户ID',
+  `contact_name` varchar(64) NOT NULL COMMENT '收货人',
+  `contact_tel` varchar(64) NOT NULL COMMENT '联系电话',
+  `region` varchar(128) NOT NULL COMMENT '省市区',
+  `detail` varchar(255) NOT NULL COMMENT '详细地址',
+  `tag` varchar(16) DEFAULT NULL COMMENT '标签：默认/收货点/备用',
+  `is_default` char(1) NOT NULL DEFAULT 'N' COMMENT '是否默认 Y/N',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`address_id`),
+  KEY `idx_client_id` (`client_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序收货地址';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `miniapp_contact`
+--
+
+DROP TABLE IF EXISTS `miniapp_contact`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `miniapp_contact` (
+  `contact_id` bigint NOT NULL AUTO_INCREMENT COMMENT '联系人ID',
+  `client_id` bigint NOT NULL COMMENT '客户ID',
+  `name` varchar(64) NOT NULL COMMENT '姓名',
+  `dept` varchar(64) DEFAULT NULL COMMENT '部门/职务',
+  `tel` varchar(64) DEFAULT NULL COMMENT '电话',
+  `email` varchar(128) DEFAULT NULL COMMENT '邮箱',
+  `is_default` char(1) NOT NULL DEFAULT 'N' COMMENT '是否默认 Y/N',
+  PRIMARY KEY (`contact_id`),
+  KEY `idx_client_id` (`client_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序联系人';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `miniapp_customer`
+--
+
+DROP TABLE IF EXISTS `miniapp_customer`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `miniapp_customer` (
+  `client_id` bigint NOT NULL AUTO_INCREMENT COMMENT '客户ID',
+  `company_name` varchar(255) NOT NULL COMMENT '企业名称',
+  `short_name` varchar(16) DEFAULT NULL COMMENT '企业简称（头像文字）',
+  `credit_code` varchar(64) DEFAULT NULL COMMENT '统一社会信用代码',
+  `level_name` varchar(32) DEFAULT NULL COMMENT '客户等级',
+  `level_desc` varchar(128) DEFAULT NULL COMMENT '等级说明',
+  `buyer` varchar(128) DEFAULT NULL COMMENT '采购联系人',
+  `region` varchar(128) DEFAULT NULL COMMENT '所在区域',
+  `sales_name` varchar(64) DEFAULT NULL COMMENT '专属销售',
+  `sales_phone` varchar(64) DEFAULT NULL COMMENT '销售电话',
+  `stat_consulting` int NOT NULL DEFAULT '0' COMMENT '询价中',
+  `stat_pending` int NOT NULL DEFAULT '0' COMMENT '待确认',
+  `stat_closed` int NOT NULL DEFAULT '0' COMMENT '已成交',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`client_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序企业客户';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `miniapp_delivery`
+--
+
+DROP TABLE IF EXISTS `miniapp_delivery`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `miniapp_delivery` (
+  `delivery_id` bigint NOT NULL AUTO_INCREMENT COMMENT '交付ID',
+  `delivery_no` varchar(32) NOT NULL COMMENT '交付单号',
+  `client_id` bigint NOT NULL COMMENT '客户ID',
+  `order_no` varchar(32) NOT NULL COMMENT '订单号',
+  `status` varchar(20) NOT NULL DEFAULT 'PRODUCING' COMMENT '状态：WAITING待排产 PRODUCING生产中 SHIPPED已发货 DELIVERED已签收',
+  `status_name` varchar(32) DEFAULT NULL COMMENT '状态名称',
+  `total_qty` decimal(12,4) NOT NULL DEFAULT '0.0000' COMMENT '订单总数量',
+  `shipped_qty` decimal(12,4) NOT NULL DEFAULT '0.0000' COMMENT '已发货数量',
+  `plan_date` date DEFAULT NULL COMMENT '计划交付日期',
+  `ship_date` date DEFAULT NULL COMMENT '实际发货日期',
+  `carrier` varchar(64) DEFAULT NULL COMMENT '承运商',
+  `tracking_no` varchar(64) DEFAULT NULL COMMENT '运单号',
+  `address` varchar(500) DEFAULT NULL COMMENT '收货地址',
+  `progress` int NOT NULL DEFAULT '0' COMMENT '进度百分比',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`delivery_id`),
+  UNIQUE KEY `uk_delivery_no` (`delivery_no`),
+  KEY `idx_order_no` (`order_no`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序交付进度';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `miniapp_faq`
+--
+
+DROP TABLE IF EXISTS `miniapp_faq`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `miniapp_faq` (
+  `faq_id` bigint NOT NULL AUTO_INCREMENT COMMENT 'FAQ ID',
+  `category` varchar(64) NOT NULL COMMENT '分类',
+  `question` varchar(255) NOT NULL COMMENT '问题',
+  `answer` varchar(1000) NOT NULL COMMENT '回答',
+  `sort_no` int NOT NULL DEFAULT '0' COMMENT '排序',
+  PRIMARY KEY (`faq_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序帮助中心';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `miniapp_invoice`
+--
+
+DROP TABLE IF EXISTS `miniapp_invoice`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `miniapp_invoice` (
+  `invoice_id` bigint NOT NULL AUTO_INCREMENT COMMENT '发票ID',
+  `invoice_no` varchar(32) NOT NULL COMMENT '发票单号',
+  `client_id` bigint NOT NULL COMMENT '客户ID',
+  `invoice_title` varchar(255) NOT NULL COMMENT '发票抬头',
+  `tax_no` varchar(64) DEFAULT NULL COMMENT '纳税人识别号',
+  `invoice_type` varchar(64) NOT NULL DEFAULT '增值税专用发票 13%' COMMENT '发票类型',
+  `amount` decimal(14,2) NOT NULL DEFAULT '0.00' COMMENT '开票金额',
+  `status` varchar(20) NOT NULL DEFAULT 'APPLIED' COMMENT '状态：APPLIED开票中 ISSUED已开票',
+  `status_name` varchar(32) DEFAULT NULL COMMENT '状态名称',
+  `apply_time` datetime DEFAULT NULL COMMENT '申请时间',
+  `issue_time` datetime DEFAULT NULL COMMENT '开票时间',
+  `email` varchar(128) DEFAULT NULL COMMENT '接收邮箱',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`invoice_id`),
+  UNIQUE KEY `uk_invoice_no` (`invoice_no`),
+  KEY `idx_client_id` (`client_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序发票';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `miniapp_order`
+--
+
+DROP TABLE IF EXISTS `miniapp_order`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `miniapp_order` (
+  `order_id` bigint NOT NULL AUTO_INCREMENT COMMENT '订单ID',
+  `order_no` varchar(32) NOT NULL COMMENT '订单号',
+  `client_id` bigint NOT NULL COMMENT '客户ID',
+  `inquiry_no` varchar(32) DEFAULT NULL COMMENT '来源询价单号',
+  `status` varchar(20) NOT NULL DEFAULT 'CONFIRMED' COMMENT '状态：QUOTED待报价 CONFIRMED待确认 PRODUCING生产中 DELIVERED已交付 CLOSED已关闭',
+  `status_name` varchar(32) DEFAULT NULL COMMENT '状态名称',
+  `item_count` int NOT NULL DEFAULT '0' COMMENT '品项数',
+  `total_qty` decimal(12,4) NOT NULL DEFAULT '0.0000' COMMENT '总数量',
+  `total_amount` decimal(14,2) NOT NULL DEFAULT '0.00' COMMENT '订单金额',
+  `delivery_address` varchar(500) DEFAULT NULL COMMENT '收货地址',
+  `invoice_type` varchar(128) DEFAULT NULL COMMENT '开票方式',
+  `expected_date` date DEFAULT NULL COMMENT '期望交期',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  `create_time` datetime DEFAULT NULL COMMENT '下单时间',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`order_id`),
+  UNIQUE KEY `uk_order_no` (`order_no`),
+  KEY `idx_client_id` (`client_id`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序订单';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `miniapp_order_line`
+--
+
+DROP TABLE IF EXISTS `miniapp_order_line`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `miniapp_order_line` (
+  `line_id` bigint NOT NULL AUTO_INCREMENT COMMENT '订单行ID',
+  `order_id` bigint NOT NULL COMMENT '订单ID',
+  `line_no` int NOT NULL DEFAULT '1' COMMENT '行号',
+  `item_code` varchar(64) DEFAULT NULL COMMENT '物料编码',
+  `item_name` varchar(255) DEFAULT NULL COMMENT '物料名称',
+  `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
+  `qty` decimal(12,4) NOT NULL DEFAULT '0.0000' COMMENT '数量',
+  `unit_name` varchar(32) DEFAULT NULL COMMENT '单位',
+  `unit_price` decimal(14,4) DEFAULT NULL COMMENT '单价',
+  `amount` decimal(14,2) DEFAULT NULL COMMENT '行金额',
+  `art` varchar(32) DEFAULT NULL COMMENT '示意图类型',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`line_id`),
+  KEY `idx_order_id` (`order_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序订单行';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `miniapp_statement`
+--
+
+DROP TABLE IF EXISTS `miniapp_statement`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `miniapp_statement` (
+  `statement_id` bigint NOT NULL AUTO_INCREMENT COMMENT '对账单ID',
+  `statement_no` varchar(32) NOT NULL COMMENT '对账单号',
+  `client_id` bigint NOT NULL COMMENT '客户ID',
+  `period` varchar(32) NOT NULL COMMENT '账期',
+  `total_amount` decimal(14,2) NOT NULL DEFAULT '0.00' COMMENT '应结金额',
+  `paid_amount` decimal(14,2) NOT NULL DEFAULT '0.00' COMMENT '已付金额',
+  `unpaid_amount` decimal(14,2) NOT NULL DEFAULT '0.00' COMMENT '未付金额',
+  `status` varchar(20) NOT NULL DEFAULT 'UNPAID' COMMENT '状态：UNPAID待付款 PARTIAL部分付款 PAID已结清',
+  `status_name` varchar(32) DEFAULT NULL COMMENT '状态名称',
+  `bill_date` date DEFAULT NULL COMMENT '出账日期',
+  `due_date` date DEFAULT NULL COMMENT '到期日期',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`statement_id`),
+  UNIQUE KEY `uk_statement_no` (`statement_no`),
+  KEY `idx_client_id` (`client_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序对账单';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `print_client`
 --
 
@@ -1422,7 +1806,7 @@ CREATE TABLE `print_printer_config` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `default_flag` char(5) DEFAULT NULL COMMENT '是否为默认打印机',
   PRIMARY KEY (`printer_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=206 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='打印机配置';
+) ENGINE=InnoDB AUTO_INCREMENT=234 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='打印机配置';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1454,7 +1838,7 @@ CREATE TABLE `print_template` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`template_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=228 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='打印模板配置';
+) ENGINE=InnoDB AUTO_INCREMENT=256 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='打印模板配置';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1524,7 +1908,7 @@ CREATE TABLE `pro_andon_record` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`record_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=206 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='安灯呼叫记录';
+) ENGINE=InnoDB AUTO_INCREMENT=227 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='安灯呼叫记录';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1548,7 +1932,7 @@ CREATE TABLE `pro_card` (
   `unit_of_measure` varchar(64) NOT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
   `barcode_url` varchar(255) DEFAULT NULL COMMENT '赋码地址',
-  `quantity_transfered` double(12,2) DEFAULT NULL COMMENT '流转数量',
+  `quantity_transfered` decimal(12,2) DEFAULT NULL COMMENT '流转数量',
   `status` varchar(64) DEFAULT NULL COMMENT '流转卡状态',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
@@ -1559,9 +1943,48 @@ CREATE TABLE `pro_card` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`card_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=214 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流转卡表';
+  PRIMARY KEY (`card_id`),
+  UNIQUE KEY `uk_pro_card_card_code` (`card_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=235 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流转卡表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_pro_card_code_bi` BEFORE INSERT ON `pro_card` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.card_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_pro_card_code_bu` BEFORE UPDATE ON `pro_card` FOR EACH ROW BEGIN
+  IF NOT (OLD.card_code <=> NEW.card_code) AND fn_doc_code_valid(NEW.card_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `pro_card_process`
@@ -1580,9 +2003,9 @@ CREATE TABLE `pro_card_process` (
   `process_name` varchar(255) DEFAULT NULL COMMENT '工序名称',
   `input_time` datetime DEFAULT NULL COMMENT '进入工序时间',
   `output_time` datetime DEFAULT NULL COMMENT '出工序时间',
-  `quantity_input` double(12,2) DEFAULT NULL COMMENT '投入数量',
-  `quantity_output` double(12,2) DEFAULT NULL COMMENT '产出数量',
-  `quantity_unquanlify` double(12,2) DEFAULT NULL COMMENT '不合格品数量',
+  `quantity_input` decimal(12,2) DEFAULT NULL COMMENT '投入数量',
+  `quantity_output` decimal(12,2) DEFAULT NULL COMMENT '产出数量',
+  `quantity_unquanlify` decimal(12,2) DEFAULT NULL COMMENT '不合格品数量',
   `workstation_id` bigint NOT NULL COMMENT '工作站ID',
   `workstation_code` varchar(64) DEFAULT NULL COMMENT '工作站编号',
   `workstation_name` varchar(125) DEFAULT NULL COMMENT '工作站名称',
@@ -1635,14 +2058,14 @@ CREATE TABLE `pro_feedback` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `expire_date` datetime DEFAULT NULL COMMENT '过期日期',
   `lot_number` varchar(128) DEFAULT NULL COMMENT '生产批号',
-  `quantity` double(14,2) DEFAULT NULL COMMENT '排产数量',
-  `quantity_feedback` double(14,2) DEFAULT NULL COMMENT '本次报工数量',
-  `quantity_qualified` double(14,2) DEFAULT NULL COMMENT '合格品数量',
-  `quantity_unquanlified` double(14,2) DEFAULT NULL COMMENT '不良品数量',
-  `quantity_uncheck` double(14,2) DEFAULT NULL COMMENT '待检测数量',
-  `quantity_labor_scrap` double(14,2) DEFAULT NULL COMMENT '工废数量',
-  `quantity_material_scrap` double(14,2) DEFAULT NULL COMMENT '料废数量',
-  `quantity_other_scrap` double(14,2) DEFAULT NULL COMMENT '其他废品数量',
+  `quantity` decimal(14,2) DEFAULT NULL COMMENT '排产数量',
+  `quantity_feedback` decimal(14,2) DEFAULT NULL COMMENT '本次报工数量',
+  `quantity_qualified` decimal(14,2) DEFAULT NULL COMMENT '合格品数量',
+  `quantity_unquanlified` decimal(14,2) DEFAULT NULL COMMENT '不良品数量',
+  `quantity_uncheck` decimal(14,2) DEFAULT NULL COMMENT '待检测数量',
+  `quantity_labor_scrap` decimal(14,2) DEFAULT NULL COMMENT '工废数量',
+  `quantity_material_scrap` decimal(14,2) DEFAULT NULL COMMENT '料废数量',
+  `quantity_other_scrap` decimal(14,2) DEFAULT NULL COMMENT '其他废品数量',
   `user_name` varchar(64) DEFAULT NULL COMMENT '报工用户名',
   `nick_name` varchar(64) DEFAULT NULL COMMENT '昵称',
   `feedback_channel` varchar(64) DEFAULT NULL COMMENT '报工途径',
@@ -1659,9 +2082,121 @@ CREATE TABLE `pro_feedback` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`record_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=75 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产报工记录表';
+  PRIMARY KEY (`record_id`),
+  UNIQUE KEY `uk_pro_feedback_feedback_code` (`feedback_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=99 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产报工记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_pro_feedback_code_bi` BEFORE INSERT ON `pro_feedback` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.feedback_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_feedback_auto_ipqc` AFTER INSERT ON `pro_feedback` FOR EACH ROW BEGIN
+  DECLARE v_check CHAR(1) DEFAULT 'N';
+  DECLARE v_tpl   BIGINT  DEFAULT NULL;
+  DECLARE v_exists INT    DEFAULT 0;
+  DECLARE v_seq   INT     DEFAULT 1;
+  DECLARE v_code  VARCHAR(64);
+
+  IF NEW.status IN ('FINISHED', 'COMPLETED', 'CONFIRMED') THEN
+
+    SELECT IFNULL(MAX(is_check), 'N') INTO v_check
+    FROM pro_route_process
+    WHERE route_id = NEW.route_id
+      AND process_name = NEW.process_name;
+
+    IF v_check = 'Y' THEN
+      SELECT COUNT(1) INTO v_exists
+      FROM qc_ipqc
+      WHERE source_doc_type = 'FEEDBACK' AND source_doc_code = NEW.feedback_code;
+
+      IF v_exists = 0 THEN
+        SELECT template_id INTO v_tpl
+        FROM qc_template
+        WHERE FIND_IN_SET('IPQC', qc_types)
+        ORDER BY template_id
+        LIMIT 1;
+
+        SELECT IFNULL(MAX(CAST(SUBSTRING(ipqc_code, 11) AS UNSIGNED)), 0) + 1 INTO v_seq
+        FROM qc_ipqc
+        WHERE ipqc_code LIKE CONCAT('zj', DATE_FORMAT(NOW(), '%Y%m%d'), '%');
+
+        SET v_code = CONCAT('zj', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(v_seq, 5, '0'));
+
+        INSERT INTO qc_ipqc (
+          ipqc_code, ipqc_name, ipqc_type, template_id,
+          source_doc_type, source_doc_code,
+          workorder_id, workorder_code, workorder_name,
+          task_id, task_code,
+          workstation_id, workstation_code, workstation_name,
+          process_id, process_code, process_name,
+          item_id, item_code, item_name,
+          unit_of_measure, unit_name, specification,
+          quantity_check, status, remark,
+          create_by, create_time
+        ) VALUES (
+          v_code, CONCAT(NEW.process_name, ' 自动待检'), 'IPQC', v_tpl,
+          'FEEDBACK', NEW.feedback_code,
+          NEW.workorder_id, NEW.workorder_code, NEW.workorder_name,
+          NEW.task_id, NEW.task_code,
+          NEW.workstation_id, NEW.workstation_code, NEW.workstation_name,
+          NEW.process_id, NEW.process_code, NEW.process_name,
+          NEW.item_id, NEW.item_code, NEW.item_name,
+          NEW.unit_of_measure, NEW.unit_name, NEW.specification,
+          NEW.quantity_qualified, 'PREPARE', '报工合格自动触发检验',
+          'system', NOW()
+        );
+      END IF;
+    END IF;
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_pro_feedback_code_bu` BEFORE UPDATE ON `pro_feedback` FOR EACH ROW BEGIN
+  IF NOT (OLD.feedback_code <=> NEW.feedback_code) AND fn_doc_code_valid(NEW.feedback_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `pro_process`
@@ -1740,7 +2275,7 @@ CREATE TABLE `pro_route` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`route_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9454 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工艺路线表';
+) ENGINE=InnoDB AUTO_INCREMENT=9460 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工艺路线表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1776,7 +2311,7 @@ CREATE TABLE `pro_route_process` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`record_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9470 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工艺组成表';
+) ENGINE=InnoDB AUTO_INCREMENT=9477 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工艺组成表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1796,7 +2331,7 @@ CREATE TABLE `pro_route_product` (
   `unit_of_measure` varchar(64) NOT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
   `quantity` int DEFAULT '1' COMMENT '生产数量',
-  `production_time` double(12,2) DEFAULT '1.00' COMMENT '生产用时',
+  `production_time` decimal(12,2) DEFAULT '1.00' COMMENT '生产用时',
   `time_unit_type` varchar(64) DEFAULT 'MINUTE' COMMENT '时间单位',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
@@ -1828,7 +2363,7 @@ CREATE TABLE `pro_route_product_bom` (
   `item_name` varchar(255) NOT NULL COMMENT '产品物料名称',
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) NOT NULL COMMENT '单位',
-  `quantity` double(12,2) DEFAULT '1.00' COMMENT '用料比例',
+  `quantity` decimal(12,2) DEFAULT '1.00' COMMENT '用料比例',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
   `attr2` varchar(255) DEFAULT NULL COMMENT '预留字段2',
@@ -1890,9 +2425,9 @@ CREATE TABLE `pro_sn_process` (
   `process_name` varchar(255) DEFAULT NULL COMMENT '工序名称',
   `input_time` datetime DEFAULT NULL COMMENT '进入工序时间',
   `output_time` datetime DEFAULT NULL COMMENT '出工序时间',
-  `quantity_input` double(12,2) DEFAULT NULL COMMENT '投入数量',
-  `quantity_output` double(12,2) DEFAULT NULL COMMENT '产出数量',
-  `quantity_unquanlify` double(12,2) DEFAULT NULL COMMENT '不合格品数量',
+  `quantity_input` decimal(12,2) DEFAULT NULL COMMENT '投入数量',
+  `quantity_output` decimal(12,2) DEFAULT NULL COMMENT '产出数量',
+  `quantity_unquanlify` decimal(12,2) DEFAULT NULL COMMENT '不合格品数量',
   `workstation_id` bigint NOT NULL COMMENT '工作站ID',
   `workstation_code` varchar(64) DEFAULT NULL COMMENT '工作站编号',
   `workstation_name` varchar(125) DEFAULT NULL COMMENT '工作站名称',
@@ -1940,11 +2475,11 @@ CREATE TABLE `pro_task` (
   `item_name` varchar(255) NOT NULL COMMENT '产品物料名称',
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) NOT NULL COMMENT '单位',
-  `quantity` double(14,2) NOT NULL DEFAULT '1.00' COMMENT '排产数量',
-  `quantity_produced` double(14,2) DEFAULT '0.00' COMMENT '已生产数量',
-  `quantity_quanlify` double(14,2) DEFAULT '0.00' COMMENT '合格品数量',
-  `quantity_unquanlify` double(14,2) DEFAULT '0.00' COMMENT '不良品数量',
-  `quantity_changed` double(14,2) DEFAULT '0.00' COMMENT '调整数量',
+  `quantity` decimal(14,2) NOT NULL DEFAULT '1.00' COMMENT '排产数量',
+  `quantity_produced` decimal(14,2) DEFAULT '0.00' COMMENT '已生产数量',
+  `quantity_quanlify` decimal(14,2) DEFAULT '0.00' COMMENT '合格品数量',
+  `quantity_unquanlify` decimal(14,2) DEFAULT '0.00' COMMENT '不良品数量',
+  `quantity_changed` decimal(14,2) DEFAULT '0.00' COMMENT '调整数量',
   `client_id` bigint DEFAULT NULL COMMENT '客户ID',
   `client_code` varchar(64) DEFAULT NULL COMMENT '客户编码',
   `client_name` varchar(255) DEFAULT NULL COMMENT '客户名称',
@@ -1967,9 +2502,48 @@ CREATE TABLE `pro_task` (
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
   `finish_date` datetime DEFAULT NULL COMMENT '完成日期',
   `cancel_date` datetime DEFAULT NULL COMMENT '取消日期',
-  PRIMARY KEY (`task_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=79 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产任务表';
+  PRIMARY KEY (`task_id`),
+  UNIQUE KEY `uk_pro_task_task_code` (`task_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=112 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产任务表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_pro_task_code_bi` BEFORE INSERT ON `pro_task` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.task_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_pro_task_code_bu` BEFORE UPDATE ON `pro_task` FOR EACH ROW BEGIN
+  IF NOT (OLD.task_code <=> NEW.task_code) AND fn_doc_code_valid(NEW.task_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `pro_task_issue`
@@ -1993,9 +2567,9 @@ CREATE TABLE `pro_task_issue` (
   `item_name` varchar(255) NOT NULL COMMENT '产品物料名称',
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) NOT NULL COMMENT '单位',
-  `quantity_issued` double(12,2) DEFAULT NULL COMMENT '总的投料数量',
-  `quantity_available` double(12,2) DEFAULT NULL COMMENT '当前可用数量',
-  `quantity_used` double(12,2) DEFAULT NULL COMMENT '当前使用数量',
+  `quantity_issued` decimal(12,2) DEFAULT NULL COMMENT '总的投料数量',
+  `quantity_available` decimal(12,2) DEFAULT NULL COMMENT '当前可用数量',
+  `quantity_used` decimal(12,2) DEFAULT NULL COMMENT '当前使用数量',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
   `attr2` varchar(255) DEFAULT NULL COMMENT '预留字段2',
@@ -2035,7 +2609,7 @@ CREATE TABLE `pro_trans_consume` (
   `item_name` varchar(255) NOT NULL COMMENT '被消耗产品物料名称',
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) NOT NULL COMMENT '单位',
-  `quantity_consumed` double(12,2) DEFAULT NULL COMMENT '消耗数量',
+  `quantity_consumed` decimal(12,2) DEFAULT NULL COMMENT '消耗数量',
   `consume_date` datetime DEFAULT NULL COMMENT '消耗时间',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
@@ -2077,7 +2651,7 @@ CREATE TABLE `pro_trans_order` (
   `item_name` varchar(255) NOT NULL COMMENT '产品物料名称',
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) NOT NULL COMMENT '单位',
-  `quantity_transfered` double(12,2) DEFAULT NULL COMMENT '流转数量',
+  `quantity_transfered` decimal(12,2) DEFAULT NULL COMMENT '流转数量',
   `produce_date` datetime DEFAULT NULL COMMENT '生产日期',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
@@ -2089,9 +2663,48 @@ CREATE TABLE `pro_trans_order` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `barcode_url` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`trans_order_id`)
+  PRIMARY KEY (`trans_order_id`),
+  UNIQUE KEY `uk_pro_trans_order_code` (`trans_order_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流转单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_pro_trans_order_code_bi` BEFORE INSERT ON `pro_trans_order` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.trans_order_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_pro_trans_order_code_bu` BEFORE UPDATE ON `pro_trans_order` FOR EACH ROW BEGIN
+  IF NOT (OLD.trans_order_code <=> NEW.trans_order_code) AND fn_doc_code_valid(NEW.trans_order_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `pro_user_workstation`
@@ -2141,10 +2754,10 @@ CREATE TABLE `pro_workorder` (
   `product_spc` varchar(255) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) NOT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(14,2) NOT NULL DEFAULT '0.00' COMMENT '生产数量',
-  `quantity_produced` double(14,2) DEFAULT '0.00' COMMENT '已生产数量',
-  `quantity_changed` double(14,2) DEFAULT '0.00' COMMENT '调整数量',
-  `quantity_scheduled` double(14,2) DEFAULT '0.00' COMMENT '已排产数量',
+  `quantity` decimal(14,2) NOT NULL DEFAULT '0.00' COMMENT '生产数量',
+  `quantity_produced` decimal(14,2) DEFAULT '0.00' COMMENT '已生产数量',
+  `quantity_changed` decimal(14,2) DEFAULT '0.00' COMMENT '调整数量',
+  `quantity_scheduled` decimal(14,2) DEFAULT '0.00' COMMENT '已排产数量',
   `client_id` bigint DEFAULT NULL COMMENT '客户ID',
   `client_code` varchar(64) DEFAULT NULL COMMENT '客户编码',
   `client_name` varchar(255) DEFAULT NULL COMMENT '客户名称',
@@ -2168,9 +2781,69 @@ CREATE TABLE `pro_workorder` (
   `vendor_code` varchar(64) DEFAULT NULL,
   `vendor_name` varchar(255) DEFAULT NULL,
   `cancel_date` datetime DEFAULT NULL COMMENT '取消日期',
-  PRIMARY KEY (`workorder_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产工单表';
+  `product_item_id` bigint DEFAULT NULL COMMENT '产品物料ID（新，归一 md_item）',
+  `source_doc_type` varchar(32) DEFAULT NULL COMMENT '来源单据类型',
+  `source_doc_id` bigint DEFAULT NULL COMMENT '来源单据ID',
+  `source_doc_code` varchar(64) DEFAULT NULL COMMENT '来源单据号（快照）',
+  `root_id` bigint DEFAULT NULL COMMENT '根工单ID',
+  `rework_of_id` bigint DEFAULT NULL COMMENT '返工来源工单ID',
+  `batch_strategy` varchar(8) NOT NULL DEFAULT 'SINGLE' COMMENT '批次策略 SINGLE/MULTI/NONE',
+  `plan_start_date` date DEFAULT NULL COMMENT '计划开工日期',
+  `plan_end_date` date DEFAULT NULL COMMENT '计划完工日期',
+  `quantity_qualified` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '合格入库数量',
+  `quantity_scrapped` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '报废数量',
+  PRIMARY KEY (`workorder_id`),
+  UNIQUE KEY `uk_workorder_code` (`workorder_code`),
+  KEY `idx_wo_status` (`status`),
+  KEY `idx_wo_product_item` (`product_item_id`),
+  KEY `idx_wo_parent` (`parent_id`),
+  KEY `idx_wo_request_date` (`request_date`),
+  KEY `idx_wo_client` (`client_id`),
+  KEY `idx_wo_source` (`source_doc_type`,`source_doc_id`),
+  KEY `fk_wo_rework` (`rework_of_id`),
+  CONSTRAINT `fk_wo_rework` FOREIGN KEY (`rework_of_id`) REFERENCES `pro_workorder` (`workorder_id`) ON DELETE RESTRICT,
+  CONSTRAINT `ck_wo_batch_strategy` CHECK ((`batch_strategy` in (_utf8mb4'SINGLE',_utf8mb4'MULTI',_utf8mb4'NONE'))),
+  CONSTRAINT `ck_wo_status` CHECK (((`status` is null) or (`status` in (_utf8mb4'PREPARE',_utf8mb4'CONFIRMED',_utf8mb4'APPROVING',_utf8mb4'APPROVED',_utf8mb4'IN_PROGRESS',_utf8mb4'FINISHED',_utf8mb4'CANCELED',_utf8mb4'CANCELLED',_utf8mb4'CLOSED',_utf8mb4'DELETED'))))
+) ENGINE=InnoDB AUTO_INCREMENT=83 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产工单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_pro_workorder_code_bi` BEFORE INSERT ON `pro_workorder` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.workorder_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_pro_workorder_code_bu` BEFORE UPDATE ON `pro_workorder` FOR EACH ROW BEGIN
+  IF NOT (OLD.workorder_code <=> NEW.workorder_code) AND fn_doc_code_valid(NEW.workorder_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `pro_workorder_bom`
@@ -2189,7 +2862,7 @@ CREATE TABLE `pro_workorder_bom` (
   `unit_of_measure` varchar(64) NOT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
   `item_or_product` varchar(20) NOT NULL COMMENT '物料产品标识',
-  `quantity` double(14,2) NOT NULL DEFAULT '0.00' COMMENT '预计使用量',
+  `quantity` decimal(14,2) NOT NULL DEFAULT '0.00' COMMENT '预计使用量',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
   `attr2` varchar(255) DEFAULT NULL COMMENT '预留字段2',
@@ -2199,8 +2872,140 @@ CREATE TABLE `pro_workorder_bom` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=201 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产工单BOM组成表';
+  `workorder_line_id` bigint DEFAULT NULL COMMENT '工单行ID',
+  `issued_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '已领数量',
+  `consumed_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '已耗数量',
+  PRIMARY KEY (`line_id`),
+  KEY `idx_bom_wo` (`workorder_id`),
+  KEY `idx_bom_item` (`item_id`),
+  KEY `idx_bom_line` (`workorder_line_id`),
+  CONSTRAINT `fk_bom_line` FOREIGN KEY (`workorder_line_id`) REFERENCES `pro_workorder_line` (`line_id`) ON DELETE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=461 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产工单BOM组成表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `pro_workorder_line`
+--
+
+DROP TABLE IF EXISTS `pro_workorder_line`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pro_workorder_line` (
+  `line_id` bigint NOT NULL AUTO_INCREMENT COMMENT '行ID',
+  `workorder_id` bigint NOT NULL COMMENT '工单ID',
+  `line_no` int NOT NULL DEFAULT '1' COMMENT '工单内行号',
+  `item_id` bigint NOT NULL COMMENT '产出物料ID',
+  `item_code` varchar(64) DEFAULT NULL COMMENT '产出物料编码（快照）',
+  `item_name` varchar(255) DEFAULT NULL COMMENT '产出物料名称（快照）',
+  `item_spc` varchar(255) DEFAULT NULL COMMENT '规格型号（快照）',
+  `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '计量单位（快照）',
+  `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称（快照）',
+  `plan_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '计划数量',
+  `produced_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '已产数量',
+  `qualified_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '合格数量',
+  `scrapped_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '报废数量',
+  `batch_strategy` varchar(8) NOT NULL DEFAULT 'SINGLE' COMMENT '批次策略 SINGLE/MULTI/NONE',
+  `route_id` bigint DEFAULT NULL COMMENT '工艺路线ID',
+  `status` varchar(16) NOT NULL DEFAULT 'PREPARE' COMMENT '状态 PREPARE/IN_PROGRESS/FINISHED/CANCELLED',
+  `remark` varchar(500) DEFAULT '' COMMENT '备注',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`line_id`),
+  UNIQUE KEY `uk_wo_line_no` (`workorder_id`,`line_no`),
+  UNIQUE KEY `uk_wo_line_pair` (`workorder_id`,`line_id`),
+  KEY `idx_wo_line_item` (`item_id`),
+  KEY `idx_wo_line_route` (`route_id`),
+  CONSTRAINT `fk_wo_line_wo` FOREIGN KEY (`workorder_id`) REFERENCES `pro_workorder` (`workorder_id`) ON DELETE RESTRICT,
+  CONSTRAINT `ck_wo_line_batch_strategy` CHECK ((`batch_strategy` in (_utf8mb4'SINGLE',_utf8mb4'MULTI',_utf8mb4'NONE'))),
+  CONSTRAINT `ck_wo_line_status` CHECK ((`status` in (_utf8mb4'PREPARE',_utf8mb4'IN_PROGRESS',_utf8mb4'FINISHED',_utf8mb4'CANCELLED')))
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工单行（成品产出维度）';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `pro_workorder_operation`
+--
+
+DROP TABLE IF EXISTS `pro_workorder_operation`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pro_workorder_operation` (
+  `operation_id` bigint NOT NULL AUTO_INCREMENT COMMENT '工序ID',
+  `line_id` bigint NOT NULL COMMENT '工单行ID',
+  `workorder_id` bigint NOT NULL COMMENT '工单ID（冗余，便于按工单查）',
+  `operation_no` int NOT NULL DEFAULT '1' COMMENT '行内工序顺序',
+  `process_id` bigint NOT NULL COMMENT '工序ID',
+  `process_code` varchar(64) DEFAULT NULL COMMENT '工序编码（快照）',
+  `process_name` varchar(255) DEFAULT NULL COMMENT '工序名称（快照）',
+  `workstation_id` bigint DEFAULT NULL COMMENT '默认工作站ID',
+  `workstation_code` varchar(64) DEFAULT NULL COMMENT '工作站编码（快照）',
+  `workstation_name` varchar(255) DEFAULT NULL COMMENT '工作站名称（快照）',
+  `plan_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '计划数量',
+  `completed_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '完成数量',
+  `qualified_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '合格数量',
+  `scrapped_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '报废数量',
+  `status` varchar(16) NOT NULL DEFAULT 'PENDING' COMMENT '状态 PENDING/READY/RUNNING/DONE/SKIPPED',
+  `remark` varchar(500) DEFAULT '' COMMENT '备注',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`operation_id`),
+  UNIQUE KEY `uk_wo_op_no` (`line_id`,`operation_no`),
+  KEY `idx_wo_op_wo` (`workorder_id`),
+  KEY `idx_wo_op_process` (`process_id`),
+  KEY `idx_wo_op_workstation` (`workstation_id`),
+  CONSTRAINT `fk_wo_op_line` FOREIGN KEY (`line_id`) REFERENCES `pro_workorder_line` (`line_id`) ON DELETE RESTRICT,
+  CONSTRAINT `ck_wo_op_status` CHECK ((`status` in (_utf8mb4'PENDING',_utf8mb4'READY',_utf8mb4'RUNNING',_utf8mb4'DONE',_utf8mb4'SKIPPED')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工单工序计划';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `pro_workorder_task`
+--
+
+DROP TABLE IF EXISTS `pro_workorder_task`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pro_workorder_task` (
+  `task_id` bigint NOT NULL AUTO_INCREMENT COMMENT '任务ID',
+  `task_code` varchar(32) NOT NULL COMMENT '任务编号（服务端生成）',
+  `operation_id` bigint NOT NULL COMMENT '工序ID',
+  `workorder_id` bigint NOT NULL COMMENT '工单ID（冗余）',
+  `line_id` bigint NOT NULL COMMENT '工单行ID（冗余）',
+  `process_id` bigint DEFAULT NULL COMMENT '工序ID（快照）',
+  `process_code` varchar(64) DEFAULT NULL COMMENT '工序编码（快照）',
+  `process_name` varchar(255) DEFAULT NULL COMMENT '工序名称（快照）',
+  `workstation_id` bigint DEFAULT NULL COMMENT '工作站ID',
+  `workstation_code` varchar(64) DEFAULT NULL COMMENT '工作站编码（快照）',
+  `workstation_name` varchar(255) DEFAULT NULL COMMENT '工作站名称（快照）',
+  `assignee_id` bigint DEFAULT NULL COMMENT '派工对象ID',
+  `assignee_name` varchar(128) DEFAULT NULL COMMENT '派工对象名称',
+  `plan_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '计划数量',
+  `completed_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '完成数量',
+  `qualified_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '合格数量',
+  `unqualified_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '不合格数量',
+  `batch_id` bigint DEFAULT NULL COMMENT '产出批次ID',
+  `batch_code` varchar(32) DEFAULT NULL COMMENT '产出批次号（快照）',
+  `start_time` datetime DEFAULT NULL COMMENT '开始时间',
+  `end_time` datetime DEFAULT NULL COMMENT '结束时间',
+  `duration` int DEFAULT NULL COMMENT '时长（分钟）',
+  `status` varchar(16) NOT NULL DEFAULT 'NORMAL' COMMENT '状态 NORMAL/RUNNING/PAUSED/DONE/CANCELLED',
+  `remark` varchar(500) DEFAULT '' COMMENT '备注',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`task_id`),
+  UNIQUE KEY `uk_wo_task_code` (`task_code`),
+  KEY `idx_wo_task_op` (`operation_id`),
+  KEY `idx_wo_task_wo` (`workorder_id`),
+  KEY `idx_wo_task_assignee` (`assignee_id`),
+  KEY `idx_wo_task_batch` (`batch_id`),
+  CONSTRAINT `fk_wo_task_op` FOREIGN KEY (`operation_id`) REFERENCES `pro_workorder_operation` (`operation_id`) ON DELETE RESTRICT,
+  CONSTRAINT `ck_wo_task_status` CHECK ((`status` in (_utf8mb4'NORMAL',_utf8mb4'RUNNING',_utf8mb4'PAUSED',_utf8mb4'DONE',_utf8mb4'CANCELLED')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工单派工/执行任务';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2256,7 +3061,7 @@ CREATE TABLE `qc_defect` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`defect_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=208 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='常见缺陷表';
+) ENGINE=InnoDB AUTO_INCREMENT=236 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='常见缺陷表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2285,6 +3090,128 @@ CREATE TABLE `qc_defect_record` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`record_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='检验单缺陷记录表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `qc_inbound`
+--
+
+DROP TABLE IF EXISTS `qc_inbound`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `qc_inbound` (
+  `inspection_id` bigint NOT NULL AUTO_INCREMENT COMMENT '质检单ID',
+  `inspection_code` varchar(32) NOT NULL COMMENT '入库质检号 rkzjgd2026110200001',
+  `inspection_type` varchar(16) NOT NULL DEFAULT 'FINISHED_INBOUND' COMMENT 'FINISHED_INBOUND/PURCHASE_INBOUND',
+  `source_doc_type` varchar(32) NOT NULL DEFAULT 'WORKORDER' COMMENT '来源类型 WORKORDER/ITEM_RECPT',
+  `workorder_id` bigint DEFAULT NULL COMMENT '工单ID',
+  `workorder_code` varchar(32) DEFAULT NULL COMMENT '工单号（快照）',
+  `batch_id` bigint NOT NULL COMMENT '批次ID',
+  `batch_code` varchar(32) NOT NULL COMMENT '批次号（快照）',
+  `item_id` bigint NOT NULL COMMENT '物料ID',
+  `item_code` varchar(64) DEFAULT NULL COMMENT '物料编码（快照）',
+  `item_name` varchar(255) DEFAULT NULL COMMENT '物料名称（快照）',
+  `item_spec` varchar(255) DEFAULT NULL COMMENT '规格型号（快照）',
+  `attempt_no` smallint NOT NULL DEFAULT '1' COMMENT '第几轮检验（返工重检递增）',
+  `parent_inspection_id` bigint DEFAULT NULL COMMENT '上一轮质检单ID',
+  `rework_workorder_id` bigint DEFAULT NULL COMMENT '不合格触发的返工工单ID',
+  `quantity_submitted` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '送检量',
+  `quantity_qualified` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '合格量',
+  `quantity_unqualified` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '不合格量',
+  `quantity_scrapped` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '报废量',
+  `inspect_result` varchar(16) DEFAULT NULL COMMENT '判定 PASS/FAIL/CONDITIONAL，空=未判定',
+  `inspect_date` datetime DEFAULT NULL COMMENT '检验时间',
+  `inspector_id` bigint DEFAULT NULL COMMENT '检验员ID',
+  `inspector_name` varchar(128) DEFAULT NULL COMMENT '检验员姓名',
+  `status` varchar(16) NOT NULL DEFAULT 'DRAFT' COMMENT '状态 DRAFT/INSPECTING/PASSED/FAILED/CLOSED',
+  `remark` varchar(500) DEFAULT '' COMMENT '备注',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`inspection_id`),
+  UNIQUE KEY `uk_inbound_code` (`inspection_code`),
+  UNIQUE KEY `uk_inbound_batch_attempt` (`batch_id`,`attempt_no`),
+  KEY `idx_inbound_wo` (`workorder_id`),
+  KEY `idx_inbound_status` (`status`),
+  KEY `idx_inbound_date` (`inspect_date`),
+  KEY `fk_inbound_parent` (`parent_inspection_id`),
+  KEY `fk_inbound_rework_wo` (`rework_workorder_id`),
+  CONSTRAINT `fk_inbound_batch` FOREIGN KEY (`batch_id`) REFERENCES `wm_batch` (`batch_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_inbound_parent` FOREIGN KEY (`parent_inspection_id`) REFERENCES `qc_inbound` (`inspection_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_inbound_rework_wo` FOREIGN KEY (`rework_workorder_id`) REFERENCES `pro_workorder` (`workorder_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_inbound_wo` FOREIGN KEY (`workorder_id`) REFERENCES `pro_workorder` (`workorder_id`) ON DELETE RESTRICT,
+  CONSTRAINT `ck_inbound_result` CHECK (((`inspect_result` is null) or (`inspect_result` in (_utf8mb4'PASS',_utf8mb4'FAIL',_utf8mb4'CONDITIONAL')))),
+  CONSTRAINT `ck_inbound_status` CHECK ((`status` in (_utf8mb4'DRAFT',_utf8mb4'INSPECTING',_utf8mb4'PASSED',_utf8mb4'FAILED',_utf8mb4'CLOSED'))),
+  CONSTRAINT `ck_inbound_type` CHECK ((`inspection_type` in (_utf8mb4'FINISHED_INBOUND',_utf8mb4'PURCHASE_INBOUND')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='入库质检单（主链）';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `qc_inbound_defect`
+--
+
+DROP TABLE IF EXISTS `qc_inbound_defect`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `qc_inbound_defect` (
+  `defect_id` bigint NOT NULL AUTO_INCREMENT COMMENT '缺陷记录ID',
+  `inspection_id` bigint NOT NULL COMMENT '质检单ID',
+  `line_id` bigint DEFAULT NULL COMMENT '质检项目行ID',
+  `defect_code` varchar(64) DEFAULT NULL COMMENT '缺陷编码',
+  `defect_name` varchar(255) DEFAULT NULL COMMENT '缺陷名称',
+  `defect_level` varchar(8) NOT NULL DEFAULT 'MIN' COMMENT '缺陷等级 CR/MAJ/MIN',
+  `defect_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '缺陷数量',
+  `disposal` varchar(16) DEFAULT NULL COMMENT '处置 SCRAP/REWORK/CONDITIONAL',
+  `remark` varchar(500) DEFAULT '' COMMENT '备注',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`defect_id`),
+  KEY `idx_inbound_defect_insp` (`inspection_id`),
+  KEY `idx_inbound_defect_line` (`line_id`),
+  CONSTRAINT `fk_inbound_defect_insp` FOREIGN KEY (`inspection_id`) REFERENCES `qc_inbound` (`inspection_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_inbound_defect_line` FOREIGN KEY (`line_id`) REFERENCES `qc_inbound_line` (`line_id`) ON DELETE RESTRICT,
+  CONSTRAINT `ck_inbound_defect_disposal` CHECK (((`disposal` is null) or (`disposal` in (_utf8mb4'SCRAP',_utf8mb4'REWORK',_utf8mb4'CONDITIONAL')))),
+  CONSTRAINT `ck_inbound_defect_level` CHECK ((`defect_level` in (_utf8mb4'CR',_utf8mb4'MAJ',_utf8mb4'MIN')))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='入库质检缺陷记录';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `qc_inbound_line`
+--
+
+DROP TABLE IF EXISTS `qc_inbound_line`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `qc_inbound_line` (
+  `line_id` bigint NOT NULL AUTO_INCREMENT COMMENT '行ID',
+  `inspection_id` bigint NOT NULL COMMENT '质检单ID',
+  `seq_no` int NOT NULL DEFAULT '1' COMMENT '行号',
+  `index_id` bigint DEFAULT NULL COMMENT '检验项目ID',
+  `index_code` varchar(64) DEFAULT NULL COMMENT '检验项目编码（快照）',
+  `index_name` varchar(255) DEFAULT NULL COMMENT '检验项目名称（快照）',
+  `index_type` varchar(16) DEFAULT NULL COMMENT 'NUMERIC/BOOLEAN/TEXT',
+  `standard_value` decimal(18,4) DEFAULT NULL COMMENT '标准值',
+  `threshold_min` decimal(18,4) DEFAULT NULL COMMENT '下限',
+  `threshold_max` decimal(18,4) DEFAULT NULL COMMENT '上限',
+  `actual_value` decimal(18,4) DEFAULT NULL COMMENT '实测值',
+  `actual_text` varchar(255) DEFAULT NULL COMMENT '文本实测值',
+  `line_result` varchar(8) DEFAULT NULL COMMENT '行判定 PASS/FAIL',
+  `qc_tool` varchar(64) DEFAULT NULL COMMENT '检验工具',
+  `check_method` varchar(255) DEFAULT NULL COMMENT '检验方法',
+  `remark` varchar(500) DEFAULT '' COMMENT '备注',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`line_id`),
+  UNIQUE KEY `uk_inbound_line_seq` (`inspection_id`,`seq_no`),
+  KEY `idx_inbound_line_index` (`index_id`),
+  CONSTRAINT `fk_inbound_line_insp` FOREIGN KEY (`inspection_id`) REFERENCES `qc_inbound` (`inspection_id`) ON DELETE RESTRICT,
+  CONSTRAINT `ck_inbound_line_result` CHECK (((`line_result` is null) or (`line_result` in (_utf8mb4'PASS',_utf8mb4'FAIL'))))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='入库质检项目行';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2350,18 +3277,18 @@ CREATE TABLE `qc_ipqc` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity_check` double(12,4) DEFAULT '1.0000' COMMENT '检测数量',
-  `quantity_unqualified` double(12,4) DEFAULT '0.0000' COMMENT '不合格数',
-  `quantity_qualified` double(12,4) DEFAULT NULL COMMENT '合格品数量',
-  `quantity_labor_scrap` double(14,2) DEFAULT NULL COMMENT '工废数量',
-  `quantity_material_scrap` double(14,2) DEFAULT NULL COMMENT '料废数量',
-  `quantity_other_scrap` double(14,2) DEFAULT NULL COMMENT '其他废品数量',
-  `cr_rate` double(12,2) DEFAULT '0.00' COMMENT '致命缺陷率',
-  `maj_rate` double(12,2) DEFAULT '0.00' COMMENT '严重缺陷率',
-  `min_rate` double(12,2) DEFAULT '0.00' COMMENT '轻微缺陷率',
-  `cr_quantity` double(12,4) DEFAULT '0.0000' COMMENT '致命缺陷数量',
-  `maj_quantity` double(12,4) DEFAULT '0.0000' COMMENT '严重缺陷数量',
-  `min_quantity` double(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷数量',
+  `quantity_check` decimal(12,4) DEFAULT '1.0000' COMMENT '检测数量',
+  `quantity_unqualified` decimal(12,4) DEFAULT '0.0000' COMMENT '不合格数',
+  `quantity_qualified` decimal(12,4) DEFAULT NULL COMMENT '合格品数量',
+  `quantity_labor_scrap` decimal(14,2) DEFAULT NULL COMMENT '工废数量',
+  `quantity_material_scrap` decimal(14,2) DEFAULT NULL COMMENT '料废数量',
+  `quantity_other_scrap` decimal(14,2) DEFAULT NULL COMMENT '其他废品数量',
+  `cr_rate` decimal(12,2) DEFAULT '0.00' COMMENT '致命缺陷率',
+  `maj_rate` decimal(12,2) DEFAULT '0.00' COMMENT '严重缺陷率',
+  `min_rate` decimal(12,2) DEFAULT '0.00' COMMENT '轻微缺陷率',
+  `cr_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '致命缺陷数量',
+  `maj_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '严重缺陷数量',
+  `min_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷数量',
   `check_result` varchar(64) DEFAULT NULL COMMENT '检测结果',
   `inspect_date` datetime DEFAULT NULL COMMENT '检测日期',
   `inspector` varchar(64) DEFAULT NULL COMMENT '检测人员',
@@ -2375,9 +3302,50 @@ CREATE TABLE `qc_ipqc` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`ipqc_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='过程检验单表';
+  `linkage_key` varchar(191) GENERATED ALWAYS AS ((case when (`attr1` like _utf8mb4'AUTO:%') then `attr1` else NULL end)) STORED,
+  PRIMARY KEY (`ipqc_id`),
+  UNIQUE KEY `uk_qc_ipqc_ipqc_code` (`ipqc_code`),
+  UNIQUE KEY `uk_qc_ipqc_linkage_key` (`linkage_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='过程检验单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_qc_ipqc_code_bi` BEFORE INSERT ON `qc_ipqc` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.ipqc_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_qc_ipqc_code_bu` BEFORE UPDATE ON `qc_ipqc` FOR EACH ROW BEGIN
+  IF NOT (OLD.ipqc_code <=> NEW.ipqc_code) AND fn_doc_code_valid(NEW.ipqc_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `qc_ipqc_line`
@@ -2395,13 +3363,13 @@ CREATE TABLE `qc_ipqc_line` (
   `index_type` varchar(64) DEFAULT NULL COMMENT '检测项类型',
   `qc_tool` varchar(255) DEFAULT NULL COMMENT '检测工具',
   `check_method` varchar(500) DEFAULT NULL COMMENT '检测要求',
-  `stander_val` double(12,4) DEFAULT NULL COMMENT '标准值',
+  `stander_val` decimal(12,4) DEFAULT NULL COMMENT '标准值',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
-  `threshold_max` double(12,4) DEFAULT NULL COMMENT '误差上限',
-  `threshold_min` double(12,4) DEFAULT NULL COMMENT '误差下限',
-  `cr_quantity` double(12,4) DEFAULT '0.0000' COMMENT '致命缺陷数量',
-  `maj_quantity` double(12,4) DEFAULT '0.0000' COMMENT '严重缺陷数量',
-  `min_quantity` double(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷数量',
+  `threshold_max` decimal(12,4) DEFAULT NULL COMMENT '误差上限',
+  `threshold_min` decimal(12,4) DEFAULT NULL COMMENT '误差下限',
+  `cr_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '致命缺陷数量',
+  `maj_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '严重缺陷数量',
+  `min_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷数量',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
   `attr2` varchar(255) DEFAULT NULL COMMENT '预留字段2',
@@ -2412,7 +3380,7 @@ CREATE TABLE `qc_ipqc_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=109 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='过程检验单行表';
+) ENGINE=InnoDB AUTO_INCREMENT=124 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='过程检验单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2444,13 +3412,13 @@ CREATE TABLE `qc_iqc` (
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
   `quantity_min_check` int DEFAULT '1' COMMENT '最低检测数',
   `quantity_max_unqualified` int DEFAULT '0' COMMENT '最大不合格数',
-  `quantity_recived` double(12,2) NOT NULL COMMENT '本次接收数量',
+  `quantity_recived` decimal(12,2) NOT NULL COMMENT '本次接收数量',
   `quantity_check` int DEFAULT NULL COMMENT '本次检测数量',
   `quantity_qualified` int DEFAULT '0' COMMENT '合格数',
   `quantity_unqualified` int DEFAULT '0' COMMENT '不合格数',
-  `cr_rate` double(12,2) DEFAULT '0.00' COMMENT '致命缺陷率',
-  `maj_rate` double(12,2) DEFAULT '0.00' COMMENT '严重缺陷率',
-  `min_rate` double(12,2) DEFAULT '0.00' COMMENT '轻微缺陷率',
+  `cr_rate` decimal(12,2) DEFAULT '0.00' COMMENT '致命缺陷率',
+  `maj_rate` decimal(12,2) DEFAULT '0.00' COMMENT '严重缺陷率',
+  `min_rate` decimal(12,2) DEFAULT '0.00' COMMENT '轻微缺陷率',
   `cr_quantity` int DEFAULT '0' COMMENT '致命缺陷数量',
   `maj_quantity` int DEFAULT '0' COMMENT '严重缺陷数量',
   `min_quantity` int DEFAULT '0' COMMENT '轻微缺陷数量',
@@ -2468,9 +3436,50 @@ CREATE TABLE `qc_iqc` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`iqc_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=170 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='来料检验单表';
+  `linkage_key` varchar(191) GENERATED ALWAYS AS ((case when (`attr1` like _utf8mb4'AUTO:%') then `attr1` else NULL end)) STORED,
+  PRIMARY KEY (`iqc_id`),
+  UNIQUE KEY `uk_iqc_code` (`iqc_code`),
+  UNIQUE KEY `uk_qc_iqc_linkage_key` (`linkage_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=191 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='来料检验单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_qc_iqc_code_bi` BEFORE INSERT ON `qc_iqc` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.iqc_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_qc_iqc_code_bu` BEFORE UPDATE ON `qc_iqc` FOR EACH ROW BEGIN
+  IF NOT (OLD.iqc_code <=> NEW.iqc_code) AND fn_doc_code_valid(NEW.iqc_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `qc_iqc_defect`
@@ -2515,10 +3524,10 @@ CREATE TABLE `qc_iqc_line` (
   `index_type` varchar(64) DEFAULT NULL COMMENT '检测项类型',
   `qc_tool` varchar(255) DEFAULT NULL COMMENT '检测工具',
   `check_method` varchar(500) DEFAULT NULL COMMENT '检测要求',
-  `stander_val` double(12,4) DEFAULT NULL COMMENT '标准值',
+  `stander_val` decimal(12,4) DEFAULT NULL COMMENT '标准值',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
-  `threshold_max` double(12,4) DEFAULT NULL COMMENT '误差上限',
-  `threshold_min` double(12,4) DEFAULT NULL COMMENT '误差下限',
+  `threshold_max` decimal(12,4) DEFAULT NULL COMMENT '误差上限',
+  `threshold_min` decimal(12,4) DEFAULT NULL COMMENT '误差下限',
   `cr_quantity` int DEFAULT '0' COMMENT '致命缺陷数量',
   `maj_quantity` int DEFAULT '0' COMMENT '严重缺陷数量',
   `min_quantity` int DEFAULT '0' COMMENT '轻微缺陷数量',
@@ -2532,7 +3541,7 @@ CREATE TABLE `qc_iqc_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=515 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='来料检验单行表';
+) ENGINE=InnoDB AUTO_INCREMENT=545 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='来料检验单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2560,18 +3569,18 @@ CREATE TABLE `qc_oqc` (
   `item_name` varchar(255) DEFAULT NULL COMMENT '产品物料名称',
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
-  `quantity_min_check` double(12,4) DEFAULT '1.0000' COMMENT '最低检测数',
-  `quantity_max_unqualified` double(12,4) DEFAULT '0.0000' COMMENT '最大不合格数',
-  `quantity_out` double(12,4) NOT NULL COMMENT '发货数量',
-  `quantity_check` double(12,4) NOT NULL COMMENT '本次检测数量',
-  `quantity_unqualified` double(12,4) DEFAULT '0.0000' COMMENT '不合格数',
-  `quantity_qualified` double(12,4) DEFAULT '0.0000' COMMENT '合格数量',
-  `cr_rate` double(12,4) DEFAULT '0.0000' COMMENT '致命缺陷率',
-  `maj_rate` double(12,4) DEFAULT '0.0000' COMMENT '严重缺陷率',
-  `min_rate` double(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷率',
-  `cr_quantity` double(12,4) DEFAULT '0.0000' COMMENT '致命缺陷数量',
-  `maj_quantity` double(12,4) DEFAULT '0.0000' COMMENT '严重缺陷数量',
-  `min_quantity` double(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷数量',
+  `quantity_min_check` decimal(12,4) DEFAULT '1.0000' COMMENT '最低检测数',
+  `quantity_max_unqualified` decimal(12,4) DEFAULT '0.0000' COMMENT '最大不合格数',
+  `quantity_out` decimal(12,4) NOT NULL COMMENT '发货数量',
+  `quantity_check` decimal(12,4) NOT NULL COMMENT '本次检测数量',
+  `quantity_unqualified` decimal(12,4) DEFAULT '0.0000' COMMENT '不合格数',
+  `quantity_qualified` decimal(12,4) DEFAULT '0.0000' COMMENT '合格数量',
+  `cr_rate` decimal(12,4) DEFAULT '0.0000' COMMENT '致命缺陷率',
+  `maj_rate` decimal(12,4) DEFAULT '0.0000' COMMENT '严重缺陷率',
+  `min_rate` decimal(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷率',
+  `cr_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '致命缺陷数量',
+  `maj_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '严重缺陷数量',
+  `min_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷数量',
   `check_result` varchar(64) DEFAULT NULL COMMENT '检测结果',
   `out_date` datetime DEFAULT NULL COMMENT '出货日期',
   `inspect_date` datetime DEFAULT NULL COMMENT '检测日期',
@@ -2586,9 +3595,50 @@ CREATE TABLE `qc_oqc` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`oqc_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=209 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='出货检验单表';
+  `linkage_key` varchar(191) GENERATED ALWAYS AS ((case when (`attr1` like _utf8mb4'AUTO:%') then `attr1` else NULL end)) STORED,
+  PRIMARY KEY (`oqc_id`),
+  UNIQUE KEY `uk_qc_oqc_oqc_code` (`oqc_code`),
+  UNIQUE KEY `uk_qc_oqc_linkage_key` (`linkage_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=216 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='出货检验单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_qc_oqc_code_bi` BEFORE INSERT ON `qc_oqc` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.oqc_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_qc_oqc_code_bu` BEFORE UPDATE ON `qc_oqc` FOR EACH ROW BEGIN
+  IF NOT (OLD.oqc_code <=> NEW.oqc_code) AND fn_doc_code_valid(NEW.oqc_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `qc_oqc_line`
@@ -2606,13 +3656,13 @@ CREATE TABLE `qc_oqc_line` (
   `index_type` varchar(64) DEFAULT NULL COMMENT '检测项类型',
   `qc_tool` varchar(255) DEFAULT NULL COMMENT '检测工具',
   `check_method` varchar(500) DEFAULT NULL COMMENT '检测要求',
-  `stander_val` double(12,4) DEFAULT NULL COMMENT '标准值',
+  `stander_val` decimal(12,4) DEFAULT NULL COMMENT '标准值',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
-  `threshold_max` double(12,4) DEFAULT NULL COMMENT '误差上限',
-  `threshold_min` double(12,4) DEFAULT NULL COMMENT '误差下限',
-  `cr_quantity` double(12,4) DEFAULT '0.0000' COMMENT '致命缺陷数量',
-  `maj_quantity` double(12,4) DEFAULT '0.0000' COMMENT '严重缺陷数量',
-  `min_quantity` double(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷数量',
+  `threshold_max` decimal(12,4) DEFAULT NULL COMMENT '误差上限',
+  `threshold_min` decimal(12,4) DEFAULT NULL COMMENT '误差下限',
+  `cr_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '致命缺陷数量',
+  `maj_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '严重缺陷数量',
+  `min_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷数量',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
   `attr2` varchar(255) DEFAULT NULL COMMENT '预留字段2',
@@ -2655,9 +3705,48 @@ CREATE TABLE `qc_result` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`result_id`)
+  PRIMARY KEY (`result_id`),
+  UNIQUE KEY `uk_qc_result_result_code` (`result_code`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='检测结果记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_qc_result_code_bi` BEFORE INSERT ON `qc_result` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.result_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_qc_result_code_bu` BEFORE UPDATE ON `qc_result` FOR EACH ROW BEGIN
+  IF NOT (OLD.result_code <=> NEW.result_code) AND fn_doc_code_valid(NEW.result_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `qc_result_detail`
@@ -2673,13 +3762,13 @@ CREATE TABLE `qc_result_detail` (
   `index_type` varchar(64) DEFAULT NULL COMMENT '检测项类型',
   `qc_tool` varchar(255) DEFAULT NULL COMMENT '检测工具',
   `check_method` varchar(500) DEFAULT NULL COMMENT '检测要求',
-  `stander_val` double(12,4) DEFAULT NULL COMMENT '标准值',
+  `stander_val` decimal(12,4) DEFAULT NULL COMMENT '标准值',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
-  `threshold_max` double(12,4) DEFAULT NULL COMMENT '误差上限',
-  `threshold_min` double(12,4) DEFAULT NULL COMMENT '误差下限',
+  `threshold_max` decimal(12,4) DEFAULT NULL COMMENT '误差上限',
+  `threshold_min` decimal(12,4) DEFAULT NULL COMMENT '误差下限',
   `qc_result_type` varchar(64) NOT NULL COMMENT '质检值类型',
   `qc_result_spc` varchar(255) DEFAULT NULL COMMENT '值属性',
-  `qc_val_float` float(14,4) DEFAULT NULL COMMENT '浮点值',
+  `qc_val_float` decimal(14,4) DEFAULT NULL COMMENT '浮点值',
   `qc_val_integer` int DEFAULT NULL COMMENT '整数',
   `qc_val_text` varchar(500) DEFAULT NULL COMMENT '文字',
   `qc_val_dict` varchar(64) DEFAULT NULL COMMENT '字典项',
@@ -2721,9 +3810,9 @@ CREATE TABLE `qc_rqc` (
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(128) DEFAULT NULL COMMENT '批次号',
-  `quantity_check` double(12,4) DEFAULT '1.0000' COMMENT '检测数量',
-  `quantity_unqualified` double(12,4) DEFAULT '0.0000' COMMENT '不合格数',
-  `quantity_qualified` double(12,4) DEFAULT NULL COMMENT '合格品数量',
+  `quantity_check` decimal(12,4) DEFAULT '1.0000' COMMENT '检测数量',
+  `quantity_unqualified` decimal(12,4) DEFAULT '0.0000' COMMENT '不合格数',
+  `quantity_qualified` decimal(12,4) DEFAULT NULL COMMENT '合格品数量',
   `check_result` varchar(64) DEFAULT NULL COMMENT '检测结果',
   `inspect_date` datetime DEFAULT NULL COMMENT '检测日期',
   `user_id` bigint DEFAULT NULL COMMENT '检测人员ID',
@@ -2740,8 +3829,46 @@ CREATE TABLE `qc_rqc` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`rqc_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='退料检验单表';
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='退料检验单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_qc_rqc_code_bi` BEFORE INSERT ON `qc_rqc` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.rqc_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_qc_rqc_code_bu` BEFORE UPDATE ON `qc_rqc` FOR EACH ROW BEGIN
+  IF NOT (OLD.rqc_code <=> NEW.rqc_code) AND fn_doc_code_valid(NEW.rqc_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `qc_rqc_line`
@@ -2759,13 +3886,13 @@ CREATE TABLE `qc_rqc_line` (
   `index_type` varchar(64) DEFAULT NULL COMMENT '检测项类型',
   `qc_tool` varchar(255) DEFAULT NULL COMMENT '检测工具',
   `check_method` varchar(500) DEFAULT NULL COMMENT '检测要求',
-  `stander_val` double(12,4) DEFAULT NULL COMMENT '标准值',
+  `stander_val` decimal(12,4) DEFAULT NULL COMMENT '标准值',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
-  `threshold_max` double(12,4) DEFAULT NULL COMMENT '误差上限',
-  `threshold_min` double(12,4) DEFAULT NULL COMMENT '误差下限',
-  `cr_quantity` double(12,4) DEFAULT '0.0000' COMMENT '致命缺陷数量',
-  `maj_quantity` double(12,4) DEFAULT '0.0000' COMMENT '严重缺陷数量',
-  `min_quantity` double(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷数量',
+  `threshold_max` decimal(12,4) DEFAULT NULL COMMENT '误差上限',
+  `threshold_min` decimal(12,4) DEFAULT NULL COMMENT '误差下限',
+  `cr_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '致命缺陷数量',
+  `maj_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '严重缺陷数量',
+  `min_quantity` decimal(12,4) DEFAULT '0.0000' COMMENT '轻微缺陷数量',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
   `attr2` varchar(255) DEFAULT NULL COMMENT '预留字段2',
@@ -2802,7 +3929,7 @@ CREATE TABLE `qc_template` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`template_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9825 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='检测模板表';
+) ENGINE=InnoDB AUTO_INCREMENT=9827 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='检测模板表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2821,10 +3948,10 @@ CREATE TABLE `qc_template_index` (
   `index_type` varchar(64) NOT NULL COMMENT '检测项类型',
   `qc_tool` varchar(255) DEFAULT NULL COMMENT '检测工具',
   `check_method` varchar(500) DEFAULT NULL COMMENT '检测方法',
-  `stander_val` double(12,4) DEFAULT NULL COMMENT '标准值',
+  `stander_val` decimal(12,4) DEFAULT NULL COMMENT '标准值',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
-  `threshold_max` double(12,4) DEFAULT NULL COMMENT '误差上限',
-  `threshold_min` double(12,4) DEFAULT NULL COMMENT '误差下限',
+  `threshold_max` decimal(12,4) DEFAULT NULL COMMENT '误差上限',
+  `threshold_min` decimal(12,4) DEFAULT NULL COMMENT '误差下限',
   `doc_url` varchar(255) DEFAULT NULL COMMENT '说明图',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
@@ -2857,9 +3984,9 @@ CREATE TABLE `qc_template_product` (
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
   `quantity_check` int DEFAULT '1' COMMENT '最低检测数',
   `quantity_unqualified` int DEFAULT '0' COMMENT '最大不合格数',
-  `cr_rate` double(12,2) DEFAULT '0.00' COMMENT '最大致命缺陷率',
-  `maj_rate` double(12,2) DEFAULT '0.00' COMMENT '最大严重缺陷率',
-  `min_rate` double(12,2) DEFAULT '100.00' COMMENT '最大轻微缺陷率',
+  `cr_rate` decimal(12,2) DEFAULT '0.00' COMMENT '最大致命缺陷率',
+  `maj_rate` decimal(12,2) DEFAULT '0.00' COMMENT '最大严重缺陷率',
+  `min_rate` decimal(12,2) DEFAULT '100.00' COMMENT '最大轻微缺陷率',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
   `attr2` varchar(255) DEFAULT NULL COMMENT '预留字段2',
@@ -2933,7 +4060,7 @@ CREATE TABLE `sys_attachment` (
   `file_name` varchar(255) DEFAULT NULL COMMENT '文件名',
   `orignal_name` varchar(255) DEFAULT NULL COMMENT '原来的文件名',
   `file_type` varchar(64) DEFAULT NULL COMMENT '文件类型',
-  `file_size` double(12,2) DEFAULT NULL COMMENT '文件大小',
+  `file_size` decimal(12,2) DEFAULT NULL COMMENT '文件大小',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
   `attr2` varchar(255) DEFAULT NULL COMMENT '预留字段2',
@@ -3008,7 +4135,7 @@ CREATE TABLE `sys_auto_code_result` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`code_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=653 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='编码生成记录表';
+) ENGINE=InnoDB AUTO_INCREMENT=666 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='编码生成记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3039,6 +4166,55 @@ CREATE TABLE `sys_auto_code_rule` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`rule_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=265 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='编码生成规则表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `sys_code_rule`
+--
+
+DROP TABLE IF EXISTS `sys_code_rule`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sys_code_rule` (
+  `rule_id` bigint NOT NULL AUTO_INCREMENT COMMENT '规则ID',
+  `rule_code` varchar(64) NOT NULL COMMENT '规则编码，如 GD/PCGD/RKZJGD',
+  `rule_name` varchar(128) NOT NULL COMMENT '规则名称',
+  `biz_object` varchar(64) NOT NULL COMMENT '业务对象 WORKORDER/BATCH/INBOUND_QC/ITEM_RECPT',
+  `prefix` varchar(16) NOT NULL COMMENT '单号前缀，如 gd/pcgd/rkzjgd',
+  `date_format` varchar(16) DEFAULT 'yyyyMMdd' COMMENT '日期段格式；NULL 或空 = 无日期段',
+  `serial_length` tinyint NOT NULL DEFAULT '5' COMMENT '流水段定长',
+  `serial_start` bigint NOT NULL DEFAULT '1' COMMENT '起始流水号',
+  `serial_step` int NOT NULL DEFAULT '1' COMMENT '流水步长',
+  `reset_cycle` varchar(8) NOT NULL DEFAULT 'DAY' COMMENT '流水重置周期 NONE/YEAR/MONTH/DAY',
+  `enable_flag` char(1) NOT NULL DEFAULT 'Y' COMMENT '是否启用 Y/N',
+  `remark` varchar(500) DEFAULT '' COMMENT '备注',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`rule_id`),
+  UNIQUE KEY `uk_code_rule_code` (`rule_code`),
+  KEY `idx_code_rule_biz` (`biz_object`),
+  CONSTRAINT `ck_code_rule_enable` CHECK ((`enable_flag` in (_utf8mb4'Y',_utf8mb4'N'))),
+  CONSTRAINT `ck_code_rule_reset` CHECK ((`reset_cycle` in (_utf8mb4'NONE',_utf8mb4'YEAR',_utf8mb4'MONTH',_utf8mb4'DAY')))
+) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='编码规则表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `sys_code_sequence`
+--
+
+DROP TABLE IF EXISTS `sys_code_sequence`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sys_code_sequence` (
+  `rule_code` varchar(64) NOT NULL COMMENT '规则编码，FK -> sys_code_rule.rule_code',
+  `period_key` varchar(16) NOT NULL COMMENT '周期键：20261102 / 202611 / 2026 / 空串',
+  `current_no` bigint NOT NULL DEFAULT '0' COMMENT '该周期已发出的最大流水号',
+  `updated_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '取号时间',
+  PRIMARY KEY (`rule_code`,`period_key`),
+  CONSTRAINT `fk_code_seq_rule` FOREIGN KEY (`rule_code`) REFERENCES `sys_code_rule` (`rule_code`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='编码取号器表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3201,7 +4377,7 @@ CREATE TABLE `sys_logininfor` (
   `msg` varchar(255) DEFAULT '' COMMENT '提示消息',
   `login_time` datetime DEFAULT NULL COMMENT '访问时间',
   PRIMARY KEY (`info_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5606 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统访问记录';
+) ENGINE=InnoDB AUTO_INCREMENT=5690 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统访问记录';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3232,7 +4408,28 @@ CREATE TABLE `sys_menu` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   PRIMARY KEY (`menu_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2402 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜单权限表';
+) ENGINE=InnoDB AUTO_INCREMENT=2419 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜单权限表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `sys_menu_linkage_notice`
+--
+
+DROP TABLE IF EXISTS `sys_menu_linkage_notice`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sys_menu_linkage_notice` (
+  `notice_id` bigint NOT NULL AUTO_INCREMENT COMMENT '提醒ID',
+  `menu_path` varchar(255) NOT NULL COMMENT '目标菜单绝对路径',
+  `unread_flag` char(1) NOT NULL DEFAULT 'Y' COMMENT '是否未读（Y/N）',
+  `trigger_count` bigint NOT NULL DEFAULT '1' COMMENT '累计触发次数',
+  `last_trigger_time` datetime NOT NULL COMMENT '最近触发时间',
+  `read_time` datetime DEFAULT NULL COMMENT '最近已读时间',
+  `create_time` datetime NOT NULL COMMENT '创建时间',
+  `update_time` datetime NOT NULL COMMENT '更新时间',
+  PRIMARY KEY (`notice_id`),
+  UNIQUE KEY `uk_menu_linkage_notice_path` (`menu_path`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='关联表单菜单共享提醒';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3318,7 +4515,7 @@ CREATE TABLE `sys_oper_log` (
   `error_msg` varchar(2000) DEFAULT '' COMMENT '错误消息',
   `oper_time` datetime DEFAULT NULL COMMENT '操作时间',
   PRIMARY KEY (`oper_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12742 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='操作日志记录';
+) ENGINE=InnoDB AUTO_INCREMENT=12836 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='操作日志记录';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3366,7 +4563,7 @@ CREATE TABLE `sys_role` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`role_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=108 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='角色信息表';
+) ENGINE=InnoDB AUTO_INCREMENT=110 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='角色信息表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3474,6 +4671,29 @@ CREATE TABLE `sys_user` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `sys_user_face`
+--
+
+DROP TABLE IF EXISTS `sys_user_face`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sys_user_face` (
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `descriptor` text NOT NULL COMMENT '128维人脸特征（逗号分隔，不含原图）',
+  `algorithm` varchar(64) NOT NULL DEFAULT 'face-api-0.22.2' COMMENT '特征算法版本',
+  `samples` int NOT NULL DEFAULT '0' COMMENT '录入样本帧数',
+  `quality` decimal(5,4) DEFAULT NULL COMMENT '录入质量分0-1',
+  `status` char(1) NOT NULL DEFAULT '0' COMMENT '0正常 1停用',
+  `create_by` varchar(64) DEFAULT '' COMMENT '录入人',
+  `create_time` datetime DEFAULT NULL COMMENT '录入时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  `remark` varchar(500) DEFAULT '' COMMENT '备注（用途与授权说明）',
+  PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户人脸登录模板（仅特征向量）';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `sys_user_post`
 --
 
@@ -3549,7 +4769,7 @@ CREATE TABLE `tm_tool` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`tool_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工装夹具清单表';
+) ENGINE=InnoDB AUTO_INCREMENT=230 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工装夹具清单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3576,7 +4796,7 @@ CREATE TABLE `tm_tool_type` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`tool_type_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=206 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工装夹具类型表';
+) ENGINE=InnoDB AUTO_INCREMENT=234 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工装夹具类型表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3595,6 +4815,27 @@ CREATE TABLE `ureport_file_tbl` (
   PRIMARY KEY (`id_`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Temporary view structure for view `v_stock_alert`
+--
+
+DROP TABLE IF EXISTS `v_stock_alert`;
+/*!50001 DROP VIEW IF EXISTS `v_stock_alert`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `v_stock_alert` AS SELECT 
+ 1 AS `item_id`,
+ 1 AS `item_code`,
+ 1 AS `item_name`,
+ 1 AS `specification`,
+ 1 AS `unit_name`,
+ 1 AS `min_stock`,
+ 1 AS `current_stock`,
+ 1 AS `gap`,
+ 1 AS `suggest_purchase`,
+ 1 AS `alert_level`*/;
+SET character_set_client = @saved_cs_client;
 
 --
 -- Table structure for table `wm_arrival_notice`
@@ -3625,9 +4866,48 @@ CREATE TABLE `wm_arrival_notice` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`notice_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='到货通知单表';
+  PRIMARY KEY (`notice_id`),
+  UNIQUE KEY `uk_wm_arrival_notice_notice_code` (`notice_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=75 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='到货通知单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_arrival_notice_code_bi` BEFORE INSERT ON `wm_arrival_notice` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.notice_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_arrival_notice_code_bu` BEFORE UPDATE ON `wm_arrival_notice` FOR EACH ROW BEGIN
+  IF NOT (OLD.notice_code <=> NEW.notice_code) AND fn_doc_code_valid(NEW.notice_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_arrival_notice_line`
@@ -3644,8 +4924,8 @@ CREATE TABLE `wm_arrival_notice_line` (
   `item_name` varchar(255) DEFAULT NULL COMMENT '产品物料名称',
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
-  `quantity_arrival` double(12,2) NOT NULL COMMENT '到货数量',
-  `quantity_quanlified` double(12,2) DEFAULT NULL COMMENT '合格数量',
+  `quantity_arrival` decimal(12,2) NOT NULL COMMENT '到货数量',
+  `quantity_quanlified` decimal(12,2) DEFAULT NULL COMMENT '合格数量',
   `iqc_check` char(1) DEFAULT NULL COMMENT '是否来料检验',
   `iqc_id` bigint DEFAULT NULL COMMENT '来料检验单ID',
   `iqc_code` varchar(64) DEFAULT NULL COMMENT '来料检验单编号',
@@ -3660,7 +4940,7 @@ CREATE TABLE `wm_arrival_notice_line` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=164 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='到货通知单行表';
+) ENGINE=InnoDB AUTO_INCREMENT=185 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='到货通知单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3690,7 +4970,7 @@ CREATE TABLE `wm_barcode` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`barcode_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=317 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='条码清单表';
+) ENGINE=InnoDB AUTO_INCREMENT=338 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='条码清单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3771,9 +5051,61 @@ CREATE TABLE `wm_batch` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`batch_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=148 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='批次记录表';
+  `workorder_line_id` bigint DEFAULT NULL COMMENT '工单行ID（主链挂载点）',
+  `batch_source` varchar(16) NOT NULL DEFAULT 'MANUAL' COMMENT '批次来源 WORKORDER/PURCHASE/OUTSOURCE/MANUAL',
+  `initial_quantity` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '批次初始数量',
+  `batch_status` varchar(16) NOT NULL DEFAULT 'ACTIVE' COMMENT '批次状态 ACTIVE/CONSUMED/CLOSED',
+  PRIMARY KEY (`batch_id`),
+  UNIQUE KEY `uk_batch_code` (`batch_code`),
+  KEY `idx_batch_item` (`item_id`),
+  KEY `idx_batch_wo` (`workorder_id`),
+  KEY `idx_batch_wo_line` (`workorder_line_id`),
+  KEY `idx_batch_quality` (`quality_status`),
+  KEY `fk_batch_wo_line_pair` (`workorder_id`,`workorder_line_id`),
+  CONSTRAINT `fk_batch_wo_line` FOREIGN KEY (`workorder_line_id`) REFERENCES `pro_workorder_line` (`line_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_batch_wo_line_pair` FOREIGN KEY (`workorder_id`, `workorder_line_id`) REFERENCES `pro_workorder_line` (`workorder_id`, `line_id`) ON DELETE RESTRICT,
+  CONSTRAINT `ck_batch_source` CHECK ((`batch_source` in (_utf8mb4'WORKORDER',_utf8mb4'PURCHASE',_utf8mb4'OUTSOURCE',_utf8mb4'MANUAL'))),
+  CONSTRAINT `ck_batch_status` CHECK ((`batch_status` in (_utf8mb4'ACTIVE',_utf8mb4'CONSUMED',_utf8mb4'CLOSED')))
+) ENGINE=InnoDB AUTO_INCREMENT=167 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='批次记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_batch_code_bi` BEFORE INSERT ON `wm_batch` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.batch_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_batch_code_bu` BEFORE UPDATE ON `wm_batch` FOR EACH ROW BEGIN
+  IF NOT (OLD.batch_code <=> NEW.batch_code) AND fn_doc_code_valid(NEW.batch_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_issue_detail`
@@ -3793,7 +5125,7 @@ CREATE TABLE `wm_issue_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '领料数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '领料数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -3852,9 +5184,48 @@ CREATE TABLE `wm_issue_header` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `required_time` datetime DEFAULT NULL COMMENT '需求时间',
-  PRIMARY KEY (`issue_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产领料单头表';
+  PRIMARY KEY (`issue_id`),
+  UNIQUE KEY `uk_wm_issue_header_issue_code` (`issue_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产领料单头表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_issue_header_code_bi` BEFORE INSERT ON `wm_issue_header` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.issue_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_issue_header_code_bu` BEFORE UPDATE ON `wm_issue_header` FOR EACH ROW BEGIN
+  IF NOT (OLD.issue_code <=> NEW.issue_code) AND fn_doc_code_valid(NEW.issue_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_issue_line`
@@ -3872,7 +5243,7 @@ CREATE TABLE `wm_issue_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity_issued` double(12,2) NOT NULL COMMENT '领料数量',
+  `quantity_issued` decimal(12,2) NOT NULL COMMENT '领料数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
@@ -3885,7 +5256,7 @@ CREATE TABLE `wm_issue_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=91 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产领料单行表';
+) ENGINE=InnoDB AUTO_INCREMENT=118 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产领料单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3943,7 +5314,7 @@ CREATE TABLE `wm_item_consume_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '消耗数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '消耗数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -3985,7 +5356,7 @@ CREATE TABLE `wm_item_consume_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity_consume` double(12,2) NOT NULL COMMENT '消耗数量',
+  `quantity_consume` decimal(12,2) NOT NULL COMMENT '消耗数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
@@ -4041,9 +5412,51 @@ CREATE TABLE `wm_item_recpt` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`recpt_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='物料入库单表';
+  `linkage_key` varchar(191) GENERATED ALWAYS AS ((case when (`attr1` like _utf8mb4'AUTO:%') then `attr1` else NULL end)) STORED,
+  PRIMARY KEY (`recpt_id`),
+  UNIQUE KEY `uk_recpt_code` (`recpt_code`),
+  UNIQUE KEY `uk_wm_item_recpt_linkage_key` (`linkage_key`),
+  KEY `idx_recpt_notice` (`notice_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=923 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='物料入库单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_item_recpt_code_bi` BEFORE INSERT ON `wm_item_recpt` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.recpt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_item_recpt_code_bu` BEFORE UPDATE ON `wm_item_recpt` FOR EACH ROW BEGIN
+  IF NOT (OLD.recpt_code <=> NEW.recpt_code) AND fn_doc_code_valid(NEW.recpt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_item_recpt_detail`
@@ -4062,7 +5475,7 @@ CREATE TABLE `wm_item_recpt_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '入库数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '入库数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -4084,7 +5497,7 @@ CREATE TABLE `wm_item_recpt_detail` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`detail_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=165 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='物料入库单明细表';
+) ENGINE=InnoDB AUTO_INCREMENT=902 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='物料入库单明细表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4104,7 +5517,7 @@ CREATE TABLE `wm_item_recpt_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity_recived` double(12,2) NOT NULL COMMENT '入库数量',
+  `quantity_recived` decimal(12,2) NOT NULL COMMENT '入库数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -4131,8 +5544,12 @@ CREATE TABLE `wm_item_recpt_line` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=162 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='物料入库单行表';
+  PRIMARY KEY (`line_id`),
+  KEY `idx_recpt_line_recpt` (`recpt_id`),
+  KEY `idx_recpt_line_batch` (`batch_id`),
+  CONSTRAINT `fk_recpt_line_batch` FOREIGN KEY (`batch_id`) REFERENCES `wm_batch` (`batch_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_recpt_line_recpt` FOREIGN KEY (`recpt_id`) REFERENCES `wm_item_recpt` (`recpt_id`) ON DELETE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=923 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='物料入库单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4164,7 +5581,7 @@ CREATE TABLE `wm_material_stock` (
   `vendor_code` varchar(64) DEFAULT NULL COMMENT '供应商编号',
   `vendor_name` varchar(255) DEFAULT NULL COMMENT '供应商名称',
   `vendor_nick` varchar(64) DEFAULT NULL COMMENT '供应商简称',
-  `quantity_onhand` double(12,2) DEFAULT NULL COMMENT '在库数量',
+  `quantity_onhand` decimal(12,2) DEFAULT NULL COMMENT '在库数量',
   `workorder_id` bigint DEFAULT NULL COMMENT '生产工单ID',
   `workorder_code` varchar(64) DEFAULT NULL COMMENT '生产工单编号',
   `recpt_date` datetime DEFAULT NULL COMMENT '入库时间',
@@ -4181,8 +5598,17 @@ CREATE TABLE `wm_material_stock` (
   `production_date` datetime DEFAULT NULL,
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
-  PRIMARY KEY (`material_stock_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=243 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='库存记录表';
+  `stock_status` varchar(16) NOT NULL DEFAULT 'QUALIFIED' COMMENT '库存状态 QUALIFIED/UNQUALIFIED/HOLD/FROZEN',
+  `quantity_frozen` decimal(18,4) NOT NULL DEFAULT '0.0000' COMMENT '冻结数量',
+  `stock_key` char(64) GENERATED ALWAYS AS (concat_ws(_utf8mb4'|',cast(`item_id` as char charset utf8mb4),cast(`warehouse_id` as char charset utf8mb4),ifnull(`location_id`,0),ifnull(`area_id`,0),ifnull(`batch_id`,0),`stock_status`)) STORED COMMENT '库存维度指纹（生成列）',
+  PRIMARY KEY (`material_stock_id`),
+  UNIQUE KEY `uk_stock_key` (`stock_key`),
+  KEY `idx_stock_batch` (`batch_id`),
+  KEY `idx_stock_item_wh` (`item_id`,`warehouse_id`),
+  KEY `idx_stock_wo` (`workorder_id`),
+  CONSTRAINT `fk_stock_batch` FOREIGN KEY (`batch_id`) REFERENCES `wm_batch` (`batch_id`) ON DELETE RESTRICT,
+  CONSTRAINT `ck_stock_status` CHECK ((`stock_status` in (_utf8mb4'QUALIFIED',_utf8mb4'UNQUALIFIED',_utf8mb4'HOLD',_utf8mb4'FROZEN')))
+) ENGINE=InnoDB AUTO_INCREMENT=340 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='库存记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4275,8 +5701,46 @@ CREATE TABLE `wm_misc_issue` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`issue_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='杂项出库单表';
+) ENGINE=InnoDB AUTO_INCREMENT=223 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='杂项出库单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_misc_issue_code_bi` BEFORE INSERT ON `wm_misc_issue` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.issue_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_misc_issue_code_bu` BEFORE UPDATE ON `wm_misc_issue` FOR EACH ROW BEGIN
+  IF NOT (OLD.issue_code <=> NEW.issue_code) AND fn_doc_code_valid(NEW.issue_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_misc_issue_detail`
@@ -4295,7 +5759,7 @@ CREATE TABLE `wm_misc_issue_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '入库数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '入库数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -4339,7 +5803,7 @@ CREATE TABLE `wm_misc_issue_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity_issued` double(12,2) NOT NULL COMMENT '出库数量',
+  `quantity_issued` decimal(12,2) NOT NULL COMMENT '出库数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -4361,7 +5825,7 @@ CREATE TABLE `wm_misc_issue_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='杂项出库单行表';
+) ENGINE=InnoDB AUTO_INCREMENT=223 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='杂项出库单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4391,8 +5855,46 @@ CREATE TABLE `wm_misc_recpt` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`recpt_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=205 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='杂项入库单表';
+) ENGINE=InnoDB AUTO_INCREMENT=226 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='杂项入库单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_misc_recpt_code_bi` BEFORE INSERT ON `wm_misc_recpt` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.recpt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_misc_recpt_code_bu` BEFORE UPDATE ON `wm_misc_recpt` FOR EACH ROW BEGIN
+  IF NOT (OLD.recpt_code <=> NEW.recpt_code) AND fn_doc_code_valid(NEW.recpt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_misc_recpt_detail`
@@ -4411,7 +5913,7 @@ CREATE TABLE `wm_misc_recpt_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '入库数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '入库数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -4453,7 +5955,7 @@ CREATE TABLE `wm_misc_recpt_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity_recived` double(12,2) NOT NULL COMMENT '入库数量',
+  `quantity_recived` decimal(12,2) NOT NULL COMMENT '入库数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -4475,7 +5977,7 @@ CREATE TABLE `wm_misc_recpt_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=204 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='杂项入库单行表';
+) ENGINE=InnoDB AUTO_INCREMENT=225 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='杂项入库单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4506,9 +6008,48 @@ CREATE TABLE `wm_outsource_issue` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`issue_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=205 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='外协领料单头表';
+  PRIMARY KEY (`issue_id`),
+  UNIQUE KEY `uk_wm_outsource_issue_issue_code` (`issue_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=226 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='外协领料单头表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_outsource_issue_code_bi` BEFORE INSERT ON `wm_outsource_issue` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.issue_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_outsource_issue_code_bu` BEFORE UPDATE ON `wm_outsource_issue` FOR EACH ROW BEGIN
+  IF NOT (OLD.issue_code <=> NEW.issue_code) AND fn_doc_code_valid(NEW.issue_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_outsource_issue_detail`
@@ -4528,7 +6069,7 @@ CREATE TABLE `wm_outsource_issue_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '退货数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '退货数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -4570,7 +6111,7 @@ CREATE TABLE `wm_outsource_issue_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity_issued` double(12,2) NOT NULL COMMENT '领料数量',
+  `quantity_issued` decimal(12,2) NOT NULL COMMENT '领料数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
@@ -4583,7 +6124,7 @@ CREATE TABLE `wm_outsource_issue_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=204 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='外协领料单行表';
+) ENGINE=InnoDB AUTO_INCREMENT=225 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='外协领料单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4614,9 +6155,48 @@ CREATE TABLE `wm_outsource_recpt` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`recpt_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='外协入库单表';
+  PRIMARY KEY (`recpt_id`),
+  UNIQUE KEY `uk_wm_outsource_recpt_recpt_code` (`recpt_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=223 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='外协入库单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_outsource_recpt_code_bi` BEFORE INSERT ON `wm_outsource_recpt` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.recpt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_outsource_recpt_code_bu` BEFORE UPDATE ON `wm_outsource_recpt` FOR EACH ROW BEGIN
+  IF NOT (OLD.recpt_code <=> NEW.recpt_code) AND fn_doc_code_valid(NEW.recpt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_outsource_recpt_detail`
@@ -4636,7 +6216,7 @@ CREATE TABLE `wm_outsource_recpt_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '入库数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '入库数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -4677,7 +6257,7 @@ CREATE TABLE `wm_outsource_recpt_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity_recived` double(12,2) NOT NULL COMMENT '入库数量',
+  `quantity_recived` decimal(12,2) NOT NULL COMMENT '入库数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `produce_date` datetime DEFAULT NULL COMMENT '生产日期',
@@ -4697,7 +6277,7 @@ CREATE TABLE `wm_outsource_recpt_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=204 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='外协入库单行表';
+) ENGINE=InnoDB AUTO_INCREMENT=225 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='外协入库单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4722,12 +6302,12 @@ CREATE TABLE `wm_package` (
   `client_code` varchar(64) DEFAULT NULL COMMENT '客户编码',
   `client_name` varchar(255) DEFAULT NULL COMMENT '客户名称',
   `client_nick` varchar(255) DEFAULT NULL COMMENT '客户简称',
-  `package_length` double(12,4) DEFAULT NULL COMMENT '箱长度',
-  `package_width` double(12,4) DEFAULT NULL COMMENT '箱宽度',
-  `package_height` double(12,4) DEFAULT NULL COMMENT '箱高度',
+  `package_length` decimal(12,4) DEFAULT NULL COMMENT '箱长度',
+  `package_width` decimal(12,4) DEFAULT NULL COMMENT '箱宽度',
+  `package_height` decimal(12,4) DEFAULT NULL COMMENT '箱高度',
   `size_unit` varchar(64) DEFAULT NULL COMMENT '尺寸单位',
-  `net_weight` double(12,4) DEFAULT NULL COMMENT '净重',
-  `cross_weight` double(12,4) DEFAULT NULL COMMENT '毛重',
+  `net_weight` decimal(12,4) DEFAULT NULL COMMENT '净重',
+  `cross_weight` decimal(12,4) DEFAULT NULL COMMENT '毛重',
   `weight_unit` varchar(64) DEFAULT NULL COMMENT '重量单位',
   `inspector` varchar(64) DEFAULT NULL COMMENT '检查员用户名',
   `inspector_name` varchar(64) DEFAULT NULL COMMENT '检查员名称',
@@ -4743,8 +6323,46 @@ CREATE TABLE `wm_package` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`package_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=207 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='装箱单表';
+) ENGINE=InnoDB AUTO_INCREMENT=228 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='装箱单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_package_code_bi` BEFORE INSERT ON `wm_package` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.package_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_package_code_bu` BEFORE UPDATE ON `wm_package` FOR EACH ROW BEGIN
+  IF NOT (OLD.package_code <=> NEW.package_code) AND fn_doc_code_valid(NEW.package_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_package_line`
@@ -4763,7 +6381,7 @@ CREATE TABLE `wm_package_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity_package` double(12,2) NOT NULL COMMENT '装箱数量',
+  `quantity_package` decimal(12,2) NOT NULL COMMENT '装箱数量',
   `workorder_id` bigint DEFAULT NULL COMMENT '生产工单ID',
   `workorder_code` varchar(64) DEFAULT NULL COMMENT '生产工单编号',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
@@ -4787,7 +6405,7 @@ CREATE TABLE `wm_package_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=206 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='装箱明细表';
+) ENGINE=InnoDB AUTO_INCREMENT=227 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='装箱明细表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4848,7 +6466,7 @@ CREATE TABLE `wm_pback_line` (
   `item_name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin DEFAULT NULL COMMENT '产品物料名称',
   `specification` varchar(500) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin DEFAULT NULL COMMENT '单位',
-  `quantity_pback` double(12,2) NOT NULL COMMENT '退料数量',
+  `quantity_pback` decimal(12,2) NOT NULL COMMENT '退料数量',
   `batch_code` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin DEFAULT NULL COMMENT '退料批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
   `warehouse_code` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin DEFAULT NULL COMMENT '仓库编码',
@@ -4926,7 +6544,7 @@ CREATE TABLE `wm_product_produce_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '产出数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '产出数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -4967,7 +6585,7 @@ CREATE TABLE `wm_product_produce_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity_produce` double(12,2) NOT NULL COMMENT '产出数量',
+  `quantity_produce` decimal(12,2) NOT NULL COMMENT '产出数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `quality_status` varchar(64) DEFAULT NULL COMMENT '质量状态',
@@ -5017,9 +6635,48 @@ CREATE TABLE `wm_product_recpt` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`recpt_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=210 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='产品入库录表';
+  PRIMARY KEY (`recpt_id`),
+  UNIQUE KEY `uk_wm_product_recpt_recpt_code` (`recpt_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=231 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='产品入库录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_product_recpt_code_bi` BEFORE INSERT ON `wm_product_recpt` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.recpt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_product_recpt_code_bu` BEFORE UPDATE ON `wm_product_recpt` FOR EACH ROW BEGIN
+  IF NOT (OLD.recpt_code <=> NEW.recpt_code) AND fn_doc_code_valid(NEW.recpt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_product_recpt_detail`
@@ -5039,7 +6696,7 @@ CREATE TABLE `wm_product_recpt_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '入库数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '入库数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -5081,7 +6738,7 @@ CREATE TABLE `wm_product_recpt_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity_recived` double(12,2) NOT NULL COMMENT '入库数量',
+  `quantity_recived` decimal(12,2) NOT NULL COMMENT '入库数量',
   `workorder_id` bigint DEFAULT NULL COMMENT '生产工单ID',
   `workorder_code` varchar(64) DEFAULT NULL COMMENT '生产工单编码',
   `workorder_name` varchar(255) DEFAULT NULL COMMENT '生产工单名称',
@@ -5097,7 +6754,7 @@ CREATE TABLE `wm_product_recpt_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=210 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='产品入库记录表行表';
+) ENGINE=InnoDB AUTO_INCREMENT=231 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='产品入库记录表行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -5134,9 +6791,50 @@ CREATE TABLE `wm_product_sales` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`sales_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=209 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='销售出库单表';
+  `linkage_key` varchar(191) GENERATED ALWAYS AS ((case when (`attr1` like _utf8mb4'AUTO:%') then `attr1` else NULL end)) STORED,
+  PRIMARY KEY (`sales_id`),
+  UNIQUE KEY `uk_wm_product_sales_sales_code` (`sales_code`),
+  UNIQUE KEY `uk_wm_product_sales_linkage_key` (`linkage_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=230 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='销售出库单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_product_sales_code_bi` BEFORE INSERT ON `wm_product_sales` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.sales_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_product_sales_code_bu` BEFORE UPDATE ON `wm_product_sales` FOR EACH ROW BEGIN
+  IF NOT (OLD.sales_code <=> NEW.sales_code) AND fn_doc_code_valid(NEW.sales_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_product_sales_detail`
@@ -5156,7 +6854,7 @@ CREATE TABLE `wm_product_sales_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '出库数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '出库数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -5198,7 +6896,7 @@ CREATE TABLE `wm_product_sales_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity_sales` double(12,2) NOT NULL COMMENT '出库数量',
+  `quantity_sales` decimal(12,2) NOT NULL COMMENT '出库数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `oqc_check` char(1) DEFAULT NULL COMMENT '是否检验',
@@ -5214,8 +6912,13 @@ CREATE TABLE `wm_product_sales_line` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=210 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='产品销售出库行表';
+  `linkage_key` varchar(191) GENERATED ALWAYS AS ((case when (`attr1` like _utf8mb4'AUTO:%') then `attr1` else NULL end)) STORED,
+  `workorder_id` bigint DEFAULT NULL COMMENT '生产工单ID（成品来源工单）',
+  `workorder_code` varchar(64) DEFAULT NULL COMMENT '生产工单编号（成品来源工单）',
+  PRIMARY KEY (`line_id`),
+  UNIQUE KEY `uk_wm_product_sales_line_linkage_key` (`linkage_key`),
+  KEY `idx_wm_product_sales_line_workorder` (`workorder_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=231 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='产品销售出库行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -5277,7 +6980,7 @@ CREATE TABLE `wm_product_salse_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity_salse` double(12,2) NOT NULL COMMENT '出库数量',
+  `quantity_salse` decimal(12,2) NOT NULL COMMENT '出库数量',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
   `warehouse_code` varchar(64) DEFAULT NULL COMMENT '仓库编码',
@@ -5332,9 +7035,48 @@ CREATE TABLE `wm_rt_issue` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`rt_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产退料单头表';
+  PRIMARY KEY (`rt_id`),
+  UNIQUE KEY `uk_wm_rt_issue_rt_code` (`rt_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产退料单头表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_rt_issue_code_bi` BEFORE INSERT ON `wm_rt_issue` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.rt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_rt_issue_code_bu` BEFORE UPDATE ON `wm_rt_issue` FOR EACH ROW BEGIN
+  IF NOT (OLD.rt_code <=> NEW.rt_code) AND fn_doc_code_valid(NEW.rt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_rt_issue_detail`
@@ -5354,7 +7096,7 @@ CREATE TABLE `wm_rt_issue_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '领料数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '领料数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -5395,7 +7137,7 @@ CREATE TABLE `wm_rt_issue_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity_rt` double(12,2) NOT NULL COMMENT '退料数量',
+  `quantity_rt` decimal(12,2) NOT NULL COMMENT '退料数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `ipqc_id` bigint DEFAULT NULL COMMENT '对应的质检单ID',
@@ -5413,7 +7155,7 @@ CREATE TABLE `wm_rt_issue_line` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `material_stock_id` bigint DEFAULT NULL COMMENT '库存记录ID',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产退料单行表';
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='生产退料单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -5444,9 +7186,48 @@ CREATE TABLE `wm_rt_sales` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`rt_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=205 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='产品销售退货单表';
+  PRIMARY KEY (`rt_id`),
+  UNIQUE KEY `uk_wm_rt_sales_rt_code` (`rt_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=226 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='产品销售退货单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_rt_sales_code_bi` BEFORE INSERT ON `wm_rt_sales` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.rt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_rt_sales_code_bu` BEFORE UPDATE ON `wm_rt_sales` FOR EACH ROW BEGIN
+  IF NOT (OLD.rt_code <=> NEW.rt_code) AND fn_doc_code_valid(NEW.rt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_rt_sales_detail`
@@ -5465,7 +7246,7 @@ CREATE TABLE `wm_rt_sales_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '退货数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '退货数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -5508,7 +7289,7 @@ CREATE TABLE `wm_rt_sales_line` (
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
-  `quantity_rted` double(12,2) NOT NULL COMMENT '退货数量',
+  `quantity_rted` decimal(12,2) NOT NULL COMMENT '退货数量',
   `quality_status` varchar(64) DEFAULT NULL COMMENT '质量状态',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
@@ -5520,7 +7301,7 @@ CREATE TABLE `wm_rt_sales_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=206 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='产品销售退货行表';
+) ENGINE=InnoDB AUTO_INCREMENT=227 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='产品销售退货行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -5554,9 +7335,51 @@ CREATE TABLE `wm_rt_vendor` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`rt_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='采购退货表';
+  `auto_open_return_key` varchar(64) GENERATED ALWAYS AS ((case when ((`status` in (_utf8mb4'PREPARE',_utf8mb4'APPROVING',_utf8mb4'APPROVED')) and ((`attr1` like _utf8mb4'AUTO:RTV:IQC:%') or (`attr1` like _utf8mb4'SRC:RECEIPT:%'))) then `attr1` else NULL end)) STORED,
+  PRIMARY KEY (`rt_id`),
+  UNIQUE KEY `uk_wm_rt_vendor_rt_code` (`rt_code`),
+  UNIQUE KEY `uk_vendor_open_return` (`auto_open_return_key`),
+  KEY `idx_vendor_return_attr1` (`attr1`(48),`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='采购退货表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_rt_vendor_code_bi` BEFORE INSERT ON `wm_rt_vendor` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.rt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_rt_vendor_code_bu` BEFORE UPDATE ON `wm_rt_vendor` FOR EACH ROW BEGIN
+  IF NOT (OLD.rt_code <=> NEW.rt_code) AND fn_doc_code_valid(NEW.rt_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_rt_vendor_detail`
@@ -5576,7 +7399,7 @@ CREATE TABLE `wm_rt_vendor_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '退货数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '退货数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -5617,7 +7440,7 @@ CREATE TABLE `wm_rt_vendor_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(128) DEFAULT NULL COMMENT '单位名称',
-  `quantity_rted` double(12,2) NOT NULL COMMENT '退货数量',
+  `quantity_rted` decimal(12,2) NOT NULL COMMENT '退货数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
@@ -5629,8 +7452,9 @@ CREATE TABLE `wm_rt_vendor_line` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='供应商退货行表';
+  PRIMARY KEY (`line_id`),
+  KEY `idx_vendor_return_source` (`attr2`(64),`rt_id`,`batch_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='供应商退货行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -5663,9 +7487,48 @@ CREATE TABLE `wm_sales_notice` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`notice_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='发货通知单表';
+  PRIMARY KEY (`notice_id`),
+  UNIQUE KEY `uk_wm_sales_notice_notice_code` (`notice_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=223 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='发货通知单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_sales_notice_code_bi` BEFORE INSERT ON `wm_sales_notice` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.notice_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_sales_notice_code_bu` BEFORE UPDATE ON `wm_sales_notice` FOR EACH ROW BEGIN
+  IF NOT (OLD.notice_code <=> NEW.notice_code) AND fn_doc_code_valid(NEW.notice_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_sales_notice_line`
@@ -5685,7 +7548,7 @@ CREATE TABLE `wm_sales_notice_line` (
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
-  `quantity_sales` double(12,2) NOT NULL COMMENT '发货数量',
+  `quantity_sales` decimal(12,2) NOT NULL COMMENT '发货数量',
   `oqc_check` char(1) DEFAULT NULL COMMENT '是否检验',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
@@ -5697,7 +7560,7 @@ CREATE TABLE `wm_sales_notice_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='发货通知单行表';
+) ENGINE=InnoDB AUTO_INCREMENT=223 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='发货通知单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -5729,7 +7592,7 @@ CREATE TABLE `wm_sn` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`sn_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=210 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='SN码表';
+) ENGINE=InnoDB AUTO_INCREMENT=231 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='SN码表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -5765,9 +7628,48 @@ CREATE TABLE `wm_stock_taking` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`taking_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=213 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='库存盘点任务表';
+  PRIMARY KEY (`taking_id`),
+  UNIQUE KEY `uk_wm_stock_taking_taking_code` (`taking_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=234 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='库存盘点任务表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_stock_taking_code_bi` BEFORE INSERT ON `wm_stock_taking` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.taking_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_stock_taking_code_bu` BEFORE UPDATE ON `wm_stock_taking` FOR EACH ROW BEGIN
+  IF NOT (OLD.taking_code <=> NEW.taking_code) AND fn_doc_code_valid(NEW.taking_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_stock_taking_line`
@@ -5810,7 +7712,7 @@ CREATE TABLE `wm_stock_taking_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=256 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='库存盘点明细表';
+) ENGINE=InnoDB AUTO_INCREMENT=277 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='库存盘点明细表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -5869,8 +7771,46 @@ CREATE TABLE `wm_stock_taking_plan` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`plan_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='库存盘点方案表';
+) ENGINE=InnoDB AUTO_INCREMENT=223 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='库存盘点方案表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_stock_taking_plan_code_bi` BEFORE INSERT ON `wm_stock_taking_plan` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.plan_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_stock_taking_plan_code_bu` BEFORE UPDATE ON `wm_stock_taking_plan` FOR EACH ROW BEGIN
+  IF NOT (OLD.plan_code <=> NEW.plan_code) AND fn_doc_code_valid(NEW.plan_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_stock_taking_result`
@@ -5927,8 +7867,8 @@ CREATE TABLE `wm_storage_area` (
   `area_code` varchar(64) NOT NULL COMMENT '库位编码',
   `area_name` varchar(255) NOT NULL COMMENT '库位名称',
   `location_id` bigint NOT NULL COMMENT '库区ID',
-  `area` double(8,2) DEFAULT NULL COMMENT '面积',
-  `max_loa` double(8,2) DEFAULT NULL COMMENT '最大载重量',
+  `area` decimal(8,2) DEFAULT NULL COMMENT '面积',
+  `max_loa` decimal(8,2) DEFAULT NULL COMMENT '最大载重量',
   `position_x` int DEFAULT NULL COMMENT '库位位置X',
   `position_y` int DEFAULT NULL COMMENT '库位位置y',
   `position_z` int DEFAULT NULL COMMENT '库位位置z',
@@ -5961,7 +7901,7 @@ CREATE TABLE `wm_storage_location` (
   `location_code` varchar(64) NOT NULL COMMENT '库区编码',
   `location_name` varchar(255) NOT NULL COMMENT '库区名称',
   `warehouse_id` bigint NOT NULL COMMENT '仓库ID',
-  `area` double(12,2) DEFAULT NULL COMMENT '面积',
+  `area` decimal(12,2) DEFAULT NULL COMMENT '面积',
   `area_flag` char(1) DEFAULT 'N' COMMENT '是否开启库位管理',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
@@ -6012,7 +7952,7 @@ CREATE TABLE `wm_transaction` (
   `source_doc_line_id` bigint DEFAULT NULL COMMENT '单据行ID',
   `material_stock_id` bigint NOT NULL COMMENT '库存记录ID',
   `transaction_flag` int DEFAULT '1' COMMENT '库存方向',
-  `transaction_quantity` double(12,2) DEFAULT NULL COMMENT '事务数量',
+  `transaction_quantity` decimal(12,2) DEFAULT NULL COMMENT '事务数量',
   `transaction_date` datetime DEFAULT NULL COMMENT '事务日期',
   `related_transaction_id` bigint DEFAULT NULL COMMENT '关联的事务ID',
   `erp_date` datetime DEFAULT NULL COMMENT 'ERP账期',
@@ -6025,9 +7965,65 @@ CREATE TABLE `wm_transaction` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`transaction_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=574 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='库存事务表';
+  `txn_code` varchar(32) DEFAULT NULL COMMENT '事务号（服务端生成）',
+  `biz_key` varchar(191) DEFAULT NULL COMMENT '幂等键',
+  `qty_before` decimal(18,4) DEFAULT NULL COMMENT '变动前结存',
+  `qty_after` decimal(18,4) DEFAULT NULL COMMENT '变动后结存',
+  `workorder_id` bigint DEFAULT NULL COMMENT '工单ID（追溯）',
+  `inspection_id` bigint DEFAULT NULL COMMENT '入库质检单ID（放行凭证）',
+  `recpt_id` bigint DEFAULT NULL COMMENT '入库单ID',
+  PRIMARY KEY (`transaction_id`),
+  UNIQUE KEY `uk_txn_code` (`txn_code`),
+  UNIQUE KEY `uk_txn_biz_key` (`biz_key`),
+  KEY `idx_txn_batch_date` (`batch_id`,`transaction_date`),
+  KEY `idx_txn_wo_date` (`workorder_id`,`transaction_date`),
+  KEY `idx_txn_item_wh_date` (`item_id`,`warehouse_id`,`transaction_date`),
+  KEY `idx_txn_source` (`source_doc_type`,`source_doc_id`),
+  KEY `idx_txn_stock` (`material_stock_id`),
+  KEY `idx_txn_inspection` (`inspection_id`),
+  CONSTRAINT `fk_txn_batch` FOREIGN KEY (`batch_id`) REFERENCES `wm_batch` (`batch_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_txn_inspection` FOREIGN KEY (`inspection_id`) REFERENCES `qc_inbound` (`inspection_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_txn_stock` FOREIGN KEY (`material_stock_id`) REFERENCES `wm_material_stock` (`material_stock_id`) ON DELETE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=584 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='库存事务表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_transaction_code_bi` BEFORE INSERT ON `wm_transaction` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.txn_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_transaction_code_bu` BEFORE UPDATE ON `wm_transaction` FOR EACH ROW BEGIN
+  IF NOT (OLD.txn_code <=> NEW.txn_code) AND fn_doc_code_valid(NEW.txn_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_transfer`
@@ -6059,9 +8055,48 @@ CREATE TABLE `wm_transfer` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `confirm_flag` char(1) DEFAULT 'N' COMMENT '是否已确认',
-  PRIMARY KEY (`transfer_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=208 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='转移单表';
+  PRIMARY KEY (`transfer_id`),
+  UNIQUE KEY `uk_wm_transfer_transfer_code` (`transfer_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=242 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='转移单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_transfer_code_bi` BEFORE INSERT ON `wm_transfer` FOR EACH ROW BEGIN
+  IF fn_doc_code_valid(NEW.transfer_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_wm_transfer_code_bu` BEFORE UPDATE ON `wm_transfer` FOR EACH ROW BEGIN
+  IF NOT (OLD.transfer_code <=> NEW.transfer_code) AND fn_doc_code_valid(NEW.transfer_code) = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '单号格式错误：2位小写拼音+8位日期+5位流水';
+  END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `wm_transfer_detail`
@@ -6080,7 +8115,7 @@ CREATE TABLE `wm_transfer_detail` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity` double(12,2) NOT NULL COMMENT '转移数量',
+  `quantity` decimal(12,2) NOT NULL COMMENT '转移数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -6122,7 +8157,7 @@ CREATE TABLE `wm_transfer_line` (
   `specification` varchar(500) DEFAULT NULL COMMENT '规格型号',
   `unit_of_measure` varchar(64) DEFAULT NULL COMMENT '单位',
   `unit_name` varchar(64) DEFAULT NULL COMMENT '单位名称',
-  `quantity_transfer` double(12,2) NOT NULL COMMENT '转移数量',
+  `quantity_transfer` decimal(12,2) NOT NULL COMMENT '转移数量',
   `batch_id` bigint DEFAULT NULL COMMENT '批次ID',
   `batch_code` varchar(255) DEFAULT NULL COMMENT '批次号',
   `warehouse_id` bigint DEFAULT NULL COMMENT '仓库ID',
@@ -6145,7 +8180,7 @@ CREATE TABLE `wm_transfer_line` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`line_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=209 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='转移单行表';
+) ENGINE=InnoDB AUTO_INCREMENT=230 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='转移单行表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -6161,7 +8196,7 @@ CREATE TABLE `wm_warehouse` (
   `warehouse_name` varchar(255) NOT NULL COMMENT '仓库名称',
   `warehouse_type` varchar(32) DEFAULT NULL COMMENT '浠撳簱绫诲瀷(RAW/LINE/FG)',
   `location` varchar(500) DEFAULT NULL COMMENT '位置',
-  `area` double(12,2) DEFAULT NULL COMMENT '面积',
+  `area` decimal(12,2) DEFAULT NULL COMMENT '面积',
   `charge` varchar(64) DEFAULT NULL COMMENT '负责人',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   `attr1` varchar(64) DEFAULT NULL COMMENT '预留字段1',
@@ -6182,6 +8217,50 @@ CREATE TABLE `wm_warehouse` (
 --
 -- Dumping routines for database 'j2eedb'
 --
+/*!50003 DROP FUNCTION IF EXISTS `fn_doc_code_valid` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` FUNCTION `fn_doc_code_valid`(p_code VARCHAR(64)) RETURNS tinyint
+    DETERMINISTIC
+BEGIN
+  IF p_code IS NULL OR p_code = '' THEN
+    RETURN 0;
+  END IF;
+  IF p_code COLLATE utf8mb4_bin REGEXP '^[a-z]{2}[0-9]{8}[0-9]{5}$' THEN
+    RETURN 1;
+  END IF;
+  RETURN 0;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+
+--
+-- Final view structure for view `v_stock_alert`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_stock_alert`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `v_stock_alert` AS select `i`.`item_id` AS `item_id`,`i`.`item_code` AS `item_code`,`i`.`item_name` AS `item_name`,`i`.`specification` AS `specification`,`i`.`unit_name` AS `unit_name`,`i`.`min_stock` AS `min_stock`,ifnull(sum(`s`.`quantity_onhand`),0) AS `current_stock`,(ifnull(sum(`s`.`quantity_onhand`),0) - `i`.`min_stock`) AS `gap`,greatest(((`i`.`min_stock` * 2) - ifnull(sum(`s`.`quantity_onhand`),0)),0) AS `suggest_purchase`,(case when (ifnull(sum(`s`.`quantity_onhand`),0) <= 0) then 'CRITICAL' when (ifnull(sum(`s`.`quantity_onhand`),0) < `i`.`min_stock`) then 'WARNING' else 'OK' end) AS `alert_level` from (`md_item` `i` left join `wm_material_stock` `s` on((`s`.`item_id` = `i`.`item_id`))) where (`i`.`min_stock` > 0) group by `i`.`item_id`,`i`.`item_code`,`i`.`item_name`,`i`.`specification`,`i`.`unit_name`,`i`.`min_stock` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -6192,4 +8271,4 @@ CREATE TABLE `wm_warehouse` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-10-24 11:09:38
+-- Dump completed on 2026-11-14 19:31:22

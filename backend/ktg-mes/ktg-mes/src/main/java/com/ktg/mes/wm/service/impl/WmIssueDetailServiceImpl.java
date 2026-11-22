@@ -34,8 +34,8 @@ public class WmIssueDetailServiceImpl implements IWmIssueDetailService
     private void lockEditable(Long issueId) {
         if (issueId == null) throw new ServiceException("拣货明细必须关联领料单");
         String status = postingLockMapper.issue(issueId);
-        if (status == null || "FINISHED".equals(status) || "CANCELED".equals(status))
-            throw new ServiceException("领料单不存在、已执行或已取消，不能修改拣货明细");
+        if (status == null || "APPROVED".equals(status) || "FINISHED".equals(status) || "CANCELED".equals(status))
+            throw new ServiceException("领料单不存在、已完成拣货、已执行或已取消，不能修改拣货明细");
     }
 
     private WmIssueDetail existing(Long id) {

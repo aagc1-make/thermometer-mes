@@ -3,6 +3,7 @@ package com.ktg.mes.md.domain;
 import com.ktg.common.annotation.Excel;
 import com.ktg.common.core.domain.BaseEntity;
 
+import java.math.BigDecimal;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -30,8 +31,8 @@ public class MdItem extends BaseEntity {
     private String itemTypeName;
     private String enableFlag;
     private String safeStockFlag;
-    private Double minStock;
-    private Double maxStock;
+    private BigDecimal minStock;
+    private BigDecimal maxStock;
     private String highValue;
     private String batchFlag;
     private String attr1;
@@ -141,19 +142,19 @@ public class MdItem extends BaseEntity {
         this.safeStockFlag = safeStockFlag;
     }
 
-    public Double getMinStock() {
+    public BigDecimal getMinStock() {
         return minStock;
     }
 
-    public void setMinStock(Double minStock) {
+    public void setMinStock(BigDecimal minStock) {
         this.minStock = minStock;
     }
 
-    public Double getMaxStock() {
+    public BigDecimal getMaxStock() {
         return maxStock;
     }
 
-    public void setMaxStock(Double maxStock) {
+    public void setMaxStock(BigDecimal maxStock) {
         this.maxStock = maxStock;
     }
 

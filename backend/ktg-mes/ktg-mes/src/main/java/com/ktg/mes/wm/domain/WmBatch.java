@@ -151,6 +151,22 @@ public class WmBatch extends BaseEntity
     @Excel(name = "质量状态")
     private String qualityStatus;
 
+    /** 工单行ID（主链挂载点：批次属于哪一行产出） */
+    @Excel(name = "工单行ID")
+    private Long workorderLineId;
+
+    /** 批次来源 WORKORDER/PURCHASE/OUTSOURCE/MANUAL */
+    @Excel(name = "批次来源")
+    private String batchSource;
+
+    /** 批次初始数量 */
+    @Excel(name = "批次初始数量")
+    private java.math.BigDecimal initialQuantity;
+
+    /** 批次状态 ACTIVE/CONSUMED/CLOSED */
+    @Excel(name = "批次状态")
+    private String batchStatus;
+
     /** 预留字段1 */
     private String attr1;
 
@@ -459,6 +475,38 @@ public class WmBatch extends BaseEntity
     public String getQualityStatus() 
     {
         return qualityStatus;
+    }
+
+    public Long getWorkorderLineId() {
+        return workorderLineId;
+    }
+
+    public void setWorkorderLineId(Long workorderLineId) {
+        this.workorderLineId = workorderLineId;
+    }
+
+    public String getBatchSource() {
+        return batchSource;
+    }
+
+    public void setBatchSource(String batchSource) {
+        this.batchSource = batchSource;
+    }
+
+    public java.math.BigDecimal getInitialQuantity() {
+        return initialQuantity;
+    }
+
+    public void setInitialQuantity(java.math.BigDecimal initialQuantity) {
+        this.initialQuantity = initialQuantity;
+    }
+
+    public String getBatchStatus() {
+        return batchStatus;
+    }
+
+    public void setBatchStatus(String batchStatus) {
+        this.batchStatus = batchStatus;
     }
     public void setAttr1(String attr1) 
     {

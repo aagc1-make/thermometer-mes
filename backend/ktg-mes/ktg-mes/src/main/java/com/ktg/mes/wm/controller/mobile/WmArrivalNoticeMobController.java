@@ -13,7 +13,7 @@ import com.ktg.mes.wm.domain.WmArrivalNotice;
 import com.ktg.mes.wm.domain.WmArrivalNoticeLine;
 import com.ktg.mes.wm.service.IWmArrivalNoticeLineService;
 import com.ktg.mes.wm.service.IWmArrivalNoticeService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +44,7 @@ public class WmArrivalNoticeMobController extends BaseController {
     private IQcTemplateService qcTemplateService;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private ArrivalQualityLinkageService arrivalQualityLinkageService;
@@ -90,7 +90,7 @@ public class WmArrivalNoticeMobController extends BaseController {
                 return AjaxResult.error("单据编号已存在");
             }
         }else{
-            wmArrivalNotice.setNoticeCode(autoCodeUtil.genSerialCode(UserConstants.ARRIVAL_NOTICE_CODE,""));
+            wmArrivalNotice.setNoticeCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_ARRIVAL_NOTICE));
         }
 
 

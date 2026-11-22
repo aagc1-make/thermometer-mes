@@ -18,6 +18,7 @@ import com.ktg.mes.wm.service.IWmArrivalNoticeLineService;
 import com.ktg.mes.wm.service.IWmArrivalNoticeService;
 import com.ktg.mes.wm.service.IWmOutsourceRecptLineService;
 import com.ktg.mes.wm.service.IWmOutsourceRecptService;
+import com.ktg.mes.wm.service.impl.PreStockVendorReturnService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +53,7 @@ public class QcIqcCompletionService {
     private final FormLinkagePolicy formLinkagePolicy;
     private final PostingLockMapper postingLockMapper;
     private final ReceiptGuardMapper guardMapper;
+    private final PreStockVendorReturnService preStockVendorReturnService;
 
     public QcIqcCompletionService(IQcIqcService iqcService,
                                   IWmArrivalNoticeService arrivalNoticeService,
@@ -61,7 +63,8 @@ public class QcIqcCompletionService {
                                   PurchaseReceiptLinkageService purchaseReceiptLinkageService,
                                   FormLinkagePolicy formLinkagePolicy,
                                   PostingLockMapper postingLockMapper,
-                                  ReceiptGuardMapper guardMapper) {
+                                  ReceiptGuardMapper guardMapper,
+                                  PreStockVendorReturnService preStockVendorReturnService) {
         this.iqcService = iqcService;
         this.arrivalNoticeService = arrivalNoticeService;
         this.arrivalNoticeLineService = arrivalNoticeLineService;
@@ -71,6 +74,7 @@ public class QcIqcCompletionService {
         this.formLinkagePolicy = formLinkagePolicy;
         this.postingLockMapper = postingLockMapper;
         this.guardMapper = guardMapper;
+        this.preStockVendorReturnService = preStockVendorReturnService;
     }
 
     /** 是否为“完成检验”的目标状态：系统同时存在 CONFIRMED（页面确认）与 FINISHED 两种写法。 */
@@ -153,6 +157,11 @@ public class QcIqcCompletionService {
                 persisted.getSourceLineId(), persisted.getItemId(), persisted.getVendorId());
         if (rows != 1) {
             throw new ServiceException("检验单已被其他请求完成，请刷新后重试");
+        }
+        if (UserConstants.SOURCE_DOC_TYPE_ARRIVALNOTICE.equals(sourceType) && unqualified.signum() > 0) {
+            WmArrivalNotice notice = arrivalNoticeService.selectWmArrivalNoticeByNoticeId(persisted.getSourceDocId());
+            WmArrivalNoticeLine line = arrivalNoticeLineService.selectWmArrivalNoticeLineByLineId(persisted.getSourceLineId());
+            preStockVendorReturnService.create(persisted, notice, line, unqualified, operator);
         }
         request.setStatus(UserConstants.ORDER_STATUS_FINISHED);
         request.setCheckResult(result);

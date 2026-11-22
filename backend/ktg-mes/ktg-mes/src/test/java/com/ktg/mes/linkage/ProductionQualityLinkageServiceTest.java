@@ -11,7 +11,7 @@ import com.ktg.mes.qc.service.IQcTemplateIndexService;
 import com.ktg.mes.qc.service.IQcTemplateService;
 import com.ktg.mes.wm.domain.WmProductProduce;
 import com.ktg.mes.wm.domain.WmProductProduceLine;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -32,7 +32,7 @@ class ProductionQualityLinkageServiceTest {
     private IQcTemplateService templateService;
     private IQcTemplateIndexService templateIndexService;
     private IQcIpqcLineService ipqcLineService;
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
     private MenuLinkageNoticeService menuNoticeService;
     private ProductionQualityLinkageService linkageService;
 
@@ -42,10 +42,10 @@ class ProductionQualityLinkageServiceTest {
         templateService = mock(IQcTemplateService.class);
         templateIndexService = mock(IQcTemplateIndexService.class);
         ipqcLineService = mock(IQcIpqcLineService.class);
-        autoCodeUtil = mock(AutoCodeUtil.class);
+        codeSequenceService = mock(CodeSequenceService.class);
         menuNoticeService = mock(MenuLinkageNoticeService.class);
         linkageService = new ProductionQualityLinkageService(ipqcService, templateService,
-                templateIndexService, ipqcLineService, autoCodeUtil, menuNoticeService);
+                templateIndexService, ipqcLineService, codeSequenceService, menuNoticeService);
     }
 
     @Test
@@ -57,7 +57,7 @@ class ProductionQualityLinkageServiceTest {
                 .thenReturn(template);
         when(templateIndexService.selectQcTemplateIndexList(any(QcTemplateIndex.class)))
                 .thenReturn(Collections.emptyList());
-        when(autoCodeUtil.genSerialCode(UserConstants.QC_PQC_CODE, null)).thenReturn("IPQC-001");
+        when(codeSequenceService.generateCode(UserConstants.CODE_RULE_IPQC)).thenReturn("IPQC-001");
 
         linkageService.createDraft(feedback(), produce(), line(), "tester");
 

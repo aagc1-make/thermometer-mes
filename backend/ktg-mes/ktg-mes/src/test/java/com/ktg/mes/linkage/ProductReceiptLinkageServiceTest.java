@@ -8,7 +8,7 @@ import com.ktg.mes.wm.domain.WmProductRecptLine;
 import com.ktg.mes.wm.mapper.ProductReceiptGuardMapper;
 import com.ktg.mes.wm.service.IWmProductRecptLineService;
 import com.ktg.mes.wm.service.IWmProductRecptService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,7 +36,7 @@ class ProductReceiptLinkageServiceTest {
     private IWmProductRecptService recptService;
     private IWmProductRecptLineService recptLineService;
     private ProductReceiptGuardMapper guardMapper;
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
     private MenuLinkageNoticeService menuNoticeService;
     private ProductReceiptLinkageService linkageService;
 
@@ -46,10 +46,10 @@ class ProductReceiptLinkageServiceTest {
         recptService = mock(IWmProductRecptService.class);
         recptLineService = mock(IWmProductRecptLineService.class);
         guardMapper = mock(ProductReceiptGuardMapper.class);
-        autoCodeUtil = mock(AutoCodeUtil.class);
+        codeSequenceService = mock(CodeSequenceService.class);
         menuNoticeService = mock(MenuLinkageNoticeService.class);
         linkageService = new ProductReceiptLinkageService(workorderService, recptService, recptLineService,
-                guardMapper, autoCodeUtil, menuNoticeService);
+                guardMapper, codeSequenceService, menuNoticeService);
         // 默认：无旧口径草稿、无已建批次草稿
         when(guardMapper.countProductRecptByLinkageKey(anyString())).thenReturn(0);
         when(guardMapper.terminalProcessId(any())).thenReturn(9409L);
@@ -98,7 +98,7 @@ class ProductReceiptLinkageServiceTest {
         when(workorderService.selectProWorkorderByWorkorderId(1L)).thenReturn(workorder);
         when(guardMapper.qualifiedOutputByBatch(1L, 9201L, 9407L))
                 .thenReturn(Collections.singletonList(batch("B1", new BigDecimal("10"))));
-        when(autoCodeUtil.genSerialCode(UserConstants.PRODUCTRECPT_CODE, "")).thenReturn("PR-001");
+        when(codeSequenceService.generateCode(UserConstants.CODE_RULE_PRODUCT_RECPT)).thenReturn("PR-001");
         when(recptService.insertWmProductRecpt(any(WmProductRecpt.class))).thenAnswer(invocation -> {
             invocation.<WmProductRecpt>getArgument(0).setRecptId(900L);
             return 1;
@@ -124,7 +124,7 @@ class ProductReceiptLinkageServiceTest {
                 .thenReturn(Collections.singletonList(batch("B1", new BigDecimal("10"))));
         when(guardMapper.finishedProductRecptByBatch(1L, "B1")).thenReturn(new BigDecimal("6"));
         when(guardMapper.occupiedProductRecptByBatch(1L, "B1", null)).thenReturn(new BigDecimal("2"));
-        when(autoCodeUtil.genSerialCode(anyString(), anyString())).thenReturn("PR-002");
+        when(codeSequenceService.generateCode(anyString())).thenReturn("PR-002");
         when(recptService.insertWmProductRecpt(any(WmProductRecpt.class))).thenAnswer(invocation -> {
             invocation.<WmProductRecpt>getArgument(0).setRecptId(901L);
             return 1;

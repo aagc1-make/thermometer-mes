@@ -9,7 +9,7 @@ import com.ktg.mes.wm.domain.WmProductRecptLine;
 import com.ktg.mes.wm.mapper.ProductReceiptGuardMapper;
 import com.ktg.mes.wm.service.IWmProductRecptLineService;
 import com.ktg.mes.wm.service.IWmProductRecptService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -44,20 +44,20 @@ public class ProductReceiptLinkageService {
     private final IWmProductRecptService recptService;
     private final IWmProductRecptLineService recptLineService;
     private final ProductReceiptGuardMapper guardMapper;
-    private final AutoCodeUtil autoCodeUtil;
+    private final CodeSequenceService codeSequenceService;
     private final MenuLinkageNoticeService menuNoticeService;
 
     public ProductReceiptLinkageService(IProWorkorderService workorderService,
                                         IWmProductRecptService recptService,
                                         IWmProductRecptLineService recptLineService,
                                         ProductReceiptGuardMapper guardMapper,
-                                        AutoCodeUtil autoCodeUtil,
+                                        CodeSequenceService codeSequenceService,
                                         MenuLinkageNoticeService menuNoticeService) {
         this.workorderService = workorderService;
         this.recptService = recptService;
         this.recptLineService = recptLineService;
         this.guardMapper = guardMapper;
-        this.autoCodeUtil = autoCodeUtil;
+        this.codeSequenceService = codeSequenceService;
         this.menuNoticeService = menuNoticeService;
     }
 
@@ -166,7 +166,7 @@ public class ProductReceiptLinkageService {
 
     private WmProductRecpt buildReceipt(ProWorkorder workorder, String operator, String linkageKey) {
         WmProductRecpt recpt = new WmProductRecpt();
-        recpt.setRecptCode(autoCodeUtil.genSerialCode(UserConstants.PRODUCTRECPT_CODE, ""));
+        recpt.setRecptCode(codeSequenceService.generateChainCode(UserConstants.CODE_RULE_PRODUCT_RECPT, workorder.getWorkorderCode()));
         recpt.setRecptName(workorder.getWorkorderName() + "产品入库");
         recpt.setWorkorderId(workorder.getWorkorderId());
         recpt.setWorkorderCode(workorder.getWorkorderCode());

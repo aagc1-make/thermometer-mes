@@ -13,7 +13,7 @@ import com.ktg.mes.qc.service.IQcTemplateProductService;
 import com.ktg.mes.wm.domain.WmArrivalNotice;
 import com.ktg.mes.wm.domain.WmArrivalNoticeLine;
 import com.ktg.mes.wm.service.IWmArrivalNoticeService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +30,7 @@ public class ArrivalQualityLinkageService {
     private final IQcTemplateProductService templateProductService;
     private final IQcTemplateIndexService templateIndexService;
     private final IQcIqcLineService iqcLineService;
-    private final AutoCodeUtil autoCodeUtil;
+    private final CodeSequenceService codeSequenceService;
     private final MenuLinkageNoticeService menuNoticeService;
     private final IWmArrivalNoticeService arrivalNoticeService;
 
@@ -38,14 +38,14 @@ public class ArrivalQualityLinkageService {
                                         IQcTemplateProductService templateProductService,
                                         IQcTemplateIndexService templateIndexService,
                                         IQcIqcLineService iqcLineService,
-                                        AutoCodeUtil autoCodeUtil,
+                                        CodeSequenceService codeSequenceService,
                                         MenuLinkageNoticeService menuNoticeService,
                                         IWmArrivalNoticeService arrivalNoticeService) {
         this.iqcService = iqcService;
         this.templateProductService = templateProductService;
         this.templateIndexService = templateIndexService;
         this.iqcLineService = iqcLineService;
-        this.autoCodeUtil = autoCodeUtil;
+        this.codeSequenceService = codeSequenceService;
         this.menuNoticeService = menuNoticeService;
         this.arrivalNoticeService = arrivalNoticeService;
     }
@@ -108,7 +108,7 @@ public class ArrivalQualityLinkageService {
                               QcTemplateProduct template,
                               String operator) {
         QcIqc draft = new QcIqc();
-        draft.setIqcCode(autoCodeUtil.genSerialCode(UserConstants.QC_IQC_CODE, null));
+        draft.setIqcCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_IQC));
         draft.setIqcName("到货通知" + notice.getNoticeCode() + "-" + line.getItemName());
         draft.setTemplateId(template.getTemplateId());
         draft.setSourceDocId(notice.getNoticeId());

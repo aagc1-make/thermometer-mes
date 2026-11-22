@@ -47,6 +47,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="endTime != null "> and end_time = #{endTime}</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
         </where>
+        order by create_time desc, notice_id desc
     </select>
     
     <select id="selectWmMaterialrequestNoticeByNoticeId" parameterType="Long" resultMap="WmMaterialrequestNoticeResult">
