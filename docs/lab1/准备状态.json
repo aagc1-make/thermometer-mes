@@ -1,0 +1,25 @@
+{
+  "asOf": "2026-11-07T17:28:10.730476+08:00",
+  "status": "executed_with_open_defect",
+  "baseline": "main@909b875",
+  "cases": 28,
+  "passed": 26,
+  "failed": 2,
+  "blocked": 0,
+  "notRun": 0,
+  "executionHistory": 30,
+  "businessDefects": [
+    {
+      "id": "LAB1-D001",
+      "status": "open",
+      "cases": [
+        "MES-10",
+        "MES-25"
+      ]
+    }
+  ],
+  "evidence": "evidence/lab1/run-20261107",
+  "database": "mes_lab1_20261107",
+  "backend": "http://127.0.0.1:8082",
+  "testlink": "http://127.0.0.1:8085"
+}

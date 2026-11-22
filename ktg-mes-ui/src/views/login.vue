@@ -183,8 +183,7 @@
           </div>
 
           <div style="font-size:12px;line-height:1.7;color:#64748b;background:rgba(37,99,235,.06);border-radius:8px;padding:10px 12px">
-            首次使用请先用密码登录，在「个人中心 → 人脸登录」录入；<br>
-            动作检测在浏览器内完成，服务端使用特征向量比对身份，照片和视频留在本机。
+            首次使用请先用密码登录，在「个人中心 → 人脸登录」录入。
           </div>
 
           <button
@@ -251,7 +250,7 @@
       <p>贯通物料、生产、质量与设备管理，让红外测温枪制造过程清晰可控、全程可追溯。</p>
     </el-dialog>
 
-    <face-capture :visible.sync="faceVisible" title="人脸登录" tip="人脸特征只用于本次身份核验，不会上传照片" @captured="handleFaceCaptured" />
+    <face-capture :visible.sync="faceVisible" title="人脸登录" @captured="handleFaceCaptured" />
   </div>
 </template>
 

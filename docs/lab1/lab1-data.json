@@ -1,0 +1,460 @@
+{
+  "baseline": "main@909b875",
+  "spec": "MES 到货至销售出库需求",
+  "requirements": [
+    {
+      "id": "REQ-002",
+      "title": "物料基础数据管理",
+      "section": "2.3.4",
+      "description": "统一维护物料分类、产品和物料主数据。抽测测温枪成品、半成品和外购物料的查询及编码唯一性。"
+    },
+    {
+      "id": "REQ-003",
+      "title": "多级 BOM 管理",
+      "section": "2.3.6",
+      "description": "维护产品组成并支持多级物料需求核算。抽测三层结构和生产 10 台时的物料用量换算。"
+    },
+    {
+      "id": "REQ-007",
+      "title": "采购到货与入库管理",
+      "section": "2.4.4",
+      "description": "到货与 IQC 合格放行后才可采购入库，库存及流水一致；重复执行不得重复过账。"
+    },
+    {
+      "id": "REQ-008",
+      "title": "生产领料与退料管理",
+      "section": "2.4.6",
+      "description": "本轮只测生产领料，核对原料仓转出与线边库转入、FIFO 自动拣货及库存不足拦截；退料不在范围内。"
+    },
+    {
+      "id": "REQ-012",
+      "title": "生产工单与排产管理",
+      "section": "2.5.4",
+      "description": "组织生产任务并按工序、工作站和时间排产，校验计划数量。"
+    },
+    {
+      "id": "REQ-013",
+      "title": "生产报工 工序流转与进度查询",
+      "section": "2.5.6",
+      "description": "记录生产执行并回写进度，抽测正常报工与合格、不合格数量一致性；不做全部工序流转卡组合。"
+    },
+    {
+      "id": "REQ-015",
+      "title": "来料检验管理",
+      "section": "2.6.4",
+      "description": "控制来料质量和采购入库放行，校验检测数量与合格、不合格数量的一致性。"
+    },
+    {
+      "id": "REQ-016",
+      "title": "过程与出货检验管理",
+      "section": "2.6.6",
+      "description": "控制过程质量及出货质量，抽测 IPQC 合格放行和 OQC 不合格拦截。"
+    },
+    {
+      "id": "REQ-009",
+      "title": "成品入库与销售出库管理",
+      "section": "2.4.8",
+      "description": "合格成品入库 10 台，OQC 合格后销售出库 6 台，在无其他业务变动时结存 4 台。"
+    },
+    {
+      "id": "REQ-010",
+      "title": "库存现有量与批次查询",
+      "section": "2.4.10",
+      "description": "按物料、批次和库位查询库存及流水；不存在的批次返回空结果，不产生写操作。"
+    }
+  ],
+  "cases": [
+    {
+      "id": "MES-1",
+      "suite": "01 主数据",
+      "req": "REQ-002",
+      "kind": "正向",
+      "title": "查询测温枪主数据",
+      "pre": "已在隔离测试库执行初始化脚本。",
+      "actions": [
+        "打开主数据中的物料产品管理，按 TG- 编码前缀查询。",
+        "查看 TG-FG-001 及外购件详情，核对名称、分类、单位和启用状态。"
+      ],
+      "expected": "可识别初始化的 17 个测温枪相关物料产品；成品、半成品和外购件分类及计量单位与初始化数据一致。",
+      "source": "md/controller/MdItemController.java"
+    },
+    {
+      "id": "MES-2",
+      "suite": "01 主数据",
+      "req": "REQ-002",
+      "kind": "异常",
+      "title": "重复物料编码被拒绝",
+      "pre": "TG-FG-001 已存在；仅在隔离测试库操作。",
+      "actions": [
+        "新建物料，编码填 TG-FG-001，名称填 LAB1-重复编码，其他必填项合法。",
+        "保存，随后重新查询 TG-FG-001 的记录数。"
+      ],
+      "expected": "提示物料编码已存在；原记录不变且不新增重复记录。若异常保存成功，记录新 ID 并在测试库中清理。",
+      "source": "md/controller/MdItemController.java"
+    },
+    {
+      "id": "MES-3",
+      "suite": "01 主数据",
+      "req": "REQ-003",
+      "kind": "正向",
+      "title": "查看整机三级 BOM",
+      "pre": "TG-FG-001、两种自制半成品和 BOM 已初始化。",
+      "actions": [
+        "打开整机的 BOM，展开电控和手柄半成品。",
+        "与 sql/thermometer_init.sql 中 BOM 定义逐项核对。"
+      ],
+      "expected": "整机、半成品、外购件三层结构可查询；初始化 16 行 BOM 的子件和单位用量一致。",
+      "source": "md/controller/MdProductBomController.java"
+    },
+    {
+      "id": "MES-4",
+      "suite": "01 主数据",
+      "req": "REQ-003",
+      "kind": "正向",
+      "title": "十台整机用料数量换算",
+      "pre": "已准备隔离的 LAB1 工单，产品 TG-FG-001，计划 10 台。",
+      "actions": [
+        "查看工单 BOM 或物料需求，按多级 BOM 核对外购件需求。",
+        "分别核对电池、说明书、彩盒及其他外购件的单位用量乘以计划数量。"
+      ],
+      "expected": "按初始化 BOM 核算为 14 种外购件，合计 150 个业务计量单位；不得漏掉说明书和彩盒。不同单位合计仅用于本固定样本核对。",
+      "source": "pro/controller/ProWorkorderController.java"
+    },
+    {
+      "id": "MES-5",
+      "suite": "02 仓储",
+      "req": "REQ-007",
+      "kind": "正向",
+      "title": "IQC 合格后采购入库",
+      "pre": "有带 LAB1 前缀的到货行，IQC 合格且有对应入库单；记录目标物料入库前库存及流水数。",
+      "actions": [
+        "核对采购入库行的到货来源、合格数量、批次及库位。",
+        "按页面流程确认并执行采购入库，再查库存和来源单据流水。"
+      ],
+      "expected": "入库单完成；原料仓目标批次数量增加本次实收量，新增流水与单据和批次关联，无额外重复过账。",
+      "source": "wm/service/impl/ItemRecptWorkflowService.java"
+    },
+    {
+      "id": "MES-6",
+      "suite": "02 仓储",
+      "req": "REQ-007",
+      "kind": "异常",
+      "title": "采购入库重复执行不重复过账",
+      "pre": "MES-5 已完成；保存相同单据的库存及流水基线。",
+      "actions": [
+        "对同一已执行采购入库单重试执行；界面无入口时，可在测试库重放该执行请求。",
+        "再次查询相同单据的库存及流水。"
+      ],
+      "expected": "重复执行被拒绝或作为幂等无操作；单据对应库存和流水均不再增加。按钮隐藏只能证明界面约束，接口未重放应在实际记录中注明。",
+      "source": "wm/service/impl/ItemRecptWorkflowService.java"
+    },
+    {
+      "id": "MES-7",
+      "suite": "02 仓储",
+      "req": "REQ-008",
+      "kind": "正向",
+      "title": "自动拣货与领料双边过账",
+      "pre": "工单已确认并排产，存在领料草稿；正常链路可用库存足够，不额外制造多批次数据。",
+      "actions": [
+        "对领料单执行一键拣货，核对选中批次和需求数量。",
+        "确认并执行领料，查询原料仓、线边库和来源单据流水。"
+      ],
+      "expected": "拣货数量满足需求且不超过批次可用量；原料仓减少量等于线边库增加量，同一领料单保留双边流水。",
+      "source": "wm/service/impl/IssueAutoPickService.java"
+    },
+    {
+      "id": "MES-8",
+      "suite": "02 仓储",
+      "req": "REQ-008",
+      "kind": "异常",
+      "title": "库存不足整单拣货失败",
+      "pre": "另建 LAB1-NEG 领料草稿；某物料需求大于可用库存，记录已有拣货明细。",
+      "actions": [
+        "执行一键拣货。",
+        "重查此单所有拣货明细及库存。"
+      ],
+      "expected": "提示可用库存不足及缺料信息；整单不新增部分拣货，库存不变且不出现负库存。",
+      "source": "wm/service/impl/IssueAutoPickService.java"
+    },
+    {
+      "id": "MES-9",
+      "suite": "03 生产",
+      "req": "REQ-012",
+      "kind": "正向",
+      "title": "十台工单确认并排产",
+      "pre": "客户、产品、工艺路线和工作站已初始化；使用本轮唯一 LAB1 前缀。",
+      "actions": [
+        "新建 TG-FG-001 工单，计划 10 台并确认。",
+        "按既定路线及工作站排产，查看工序任务和数量。"
+      ],
+      "expected": "工单产品和计划数量正确，生成对应工序任务且关联工作站；保存工单及任务编号供后续领料、报工引用。",
+      "source": "pro/controller/ProWorkorderController.java"
+    },
+    {
+      "id": "MES-10",
+      "suite": "03 生产",
+      "req": "REQ-012",
+      "kind": "异常",
+      "title": "非正数工单数量校验",
+      "pre": "另建 LAB1-NEG 工单草稿；不更改正常链路工单。",
+      "actions": [
+        "将计划数量设为 0 并保存或确认。",
+        "记录页面及接口响应，核查工单和排产任务是否被创建。"
+      ],
+      "expected": "非正数计划数量被明确拒绝且不生成有效生产任务；若系统接受，作为待核实缺陷记录实际行为，不预先判定通过。",
+      "source": "pro/controller/ProWorkorderController.java"
+    },
+    {
+      "id": "MES-11",
+      "suite": "03 生产",
+      "req": "REQ-013",
+      "kind": "正向",
+      "title": "正常报工回写生产进度",
+      "pre": "生产任务已排产、领料完成；前置工序及必要检验已满足，当前任务尚未完成。",
+      "actions": [
+        "对当前任务录入合法的本次产出与合格、不合格数量。",
+        "提交报工，查询任务进度、工单累计产出及来源记录。"
+      ],
+      "expected": "只计入本次合法报工数量；任务和工单进度按既定规则更新，需检工序产生可追溯待检记录。",
+      "source": "pro/controller/ProFeedbackController.java"
+    },
+    {
+      "id": "MES-12",
+      "suite": "03 生产",
+      "req": "REQ-013",
+      "kind": "异常",
+      "title": "报工数量不平衡被拒绝",
+      "pre": "另备 LAB1-NEG 报工草稿，当前任务允许报工 10 件；记录进度和库存。",
+      "actions": [
+        "填报工数 10、合格数 8、不合格数 3，保存并尝试执行。",
+        "检查实际响应和提交后的进度、库存及报工单状态。"
+      ],
+      "expected": "执行时明确拒绝数量不一致；不得增加生产进度或生成产出库存流水，草稿若允许保存须记录其仍不可执行。",
+      "source": "pro/controller/ProFeedbackController.java"
+    },
+    {
+      "id": "MES-13",
+      "suite": "04 质量",
+      "req": "REQ-015",
+      "kind": "正向",
+      "title": "IQC 合格数量正确回写",
+      "pre": "正常链路到货已提交待检，生成 IQC 草稿；尚未采购入库。",
+      "actions": [
+        "填写检测数、合格数、不合格数及检测项结果，使数量平衡。",
+        "完成检验，查询到货行及采购入库草稿。"
+      ],
+      "expected": "检验完成并合格放行，来源行质量状态及可入库合格量一致；记录 IQC 单号供 MES-5 引用。",
+      "source": "qc/service/impl/QcIqcCompletionService.java"
+    },
+    {
+      "id": "MES-14",
+      "suite": "04 质量",
+      "req": "REQ-015",
+      "kind": "异常",
+      "title": "IQC 数量不平衡被拒绝",
+      "pre": "另备 LAB1-NEG IQC 草稿，来源到货量 10，记录原状态。",
+      "actions": [
+        "设置检测数 10、合格数 8、不合格数 3，尝试完成。",
+        "重新查询检验及到货行质量状态。"
+      ],
+      "expected": "提示数量不一致并拒绝完成；来源行不被放行，库存不变。",
+      "source": "qc/service/impl/QcIqcCompletionService.java"
+    },
+    {
+      "id": "MES-15",
+      "suite": "04 质量",
+      "req": "REQ-016",
+      "kind": "正向",
+      "title": "关键工序 IPQC 合格放行",
+      "pre": "正常关键工序完成报工并形成待检任务，存在对应 IPQC。",
+      "actions": [
+        "核对 IPQC 的工单、工序和来源报工，填写平衡的检测数量及合格结果。",
+        "完成检验，查看来源任务及后续流转状态。"
+      ],
+      "expected": "IPQC 完成且合格，来源记录关联正确；后续工序按实际状态机获得放行资格，数量未被重复累计。",
+      "source": "qc/service/impl/QcIpqcServiceImpl.java"
+    },
+    {
+      "id": "MES-16",
+      "suite": "04 质量",
+      "req": "REQ-016",
+      "kind": "异常",
+      "title": "OQC 未合格禁止销售出库",
+      "pre": "另备独立 LAB1-NEG 销售单，拣货数量正确但 OQC 未合格，保存库存及流水基线。",
+      "actions": [
+        "尝试将销售单推进到可执行并执行出库；界面阻止时记录提示。",
+        "重查销售单状态、成品库存和流水。"
+      ],
+      "expected": "质量未合格时不能完成出库；成品库存及流水不变。该负例单不用于后续正常销售，避免污染链路。",
+      "source": "wm/controller/WmProductSalesController.java"
+    },
+    {
+      "id": "MES-17",
+      "suite": "05 销售与追溯",
+      "req": "REQ-009",
+      "kind": "正向",
+      "title": "十台合格成品入库",
+      "pre": "正常链路整机产出 10 台且必要检验已通过；记录目标成品仓及批次初始量。",
+      "actions": [
+        "核对成品入库单来源工单、产品、合格量和成品仓库位。",
+        "按页面流程执行入库并查询库存及流水。"
+      ],
+      "expected": "本批成品仓增加 10 台，入库来源、批次及流水一致；销售前该批可用量为 10 台。",
+      "source": "wm/controller/WmProductRecptController.java"
+    },
+    {
+      "id": "MES-18",
+      "suite": "05 销售与追溯",
+      "req": "REQ-009",
+      "kind": "正向",
+      "title": "销售六台后本批结存四台",
+      "pre": "MES-17 已完成，无其他业务变动；客户及发货通知正常，独立正常销售单的 OQC 已合格。",
+      "actions": [
+        "选择本轮成品批次拣货 6 台，核对出库量与拣货量一致。",
+        "按状态流程执行销售出库，查询本批成品仓库存及销售流水。"
+      ],
+      "expected": "销售单完成，新增本批 -6 的销售出库流水；本批成品仓由 10 台降至 4 台，不能把其他批次合计当成本批结果。",
+      "source": "wm/controller/WmProductSalesController.java"
+    },
+    {
+      "id": "MES-19",
+      "suite": "05 销售与追溯",
+      "req": "REQ-010",
+      "kind": "正向",
+      "title": "按批次查询库存及来源流水",
+      "pre": "正常采购、领料、报工、成品入库和销售单号已记录。",
+      "actions": [
+        "按本轮成品批次查询现有量和库存流水，打开来源单据。",
+        "分别核对关联工单、领料批次及原料采购来源；记录能实际查到的关联路径。"
+      ],
+      "expected": "查询结果仅属于目标物料和批次，数量与单据一致；仅以实际来源字段证明追溯，缺失关联单独记录，不凭批次命名推断完整闭环。",
+      "source": "wm/controller/WmMaterialStockController.java"
+    },
+    {
+      "id": "MES-20",
+      "suite": "05 销售与追溯",
+      "req": "REQ-010",
+      "kind": "异常",
+      "title": "不存在批次返回空结果",
+      "pre": "选取确认不存在的批次 LAB1-NOT-EXIST-本轮后缀。",
+      "actions": [
+        "以该批次精确查询库存现有量及流水。",
+        "检查查询响应、页面提示及数据库是否产生写操作。"
+      ],
+      "expected": "返回空列表或明确无记录，无服务错误，不展示其他批次数据；查询不生成单据或库存流水。",
+      "source": "wm/controller/WmMaterialStockController.java"
+    },
+    {
+      "id": "MES-21",
+      "suite": "01 主数据",
+      "req": "REQ-003",
+      "kind": "异常",
+      "title": "产品不能作为自身 BOM 子件",
+      "pre": "保存原 BOM 行数；使用已存在的 TG-FG-001。",
+      "actions": [
+        "提交 itemId 与 bomItemId 均为 9201 的 BOM 新增请求，其他字段合法。",
+        "核对响应及原 BOM，清理异常接受的测试行。"
+      ],
+      "expected": "明确拒绝自引用 BOM；BOM 行数和原结构不变。",
+      "source": "md/controller/MdProductBomController.java"
+    },
+    {
+      "id": "MES-22",
+      "suite": "01 主数据",
+      "req": "REQ-002",
+      "kind": "异常",
+      "title": "物料名称为空时拒绝保存",
+      "pre": "使用独立 LAB1 编码，其他字段与已有合法物料相同。",
+      "actions": [
+        "提交名称为空字符串的新增物料请求。",
+        "查询测试编码，确认无新增。"
+      ],
+      "expected": "返回名称必填提示；不生成空名称物料。",
+      "source": "md/controller/MdItemController.java"
+    },
+    {
+      "id": "MES-23",
+      "suite": "02 仓储",
+      "req": "REQ-008",
+      "kind": "边界",
+      "title": "自动拣货重复调用不重复分配",
+      "pre": "合法领料单已自动拣货，尚未执行。",
+      "actions": [
+        "记录拣货明细行数、数量与库存，重放相同自动拣货请求。",
+        "重新核对明细和库存。"
+      ],
+      "expected": "不新增重复分配；原拣货数量和库存不变。",
+      "source": "wm/controller/WmIssueHeaderController.java"
+    },
+    {
+      "id": "MES-24",
+      "suite": "03 生产",
+      "req": "REQ-013",
+      "kind": "异常",
+      "title": "已执行报工再次执行不重复过账",
+      "pre": "正常报工已执行；记录任务进度、库存和流水。",
+      "actions": [
+        "重放同一报工的执行请求。",
+        "核对任务已生产量及库存流水。"
+      ],
+      "expected": "拒绝重复执行或幂等返回，进度和库存流水不增加。",
+      "source": "pro/controller/ProFeedbackController.java"
+    },
+    {
+      "id": "MES-25",
+      "suite": "03 生产",
+      "req": "REQ-012",
+      "kind": "边界",
+      "title": "负数量工单拒绝创建",
+      "pre": "独立 LAB1-NEG 工单编码，产品及客户合法。",
+      "actions": [
+        "提交计划数量 -1 的工单新增请求。",
+        "核对工单及 BOM，记录实际接受情况。"
+      ],
+      "expected": "拒绝负数量；不生成工单及负数量 BOM。",
+      "source": "pro/controller/ProWorkorderController.java"
+    },
+    {
+      "id": "MES-26",
+      "suite": "05 销售与追溯",
+      "req": "REQ-009",
+      "kind": "异常",
+      "title": "销售出库重复执行不重复扣库",
+      "pre": "正常销售 6 台已完成，本批成品仓余 4 台。",
+      "actions": [
+        "重放同一销售单执行请求。",
+        "核对本批库存及销售流水。"
+      ],
+      "expected": "拒绝重复执行或幂等返回；本批仍为 4 台且流水不重复。",
+      "source": "wm/controller/WmProductSalesController.java"
+    },
+    {
+      "id": "MES-27",
+      "suite": "05 销售与追溯",
+      "req": "REQ-010",
+      "kind": "权限",
+      "title": "未登录不能查询库存",
+      "pre": "不携带 Authorization；需求 §3.3 访问控制抽样。",
+      "actions": [
+        "无令牌请求库存列表。",
+        "检查业务响应是否拒绝且未泄露库存记录。"
+      ],
+      "expected": "拒绝访问，响应不包含库存业务记录。",
+      "source": "wm/controller/WmMaterialStockController.java"
+    },
+    {
+      "id": "MES-28",
+      "suite": "05 销售与追溯",
+      "req": "REQ-010",
+      "kind": "权限",
+      "title": "退出后旧令牌不能查询库存",
+      "pre": "隔离环境取得有效测试会话。",
+      "actions": [
+        "调用退出接口使会话失效。",
+        "使用同一旧令牌请求库存列表。"
+      ],
+      "expected": "退出成功，旧令牌被拒绝且无库存记录。",
+      "source": "wm/controller/WmMaterialStockController.java"
+    }
+  ]
+}
