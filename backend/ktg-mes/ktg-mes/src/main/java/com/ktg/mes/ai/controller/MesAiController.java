@@ -2,6 +2,10 @@ package com.ktg.mes.ai.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ktg.mes.ai.service.AiDifyWorkflow;
+import com.ktg.mes.ai.service.KbRagEngines;
+import com.ktg.mes.ai.service.KbNeo4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.ktg.common.core.controller.BaseController;
 import com.ktg.common.core.domain.AjaxResult;
 import org.slf4j.Logger;
@@ -10,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.BufferedReader;
@@ -37,6 +42,13 @@ public class MesAiController extends BaseController {
 
     private static final Logger log = LoggerFactory.getLogger(MesAiController.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    @Autowired
+    private KbRagEngines ragEngines;
+    @Autowired
+    private KbNeo4j graph;
+    @Autowired
+    private AiDifyWorkflow workflow;
 
     // 密钥只从配置/环境变量读取（MES_AI_KEY / MES_AI_FB_KEY），代码中不保留明文
 
@@ -179,7 +191,7 @@ public class MesAiController extends BaseController {
     }
 
     /** 配置自检：前端可用来判断是否启用大模型 */
-    @PostMapping("/status")
+    @RequestMapping(value = "/status", method = {RequestMethod.GET, RequestMethod.POST})
     public AjaxResult status() {
         Map<String, Object> m = new HashMap<String, Object>();
         String dsKey = notBlank(deepseekKey) ? deepseekKey : readKey("MES_AI_KEY");
@@ -187,6 +199,10 @@ public class MesAiController extends BaseController {
         m.put("deepseek", notBlank(dsKey));
         m.put("glm", notBlank(gKey));
         m.put("model", notBlank(dsKey) ? deepseekModel : (notBlank(gKey) ? glmModel : "rules-only"));
+        m.putAll(ragEngines.status());
+        m.put("graphDb", graph.status());
+        m.put("dify", workflow.status());
+        m.put("difyDetail", workflow.statusDetail());
         return AjaxResult.success(m);
     }
 

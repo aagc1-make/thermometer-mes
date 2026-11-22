@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <h1 class="mes-page-heading">用户管理</h1>
     <el-row :gutter="20">
       <!--部门数据-->
       <el-col :span="4" :xs="24">
@@ -73,7 +74,7 @@
             ></el-date-picker>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+            <el-button class="mes-action--query" type="primary" icon="el-icon-search" size="mini" @click="handleQuery">查询</el-button>
             <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
           </el-form-item>
         </el-form>
@@ -101,7 +102,7 @@
             >修改</el-button>
           </el-col>
           <el-col :span="1.5">
-            <el-button
+            <el-button class="mes-action--destructive"
               type="danger"
               plain
               icon="el-icon-delete"
@@ -122,7 +123,7 @@
             >导入</el-button>
           </el-col>
           <el-col :span="1.5">
-            <el-button
+            <el-button class="mes-action--export"
               type="warning"
               plain
               icon="el-icon-download"
@@ -170,7 +171,7 @@
                 @click="handleUpdate(scope.row)"
                 v-hasPermi="['system:user:edit']"
               >修改</el-button>
-              <el-button
+              <el-button class="mes-action--destructive"
                 size="mini"
                 type="text"
                 icon="el-icon-delete"
@@ -186,6 +187,8 @@
                     v-hasPermi="['system:user:resetPwd']">重置密码</el-dropdown-item>
                   <el-dropdown-item command="handleAuthRole" icon="el-icon-circle-check"
                     v-hasPermi="['system:user:edit']">分配角色</el-dropdown-item>
+                  <el-dropdown-item command="handleFaceLogin" icon="el-icon-user"
+                    v-hasPermi="['system:user:edit']">人脸登录管理</el-dropdown-item>
                 </el-dropdown-menu>
               </el-dropdown>
             </template>
@@ -308,6 +311,43 @@
       </div>
     </el-dialog>
 
+    <el-dialog title="人脸登录管理" :visible.sync="faceDialogOpen" width="min(460px, calc(100vw - 32px))"
+      :close-on-click-modal="false" append-to-body>
+      <div v-loading="Boolean(faceDialog.operation)">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="用户账号">{{ faceDialog.userName }}</el-descriptions-item>
+          <template v-if="faceDialog.status">
+            <el-descriptions-item label="人脸录入">
+              <el-tag size="small" :type="faceDialog.status.enrolled ? 'success' : 'info'">
+                {{ faceDialog.status.enrolled ? '已录入' : '未录入' }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="登录权限">
+              <el-tag size="small" :type="faceDialog.status.enabled ? 'success' : 'info'">
+                {{ faceDialog.status.enabled ? '允许人脸登录' : '已停用' }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item v-if="faceDialog.status.updatedAt" label="模板更新时间">
+              {{ parseTime(faceDialog.status.updatedAt) }}
+            </el-descriptions-item>
+          </template>
+        </el-descriptions>
+        <p v-if="faceDialog.status && faceDialog.status.enabled">停用后，该用户仍可使用密码登录。</p>
+        <p v-else-if="faceDialog.status && !faceDialog.status.enrolled">启用后，用户需在个人中心录入人脸。</p>
+        <p v-else-if="!faceDialog.status && !faceDialog.operation">状态加载失败，请关闭后重试。</p>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button v-if="faceDialog.status" type="text" class="mes-action--destructive"
+          :disabled="!faceDialog.status.enrolled || Boolean(faceDialog.operation)"
+          :loading="faceDialog.operation === 'unbind'" @click="handleFaceUnbind">解绑人脸</el-button>
+        <el-button @click="faceDialogOpen = false">关闭</el-button>
+        <el-button v-if="faceDialog.status" type="primary" :disabled="Boolean(faceDialog.operation)"
+          :loading="faceDialog.operation === 'policy'" @click="saveFaceLogin">
+          {{ faceDialog.status.enabled ? '停用人脸登录' : '启用人脸登录' }}
+        </el-button>
+      </div>
+    </el-dialog>
+
     <!-- 用户导入对话框 -->
     <el-dialog :title="upload.title" :visible.sync="upload.open" width="400px" append-to-body>
       <el-upload
@@ -341,7 +381,8 @@
 </template>
 
 <script>
-import { listUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus } from "@/api/system/user";
+import { listUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus,
+  getUserFaceStatus, changeUserFaceLogin, unbindUserFace } from "@/api/system/user";
 import { getToken } from "@/utils/auth";
 import { treeselect } from "@/api/system/dept";
 import Treeselect from "@riophae/vue-treeselect";
@@ -373,6 +414,8 @@ export default {
       deptOptions: undefined,
       // 是否显示弹出层
       open: false,
+      faceDialogOpen: false,
+      faceDialog: { userId: null, userName: "", status: null, operation: null },
       // 部门名称
       deptName: undefined,
       // 默认密码
@@ -560,8 +603,69 @@ export default {
         case "handleAuthRole":
           this.handleAuthRole(row);
           break;
+        case "handleFaceLogin":
+          this.handleFaceLogin(row);
+          break;
         default:
           break;
+      }
+    },
+    async handleFaceLogin(row) {
+      const dialog = { userId: row.userId, userName: row.userName, status: null, operation: "load" };
+      this.faceDialog = dialog;
+      this.faceDialogOpen = true;
+      try {
+        const response = await getUserFaceStatus(dialog.userId);
+        dialog.status = response.data;
+      } catch {
+        // 请求层显示接口错误。
+      } finally {
+        dialog.operation = null;
+      }
+    },
+    async saveFaceLogin() {
+      const dialog = this.faceDialog;
+      if (!dialog.status || dialog.operation) return;
+      dialog.operation = "policy";
+      try {
+        const response = await changeUserFaceLogin(dialog.userId, !dialog.status.enabled);
+        dialog.status = response.data;
+        this.$modal.msgSuccess(dialog.status.enabled ? "已启用人脸登录" : "已停用人脸登录");
+      } catch {
+        // 请求层显示接口错误。
+      } finally {
+        dialog.operation = null;
+      }
+    },
+    async handleFaceUnbind() {
+      const dialog = this.faceDialog;
+      if (!dialog.status || !dialog.status.enrolled || dialog.operation) return;
+      dialog.operation = "confirm-unbind";
+      try {
+        await this.$confirm(`将删除账号「${dialog.userName}」已录入的人脸模板。该用户仍可使用密码登录，再次使用人脸登录需要重新录入。`, "确认解绑人脸", {
+          confirmButtonText: "确认解绑",
+          confirmButtonClass: "el-button--danger",
+          cancelButtonText: "取消",
+          closeOnClickModal: false,
+          type: "warning"
+        });
+      } catch {
+        dialog.operation = null;
+        return;
+      }
+      if (dialog !== this.faceDialog || !this.faceDialogOpen) {
+        dialog.operation = null;
+        return;
+      }
+      dialog.operation = "unbind";
+      try {
+        await unbindUserFace(dialog.userId);
+        dialog.status = { ...dialog.status, enrolled: false, updatedAt: null };
+        this.$modal.msgSuccess("人脸已解绑");
+      } catch {
+        // 请求层显示接口错误。
+      } finally {
+        dialog.operation = null;
       }
     },
     /** 新增按钮操作 */

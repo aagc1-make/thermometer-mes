@@ -1,27 +1,15 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
-      <el-form-item label="消息类型" prop="messageType">
-        <el-select v-model="queryParams.messageType" placeholder="请选择消息类型" clearable>
-          <el-option
-            v-for="dict in dict.type.sys_message_type"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="消息级别" prop="messageLevel">
-        <el-select v-model="queryParams.messageLevel" placeholder="请选择消息级别" clearable>
-          <el-option
-            v-for="dict in dict.type.sys_message_level"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-
+    <h1 class="mes-page-heading">消息</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="发送人" prop="senderNick">
         <el-input
           v-model="queryParams.senderNick"
@@ -30,7 +18,6 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-
       <el-form-item label="接收人" prop="recipientNick">
         <el-input
           v-model="queryParams.recipientNick"
@@ -39,8 +26,6 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-
-
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
           <el-option
@@ -51,12 +36,29 @@
           />
         </el-select>
       </el-form-item>
-
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="消息类型" prop="messageType">
+          <el-select v-model="queryParams.messageType" placeholder="请选择消息类型" clearable>
+            <el-option
+              v-for="dict in dict.type.sys_message_type"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="消息级别" prop="messageLevel">
+          <el-select v-model="queryParams.messageLevel" placeholder="请选择消息级别" clearable>
+            <el-option
+              v-for="dict in dict.type.sys_message_level"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -70,7 +72,7 @@
         >测试</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -81,7 +83,7 @@
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"
@@ -139,7 +141,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['system:message:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

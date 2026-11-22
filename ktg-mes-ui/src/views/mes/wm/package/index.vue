@@ -1,7 +1,15 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
-
+    <h1 class="mes-page-heading">装箱管理</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="装箱单编号" prop="packageCode">
         <el-input
           v-model="queryParams.packageCode"
@@ -26,27 +34,25 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="客户名称" prop="clientName">
-        <el-input
-          v-model="queryParams.clientName"
-          placeholder="请输入客户名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="检查员名称" prop="inspectorName">
-        <el-input
-          v-model="queryParams.inspectorName"
-          placeholder="请输入检查员名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="客户名称" prop="clientName">
+          <el-input
+            v-model="queryParams.clientName"
+            placeholder="请输入客户名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="检查员名称" prop="inspectorName">
+          <el-input
+            v-model="queryParams.inspectorName"
+            placeholder="请输入检查员名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -109,7 +115,7 @@
             v-hasPermi="['mes:wm:package:edit']"
             v-if="scope.row.status =='PREPARE'"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

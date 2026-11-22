@@ -23,7 +23,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -54,7 +54,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['mes:cal:calplan:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

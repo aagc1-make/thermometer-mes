@@ -8,7 +8,7 @@
       >
         <el-menu-item :index="resolvePath(onlyOneChild.path)" :class="{'submenu-title-noDropdown':!isNest}">
           <item
-            :icon="onlyOneChild.meta.icon||(item.meta&&item.meta.icon)"
+            :icon="navigationIcon(resolvePath(onlyOneChild.path))"
             :title="onlyOneChild.meta.title"
             :show-dot="isUnreadPath(resolvePath(onlyOneChild.path))"
           />
@@ -20,7 +20,7 @@
       <template slot="title">
         <item
           v-if="item.meta"
-          :icon="item.meta && item.meta.icon"
+          :icon="navigationIcon(resolvePath(item.path), item.meta.title, true)"
           :title="item.meta.title"
           :show-dot="hasUnreadChild"
         />
@@ -43,6 +43,7 @@ import { isExternal } from '@/utils/validate'
 import Item from './Item'
 import AppLink from './Link'
 import FixiOSBug from './FixiOSBug'
+import { navigationIcon } from '../../navigation-icons'
 
 const {
   isMenuPathUnread,
@@ -96,6 +97,7 @@ export default {
     }
   },
   methods: {
+    navigationIcon,
     isUnreadPath(menuPath) {
       const value = typeof menuPath === 'object' ? menuPath.path : menuPath
       return isMenuPathUnread(this.unreadMenuPaths, value)

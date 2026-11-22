@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <h1 class="mes-page-heading">报表清单</h1>
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px" @submit.native.prevent>
       <el-form-item label="报表名称" prop="name">
         <el-input
@@ -10,7 +11,7 @@
         />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button class="mes-action--query" type="primary" icon="el-icon-search" size="mini" @click="handleQuery">查询</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
@@ -83,7 +84,7 @@
             @click="handlePreview(scope.row.name)"
             v-hasPermi="['mes:report:edit']"
           >预览</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

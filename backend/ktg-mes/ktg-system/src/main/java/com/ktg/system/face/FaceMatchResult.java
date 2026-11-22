@@ -12,6 +12,8 @@ public class FaceMatchResult {
     public static final String NOT_MATCHED = "NOT_MATCHED";
     public static final String NOT_ENROLLED = "NOT_ENROLLED";
     public static final String INVALID_TEMPLATE = "INVALID_TEMPLATE";
+    /** 模板由旧算法录入，与当前算法版本不一致，需要重新录入。 */
+    public static final String STALE_TEMPLATE = "STALE_TEMPLATE";
 
     private final boolean matched;
     private final double distance;
@@ -37,6 +39,10 @@ public class FaceMatchResult {
 
     public static FaceMatchResult invalidTemplate() {
         return new FaceMatchResult(false, Double.NaN, INVALID_TEMPLATE);
+    }
+
+    public static FaceMatchResult staleTemplate() {
+        return new FaceMatchResult(false, Double.NaN, STALE_TEMPLATE);
     }
 
     public boolean isMatched() {

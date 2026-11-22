@@ -1,6 +1,15 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
+    <h1 class="mes-page-heading">出货检验</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="检验单编号" prop="oqcCode">
         <el-input
           v-model="queryParams.oqcCode"
@@ -9,34 +18,10 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="客户名称" prop="clientName">
-        <el-input
-          v-model="queryParams.clientName"
-          placeholder="请输入客户名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="批次号" prop="batchCode">
-        <el-input
-          v-model="queryParams.batchCode"
-          placeholder="请输入批次号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="产品物料编码" prop="itemCode">
         <el-input
           v-model="queryParams.itemCode"
           placeholder="请输入产品物料编码"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="产品物料名称" prop="itemName">
-        <el-input
-          v-model="queryParams.itemName"
-          placeholder="请输入产品物料名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -51,11 +36,33 @@
             ></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="客户名称" prop="clientName">
+          <el-input
+            v-model="queryParams.clientName"
+            placeholder="请输入客户名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="批次号" prop="batchCode">
+          <el-input
+            v-model="queryParams.batchCode"
+            placeholder="请输入批次号"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="产品物料名称" prop="itemName">
+          <el-input
+            v-model="queryParams.itemName"
+            placeholder="请输入产品物料名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -80,7 +87,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -91,7 +98,7 @@
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"
@@ -164,7 +171,7 @@
             v-if="scope.row.status =='PREPARE'"
             v-hasPermi="['mes:qc:oqc:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

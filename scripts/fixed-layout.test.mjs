@@ -7,7 +7,6 @@ const read = relativePath => readFileSync(new URL(`../${relativePath}`, import.m
 
 test('home hides the secondary sidebar while business pages and mobile keep their navigation', () => {
   const layout = read('ktg-mes-ui/src/layout/index.vue')
-  const sidebar = read('ktg-mes-ui/src/layout/components/Sidebar/index.vue')
   const script = layout.match(/<script>([\s\S]*?)<\/script>/)[1]
     .replace(/^import .*$/mg, '').replace('export default', 'result =')
   const box = { result: null, ResizeMixin: {}, mapState: () => ({}), require: () => ({}),
@@ -24,8 +23,9 @@ test('home hides the secondary sidebar while business pages and mobile keep thei
   assert.equal(classes('/mes/md/client', 'desktop', true).hideSidebar, false)
   assert.equal(classes('/mes/md/client', 'mobile', false).hideSidebar, true)
   assert.equal(classes('/mes/md/client', 'mobile', true).hideSidebar, false)
+  assert.equal(classes('/index', 'mobile', false).hideSidebar, true)
+  assert.equal(classes('/index', 'mobile', true).hideSidebar, false)
   assert.match(layout, /<sidebar[^>]+v-if="!sidebar.hide && !isHomePage"/)
-  assert.match(sidebar, /return\s+this\.device\s*===\s*['"]mobile['"]\s*\?\s*!this\.sidebar\.opened\s*:\s*false/)
 })
 
 test('collapse control is available only on mobile', () => {

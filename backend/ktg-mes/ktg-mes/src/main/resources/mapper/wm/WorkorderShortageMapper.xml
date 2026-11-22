@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ktg.mes.wm.mapper.WorkorderShortageMapper">
+    <select id="order" resultType="com.ktg.mes.pro.domain.ProWorkorder">
+        select workorder_id as workorderId, workorder_code as workorderCode, status
+        from pro_workorder where workorder_id = #{id}
+        <if test="lock">for update</if>
+    </select>
+
+    <select id="materials" resultType="com.ktg.mes.wm.domain.vo.WorkorderShortagePlan$Material">
+        select d.*,
+               coalesce((select sum(cast(i.quantity_issued as decimal(20,2)))
+                         from wm_issue_line i join wm_issue_header h on h.issue_id = i.issue_id
+                         where h.status = 'FINISHED' and i.item_id = d.itemId and i.quantity_issued > 0
+                           and (h.workorder_id = #{id} or (h.workorder_id is null and h.workorder_code = #{code}))), 0) issued,
+               coalesce((select sum(cast(s.quantity_onhand as decimal(20,2))) from wm_material_stock s
+                         where s.item_id = d.itemId and s.warehouse_code = 'WH-RAW'
+                           and s.quantity_onhand > 0 and coalesce(s.frozen_flag, 'N') != 'Y'), 0) onHand
+        from (select item_id as itemId, max(item_code) as itemCode, max(item_name) as itemName,
+                     coalesce(max(nullif(unit_name, '')), max(unit_of_measure)) as unit,
+                     sum(cast(quantity as decimal(20,2))) as required
+              from pro_workorder_bom where workorder_id = #{id} and item_or_product != 'PRODUCT' and quantity > 0
+              group by item_id) d
+        order by d.itemCode, d.itemId
+    </select>
+
+    <select id="sources" resultMap="com.ktg.mes.wm.mapper.WmMaterialStockMapper.WmMaterialStockResult">
+        select s.material_stock_id, s.item_id, s.item_code, s.item_name, s.specification,
+               s.unit_of_measure, s.unit_name, s.batch_id, s.batch_code, s.warehouse_id,
+               w.warehouse_code, w.warehouse_name, s.location_id, l.location_code, l.location_name,
+               s.area_id, a.area_code, a.area_name,
+               cast(s.quantity_onhand as decimal(20,2)) - coalesce((
+                   select sum(cast(tl.quantity_transfer as decimal(20,2)))
+                   from wm_transfer_line tl join wm_transfer t on t.transfer_id = tl.transfer_id
+                   where tl.material_stock_id = s.material_stock_id and t.status not in ('FINISHED', 'CANCELED')
+               ), 0) as quantity_onhand
+        from wm_material_stock s
+        join wm_warehouse w on w.warehouse_id = s.warehouse_id
+        join wm_storage_location l on l.location_id = s.location_id and l.warehouse_id = w.warehouse_id
+        join wm_storage_area a on a.area_id = s.area_id and a.location_id = l.location_id
+        join wm_batch b on b.batch_id = s.batch_id and b.item_id = s.item_id
+        where s.item_id in <foreach collection="items" item="id" open="(" separator="," close=")">#{id}</foreach>
+          and w.warehouse_type = 'RAW' and w.warehouse_code != 'WH-RAW'
+          and upper(w.warehouse_code) not like '%VIR%' and s.quantity_onhand > 0
+          and coalesce(s.frozen_flag,'N') = 'N' and coalesce(w.frozen_flag,'N') = 'N'
+          and coalesce(l.frozen_flag,'N') = 'N' and coalesce(a.frozen_flag,'N') = 'N' and a.enable_flag = 'Y'
+          and (s.expire_date is null or s.expire_date >= curdate())
+          and (b.expire_date is null or b.expire_date >= curdate())
+          and (b.quality_status is null or b.quality_status in ('', 'OK'))
+          and (s.workorder_id is null or s.workorder_id = 0) and coalesce(s.workorder_code,'') = ''
+        order by s.item_id, s.recpt_date, s.material_stock_id
+    </select>
+
+    <select id="documents" resultType="com.ktg.mes.wm.domain.vo.WorkorderShortagePlan$Document">
+        select transfer_id as transferId, transfer_code as transferCode, status, attr2 as operation
+        from wm_transfer where attr1 = #{tag} order by transfer_id desc
+    </select>
+    <select id="lockSources" resultType="long">
+        select material_stock_id from wm_material_stock where material_stock_id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        order by material_stock_id for update
+    </select>
+    <select id="lockTransferCodeRule" resultType="long">
+        select rule_id from sys_auto_code_rule where rule_code = 'TRANSFER_CODE' for update
+    </select>
+</mapper>

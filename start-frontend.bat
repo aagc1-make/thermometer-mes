@@ -4,10 +4,9 @@ cd /d "%~dp0ktg-mes-ui"
 
 echo ============================================
 echo  ktg-mes-ui dev server
-echo  default port 80; if 80 is busy vue-cli
-echo  will pick the next free port (e.g. 81)
+echo  http://localhost:8095
 echo ============================================
-call npm run dev
+call npm run dev -- --port 8095
 
 echo.
 echo frontend stopped. press any key to close.

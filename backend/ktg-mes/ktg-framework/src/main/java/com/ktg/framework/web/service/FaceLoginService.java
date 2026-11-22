@@ -60,9 +60,6 @@ public class FaceLoginService {
     @Autowired
     private RedisCache redisCache;
 
-    @Value("${mes.face.enabled:true}")
-    private boolean enabled;
-
     @Value("${mes.face.max-fail:5}")
     private int maxFail;
 
@@ -77,8 +74,8 @@ public class FaceLoginService {
      * @return token
      */
     public String login(String username, double[] descriptor) {
-        if (!enabled) {
-            throw new ServiceException("人脸登录未启用，请使用密码登录");
+        if (!userFaceService.isFaceServiceAvailable()) {
+            throw new ServiceException("人脸登录暂不可用，请使用密码登录");
         }
         if (StringUtils.isEmpty(username)) {
             throw new ServiceException("请输入用户账号");
@@ -134,15 +131,27 @@ public class FaceLoginService {
     }
 
     private void ensureNotBlocked(String key, int limit) {
-        Integer count = redisCache.getCacheObject(key);
+        Integer count;
+        try {
+            count = redisCache.getCacheObject(key);
+        } catch (RuntimeException e) {
+            // 限流依赖 Redis：读取失败时按不可用处理，避免绕过失败次数限制
+            log.error("[人脸登录] 读取失败次数失败，暂不可用", e);
+            throw new ServiceException("人脸登录暂不可用，请使用密码登录");
+        }
         if (count != null && count >= limit) {
             throw new ServiceException("人脸登录失败次数过多，请稍后再试或使用密码登录");
         }
     }
 
     private void countFail(String key) {
-        Integer count = redisCache.getCacheObject(key);
-        int next = count == null ? 1 : count + 1;
-        redisCache.setCacheObject(key, next, failWindow, TimeUnit.SECONDS);
+        try {
+            Integer count = redisCache.getCacheObject(key);
+            int next = count == null ? 1 : count + 1;
+            redisCache.setCacheObject(key, next, failWindow, TimeUnit.SECONDS);
+        } catch (RuntimeException e) {
+            // 计数失败不阻断本次校验，但会记录日志便于排查
+            log.error("[人脸登录] 写入失败次数失败", e);
+        }
     }
 }

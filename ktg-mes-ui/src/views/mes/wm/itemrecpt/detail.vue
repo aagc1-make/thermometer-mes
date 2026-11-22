@@ -22,7 +22,7 @@
                   @click="handleUpdate(scope.row)"
                   v-hasPermi="['mes:wm:itemrecpt:edit']"
                 >修改</el-button>
-                <el-button
+                <el-button class="mes-action--destructive"
                   size="mini"
                   type="text"
                   icon="el-icon-delete"
@@ -75,7 +75,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" width="100px" v-if="optType != 'view'" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button
+          <el-button class="mes-action--execute"
             size="mini"
             type="text"
             icon="el-icon-shopping-cart-full"

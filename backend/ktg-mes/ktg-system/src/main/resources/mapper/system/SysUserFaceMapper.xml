@@ -18,16 +18,77 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"     column="remark"      />
     </resultMap>
 
-    <sql id="selectSysUserFaceVo">
-        select user_id, descriptor, algorithm, samples, quality, status,
-               create_by, create_time, update_by, update_time, remark
-        from sys_user_face
-    </sql>
+    <resultMap type="com.ktg.system.domain.SysUserFaceStatus" id="SysUserFaceStatusResult">
+        <result property="enrolled" column="enrolled" />
+        <result property="enabled" column="enabled" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
 
     <select id="selectByUserId" parameterType="Long" resultMap="SysUserFaceResult">
-        <include refid="selectSysUserFaceVo"/>
+        select user_id, algorithm, samples, status, create_time, update_time
+        from sys_user_face
         where user_id = #{userId}
     </select>
+
+    <select id="selectLegacyTemplates" resultMap="SysUserFaceResult">
+        select user_id, descriptor
+        from sys_user_face
+        where user_id &gt; #{afterUserId} and descriptor not like 'gcm:%'
+        order by user_id
+        limit 100
+    </select>
+
+    <select id="selectTemplateUserIds" resultType="Long">
+        select f.user_id
+        from sys_user_face f
+        join sys_user u on u.user_id = f.user_id and u.del_flag = '0'
+        where f.user_id &gt; #{afterUserId}
+        order by f.user_id
+        limit 100
+    </select>
+
+    <select id="selectTemplateForMigration" resultMap="SysUserFaceResult">
+        select user_id, descriptor, algorithm, samples, status, create_time, update_time
+        from sys_user_face where user_id = #{userId}
+    </select>
+
+    <select id="lockActiveAccount" resultType="Long">
+        select user_id from sys_user where user_id = #{userId} and del_flag = '0' for update
+    </select>
+
+    <select id="isFaceLoginAllowed" resultType="boolean">
+        select exists (
+            select 1 from sys_user u
+            where u.user_id = #{userId} and u.del_flag = '0' and u.status = '0'
+              and not exists (
+                  select 1 from sys_user_face_policy p where p.user_id = u.user_id and p.enabled = 0
+              )
+        )
+    </select>
+
+    <update id="replaceLegacyDescriptor">
+        update sys_user_face
+        set descriptor = #{encrypted}
+        where user_id = #{userId} and binary descriptor = binary #{previous}
+    </update>
+
+    <select id="selectFaceStatus" parameterType="Long" resultMap="SysUserFaceStatusResult">
+        select f.user_id is not null as enrolled,
+               coalesce(p.enabled, 1) as enabled,
+               coalesce(f.update_time, f.create_time) as updated_at
+        from sys_user u
+        left join sys_user_face f on f.user_id = u.user_id
+        left join sys_user_face_policy p on p.user_id = u.user_id
+        where u.user_id = #{userId} and u.del_flag = '0'
+    </select>
+
+    <insert id="saveFaceLoginPolicy">
+        insert into sys_user_face_policy (user_id, enabled)
+        select user_id, #{enabled}
+        from sys_user
+        where user_id = #{userId} and del_flag = '0'
+        on duplicate key update enabled = #{enabled}
+    </insert>
 
     <insert id="insertSysUserFace" parameterType="SysUserFace">
         insert into sys_user_face
@@ -43,6 +104,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateBy != null">update_by,</if>
             <if test="updateTime != null">update_time,</if>
             <if test="remark != null">remark,</if>
+            <if test="consentAt != null">consent_at,</if>
+            <if test="consentVersion != null">consent_version,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="userId != null">#{userId},</if>
@@ -56,6 +119,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateBy != null">#{updateBy},</if>
             <if test="updateTime != null">#{updateTime},</if>
             <if test="remark != null">#{remark},</if>
+            <if test="consentAt != null">#{consentAt},</if>
+            <if test="consentVersion != null">#{consentVersion},</if>
         </trim>
     </insert>
 
@@ -72,6 +137,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>
+            <if test="consentAt != null">consent_at = #{consentAt},</if>
+            <if test="consentVersion != null">consent_version = #{consentVersion},</if>
         </trim>
         where user_id = #{userId}
     </update>
@@ -79,5 +146,60 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <delete id="deleteByUserId" parameterType="Long">
         delete from sys_user_face where user_id = #{userId}
     </delete>
+
+    <!-- 补充角度模板：只存加密特征 -->
+    <resultMap id="SysUserFaceAltResult" type="SysUserFace">
+        <result property="userId"     column="user_id"     />
+        <result property="seq"        column="seq"         />
+        <result property="descriptor" column="descriptor"  />
+        <result property="algorithm"  column="algorithm"   />
+        <result property="samples"    column="samples"     />
+        <result property="quality"    column="quality"     />
+        <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <select id="selectAlternates" parameterType="Long" resultMap="SysUserFaceAltResult">
+        select user_id, seq, descriptor, algorithm, samples, quality, create_time
+        from sys_user_face_alt
+        where user_id = #{userId}
+        order by seq
+    </select>
+
+    <select id="countAlternates" parameterType="Long" resultType="int">
+        select count(1) from sys_user_face_alt where user_id = #{userId}
+    </select>
+
+    <insert id="insertAlternate" parameterType="SysUserFace">
+        insert into sys_user_face_alt (user_id, seq, descriptor, algorithm, samples, quality, create_time)
+        values (#{userId}, #{seq}, #{descriptor}, #{algorithm}, #{samples}, #{quality}, #{createTime})
+    </insert>
+
+    <delete id="deleteAlternates" parameterType="Long">
+        delete from sys_user_face_alt where user_id = #{userId}
+    </delete>
+
+    <!-- 管理员列表：只返回元数据，不返回特征 -->
+    <select id="selectFaceAdminList" resultType="com.ktg.system.domain.SysUserFaceAdminRow">
+        select u.user_id as userId, u.user_name as userName, u.nick_name as nickName,
+               d.dept_name as deptName,
+               (f.user_id is not null) as enrolled,
+               coalesce(p.enabled, 1) as enabled,
+               f.status as status, f.algorithm as algorithm, f.samples as samples,
+               f.quality as quality,
+               coalesce(f.update_time, f.create_time) as updatedAt,
+               (select count(1) from sys_user_face_alt a where a.user_id = u.user_id) as altCount
+        from sys_user u
+        left join sys_dept d on d.dept_id = u.dept_id
+        left join sys_user_face f on f.user_id = u.user_id
+        left join sys_user_face_policy p on p.user_id = u.user_id
+        where u.del_flag = '0'
+        <if test="keyword != null and keyword != ''">
+            and (u.user_name like concat('%', #{keyword}, '%') or u.nick_name like concat('%', #{keyword}, '%'))
+        </if>
+        <if test="filter != null and filter == 'enrolled'">and f.user_id is not null</if>
+        <if test="filter != null and filter == 'none'">and f.user_id is null</if>
+        <if test="filter != null and filter == 'disabled'">and p.enabled = 0</if>
+        order by u.user_id
+    </select>
 
 </mapper>

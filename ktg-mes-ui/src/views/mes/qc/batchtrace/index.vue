@@ -1,6 +1,15 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
+    <h1 class="mes-page-heading">批次追溯</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="批次号" prop="batchCode">
         <el-input
           v-model="queryParams.batchCode"
@@ -25,67 +34,65 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="单位" prop="unitOfMeasure">
-        <el-input
-          v-model="queryParams.unitOfMeasure"
-          placeholder="请输入单位"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="供应商编码" prop="vendorCode">
-        <el-input
-          v-model="queryParams.vendorCode"
-          placeholder="请输入供应商编码"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="供应商名称" prop="vendorName">
-        <el-input
-          v-model="queryParams.vendorName"
-          placeholder="请输入供应商名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="客户编码" prop="clientCode">
-        <el-input
-          v-model="queryParams.clientCode"
-          placeholder="请输入客户编码"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="客户名称" prop="clientName">
-        <el-input
-          v-model="queryParams.clientName"
-          placeholder="请输入客户名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="销售订单编号" prop="coCode">
-        <el-input
-          v-model="queryParams.coCode"
-          placeholder="请输入销售订单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="采购订单编号" prop="poCode">
-        <el-input
-          v-model="queryParams.poCode"
-          placeholder="请输入采购订单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="单位" prop="unitOfMeasure">
+          <el-input
+            v-model="queryParams.unitOfMeasure"
+            placeholder="请输入单位"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="供应商编码" prop="vendorCode">
+          <el-input
+            v-model="queryParams.vendorCode"
+            placeholder="请输入供应商编码"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="供应商名称" prop="vendorName">
+          <el-input
+            v-model="queryParams.vendorName"
+            placeholder="请输入供应商名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="客户编码" prop="clientCode">
+          <el-input
+            v-model="queryParams.clientCode"
+            placeholder="请输入客户编码"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="客户名称" prop="clientName">
+          <el-input
+            v-model="queryParams.clientName"
+            placeholder="请输入客户名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="销售订单编号" prop="coCode">
+          <el-input
+            v-model="queryParams.coCode"
+            placeholder="请输入销售订单编号"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="采购订单编号" prop="poCode">
+          <el-input
+            v-model="queryParams.poCode"
+            placeholder="请输入采购订单编号"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
     <el-table v-loading="loading" :data="batchList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />      
       <el-table-column label="批次编号" align="center" prop="batchCode" />      

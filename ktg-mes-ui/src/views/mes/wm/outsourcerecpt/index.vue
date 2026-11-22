@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <h1 class="mes-page-heading">外协入库</h1>
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="入库单编号" prop="recptCode">
         <el-input
@@ -37,7 +38,7 @@
         </el-date-picker>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button class="mes-action--query" type="primary" icon="el-icon-search" size="mini" @click="handleQuery">查询</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
@@ -65,7 +66,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -113,7 +114,7 @@
             @click="handleExecute(scope.row)"
             v-hasPermi="['mes:wm:outsourcerecpt:edit']"
           >执行退料</el-button>
-          <el-button
+          <el-button class="mes-action--execute"
             size="mini"
             type="text"
             icon="el-icon-shopping-cart-full"
@@ -129,7 +130,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['mes:wm:outsourcerecpt:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -216,9 +217,9 @@
         </el-card>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="saveForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
-        <el-button type="warning" @click="submitToStock" v-if="form.status =='PREPARE' && form.recptId !=null && optType !='view' ">提 交</el-button>
-        <el-button type="warning" @click="submitToExecute" v-if="form.status =='UNSTOCK' && form.recptId !=null && optType !='view' ">提 交</el-button>        
-        <el-button type="danger" @click="cancel"  v-if="form.status !='PREPARE' && form.status !='FINISHED' && optType !='view' " >取 消</el-button>
+        <el-button class="mes-action--review" type="warning" @click="submitToStock" v-if="form.status =='PREPARE' && form.recptId !=null && optType !='view' ">提 交</el-button>
+        <el-button class="mes-action--execute" type="warning" @click="submitToExecute" v-if="form.status =='UNSTOCK' && form.recptId !=null && optType !='view' ">提 交</el-button>
+        <el-button class="mes-action--destructive" type="danger" @click="cancel"  v-if="form.status !='PREPARE' && form.status !='FINISHED' && optType !='view' " >取 消</el-button>
         <el-button @click="close">关 闭</el-button>
       </div>
     </el-dialog>

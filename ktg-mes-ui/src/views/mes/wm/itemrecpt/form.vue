@@ -1,6 +1,8 @@
 <template>
   <div class="app-container">
-    <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+    <h1 class="mes-page-heading">采购入库详情</h1>
+    <el-form ref="form" class="mes-form-section mes-document-form" :model="form" :rules="rules" label-width="100px">
+      <h2 class="mes-form-section__title">基本信息</h2>
       <el-row>
         <el-col :span="8">
           <el-form-item label="入库单编号" prop="recptCode">
@@ -36,7 +38,7 @@
         <el-col :span="8">
           <el-form-item label="到货通知单" prop="noticeCode">
             <el-input v-model="form.noticeCode" readonly="readonly" placeholder="请选择到货通知单" >
-              <el-button slot="append" @click="handleSelectNotice" icon="el-icon-search"></el-button>
+              <el-button slot="append" @click="handleSelectNotice" icon="el-icon-search" aria-label="选择到货通知单"></el-button>
             </el-input>
             <NoticeSelect ref="noticeSelect" @onSelected="onNoticeSelected"></NoticeSelect>
           </el-form-item>
@@ -51,7 +53,7 @@
         <el-col :span="8">
           <el-form-item label="供应商" prop="vendorName">
             <el-input v-model="form.vendorName" readonly="readonly" placeholder="请选择供应商" >
-              <el-button slot="append" @click="handleSelectVendor" icon="el-icon-search"></el-button>
+              <el-button slot="append" @click="handleSelectVendor" icon="el-icon-search" aria-label="选择供应商"></el-button>
             </el-input>
             <VendorSelect ref="vendorSelect" @onSelected="onVendorSelected" />
           </el-form-item>
@@ -92,6 +94,7 @@ export default {
   data() {
     return {
       recptId: '',
+      optType: 'view',
       //自动生成编码
       autoGenFlag:false,
       // 表单参数
@@ -137,10 +140,6 @@ export default {
     getItemrecptForm(recptId) {
       getItemrecpt(recptId).then(response => {
         this.form = response.data;
-        this.warehouseInfo[0] = response.data.warehouseId;
-        this.warehouseInfo[1] = response.data.locationId;
-        this.warehouseInfo[2] = response.data.areaId;
-        this.optType = "view";
       });
     },
     //供应商选择弹出框

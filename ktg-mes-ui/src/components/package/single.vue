@@ -49,7 +49,7 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+          <el-button class="mes-action--query" type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
           <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
         </el-form-item>
       </el-form>
@@ -92,7 +92,7 @@
               @click="handleUpdate(scope.row)"
               v-hasPermi="['mes:wm:package:edit']"
             >修改</el-button>
-            <el-button
+            <el-button class="mes-action--destructive"
               size="mini"
               type="text"
               icon="el-icon-delete"

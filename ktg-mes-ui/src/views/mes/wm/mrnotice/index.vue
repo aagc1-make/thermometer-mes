@@ -1,14 +1,14 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
-      <el-form-item label="工作站编号" prop="workstaitonCode">
-        <el-input
-          v-model="queryParams.workstaitonCode"
-          placeholder="请输入工作站编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="生产工单编号" prop="workorderCode">
         <el-input
           v-model="queryParams.workorderCode"
@@ -17,35 +17,41 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="需求人" prop="nickName">
+      <el-form-item label="工作站编号" prop="workstaitonCode">
         <el-input
-          v-model="queryParams.nickName"
-          placeholder="请输入昵称"
+          v-model="queryParams.workstaitonCode"
+          placeholder="请输入工作站编号"
           clearable
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="需求时间">
-            <el-date-picker
-              v-model="dateRange"
-              style="width: 240px"
-              value-format="yyyy-MM-dd HH:mm"
-              type="datetimerange"
-              range-separator="-"
-              start-placeholder="起始时间"
-              end-placeholder="截止时间"
-            ></el-date-picker>
-          </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
           <el-option label="请选择字典生成" value="" />
         </el-select>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="需求人" prop="nickName">
+          <el-input
+            v-model="queryParams.nickName"
+            placeholder="请输入昵称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="需求时间">
+              <el-date-picker
+                v-model="dateRange"
+                style="width: 240px"
+                value-format="yyyy-MM-dd HH:mm"
+                type="datetimerange"
+                range-separator="-"
+                start-placeholder="起始时间"
+                end-placeholder="截止时间"
+              ></el-date-picker>
+            </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -70,7 +76,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -81,7 +87,7 @@
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"
@@ -129,7 +135,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['wm:mrnotice:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

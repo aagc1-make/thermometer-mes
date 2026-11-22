@@ -51,8 +51,8 @@
             <el-tab-pane label="修改密码" name="resetPwd">
               <resetPwd :user="user" />
             </el-tab-pane>
-            <el-tab-pane label="人脸登录" name="face">
-              <faceLogin />
+            <el-tab-pane label="人脸登录" name="face" lazy>
+              <faceLogin :active="activeTab === 'face'" />
             </el-tab-pane>
           </el-tabs>
         </el-card>

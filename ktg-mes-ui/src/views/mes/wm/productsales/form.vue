@@ -1,6 +1,8 @@
 <template>
   <div class="app-container">
-    <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+    <h1 class="mes-page-heading">销售出库详情</h1>
+    <el-form ref="form" class="mes-form-section mes-document-form" :model="form" :rules="rules" label-width="100px">
+      <h2 class="mes-form-section__title">基本信息</h2>
       <el-row>
         <el-col :span="8">
           <el-form-item label="出库单编号" prop="salesCode">
@@ -100,7 +102,7 @@ export default {
       //自动生成物料编码标识
       autoGenFlag: false,
       //弹框的操作类型 view add edit
-      optType: undefined,
+      optType: 'view',
       // 表单校验
       rules: {
         salesCode: [
@@ -142,10 +144,6 @@ export default {
     getProdectsalesForm(salesId) {
       getProductsales(salesId).then(response => {
         this.form = response.data;
-        this.warehouseInfo[0] = response.data.warehouseId;
-        this.warehouseInfo[1] = response.data.locationId;
-        this.warehouseInfo[2] = response.data.areaId;
-        this.optType = "view";
       });
     },
     handleSelectClient(){

@@ -1,63 +1,18 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="结果记录ID" prop="resultId">
-        <el-input
-          v-model="queryParams.resultId"
-          placeholder="请输入结果记录ID"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="检测项ID" prop="indexId">
-        <el-input
-          v-model="queryParams.indexId"
-          placeholder="请输入检测项ID"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="检测项类型" prop="indexType">
-        <el-select v-model="queryParams.indexType" placeholder="请选择检测项类型" clearable>
-          <el-option label="请选择字典生成" value="" />
-        </el-select>
-      </el-form-item>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="68px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="检测工具" prop="qcTool">
         <el-input
           v-model="queryParams.qcTool"
           placeholder="请输入检测工具"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="标准值" prop="standerVal">
-        <el-input
-          v-model="queryParams.standerVal"
-          placeholder="请输入标准值"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="单位" prop="unitOfMeasure">
-        <el-input
-          v-model="queryParams.unitOfMeasure"
-          placeholder="请输入单位"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="误差上限" prop="thresholdMax">
-        <el-input
-          v-model="queryParams.thresholdMax"
-          placeholder="请输入误差上限"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="误差下限" prop="thresholdMin">
-        <el-input
-          v-model="queryParams.thresholdMin"
-          placeholder="请输入误差下限"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -75,67 +30,118 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="浮点值" prop="qcValFloat">
-        <el-input
-          v-model="queryParams.qcValFloat"
-          placeholder="请输入浮点值"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="整数" prop="qcValInteger">
-        <el-input
-          v-model="queryParams.qcValInteger"
-          placeholder="请输入整数"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="字典项" prop="qcValDict">
-        <el-input
-          v-model="queryParams.qcValDict"
-          placeholder="请输入字典项"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="预留字段1" prop="attr1">
-        <el-input
-          v-model="queryParams.attr1"
-          placeholder="请输入预留字段1"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="预留字段2" prop="attr2">
-        <el-input
-          v-model="queryParams.attr2"
-          placeholder="请输入预留字段2"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="预留字段3" prop="attr3">
-        <el-input
-          v-model="queryParams.attr3"
-          placeholder="请输入预留字段3"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="预留字段4" prop="attr4">
-        <el-input
-          v-model="queryParams.attr4"
-          placeholder="请输入预留字段4"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="结果记录ID" prop="resultId">
+          <el-input
+            v-model="queryParams.resultId"
+            placeholder="请输入结果记录ID"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="检测项ID" prop="indexId">
+          <el-input
+            v-model="queryParams.indexId"
+            placeholder="请输入检测项ID"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="检测项类型" prop="indexType">
+          <el-select v-model="queryParams.indexType" placeholder="请选择检测项类型" clearable>
+            <el-option label="请选择字典生成" value="" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="标准值" prop="standerVal">
+          <el-input
+            v-model="queryParams.standerVal"
+            placeholder="请输入标准值"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="单位" prop="unitOfMeasure">
+          <el-input
+            v-model="queryParams.unitOfMeasure"
+            placeholder="请输入单位"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="误差上限" prop="thresholdMax">
+          <el-input
+            v-model="queryParams.thresholdMax"
+            placeholder="请输入误差上限"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="误差下限" prop="thresholdMin">
+          <el-input
+            v-model="queryParams.thresholdMin"
+            placeholder="请输入误差下限"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="浮点值" prop="qcValFloat">
+          <el-input
+            v-model="queryParams.qcValFloat"
+            placeholder="请输入浮点值"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="整数" prop="qcValInteger">
+          <el-input
+            v-model="queryParams.qcValInteger"
+            placeholder="请输入整数"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="字典项" prop="qcValDict">
+          <el-input
+            v-model="queryParams.qcValDict"
+            placeholder="请输入字典项"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="预留字段1" prop="attr1">
+          <el-input
+            v-model="queryParams.attr1"
+            placeholder="请输入预留字段1"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="预留字段2" prop="attr2">
+          <el-input
+            v-model="queryParams.attr2"
+            placeholder="请输入预留字段2"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="预留字段3" prop="attr3">
+          <el-input
+            v-model="queryParams.attr3"
+            placeholder="请输入预留字段3"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="预留字段4" prop="attr4">
+          <el-input
+            v-model="queryParams.attr4"
+            placeholder="请输入预留字段4"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -160,7 +166,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -171,7 +177,7 @@
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"
@@ -216,7 +222,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['qc:qcresultdetail:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

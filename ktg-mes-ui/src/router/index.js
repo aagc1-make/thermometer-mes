@@ -271,7 +271,7 @@ export const dynamicRoutes = [
         path: 'form',
         component: () => import('@/views/mes/md/mditem/form.vue'),
         name: 'itemForm',
-        meta: { title: '物料详情', activeMenu: '/mes/md/item/form' }
+        meta: { title: '物料详情', activeMenu: '/mes/md/mditem' }
       }
     ]
   },
@@ -286,7 +286,7 @@ export const dynamicRoutes = [
         path: 'form',
         component: () => import('@/views/mes/wm/itemrecpt/form.vue'),
         name: 'itemrecptForm',
-        meta: { title: '采购入库详情', activeMenu: '/mes/wm/itemrecpt/form' }
+        meta: { title: '采购入库详情', activeMenu: '/mes/wm/itemrecpt' }
       }
     ]
   },
@@ -299,7 +299,7 @@ export const dynamicRoutes = [
         path: 'form',
         component: () => import('@/views/mes/wm/productsales/form.vue'),
         name: 'productsalseForm',
-        meta: { title: '销售出库详情', activeMenu: '/mes/wm/productsales/form' }
+        meta: { title: '销售出库详情', activeMenu: '/mes/wm/productsales' }
       }
     ]
   },

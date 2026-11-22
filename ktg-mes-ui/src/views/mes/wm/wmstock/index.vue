@@ -26,15 +26,42 @@
       </el-col>
       <el-col :span="20" :xs="24">
 
-      <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
-        <el-form-item label="产品物料编码" prop="itemCode">
-          <el-input
-            v-model="queryParams.itemCode"
-            placeholder="请输入产品物料编码"
-            clearable
-            @keyup.enter.native="handleQuery"
-          />
-        </el-form-item>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
+      <el-form-item label="产品物料编码" prop="itemCode">
+        <el-input
+          v-model="queryParams.itemCode"
+          placeholder="请输入产品物料编码"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="仓库名称" prop="warehouseName">
+        <el-input
+          v-model="queryParams.warehouseName"
+          placeholder="请输入仓库名称"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="是否冻结" prop="frozenFlag">
+        <el-select v-model="queryParams.frozenFlag" placeholder="请选择">
+          <el-option
+            v-for="dict in dict.type.sys_yes_no"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <template #more>
         <el-form-item label="产品物料名称" prop="itemName">
           <el-input
             v-model="queryParams.itemName"
@@ -47,14 +74,6 @@
           <el-input
             v-model="queryParams.batchCode"
             placeholder="请输入批次号"
-            clearable
-            @keyup.enter.native="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="仓库名称" prop="warehouseName">
-          <el-input
-            v-model="queryParams.warehouseName"
-            placeholder="请输入仓库名称"
             clearable
             @keyup.enter.native="handleQuery"
           />
@@ -75,25 +94,12 @@
             @keyup.enter.native="handleQuery"
           />
         </el-form-item>
-        <el-form-item label="是否冻结" prop="frozenFlag">
-          <el-select v-model="queryParams.frozenFlag" placeholder="请选择">
-            <el-option
-              v-for="dict in dict.type.sys_yes_no"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-          <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
+      </template>
+    </query-bar>
 
       <el-row :gutter="10" class="mb8">    
         <el-col :span="1.5">
-          <el-button
+          <el-button class="mes-action--export"
             type="warning"
             plain
             icon="el-icon-download"

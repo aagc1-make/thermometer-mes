@@ -18,6 +18,7 @@ function chat(result) {
   const source = fs.readFileSync('ktg-mes-ui/src/views/mes/ai/index.vue', 'utf8')
   const script = source.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/^import .*$/mg, '').replace('export default', 'component =')
   const box = { ...answerRules(), component: null, console, Date, setTimeout: () => 1, clearTimeout() {}, sessionStorage: { setItem() {}, getItem() {}, removeItem() {} },
+    askBusinessQuestion: async () => ({ data: { mode: 'legacy' } }),
     request: async () => { requests++; throw new Error('知识问答不能请求业务或模型接口') } }
   vm.createContext(box); vm.runInContext(script, box)
   const ctx = { ...box.component.data(), ...box.component.methods, queryMode: 'knowledge',

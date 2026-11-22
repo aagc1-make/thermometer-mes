@@ -10,7 +10,7 @@
                                     clearable
                                     readonly="readonly"
                                     >
-                                          <el-button slot="append" @click="handleQuery" icon="el-icon-search"></el-button>
+                                          <el-button class="mes-action--query" slot="append" @click="handleQuery" icon="el-icon-search"></el-button>
                                     </el-input>
                                     <UserSingleSelect ref="userSelect" @onSelected="onUserSelected"></UserSingleSelect>
                               </el-form-item>

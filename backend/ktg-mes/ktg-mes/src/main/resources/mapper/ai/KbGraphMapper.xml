@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ktg.mes.ai.mapper.KbGraphMapper">
+    <select id="anchors" resultType="com.ktg.mes.ai.service.KbGraphExtraction$Entity">
+        select item_code as code, item_name as name,
+               case when item_or_product = 'PRODUCT' then 'Product' else 'Item' end as type from md_item
+        union all select process_code, process_name, 'Process' from pro_process
+        union all select machinery_code, machinery_name, 'Equipment' from dv_machinery
+        union all select index_code, index_name, 'InspectionItem' from qc_index
+        union all select workorder_code, workorder_name, 'Workorder' from pro_workorder
+        union all select defect_code, defect_name, 'Defect' from qc_defect
+        union all select cast(dept_id as char), dept_name, 'Dept' from sys_dept where del_flag = '0' and status = '0'
+    </select>
+
+    <sql id="versionRows">
+        select v.version_id as versionId, d.doc_id as docId, d.library_id as libraryId, d.dept_id as deptId,
+               d.title, task.task_id as taskId
+        from kb_document_version v join kb_document d on d.doc_id = v.doc_id
+        left join kb_ingest_task task on task.version_id = v.version_id and task.stage = 'graph'
+    </sql>
+    <select id="nextVersion" resultType="com.ktg.mes.ai.domain.KbDocument$Version">
+        <include refid="versionRows"/>
+        where v.active = 1 and v.deleted_at is null and d.deleted_at is null and d.graph_enabled = 1
+          and (task.task_id is null or task.status = 'pending'
+            or (task.status = 'running' and task.started_at &lt; now() - interval 30 minute)
+            or (task.status = 'failed' and task.finished_at &lt; now() - interval 2 minute))
+        <if test="versionId != null">and v.version_id = #{versionId}</if>
+        order by task.task_id is not null, v.version_id limit 1
+    </select>
+    <select id="retiredVersion" resultType="com.ktg.mes.ai.domain.KbDocument$Version">
+        <include refid="versionRows"/>
+        where (v.active = 0 or d.graph_enabled = 0 or d.deleted_at is not null)
+          and task.task_id is not null
+          and (task.status != 'running' or task.started_at &lt; now() - interval 30 minute)
+        order by task.task_id limit 1
+    </select>
+    <select id="visibleVersions" resultType="long">
+        select v.version_id from kb_document d
+        join kb_document_version v on v.active_doc_id = d.doc_id and v.deleted_at is null
+        join kb_ingest_task task on task.version_id = v.version_id and task.stage = 'graph' and task.status = 'completed'
+        where d.library_id = #{scope.libraryId} and d.dept_id = #{scope.deptId}
+          and d.deleted_at is null and d.graph_enabled = 1
+    </select>
+    <insert id="start" useGeneratedKeys="true" keyProperty="version.taskId">
+        insert into kb_ingest_task (version_id, stage, status, started_at)
+        values (#{version.versionId}, 'graph', 'running', now())
+    </insert>
+    <update id="restart">
+        update kb_ingest_task set status = 'running', started_at = now(), finished_at = null, error = null
+        where task_id = #{taskId} and stage = 'graph'
+    </update>
+    <delete id="remove">
+        delete from kb_ingest_task where task_id = #{taskId} and stage = 'graph'
+    </delete>
+    <update id="retry">
+        update kb_ingest_task set status = 'pending', started_at = null, finished_at = null, error = null
+        where version_id = #{versionId} and stage = 'graph' and status = 'failed'
+    </update>
+</mapper>

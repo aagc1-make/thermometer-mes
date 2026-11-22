@@ -12,7 +12,7 @@
       @click="go(d)"
       @keyup.enter="go(d)"
     >
-      <i :class="d.icon" aria-hidden="true"></i>
+      <svg-icon :icon-class="d.icon" class-name="rail-item__icon" />
       <span class="rail-item__text">{{ d.title }}</span>
       <span v-if="hasUnread(d)" class="rail-item__dot" aria-hidden="true"></span>
     </div>

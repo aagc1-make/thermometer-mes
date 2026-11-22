@@ -13,7 +13,7 @@
         <UserMultiSelect ref="userSelect" @onSelected="userSelected"></UserMultiSelect>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -24,7 +24,7 @@
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"
@@ -43,7 +43,7 @@
       <el-table-column label="电话" align="center" prop="tel" />
       <el-table-column label="操作" align="center" v-if="optType !='view'" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

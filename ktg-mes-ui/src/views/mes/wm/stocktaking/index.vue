@@ -1,28 +1,19 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
-      <el-form-item label="盘点类型" prop="takingType">
-        <el-select v-model="queryParams.takingType" placeholder="请选择盘点类型" clearable>
-          <el-option
-            v-for="dict in dict.type.mes_stock_taking_type"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>     
+    <h1 class="mes-page-heading">盘点任务</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="盘点单编号" prop="takingCode">
         <el-input
           v-model="queryParams.takingCode"
           placeholder="请输入盘点单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="盘点单名称" prop="takingName">
-        <el-input
-          v-model="queryParams.takingName"
-          placeholder="请输入盘点单名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -40,11 +31,27 @@
           <el-option label="请选择字典生成" value="" />
         </el-select>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="盘点类型" prop="takingType">
+          <el-select v-model="queryParams.takingType" placeholder="请选择盘点类型" clearable>
+            <el-option
+              v-for="dict in dict.type.mes_stock_taking_type"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="盘点单名称" prop="takingName">
+          <el-input
+            v-model="queryParams.takingName"
+            placeholder="请输入盘点单名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -69,7 +76,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -121,7 +128,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['mes:wm:stocktaking:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

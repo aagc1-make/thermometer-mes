@@ -45,7 +45,7 @@
               title="是否确认清空?"
               confirm-button-text="确定清空"
               @confirm="clearPaper">
-              <el-button slot="reference" type="danger" icon="el-icon-close">
+              <el-button class="mes-action--destructive" slot="reference" type="danger" icon="el-icon-close">
                 清空
               </el-button>
             </el-popconfirm>

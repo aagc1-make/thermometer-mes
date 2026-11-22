@@ -14,7 +14,7 @@
         >批量生成工单（{{ selectedProductRows.length }}）</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"

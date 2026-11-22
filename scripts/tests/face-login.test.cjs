@@ -9,7 +9,7 @@ function engine() {
   const source = fs.readFileSync(file, 'utf8').replace(/export (const|function) /g, '$1 ')
   const box = { exports: {}, console }
   vm.createContext(box)
-  vm.runInContext(source + '\nexports={FACE_DIMENSION,FACE_THRESHOLD,EYE_OPEN_RATIO,EYE_CLOSED_RATIO,isValidDescriptor,euclideanDistance,averageDescriptors,eyeAspectRatio,landmarkEar,noseRatio,createLivenessTracker};', box)
+  vm.runInContext(source + '\nexports={FACE_DIMENSION,FACE_THRESHOLD,isValidDescriptor,euclideanDistance,averageDescriptors,noseRatio,createActiveLivenessTracker,LIVENESS_ACTIONS};', box)
   return box.exports
 }
 
@@ -19,22 +19,9 @@ function descriptor(seed = 1) {
   return values
 }
 
-function eye(open) {
-  const dy = open ? 1 : 0.1
-  return [
-    { x: 0, y: 0 }, { x: 1, y: dy }, { x: 2, y: dy },
-    { x: 3, y: 0 }, { x: 2, y: -dy }, { x: 1, y: -dy }
-  ]
-}
-
-function landmarks(earOpen) {
+function landmarks() {
   const points = []
   for (let i = 0; i < 68; i++) points.push({ x: i, y: i % 7 })
-  const eyePoints = eye(earOpen)
-  for (let i = 0; i < 6; i++) {
-    points[36 + i] = eyePoints[i]
-    points[42 + i] = { x: eyePoints[i].x + 10, y: eyePoints[i].y }
-  }
   points[30] = { x: 60, y: 50 }
   return points
 }
@@ -71,48 +58,50 @@ test('多帧平均用于降低单帧抖动', () => {
   assert.equal(api.averageDescriptors([]), null)
 })
 
-test('EAR 能区分睁眼与闭眼', () => {
+test('鼻尖位置按人脸框归一化', () => {
   const api = engine()
-  assert.ok(api.eyeAspectRatio(eye(true)) > api.EYE_OPEN_RATIO)
-  assert.ok(api.eyeAspectRatio(eye(false)) < api.EYE_CLOSED_RATIO)
-  assert.ok(api.landmarkEar(landmarks(true)) > api.EYE_OPEN_RATIO)
-  assert.ok(api.landmarkEar(landmarks(false)) < api.EYE_CLOSED_RATIO)
+  assert.equal(api.noseRatio({ x: 10, width: 100 }, landmarks()), 0.5)
 })
 
-test('眨一次眼即通过活体，静止睁眼不通过', () => {
+test('活体只做左右转头：转向必须与提示一致，且每步回正', () => {
   const api = engine()
-  const tracker = api.createLivenessTracker()
-  const staticFace = tracker.push({ ear: 0.3 })
-  for (let i = 0; i < 12; i++) tracker.push({ ear: 0.3 })
-  assert.equal(staticFace.passed, false)
-  assert.equal(tracker.push({ ear: 0.3 }).passed, false)
+  const run = (sequence) => {
+    const tracker = api.createActiveLivenessTracker({
+      order: ['turn-left', 'turn-right'],
+      baselineNose: 0.5
+    })
+    let at = 1000
+    let last = null
+    sequence.forEach(([nose, frames]) => {
+      for (let i = 0; i < (frames || 2); i++) {
+        at += 100
+        last = tracker.push({ nose, at })
+      }
+    })
+    return last
+  }
 
-  tracker.push({ ear: 0.1 })
-  const blinked = tracker.push({ ear: 0.3 })
-  assert.equal(blinked.passed, true)
-  assert.equal(blinked.blinked, true)
-})
+  assert.equal(api.LIVENESS_ACTIONS.join(','), 'turn-left,turn-right')
 
-test('左右转头同样可以通过活体', () => {
-  const api = engine()
-  const tracker = api.createLivenessTracker()
-  tracker.push({ ear: 0.3, nose: 0.42 })
-  tracker.push({ ear: 0.3, nose: 0.44 })
-  tracker.push({ ear: 0.3, nose: 0.52 })
-  const turned = tracker.push({ ear: 0.3, nose: 0.56 })
-  assert.equal(turned.passed, true)
-  assert.equal(turned.turned, true)
-})
+  const happy = [[0.5, 2], [0.62, 3], [0.5, 3], [0.5, 2], [0.38, 3], [0.5, 3]]
+  const passed = run(happy)
+  assert.equal(passed.passed, true)
+  assert.equal(passed.step, 2)
+  assert.equal(passed.total, 2)
 
-test('活体状态可重置，鼻尖位置按人脸框归一化', () => {
-  const api = engine()
-  const tracker = api.createLivenessTracker()
-  tracker.push({ ear: 0.3 })
-  tracker.push({ ear: 0.1 })
-  assert.equal(tracker.push({ ear: 0.3 }).passed, true)
-  tracker.reset()
-  assert.equal(tracker.push({ ear: 0.3 }).passed, false)
-  assert.equal(api.noseRatio({ x: 10, width: 100 }, landmarks(true)), 0.5)
+  // 只转一边不能通过
+  const half = run([[0.5, 2], [0.62, 3], [0.5, 3], [0.5, 2]])
+  assert.equal(half.passed, false)
+  assert.equal(half.step, 1)
+
+  // 反向转头不计入
+  const reversed = run([[0.5, 2], [0.38, 3], [0.5, 3], [0.5, 2]])
+  assert.equal(reversed.passed, false)
+  assert.equal(reversed.step, 0)
+
+  // 静止不动超时失效
+  const expired = run([[0.5, 2], ...Array.from({ length: 70 }, () => [0.52, 1])])
+  assert.equal(expired.phase, 'expired')
 })
 
 test('前端阈值与后端配置保持一致', () => {

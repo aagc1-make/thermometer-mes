@@ -28,6 +28,9 @@ public class SysFaceLoginController {
         if (body == null || StringUtils.isEmpty(body.getUsername())) {
             return AjaxResult.error("请输入用户账号");
         }
+        if (body.getDescriptor() == null || body.getDescriptor().size() != FaceTemplate.DIMENSION) {
+            return AjaxResult.error("人脸特征格式不正确，请重新采集");
+        }
         double[] descriptor = FaceTemplate.toArray(body.getDescriptor());
         String token = faceLoginService.login(body.getUsername().trim(), descriptor);
         AjaxResult ajax = AjaxResult.success();

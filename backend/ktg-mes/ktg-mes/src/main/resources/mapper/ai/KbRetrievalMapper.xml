@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ktg.mes.ai.mapper.KbRetrievalMapper">
+    <sql id="activeChunks">
+        from kb_document_chunk c
+        join kb_document_version v on v.version_id = c.version_id and v.active = 1 and v.deleted_at is null
+        join kb_document d on d.doc_id = c.doc_id and d.deleted_at is null
+    </sql>
+    <sql id="columns">
+        c.chunk_id as chunkId, c.library_id as libraryId, c.dept_id as deptId, c.version_id as versionId,
+        c.chunk_index as chunkIndex, c.section_label as sectionLabel, c.content, d.title, v.version, v.filename
+    </sql>
+
+    <select id="keywordCandidates" resultType="com.ktg.mes.ai.domain.KbCitation">
+        select <include refid="columns"/>
+        <include refid="activeChunks"/>
+        where c.dept_id = #{scope.deptId} and c.library_id = #{scope.libraryId}
+        and (
+            <foreach collection="terms" item="term" separator="or">
+                (c.content like concat('%', #{term}, '%') or d.title like concat('%', #{term}, '%'))
+            </foreach>
+        )
+        order by (
+            <foreach collection="terms" item="term" separator="+">
+                (case when c.content like concat('%', #{term}, '%') then 2 else 0 end
+                + case when d.title like concat('%', #{term}, '%') then 1 else 0 end)
+            </foreach>
+        ) desc, c.chunk_id
+        limit 48
+    </select>
+
+    <select id="activeHits" resultType="com.ktg.mes.ai.domain.KbCitation">
+        select <include refid="columns"/>
+        <include refid="activeChunks"/>
+        where c.dept_id = #{scope.deptId} and c.library_id = #{scope.libraryId}
+          and c.chunk_id in
+          <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
+    <sql id="indexVersion">
+        select d.doc_id as docId, d.dept_id as deptId, d.library_id as libraryId, v.version_id as versionId,
+               task.task_id as taskId
+        from kb_document_version v
+        join kb_document d on d.doc_id = v.doc_id
+        left join kb_ingest_task task on task.version_id = v.version_id and task.stage = 'embed'
+    </sql>
+    <select id="nextIndexVersion" resultType="com.ktg.mes.ai.domain.KbDocument$Version">
+        <include refid="indexVersion"/>
+        where v.active = 1 and v.deleted_at is null and d.deleted_at is null
+          and (task.task_id is null or task.status = 'pending'
+            or (task.status = 'failed' and task.finished_at &lt; now() - interval 2 minute)
+            or (task.status = 'running' and task.started_at &lt; now() - interval 15 minute))
+        order by task.task_id is not null, v.version_id
+        limit 1
+    </select>
+    <select id="nextRetiredVersion" resultType="com.ktg.mes.ai.domain.KbDocument$Version">
+        <include refid="indexVersion"/>
+        where v.active = 0 and task.task_id is not null
+        order by task.task_id limit 1
+    </select>
+    <select id="indexChunks" resultType="com.ktg.mes.ai.domain.KbCitation">
+        select <include refid="columns"/>
+        <include refid="activeChunks"/>
+        where c.dept_id = #{version.deptId} and c.library_id = #{version.libraryId}
+          and c.version_id = #{version.versionId} and c.chunk_id &gt; #{after}
+        order by c.chunk_id limit 12
+    </select>
+    <insert id="startIndex" useGeneratedKeys="true" keyProperty="taskId">
+        insert into kb_ingest_task (version_id, stage, status, started_at) values (#{versionId}, 'embed', 'running', now())
+    </insert>
+    <update id="restartIndex">
+        update kb_ingest_task set status = 'running', started_at = now(), finished_at = null, error = null
+        where task_id = #{taskId}
+    </update>
+    <delete id="removeIndexRecord">
+        delete from kb_ingest_task where task_id = #{taskId} and stage = 'embed'
+    </delete>
+</mapper>

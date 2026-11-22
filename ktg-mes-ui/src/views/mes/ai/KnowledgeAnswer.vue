@@ -1,28 +1,61 @@
 <template>
   <div class="knowledge-answer">
-    <div class="knowledge-answer__label"><i class="el-icon-reading" aria-hidden="true" /> 知识库引用 · 本机资料</div>
-    <p>{{ message.text }}</p>
-    <article v-for="(source, index) in message.sources" :key="source.documentId + ':' + source.sectionIndex" class="knowledge-answer__source">
-      <div class="knowledge-answer__title">[{{ index + 1 }}] {{ source.title }} <el-tag size="mini" effect="plain">{{ source.version }}</el-tag></div>
-      <blockquote>{{ source.excerpt }}</blockquote>
-      <div class="knowledge-answer__foot"><span>{{ source.filename }} · {{ source.sectionLabel }}</span><el-button type="text" size="mini" @click="$emit('source', source)">查看原文 [{{ index + 1 }}]</el-button></div>
-    </article>
-    <p class="knowledge-answer__note">以上为关键词匹配的原文片段，请结合文档版本和适用范围核对。</p>
+    <div class="knowledge-answer__text"><template v-for="(part, index) in parts"><button v-if="part.source !== undefined"
+      :key="index" class="citation" type="button" :aria-label="'查看引用 ' + (part.source + 1)"
+      @click="$emit('source', part.source)">[{{ part.source + 1 }}]</button><span v-else :key="index">{{ part.text }}</span></template></div>
+    <div v-if="sources.length && !message.streaming" class="answer-sources">
+      <button class="sources-button" type="button" @click="$emit('source', 0)">
+        <i class="el-icon-reading" aria-hidden="true" /> {{ sources.length }} 处文档引用
+      </button>
+      <button v-for="(source, index) in sources" :key="index" class="file-pill" type="button"
+        :title="source.filename" @click="$emit('source', index)">{{ source.filename || source.title }}</button>
+    </div>
+    <div v-if="sources.length && !message.streaming && message.channel" class="answer-follow-ups">
+      <button v-for="question in followUps" :key="question" type="button" @click="$emit('follow-up', question)">
+        {{ question }} <i class="el-icon-arrow-right" aria-hidden="true" />
+      </button>
+    </div>
   </div>
 </template>
 
 <script>
-export default { name: 'KnowledgeAnswer', props: { message: { type: Object, required: true }}}
+export default {
+  name: 'KnowledgeAnswer',
+  props: { message: { type: Object, required: true }},
+  computed: {
+    sources() { return this.message.sources || [] },
+    parts() {
+      const raw = this.message.text || (this.message.streaming ? '正在检索资料…' : '')
+      return raw.split(/(\[\d+\])/g).filter(Boolean).map(token => {
+        const marker = token.match(/^\[(\d+)\]$/)
+        const source = marker ? Number(marker[1]) - 1 : -1
+        return source >= 0 && source < this.sources.length ? { source } : { text: token }
+      })
+    },
+    followUps() {
+      const title = this.sources[0].title.slice(0, 30)
+      return [`《${title}》有哪些关键要求？`, `按《${title}》需要记录哪些信息？`]
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
-.knowledge-answer { width: 620px; max-width: 100%;
-  p { margin: 8px 0; }
-  &__label { font-size: 12px; color: #5c7faf; font-weight: 600; }
-  &__source { margin-top: 12px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
-  &__title { font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-  blockquote { margin: 10px 0; padding: 10px 14px; background: #f5f8fc; border-left: 3px solid #b8cce8; border-radius: 0 6px 6px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-  &__foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; color: #6b7280; font-size: 12px; }
-  &__note { color: #6b7280; font-size: 11px; }
+@import "~@/assets/styles/mes-palette";
+.knowledge-answer__text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.citation, .sources-button, .file-pill, .answer-follow-ups button {
+  border: 1px solid $mes-border;
+  border-radius: 7px;
+  background: $mes-primary-soft;
+  color: $mes-primary;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
 }
+.citation { padding: 0 5px; margin: 0 2px; line-height: 1.5; vertical-align: 1px; }
+.answer-sources, .answer-follow-ups { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.sources-button, .file-pill, .answer-follow-ups button { padding: 3px 8px; }
+.file-pill { background: $mes-card; color: $mes-text-sub; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.answer-follow-ups button { background: $mes-card; text-align: left; }
+.citation:hover, .sources-button:hover, .file-pill:hover, .answer-follow-ups button:hover { border-color: $mes-marker; }
 </style>

@@ -4,12 +4,12 @@
     <!-- 可访问性：键盘用户可跳过导航直达主内容（WCAG 2.4.1） -->
     <a class="skip-to-content" href="#main-content" @click.prevent="skipToContent">跳到主内容</a>
     <rail />
-    <sidebar v-if="!sidebar.hide && !isHomePage" class="sidebar-container" />
-    <div :class="{hasTagsView:needTagsView,sidebarHide:sidebar.hide}" class="main-container">
-      <div class="fixed-header">
-        <navbar />
-        <tags-view v-if="needTagsView" />
-      </div>
+    <sidebar v-if="!sidebar.hide && !isHomePage" v-show="!isAssistantWorkspace" class="sidebar-container" />
+    <div class="fixed-header">
+      <navbar />
+    </div>
+    <div :class="{ hasTagsView: needTagsView && !isAssistantWorkspace }" class="main-container">
+      <tags-view v-if="needTagsView" v-show="!isAssistantWorkspace" class="workspace-tabs" />
       <app-main />
       <right-panel>
         <settings />
@@ -24,7 +24,6 @@ import { AppMain, Navbar, Settings, Sidebar, TagsView } from './components'
 import Rail from './components/Rail'
 import ResizeMixin from './mixin/ResizeHandler'
 import { mapState } from 'vuex'
-import variables from '@/assets/styles/variables.scss'
 
 const {
   MENU_NOTICE_POLL_INTERVAL
@@ -50,7 +49,6 @@ export default {
   computed: {
     ...mapState({
       theme: state => state.settings.theme,
-      sideTheme: state => state.settings.sideTheme,
       sidebar: state => state.app.sidebar,
       device: state => state.app.device,
       needTagsView: state => state.settings.tagsView
@@ -60,16 +58,18 @@ export default {
       const path = this.$route.path || ''
       return path === '/index' || path === '/' || path === '/index/'
     },
+    isAssistantWorkspace() {
+      return /^\/mes\/ai\/chat\/?$/.test(this.$route.path)
+    },
     classObj() {
       return {
-        hideSidebar: (this.device === 'mobile' && !this.sidebar.opened) || this.isHomePage,
+        hideSidebar: this.device === 'mobile' ? !this.sidebar.opened : this.isHomePage,
+        sidebarHidden: this.sidebar.hide,
+        assistantWorkspace: this.isAssistantWorkspace,
         openSidebar: this.device !== 'mobile' || this.sidebar.opened,
         withoutAnimation: this.sidebar.withoutAnimation,
         mobile: this.device === 'mobile'
       }
-    },
-    variables() {
-      return variables;
     }
   },
   watch: {
@@ -108,7 +108,6 @@ export default {
 
 <style lang="scss" scoped>
   @import "~@/assets/styles/mixin.scss";
-  @import "~@/assets/styles/variables.scss";
 
   .app-wrapper {
     @include clearfix;
@@ -123,12 +122,9 @@ export default {
   }
 
   .drawer-bg {
-    background: #000;
-    opacity: 0.3;
-    width: 100%;
-    top: 0;
-    height: 100%;
-    position: absolute;
+    background: rgba(37, 44, 53, .30);
+    position: fixed;
+    inset: var(--mes-header-height) 0 0;
     z-index: 999;
   }
 
@@ -137,15 +133,6 @@ export default {
     top: 0;
     right: 0;
     left: 0;
-    z-index: 9;
-    width: 100%;
-  }
-
-  .sidebarHide .fixed-header {
-    width: 100%;
-  }
-
-  .mobile .fixed-header {
-    width: 100%;
+    z-index: 1010;
   }
 </style>

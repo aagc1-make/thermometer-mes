@@ -1,5 +1,6 @@
 <template>
     <div class="app-container">
+      <h1 class="mes-page-heading">待检任务</h1>
       <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
         <el-form-item label="单据编码" prop="sourceDocCode">
           <el-input
@@ -28,7 +29,7 @@
           </el-select>
         </el-form-item>     
         <el-form-item>
-          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+          <el-button class="mes-action--query" type="primary" icon="el-icon-search" size="mini" @click="handleQuery">查询</el-button>
           <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
         </el-form-item>
       </el-form>

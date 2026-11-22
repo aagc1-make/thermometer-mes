@@ -175,7 +175,7 @@
       </el-tabs>
       <el-form label-width="100px">
         <el-form-item style="text-align: center;margin-left:-120px;margin-top:30px;">
-          <el-button type="primary" @click="cancel" v-if="form.status !='PREPARE' ">返回</el-button>
+          <el-button class="mes-action--neutral" type="primary" @click="cancel" v-if="form.status !='PREPARE' ">返回</el-button>
           <el-button type="primary" @click="submitForm" v-if="form.status =='PREPARE' ">保 存</el-button>
           <el-button type="success" @click="handleFinish" v-if="form.status =='PREPARE' && form.oqcId !=null">完成</el-button>
           <el-button @click="cancel">取 消</el-button>

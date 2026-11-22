@@ -1,0 +1,590 @@
+app:
+  name: MES 智能问答编排
+  description: 按 MES 返回的分支标识选择检索节点，依次推进问题改写、检索、证据排序、回答生成、引用整理与完成回执。只流转一次性凭证与执行元数据。
+  icon: "📊"
+  icon_background: "#E8EFF6"
+  mode: workflow
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables:
+    - description: Dify 可访问的 MES 回调地址，形如 http://host.docker.internal:8080/mes/ai/dify/callback。
+      id: 14f340c6-6171-4fa9-8778-5b10808752a7
+      name: mes_callback_url
+      selector: [env, mes_callback_url]
+      value: ""
+      value_type: string
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ""
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ""
+      voice: ""
+  graph:
+    edges:
+      - id: n_start-source-n_rewrite-target
+        data: { isInIteration: false, sourceType: start, targetType: http-request }
+        source: n_start
+        sourceHandle: source
+        target: n_rewrite
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_rewrite-source-n_branch-target
+        data: { isInIteration: false, sourceType: http-request, targetType: if-else }
+        source: n_rewrite
+        sourceHandle: source
+        target: n_branch
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_branch-case_doc-n_doc-target
+        data: { isInIteration: false, sourceType: if-else, targetType: http-request }
+        source: n_branch
+        sourceHandle: case_doc
+        target: n_doc
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_branch-case_graph-n_graph-target
+        data: { isInIteration: false, sourceType: if-else, targetType: http-request }
+        source: n_branch
+        sourceHandle: case_graph
+        target: n_graph
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_branch-case_business-n_business-target
+        data: { isInIteration: false, sourceType: if-else, targetType: http-request }
+        source: n_branch
+        sourceHandle: case_business
+        target: n_business
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_branch-case_mixed-n_mixed_doc-target
+        data: { isInIteration: false, sourceType: if-else, targetType: http-request }
+        source: n_branch
+        sourceHandle: case_mixed
+        target: n_mixed_doc
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_branch-false-n_doc-target
+        data: { isInIteration: false, sourceType: if-else, targetType: http-request }
+        source: n_branch
+        sourceHandle: "false"
+        target: n_doc
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_doc-source-n_merge-target
+        data: { isInIteration: false, sourceType: http-request, targetType: variable-aggregator }
+        source: n_doc
+        sourceHandle: source
+        target: n_merge
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_graph-source-n_merge-target
+        data: { isInIteration: false, sourceType: http-request, targetType: variable-aggregator }
+        source: n_graph
+        sourceHandle: source
+        target: n_merge
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_business-source-n_merge-target
+        data: { isInIteration: false, sourceType: http-request, targetType: variable-aggregator }
+        source: n_business
+        sourceHandle: source
+        target: n_merge
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_mixed_doc-source-n_mixed_business-target
+        data: { isInIteration: false, sourceType: http-request, targetType: http-request }
+        source: n_mixed_doc
+        sourceHandle: source
+        target: n_mixed_business
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_mixed_business-source-n_merge-target
+        data: { isInIteration: false, sourceType: http-request, targetType: variable-aggregator }
+        source: n_mixed_business
+        sourceHandle: source
+        target: n_merge
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_merge-source-n_rank-target
+        data: { isInIteration: false, sourceType: variable-aggregator, targetType: http-request }
+        source: n_merge
+        sourceHandle: source
+        target: n_rank
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_rank-source-n_generate-target
+        data: { isInIteration: false, sourceType: http-request, targetType: http-request }
+        source: n_rank
+        sourceHandle: source
+        target: n_generate
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_generate-source-n_citations-target
+        data: { isInIteration: false, sourceType: http-request, targetType: http-request }
+        source: n_generate
+        sourceHandle: source
+        target: n_citations
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_citations-source-n_final-target
+        data: { isInIteration: false, sourceType: http-request, targetType: http-request }
+        source: n_citations
+        sourceHandle: source
+        target: n_final
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - id: n_final-source-n_end-target
+        data: { isInIteration: false, sourceType: http-request, targetType: end }
+        source: n_final
+        sourceHandle: source
+        target: n_end
+        targetHandle: target
+        type: custom
+        zIndex: 0
+    nodes:
+      - id: n_start
+        type: custom
+        width: 248
+        height: 116
+        position: { x: 40, y: 300 }
+        positionAbsolute: { x: 40, y: 300 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: start
+          title: 领取本轮任务
+          desc: 只接收一次性凭证与分支标识；问题原文、证据与业务数据留在 MES。
+          selected: false
+          variables:
+            - variable: ticket
+              label: 一次性运行凭证
+              type: text-input
+              required: true
+              max_length: 64
+              options: []
+            - variable: route
+              label: 检索分支
+              type: select
+              required: true
+              max_length: 16
+              options: [doc, graph, business, mixed]
+      - id: n_rewrite
+        type: custom
+        width: 248
+        height: 124
+        position: { x: 320, y: 300 }
+        positionAbsolute: { x: 320, y: 300 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: http-request
+          title: 问题改写确认
+          desc: MES 已在权限范围内规范化物料、工单、日期与检验类型，此节点确认分支并签发下一步凭证。
+          selected: false
+          method: post
+          url: "{{#env.mes_callback_url#}}"
+          authorization:
+            type: no-auth
+            config: null
+          headers: "Content-Type:application/json"
+          params: ""
+          body:
+            type: json
+            data:
+              - id: body-rewrite
+                key: ""
+                type: text
+                value: '{"stage":"rewrite","ticket":"{{#n_start.ticket#}}"}'
+          retry_config:
+            retry_enabled: true
+            max_retries: 1
+            retry_interval: 200
+      - id: n_branch
+        type: custom
+        width: 248
+        height: 194
+        position: { x: 600, y: 300 }
+        positionAbsolute: { x: 600, y: 300 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: if-else
+          title: 选择检索分支
+          desc: 按 MES 返回的分支标识选择检索节点；标识缺失时按文档检索兜底，权限仍由 MES 校验。
+          selected: false
+          cases:
+            - case_id: case_doc
+              logical_operator: and
+              conditions:
+                - variable_selector: [n_start, route]
+                  comparison_operator: is
+                  value: doc
+            - case_id: case_graph
+              logical_operator: and
+              conditions:
+                - variable_selector: [n_start, route]
+                  comparison_operator: is
+                  value: graph
+            - case_id: case_business
+              logical_operator: and
+              conditions:
+                - variable_selector: [n_start, route]
+                  comparison_operator: is
+                  value: business
+            - case_id: case_mixed
+              logical_operator: and
+              conditions:
+                - variable_selector: [n_start, route]
+                  comparison_operator: is
+                  value: mixed
+      - id: n_doc
+        type: custom
+        width: 248
+        height: 124
+        position: { x: 900, y: 40 }
+        positionAbsolute: { x: 900, y: 40 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: http-request
+          title: 文档检索
+          desc: 在提问账号授权的部门库内检索文档证据，结果保留在 MES。
+          selected: false
+          method: post
+          url: "{{#env.mes_callback_url#}}"
+          authorization:
+            type: no-auth
+            config: null
+          headers: "Content-Type:application/json"
+          params: ""
+          body:
+            type: json
+            data:
+              - id: body-doc
+                key: ""
+                type: text
+                value: '{"stage":"doc","ticket":"{{#n_rewrite.body#}}"}'
+          retry_config:
+            retry_enabled: true
+            max_retries: 1
+            retry_interval: 200
+      - id: n_graph
+        type: custom
+        width: 248
+        height: 124
+        position: { x: 900, y: 190 }
+        positionAbsolute: { x: 900, y: 190 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: http-request
+          title: 图谱检索
+          desc: 返回实体关系及关联文档；图谱不可用时由 MES 回退到文档证据。
+          selected: false
+          method: post
+          url: "{{#env.mes_callback_url#}}"
+          authorization:
+            type: no-auth
+            config: null
+          headers: "Content-Type:application/json"
+          params: ""
+          body:
+            type: json
+            data:
+              - id: body-graph
+                key: ""
+                type: text
+                value: '{"stage":"graph","ticket":"{{#n_rewrite.body#}}"}'
+          retry_config:
+            retry_enabled: true
+            max_retries: 1
+            retry_interval: 200
+      - id: n_business
+        type: custom
+        width: 248
+        height: 124
+        position: { x: 900, y: 340 }
+        positionAbsolute: { x: 900, y: 340 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: http-request
+          title: 业务工具查询
+          desc: 调用 MES 既有只读工具，按提问账号的权限与部门范围取数，汇总由 MES 计算。
+          selected: false
+          method: post
+          url: "{{#env.mes_callback_url#}}"
+          authorization:
+            type: no-auth
+            config: null
+          headers: "Content-Type:application/json"
+          params: ""
+          body:
+            type: json
+            data:
+              - id: body-business
+                key: ""
+                type: text
+                value: '{"stage":"business","ticket":"{{#n_rewrite.body#}}"}'
+          retry_config:
+            retry_enabled: true
+            max_retries: 1
+            retry_interval: 200
+      - id: n_mixed_doc
+        type: custom
+        width: 248
+        height: 124
+        position: { x: 900, y: 490 }
+        positionAbsolute: { x: 900, y: 490 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: http-request
+          title: 混合问答·文档检索
+          desc: 混合问答的第一路：先取授权文档证据，再在同一运行编号内查询业务数据。
+          selected: false
+          method: post
+          url: "{{#env.mes_callback_url#}}"
+          authorization:
+            type: no-auth
+            config: null
+          headers: "Content-Type:application/json"
+          params: ""
+          body:
+            type: json
+            data:
+              - id: body-mixed-doc
+                key: ""
+                type: text
+                value: '{"stage":"mixed_doc","ticket":"{{#n_rewrite.body#}}"}'
+          retry_config:
+            retry_enabled: true
+            max_retries: 1
+            retry_interval: 200
+      - id: n_mixed_business
+        type: custom
+        width: 248
+        height: 124
+        position: { x: 1190, y: 490 }
+        positionAbsolute: { x: 1190, y: 490 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: http-request
+          title: 混合问答·业务查询
+          desc: 混合问答的第二路：文档分支完成后再查业务数据，两路结果分别保留。
+          selected: false
+          method: post
+          url: "{{#env.mes_callback_url#}}"
+          authorization:
+            type: no-auth
+            config: null
+          headers: "Content-Type:application/json"
+          params: ""
+          body:
+            type: json
+            data:
+              - id: body-mixed-business
+                key: ""
+                type: text
+                value: '{"stage":"mixed_business","ticket":"{{#n_mixed_doc.body#}}"}'
+          retry_config:
+            retry_enabled: true
+            max_retries: 1
+            retry_interval: 200
+      - id: n_merge
+        type: custom
+        width: 248
+        height: 140
+        position: { x: 1490, y: 250 }
+        positionAbsolute: { x: 1490, y: 250 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: variable-aggregator
+          title: 汇集阶段凭证
+          desc: 只取实际执行分支返回的下一步凭证；未执行分支为空，不影响汇合。
+          selected: false
+          output_type: string
+          variables:
+            - [n_doc, body]
+            - [n_graph, body]
+            - [n_business, body]
+            - [n_mixed_business, body]
+          advanced_settings: null
+      - id: n_rank
+        type: custom
+        width: 248
+        height: 124
+        position: { x: 1780, y: 250 }
+        positionAbsolute: { x: 1780, y: 250 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: http-request
+          title: 证据排序
+          desc: 复用 MES 既有重排策略；业务纯表格分支返回「无需重排」，策略写入 MES 轨迹。
+          selected: false
+          method: post
+          url: "{{#env.mes_callback_url#}}"
+          authorization:
+            type: no-auth
+            config: null
+          headers: "Content-Type:application/json"
+          params: ""
+          body:
+            type: json
+            data:
+              - id: body-rank
+                key: ""
+                type: text
+                value: '{"stage":"rank","ticket":"{{#n_merge.output#}}"}'
+          retry_config:
+            retry_enabled: true
+            max_retries: 1
+            retry_interval: 200
+      - id: n_generate
+        type: custom
+        width: 248
+        height: 124
+        position: { x: 2070, y: 250 }
+        positionAbsolute: { x: 2070, y: 250 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: http-request
+          title: 回答生成
+          desc: 生成沿用 MES 现有本地模型、已授权外部 API、仅检索或规则表格路径；Dify 只调度该阶段。
+          selected: false
+          method: post
+          url: "{{#env.mes_callback_url#}}"
+          authorization:
+            type: no-auth
+            config: null
+          headers: "Content-Type:application/json"
+          params: ""
+          body:
+            type: json
+            data:
+              - id: body-generate
+                key: ""
+                type: text
+                value: '{"stage":"generate","ticket":"{{#n_rank.body#}}"}'
+          retry_config:
+            retry_enabled: true
+            max_retries: 1
+            retry_interval: 200
+      - id: n_citations
+        type: custom
+        width: 248
+        height: 124
+        position: { x: 2360, y: 250 }
+        positionAbsolute: { x: 2360, y: 250 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: http-request
+          title: 引用整理
+          desc: 为证据分配稳定引用编号，并整理为可点回来源的引用；业务表格保持原始口径。
+          selected: false
+          method: post
+          url: "{{#env.mes_callback_url#}}"
+          authorization:
+            type: no-auth
+            config: null
+          headers: "Content-Type:application/json"
+          params: ""
+          body:
+            type: json
+            data:
+              - id: body-citations
+                key: ""
+                type: text
+                value: '{"stage":"citations","ticket":"{{#n_generate.body#}}"}'
+          retry_config:
+            retry_enabled: true
+            max_retries: 1
+            retry_interval: 200
+      - id: n_final
+        type: custom
+        width: 248
+        height: 124
+        position: { x: 2650, y: 250 }
+        positionAbsolute: { x: 2650, y: 250 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: http-request
+          title: 完成回执
+          desc: MES 生成本轮专用完成回执；只有回执与运行编号同时校验通过，MES 才标注「本轮由 Dify 编排」。
+          selected: false
+          method: post
+          url: "{{#env.mes_callback_url#}}"
+          authorization:
+            type: no-auth
+            config: null
+          headers: "Content-Type:application/json"
+          params: ""
+          body:
+            type: json
+            data:
+              - id: body-final
+                key: ""
+                type: text
+                value: '{"stage":"finalize","ticket":"{{#n_citations.body#}}"}'
+          retry_config:
+            retry_enabled: true
+            max_retries: 1
+            retry_interval: 200
+      - id: n_end
+        type: custom
+        width: 248
+        height: 124
+        position: { x: 2940, y: 250 }
+        positionAbsolute: { x: 2940, y: 250 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: end
+          title: 返回执行回执
+          desc: 只回传完成回执、分支标识与末步状态码；答案、引用与表格仍由 MES 返回前端。
+          selected: false
+          outputs:
+            - variable: receipt
+              value_selector: [n_final, body]
+            - variable: route
+              value_selector: [n_start, route]
+            - variable: callback_status
+              value_selector: [n_final, status_code]
+    viewport: { x: 0, y: 120, zoom: 0.55 }

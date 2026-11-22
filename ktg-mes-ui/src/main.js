@@ -9,6 +9,7 @@ import '@/assets/styles/index.scss' // global css
 import '@/assets/styles/ruoyi.scss' // ruoyi css
 import '@/assets/styles/mes-theme.scss' // 红外测温枪MES 主题（最后引入，覆盖默认样式）
 import '@/assets/styles/zen.scss' // 日式禅意主题（仅 .zen-page / .zen-login 生效）
+import '@/assets/styles/mes-buttons.scss'
 import '../public/print-lock.css'
 
 import App from './App'
@@ -29,6 +30,8 @@ import { formatDate} from './utils/dateUtils';
 import Pagination from "@/components/Pagination";
 // 自定义表格工具组件
 import RightToolbar from "@/components/RightToolbar"
+// 列表页统一查询区
+import QueryBar from "@/components/QueryBar"
 // 富文本组件
 import Editor from "@/components/Editor"
 // 文件上传组件
@@ -69,6 +72,7 @@ Vue.prototype.formatDate = formatDate
 Vue.component('DictTag', DictTag)
 Vue.component('Pagination', Pagination)
 Vue.component('RightToolbar', RightToolbar)
+Vue.component('QueryBar', QueryBar)
 Vue.component('Editor', Editor)
 Vue.component('FileUpload', FileUpload)
 Vue.component('ImageUpload', ImageUpload)

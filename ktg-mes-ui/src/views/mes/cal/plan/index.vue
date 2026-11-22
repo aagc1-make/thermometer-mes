@@ -1,16 +1,15 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="班组类型" prop="calendarType">
-        <el-select v-model="queryParams.calendarType" placeholder="请选择班组类型">
-          <el-option
-            v-for="dict in dict.type.mes_calendar_type"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
+    <h1 class="mes-page-heading">排班计划</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="68px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="计划编号" prop="planCode">
         <el-input
           v-model="queryParams.planCode"
@@ -35,19 +34,27 @@
           placeholder="请选择开始日期">
         </el-date-picker>
       </el-form-item>
-      <el-form-item label="结束日期" prop="endDate">
-        <el-date-picker clearable
-          v-model="queryParams.endDate"
-          type="date"
-          value-format="yyyy-MM-dd"
-          placeholder="请选择结束日期">
-        </el-date-picker>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="班组类型" prop="calendarType">
+          <el-select v-model="queryParams.calendarType" placeholder="请选择班组类型">
+            <el-option
+              v-for="dict in dict.type.mes_calendar_type"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="结束日期" prop="endDate">
+          <el-date-picker clearable
+            v-model="queryParams.endDate"
+            type="date"
+            value-format="yyyy-MM-dd"
+            placeholder="请选择结束日期">
+          </el-date-picker>
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -61,7 +68,7 @@
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -72,7 +79,7 @@
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"
@@ -136,7 +143,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['mes:cal:calplan:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

@@ -1,24 +1,17 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="82px">
+    <h1 class="mes-page-heading">库存流水</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="82px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="物料编码" prop="itemCode">
         <el-input v-model="queryParams.itemCode" placeholder="请输入物料编码" clearable @keyup.enter.native="handleQuery" />
-      </el-form-item>
-      <el-form-item label="物料名称" prop="itemName">
-        <el-input v-model="queryParams.itemName" placeholder="请输入物料名称" clearable @keyup.enter.native="handleQuery" />
-      </el-form-item>
-      <el-form-item label="批次号" prop="batchCode">
-        <el-input v-model="queryParams.batchCode" placeholder="请输入批次号" clearable @keyup.enter.native="handleQuery" />
-      </el-form-item>
-      <el-form-item label="仓库" prop="warehouseCode">
-        <el-select v-model="queryParams.warehouseCode" placeholder="请选择仓库" clearable>
-          <el-option
-            v-for="w in warehouseOptions"
-            :key="w.warehouseCode"
-            :label="w.warehouseName"
-            :value="w.warehouseCode"
-          />
-        </el-select>
       </el-form-item>
       <el-form-item label="单据类型" prop="transactionType">
         <el-select v-model="queryParams.transactionType" placeholder="请选择单据类型" clearable>
@@ -33,27 +26,41 @@
       <el-form-item label="单据编号" prop="sourceDocCode">
         <el-input v-model="queryParams.sourceDocCode" placeholder="请输入来源单据编号" clearable @keyup.enter.native="handleQuery" />
       </el-form-item>
-      <el-form-item label="变动日期">
-        <el-date-picker
-          v-model="dateRange"
-          style="width: 240px"
-          value-format="yyyy-MM-dd HH:mm:ss"
-          type="daterange"
-          range-separator="-"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          :default-time="['00:00:00', '23:59:59']"
-        ></el-date-picker>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="物料名称" prop="itemName">
+          <el-input v-model="queryParams.itemName" placeholder="请输入物料名称" clearable @keyup.enter.native="handleQuery" />
+        </el-form-item>
+        <el-form-item label="批次号" prop="batchCode">
+          <el-input v-model="queryParams.batchCode" placeholder="请输入批次号" clearable @keyup.enter.native="handleQuery" />
+        </el-form-item>
+        <el-form-item label="仓库" prop="warehouseCode">
+          <el-select v-model="queryParams.warehouseCode" placeholder="请选择仓库" clearable>
+            <el-option
+              v-for="w in warehouseOptions"
+              :key="w.warehouseCode"
+              :label="w.warehouseName"
+              :value="w.warehouseCode"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="变动日期">
+          <el-date-picker
+            v-model="dateRange"
+            style="width: 240px"
+            value-format="yyyy-MM-dd HH:mm:ss"
+            type="daterange"
+            range-separator="-"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            :default-time="['00:00:00', '23:59:59']"
+          ></el-date-picker>
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"

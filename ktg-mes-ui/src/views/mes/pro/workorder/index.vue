@@ -1,87 +1,78 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="工单编码" prop="workorderCode">
+    <h1 class="mes-page-heading">生产工单</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="68px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
+      <el-form-item label="工单" prop="workorderCode">
         <el-input
           v-model="queryParams.workorderCode"
-          placeholder="请输入工单编码"
+          placeholder="编码或名称"
           clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="工单名称" prop="workorderName">
-        <el-input
-          v-model="queryParams.workorderName"
-          placeholder="请输入工单名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="来源单据" prop="sourceCode">
-        <el-input
-          v-model="queryParams.sourceCode"
-          placeholder="请输入来源单据"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-
-      <el-form-item label="产品编号" prop="productCode">
-        <el-input
-          v-model="queryParams.productCode"
-          placeholder="请输入产品编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="产品名称" prop="productName">
-        <el-input
-          v-model="queryParams.productName"
-          placeholder="请输入产品名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-
-      <el-form-item label="客户编码" prop="clientCode">
-        <el-input
-          v-model="queryParams.clientCode"
-          placeholder="请输入客户编码"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="客户名称" prop="clientName">
-        <el-input
-          v-model="queryParams.clientName"
-          placeholder="请输入客户名称"
-          clearable
+          style="width: 260px"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
       <el-form-item label="工单类型" prop="workorderType">
-        <el-input
-          v-model="queryParams.workorderType"
-          placeholder="请选择工单类型"
-          clearable
-          @keyup.enter.native="handleQuery"
+        <el-select v-model="queryParams.workorderType" placeholder="全部类型" clearable style="width: 150px">
+          <el-option
+            v-for="dict in dict.type.mes_workorder_type"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="需求日期" prop="requestDateRange">
+        <el-date-picker
+          v-model="queryParams.requestDateRange"
+          type="daterange"
+          value-format="yyyy-MM-dd"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          unlink-panels
+          style="width: 280px"
         />
       </el-form-item>
-      <el-form-item label="需求日期" prop="requestDate">
-        <el-date-picker clearable
-                        v-model="queryParams.requestDate"
-                        type="date"
-                        value-format="yyyy-MM-dd"
-                        placeholder="请选择需求日期">
-        </el-date-picker>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="客户" prop="clientCode">
+          <el-input
+            v-model="queryParams.clientCode"
+            placeholder="编码或名称"
+            clearable
+            style="width: 240px"
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="来源单据" prop="sourceCode">
+          <el-input
+            v-model="queryParams.sourceCode"
+            placeholder="单号"
+            clearable
+            style="width: 200px"
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="产品" prop="productCode">
+          <el-input
+            v-model="queryParams.productCode"
+            placeholder="编号或名称"
+            clearable
+            style="width: 240px"
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
-    <el-row :gutter="10" class="mb8">
+    <el-row class="mes-list-actions">
       <el-col :span="1.5">
         <el-button
           type="primary"
@@ -93,8 +84,7 @@
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
-          type="warning"
+        <el-button class="mes-action--export"
           plain
           icon="el-icon-download"
           size="mini"
@@ -102,8 +92,8 @@
           v-hasPermi="['mes:pro:workorder:export']"
         >导出</el-button>
       </el-col>
-      <el-col :span="1.5">
-        <el-button
+      <div class="wo-actions-tail">
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -111,12 +101,16 @@
           @click="openChainCleanup"
           v-hasPermi="['mes:pro:workorder:remove']"
         >清理贯通单据</el-button>
-      </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+        <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+      </div>
     </el-row>
 
-    <el-table
+    <el-alert v-if="listLoadError" title="工单加载失败" type="error" :closable="false" show-icon>
+      <el-button type="text" @click="getList">重新加载</el-button>
+    </el-alert>
+    <el-table v-else
       v-loading="loading"
+      :empty-text="loading ? '正在加载工单' : '未查询到工单'"
       :data="workorderList"
       row-key="workorderId"
       default-expand-all
@@ -132,7 +126,7 @@
           >{{scope.row.workorderCode}}</el-button>
         </template>
       </el-table-column>
-      <el-table-column label="工单名称" width="200" align="center" prop="workorderName" :show-overflow-tooltip="true"/>
+      <el-table-column label="工单名称" width="200" prop="workorderName" :show-overflow-tooltip="true"/>
       <el-table-column label="工单类型" align="center" prop="workorderType" >
         <template slot-scope="scope">
           <dict-tag :options="dict.type.mes_workorder_type" :value="scope.row.workorderType"/>
@@ -145,11 +139,11 @@
       </el-table-column>
       <el-table-column label="订单编号" width="140" align="center" prop="sourceCode" />
       <el-table-column label="产品编号" width="120" align="center" prop="productCode" />
-      <el-table-column label="产品名称" width="200" align="center" prop="productName" :show-overflow-tooltip="true"/>
+      <el-table-column label="产品名称" width="200" prop="productName" :show-overflow-tooltip="true"/>
       <el-table-column label="规格型号" align="center" prop="productSpc" :show-overflow-tooltip="true"/>
       <el-table-column label="单位" align="center" prop="unitName" />
-      <el-table-column label="工单数量" align="center" prop="quantity" />
-      <el-table-column label="已生产数量" align="center" width="100px" prop="quantityProduced" />
+      <el-table-column label="工单数量" align="right" min-width="96" prop="quantity" />
+      <el-table-column label="已生产数量" align="right" width="112" prop="quantityProduced" />
       <el-table-column label="客户编码" align="center" prop="clientCode" />
       <el-table-column label="客户名称" align="center" prop="clientName" :show-overflow-tooltip="true"/>
       <el-table-column label="需求日期" align="center" prop="requestDate" width="180">
@@ -188,7 +182,7 @@
             @click="handleFinish(scope.row)"
             v-hasPermi="['mes:pro:workorder:update']"
           >完成</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-circle-close"
@@ -196,7 +190,7 @@
             @click="handleCancel(scope.row)"
             v-hasPermi="['mes:pro:workorder:update']"
           >取消</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -214,7 +208,7 @@
       </el-table-column>
     </el-table>
     <pagination
-      v-show="total>0"
+      v-show="total>0 && !listLoadError"
       :total="total"
       :page.sync="queryParams.pageNum"
       :limit.sync="queryParams.pageSize"
@@ -223,7 +217,7 @@
 
     <!-- 添加或修改生产工单对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="960px" @close="cancel" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+      <el-form ref="form" class="workorder-form mes-document-form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="16">
             <el-row>
@@ -232,12 +226,11 @@
                   <el-input v-model="form.workorderCode" placeholder="请输入工单编号" />
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col v-if="optType != 'view' && form.status =='PREPARE'" :span="8">
                 <el-form-item  label-width="80">
                   <el-switch v-model="autoGenFlag"
-                             active-color="#13ce66"
                              active-text="自动生成"
-                             @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
+                             @change="handleAutoGenChange(autoGenFlag)">
                   </el-switch>
                 </el-form-item>
               </el-col>
@@ -289,7 +282,7 @@
               </el-col>
             </el-row>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="8" class="workorder-form__barcode">
             <BarcodeImg ref="barcodeImg" :bussinessId="form.workorderId" :bussinessCode="form.workorderCode" barcodeType="WORKORDER"></BarcodeImg>
           </el-col>
         </el-row>
@@ -389,11 +382,12 @@
           <Workorderbom ref="bomlist" :optType="optType" :workorder="form" @handleAddSub="handleSubAdd" @handleAddSubBatch="handleSubAddBatch" ></Workorderbom>
         </el-tab-pane>
         <el-tab-pane label="物料需求" name="item">
+          <shortage-assistant v-if="open" :key="form.workorderId" :workorder-id="form.workorderId" />
           <WorkorderItemList ref="itemlist"  :workorder="form" :itemStatus="itemStatus"></WorkorderItemList>
         </el-tab-pane>
       </el-tabs>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
+        <el-button type="primary" :loading="saving" @click="submitForm" v-if="form.status =='PREPARE' && optType !='view' ">{{ saving ? '保存中' : '保存' }}</el-button>
         <el-button type="success" @click="handleConfirm" v-if="form.status =='PREPARE' && optType !='view'  && form.workorderId !=null">确 认</el-button>
         <el-button @click="cancel">关 闭</el-button>
       </div>
@@ -417,7 +411,7 @@
           @keyup.enter.native="loadChainCandidates"
         />
         <el-checkbox v-model="chainQuery.onlyChain">只看贯通标记（备注含“全流程贯通”）</el-checkbox>
-        <el-button size="mini" type="primary" icon="el-icon-search" @click="loadChainCandidates">查询</el-button>
+        <el-button class="mes-action--query" size="mini" type="primary" icon="el-icon-search" @click="loadChainCandidates">查询</el-button>
         <el-button size="mini" icon="el-icon-refresh" @click="resetChainFilter">重置</el-button>
       </div>
       <el-table
@@ -487,7 +481,7 @@
           :disabled="!chainSelected.length || chainLoading"
           @click="handleChainPreview"
         >预览</el-button>
-        <el-button
+        <el-button class="mes-action--destructive"
           size="mini"
           type="danger"
           icon="el-icon-delete"
@@ -508,6 +502,7 @@ import pipelineWorkorderContext from '@/mixins/pipelineWorkorderContext'
 import { listWorkorder, getWorkorder, delWorkorder, addWorkorder, updateWorkorder ,dofinish ,doCancel, submitSubWorkorderBatch} from "@/api/mes/pro/workorder";
 import { listChainCandidates, previewChainCleanup, executeChainCleanup } from "@/api/mes/pro/chainCleanup";
 import Workorderbom from "./bom/bom.vue";
+import ShortageAssistant from "./ShortageAssistant.vue";
 import WorkorderItemList from "./items/item.vue";
 import ItemSelect  from "@/components/itemSelect/single.vue";
 import ClientSelect from "@/components/clientSelect/single.vue";
@@ -527,6 +522,7 @@ export default {
     ClientSelect,
     VendorSelect,
     Workorderbom,
+    ShortageAssistant,
     WorkorderItemList,
     BarcodeImg
   },
@@ -547,6 +543,8 @@ export default {
       optType: undefined,
       // 遮罩层
       loading: true,
+      listLoadError: false,
+      saving: false,
       // 显示搜索条件
       showSearch: true,
       // 非单个禁用
@@ -584,6 +582,8 @@ export default {
         clientCode: null,
         clientName: null,
         requestDate: null,
+        // 需求日期区间：[起始, 结束]，提交时拆成 requestDateBegin / requestDateEnd
+        requestDateRange: [],
         parentId: null,
         ancestors: null,
         status: null,
@@ -652,12 +652,22 @@ export default {
         this.itemStatus = false
       }
     },
+    /** 组装后台查询参数：区间数组不直接透传，拆成起止两个参数 */
+    buildQuery() {
+      const { requestDateRange, ...rest } = this.queryParams;
+      const [requestDateBegin, requestDateEnd] = Array.isArray(requestDateRange) ? requestDateRange : [];
+      return { ...rest, requestDateBegin: requestDateBegin || null, requestDateEnd: requestDateEnd || null };
+    },
     /** 查询生产工单列表 */
     getList() {
+      this.listLoadError = false;
       this.loading = true;
-      listWorkorder(this.queryParams).then(response => {
+      listWorkorder(this.buildQuery()).then(response => {
         this.workorderList = this.handleTree(response.rows, "workorderId", "parentId");
         this.total = response.total;
+      }).catch(() => {
+        this.listLoadError = true;
+      }).finally(() => {
         this.loading = false;
       });
     },
@@ -742,6 +752,7 @@ export default {
     },
     /** 搜索按钮操作 */
     handleQuery() {
+      this.queryParams.pageNum = 1;
       this.getList();
     },
     /** 重置按钮操作 */
@@ -851,22 +862,24 @@ export default {
     },
     /** 提交按钮 */
     submitForm() {
+      if (this.saving) return;
       this.$refs["form"].validate(valid => {
-        if (valid) {
+        if (valid && !this.saving) {
+          this.saving = true;
           if (this.form.workorderId != null) {
             updateWorkorder(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               //this.open = false;
               this.$refs["bomlist"].getList();
               this.getList();
-            });
+            }).catch(() => {}).finally(() => { this.saving = false; });
           } else {
             addWorkorder(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               //this.open = false;
               this.form.workorderId = response.data;
               this.getList();
-            });
+            }).catch(() => {}).finally(() => { this.saving = false; });
           }
         }
       });
@@ -893,7 +906,7 @@ export default {
     /** 导出按钮操作 */
     handleExport() {
       this.download('mes/pro/workorder/export', {
-        ...this.queryParams
+        ...this.buildQuery()
       }, `workorder_${new Date().getTime()}.xlsx`)
     },
     handleConfirm(){
@@ -1029,6 +1042,24 @@ export default {
 </script>
 
 <style scoped>
+@media (max-width: 767px) {
+  .workorder-form ::v-deep .el-row > .el-col {
+    width: 100%;
+  }
+  .workorder-form ::v-deep .el-input-number,
+  .workorder-form ::v-deep .el-date-editor,
+  .workorder-form ::v-deep .el-select {
+    width: 100%;
+  }
+  .workorder-form__barcode ::v-deep .barcodeClass {
+    width: 112px;
+    height: 112px;
+    margin-bottom: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+  }
+}
+
 .chain-clean__filter {
   display: flex;
   align-items: center;
@@ -1040,24 +1071,31 @@ export default {
   margin-top: 12px;
   padding: 12px 14px;
   border-radius: 8px;
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
+  background: var(--color-table-head);
+  border: 1px solid var(--color-border);
 }
 .chain-clean__summary {
   margin: 0 0 8px;
   font-size: 13px;
   line-height: 1.7;
-  color: #1f2937;
+  color: var(--color-text);
 }
 .chain-clean__warn {
   margin: 6px 0 0;
   font-size: 12px;
-  color: #b45309;
+  color: var(--color-warning);
 }
 .chain-clean__confirm {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-top: 12px;
+}
+
+.wo-actions-tail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
 }
 </style>

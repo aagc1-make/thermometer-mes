@@ -1,6 +1,23 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
+    <h1 class="mes-page-heading">生产报工</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
+      <el-form-item label="生产工单编号" prop="workorderCode">
+        <el-input
+          v-model="queryParams.workorderCode"
+          placeholder="请输入生产工单编号"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
       <el-form-item label="报工类型" prop="feedbackType">
         <el-select v-model="queryParams.feedbackType" placeholder="请选择报工类型" clearable>
           <el-option
@@ -10,54 +27,6 @@
             :value="dict.value"
           />
         </el-select>
-      </el-form-item>
-      <el-form-item label="工作站名称" prop="workstationName">
-        <el-input
-          v-model="queryParams.workstationName"
-          placeholder="请输入工作站名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="生产工单编号" prop="workorderCode">
-        <el-input
-          v-model="queryParams.workorderCode"
-          placeholder="请输入生产工单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="产品物料编码" prop="itemCode">
-        <el-input
-          v-model="queryParams.itemCode"
-          placeholder="请输入产品物料编码"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="产品物料名称" prop="itemName">
-        <el-input
-          v-model="queryParams.itemName"
-          placeholder="请输入产品物料名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="报工人" prop="userName">
-        <el-input
-          v-model="queryParams.userName"
-          placeholder="请输入报工人名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="记录人" prop="recordUser">
-        <el-input
-          v-model="queryParams.recordUser"
-          placeholder="请输入记录人"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
@@ -69,11 +38,49 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="工作站名称" prop="workstationName">
+          <el-input
+            v-model="queryParams.workstationName"
+            placeholder="请输入工作站名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="产品物料编码" prop="itemCode">
+          <el-input
+            v-model="queryParams.itemCode"
+            placeholder="请输入产品物料编码"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="产品物料名称" prop="itemName">
+          <el-input
+            v-model="queryParams.itemName"
+            placeholder="请输入产品物料名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="报工人" prop="userName">
+          <el-input
+            v-model="queryParams.userName"
+            placeholder="请输入报工人名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="记录人" prop="recordUser">
+          <el-input
+            v-model="queryParams.recordUser"
+            placeholder="请输入记录人"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
@@ -97,7 +104,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -164,7 +171,7 @@
             v-hasPermi="['mes:pro:feedback:edit']"
             v-if="scope.row.status =='PREPARE'"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -363,8 +370,8 @@
       </el-tabs>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
-        <el-button type="primary" @click="handleSubmit" v-if="form.status =='PREPARE' && optType !='view' && form.recordId !=null ">提交审批</el-button>
-        <el-button type="success" @click="approve" v-if="form.status =='APPROVING'  && form.recordId !=null && form.recordUser == user.userName">审批通过</el-button>
+        <el-button class="mes-action--review" type="primary" @click="handleSubmit" v-if="form.status =='PREPARE' && optType !='view' && form.recordId !=null ">提交审批</el-button>
+        <el-button class="mes-action--execute" type="success" @click="approve" v-if="form.status =='APPROVING'  && form.recordId !=null && form.recordUser == user.userName">审批通过</el-button>
         <el-button type="danger"  @click="handleReject" v-if="form.status =='APPROVING'  && form.recordId !=null && form.recordUser == user.userName">审批不通过</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>

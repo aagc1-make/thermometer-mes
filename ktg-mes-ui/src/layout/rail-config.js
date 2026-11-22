@@ -8,7 +8,7 @@
  * 字段：
  *   key      唯一标识（用于选中态）
  *   title    左栏文字
- *   icon     element-ui 图标类名
+ *   icon     导航 SVG 名称
  *   roots    归属该域的顶级路由 path 前缀（对应 sys_menu 顶级目录的 path）
  *   groups   右栏母目录分组：[组名, 该组包含的路由 path 片段]
  */
@@ -31,14 +31,14 @@ export const railDomains = [
   {
     key: 'home',
     title: '首页',
-    icon: 'el-icon-house',
+    icon: 'nav-home',
     roots: ['/index'],
     groups: []
   },
   {
     key: 'md',
     title: '主数据',
-    icon: 'el-icon-files',
+    icon: 'nav-database',
     roots: ['/mes/md'],
     groups: [
       ['物料资料', ['mditem', 'itemtype', 'unitmeasure']],
@@ -49,7 +49,7 @@ export const railDomains = [
   {
     key: 'wm',
     title: '仓储',
-    icon: 'el-icon-box',
+    icon: 'nav-building-warehouse',
     roots: ['/mes/wm'],
     groups: [
       ['库存管理', ['wmstock', 'transaction', 'batch']],
@@ -62,7 +62,7 @@ export const railDomains = [
   {
     key: 'pro',
     title: '生产',
-    icon: 'el-icon-s-data',
+    icon: 'nav-building-factory-2',
     roots: ['/mes/pro'],
     groups: [
       ['驾驶舱', ['dashboard']],
@@ -74,7 +74,7 @@ export const railDomains = [
   {
     key: 'qc',
     title: '质量',
-    icon: 'el-icon-s-claim',
+    icon: 'nav-shield-check',
     roots: ['/mes/qc'],
     groups: [
       ['质量基础', ['qcindex', 'qctemplate', 'qcdefect']],
@@ -85,7 +85,7 @@ export const railDomains = [
   {
     key: 'dv',
     title: '设备',
-    icon: 'el-icon-s-platform',
+    icon: 'nav-device-desktop-cog',
     roots: ['/mes/dv', '/tm'],
     groups: [
       ['设备台账', ['machinerytype', 'machinery']],
@@ -97,7 +97,7 @@ export const railDomains = [
   {
     key: 'cal',
     title: '班组排班',
-    icon: 'el-icon-user',
+    icon: 'nav-calendar-time',
     roots: ['/cal'],
     groups: [
       ['班组与人员', ['team']],
@@ -107,7 +107,7 @@ export const railDomains = [
   {
     key: 'sys',
     title: '系统',
-    icon: 'el-icon-s-tools',
+    icon: 'nav-settings',
     roots: ['/system', '/monitor', '/tool', '/user', '/report', '/print', '/iot'],
     groups: [
       ['用户权限', ['user', 'role', 'menu', 'dept', 'post']],
@@ -119,10 +119,11 @@ export const railDomains = [
   {
     key: 'ai',
     title: '智能助手',
-    icon: 'el-icon-chat-dot-round',
+    icon: 'nav-message-chatbot',
     roots: ['/mes/ai'],
     groups: [
-      ['智能问答', ['chat']]
+      ['智能问答', ['chat', 'evaluation']],
+      ['知识库', ['knowledge', 'graph']]
     ]
   }
 ]

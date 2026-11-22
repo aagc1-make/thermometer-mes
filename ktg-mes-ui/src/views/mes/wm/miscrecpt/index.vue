@@ -1,6 +1,15 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
+    <h1 class="mes-page-heading">杂项入库</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="入库单编号" prop="recptCode">
         <el-input
           v-model="queryParams.recptCode"
@@ -9,30 +18,8 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="入库单名称" prop="recptName">
-        <el-input
-          v-model="queryParams.recptName"
-          placeholder="请输入杂项入库单名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="事务类型" prop="miscType">
         <el-select v-model="queryParams.miscType" placeholder="请选择杂项事务类型" clearable>
-          <el-option label="请选择字典生成" value="" />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="来源单据编号" prop="sourceDocCode">
-        <el-input
-          v-model="queryParams.sourceDocCode"
-          placeholder="请输入来源单据编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="来源单据类型" prop="sourceDocType">
-        <el-select v-model="queryParams.sourceDocType" placeholder="请选择来源单据类型" clearable>
           <el-option label="请选择字典生成" value="" />
         </el-select>
       </el-form-item>
@@ -54,11 +41,30 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="入库单名称" prop="recptName">
+          <el-input
+            v-model="queryParams.recptName"
+            placeholder="请输入杂项入库单名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="来源单据编号" prop="sourceDocCode">
+          <el-input
+            v-model="queryParams.sourceDocCode"
+            placeholder="请输入来源单据编号"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="来源单据类型" prop="sourceDocType">
+          <el-select v-model="queryParams.sourceDocType" placeholder="请选择来源单据类型" clearable>
+            <el-option label="请选择字典生成" value="" />
+          </el-select>
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -83,7 +89,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -139,7 +145,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['mes:wm:miscrecpt:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -147,7 +153,7 @@
             @click="handleDelete(scope.row)"
             v-hasPermi="['mes:wm:miscrecpt:remove']"
           >删除</el-button>
-          <el-button
+          <el-button class="mes-action--execute"
             size="mini"
             type="text"
             icon="el-icon-video-play"
@@ -255,7 +261,7 @@
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" v-if="form.status =='PREPARE' && optType != 'view'" @click="saveForm">保 存</el-button>
         <el-button type="success" v-if="form.status =='PREPARE' && form.recptId !=null && optType != 'view'" @click="submitForm">提 交</el-button>
-        <el-button type="danger" v-if="form.status =='APPROVED'" @click="cancel">取 消</el-button>
+        <el-button class="mes-action--destructive" type="danger" v-if="form.status =='APPROVED'" @click="cancel">取 消</el-button>
         <el-button @click="close">关 闭</el-button>
       </div>
     </el-dialog>

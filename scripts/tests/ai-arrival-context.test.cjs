@@ -17,9 +17,8 @@ const NOTICE = { noticeId: 31, noticeCode: 'AN20261031003', status: 'PREPARE', v
 const LINE = { noticeId: 31, lineId: 72, itemId: 6, itemCode: 'TG-EL-006', itemName: '电池', unitName: '节', quantityArrival: 10, iqcCheck: 'Y' }
 const created = (notice = NOTICE) => ({ role: 'bot', type: 'arrival', ...notice, finished: true, busy: false, error: '', lines: [{ ...LINE }] })
 
-function chat({ history = [created()], notice = NOTICE, lines = [LINE], inspections = [], receipts = [], denied = [] } = {}) {
+function chat({ history = [created()], notice = NOTICE, lines = [LINE], inspections = [], receipts = [], denied = [], storage = new Map() } = {}) {
   const calls = []
-  const storage = new Map()
   const source = fs.readFileSync('ktg-mes-ui/src/views/mes/ai/index.vue', 'utf8')
   const code = source.match(/<script>([\s\S]*?)<\/script>/)[1]
     .replace(/^import .*$/mg, '').replace('export default', 'component =')
@@ -37,6 +36,7 @@ function chat({ history = [created()], notice = NOTICE, lines = [LINE], inspecti
     throw new Error('Unexpected API: ' + config.url)
   }
   const box = { ...answerRules(), component: null, request, Date, console, setTimeout: () => 1, clearTimeout() {},
+    askBusinessQuestion: async () => ({ data: { mode: 'legacy' } }),
     sessionStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) } }
   vm.createContext(box)
   vm.runInContext(code, box)
@@ -195,6 +195,32 @@ test('恢复会话后仍能指向原单，清空对话后不再沿用旧单号',
   ctx.reset()
   await ctx.route('刚刚的到货通知让我检验一下')
   assert.equal(ctx.messages.at(-1).type, 'ask')
+})
+
+test('新建和恢复最近对话时只使用当前会话的单据上下文', async () => {
+  const storage = new Map()
+  const { ctx } = chat({ storage })
+  ctx.queryMode = 'business'
+  ctx.saveChat()
+  const arrivalChatId = ctx.activeChatId
+  ctx.startNewChat()
+
+  const { ctx: reloaded } = chat({ storage, history: [] })
+  reloaded.restoreChat()
+  await reloaded.route('刚刚的到货通知让我检验一下')
+  assert.equal(reloaded.messages.at(-1).type, 'ask')
+  reloaded.saveChat()
+  const otherChatId = reloaded.activeChatId
+
+  reloaded.openChat(arrivalChatId)
+  assert.equal(reloaded.queryMode, 'business')
+  await reloaded.route('刚刚的到货通知让我检验一下')
+  assert.equal(reloaded.messages.at(-1).notice.noticeCode, NOTICE.noticeCode)
+
+  reloaded.reset()
+  reloaded.openChat(otherChatId)
+  assert.equal(reloaded.messages.at(-1).type, 'ask')
+  assert.equal(reloaded.recentChats.length, 0)
 })
 
 test('送检追问不触发新增或提交，打开原单携带确切ID', async () => {

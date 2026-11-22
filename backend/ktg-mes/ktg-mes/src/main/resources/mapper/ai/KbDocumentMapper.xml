@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ktg.mes.ai.mapper.KbDocumentMapper">
+    <resultMap id="chunk" type="com.ktg.mes.ai.domain.KbDocument$Chunk">
+        <constructor>
+            <arg column="chunk_index" javaType="_int"/>
+            <arg column="page_no" javaType="java.lang.Integer"/>
+            <arg column="section_label" javaType="string"/>
+            <arg column="content" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findLibrary" resultType="com.ktg.mes.ai.domain.KbDocument$Library">
+        select l.library_id as libraryId, l.dept_id as deptId, l.name,
+               (#{admin} or coalesce(l.owner_id = #{userId}, 0)) as maintain
+        from kb_library l
+        join sys_dept d on d.dept_id = l.dept_id and d.del_flag = '0' and d.status = '0'
+        join sys_user u on u.user_id = #{userId} and u.del_flag = '0' and u.status = '0'
+        where l.library_id = #{libraryId} and l.status = 'enabled'
+          and (#{admin} or u.dept_id = l.dept_id)
+        <if test="lock">for update</if>
+    </select>
+
+    <select id="lockLibrary" resultType="long">
+        select library_id from kb_library where library_id = #{libraryId} and dept_id = #{deptId} for update
+    </select>
+
+    <sql id="documentScope">
+        d.dept_id = #{scope.deptId} and d.library_id = #{scope.libraryId} and d.deleted_at is null
+    </sql>
+
+    <sql id="documentRows">
+        select d.doc_id as docId, d.library_id as libraryId, d.dept_id as deptId, d.title, d.category,
+               d.graph_enabled as graphEnabled, d.current_version as currentVersion, d.update_time as updateTime,
+               active.version_id as currentVersionId, latest.version_id as latestVersionId,
+               latest.version as latestVersion, coalesce(active.filename, latest.filename) as filename,
+               active.chars, parse.status as parseStatus, parse.error as parseError,
+               embedding.status as embedStatus, embedding.error as embedError,
+               graph.status as graphStatus, graph.error as graphError
+        from kb_document d
+        left join kb_document_version active on active.active_doc_id = d.doc_id
+        left join kb_document_version latest on latest.version_id = (
+            select max(v.version_id) from kb_document_version v where v.doc_id = d.doc_id and v.deleted_at is null
+        )
+        left join kb_ingest_task parse on parse.version_id = latest.version_id and parse.stage = 'parse'
+        left join kb_ingest_task embedding on embedding.version_id = active.version_id and embedding.stage = 'embed'
+        left join kb_ingest_task graph on graph.version_id = active.version_id and graph.stage = 'graph'
+    </sql>
+
+    <select id="listDocuments" resultType="com.ktg.mes.ai.domain.KbDocument">
+        <include refid="documentRows"/>
+        where <include refid="documentScope"/>
+        order by d.update_time desc, d.doc_id desc
+    </select>
+
+    <select id="findDocument" resultType="com.ktg.mes.ai.domain.KbDocument">
+        <include refid="documentRows"/>
+        where <include refid="documentScope"/> and d.doc_id = #{docId}
+    </select>
+
+    <select id="findByName" resultType="com.ktg.mes.ai.domain.KbDocument">
+        <include refid="documentRows"/>
+        where <include refid="documentScope"/> and d.title = #{title} and d.category = #{category}
+    </select>
+
+    <select id="countDocuments" resultType="long">
+        select count(*) from kb_document d where <include refid="documentScope"/>
+    </select>
+
+    <select id="countCharacters" resultType="long">
+        select coalesce(sum(v.chars), 0) from kb_document d
+        join kb_document_version v on v.active_doc_id = d.doc_id
+        where <include refid="documentScope"/>
+    </select>
+
+    <select id="activeCharacters" resultType="int">
+        select coalesce(max(chars), 0) from kb_document_version where active_doc_id = #{docId}
+    </select>
+
+    <insert id="insertDocument" useGeneratedKeys="true" keyProperty="docId">
+        insert into kb_document (library_id, dept_id, title, category, graph_enabled)
+        values (#{libraryId}, #{deptId}, #{title}, #{category}, #{graphEnabled})
+    </insert>
+
+    <insert id="insertVersion" useGeneratedKeys="true" keyProperty="versionId">
+        insert into kb_document_version (doc_id, version, filename, size, storage_path, checksum_sha256)
+        values (#{docId}, #{version}, #{filename}, #{size}, '', repeat('0', 64))
+    </insert>
+
+    <update id="saveOriginal">
+        update kb_document_version set storage_path = #{storagePath}, checksum_sha256 = #{checksumSha256}
+        where version_id = #{versionId}
+    </update>
+
+    <insert id="enqueueParse">
+        insert into kb_ingest_task (version_id, stage, status) values (#{versionId}, 'parse', 'pending')
+    </insert>
+
+    <select id="nextPendingVersion" resultType="long">
+        select version_id from kb_ingest_task where stage = 'parse' and status = 'pending'
+        order by task_id limit 1
+    </select>
+
+    <sql id="versionRows">
+        select v.version_id as versionId, d.doc_id as docId, d.library_id as libraryId, d.dept_id as deptId,
+               v.version, v.filename, v.size, coalesce(v.chars, 0) as chars, v.active,
+               v.storage_path as storagePath, d.graph_enabled as graphEnabled,
+               parse.task_id as taskId, parse.status as parseStatus
+        from kb_document_version v
+        join kb_document d on d.doc_id = v.doc_id
+        join kb_ingest_task parse on parse.version_id = v.version_id and parse.stage = 'parse'
+    </sql>
+
+    <select id="findPending" resultType="com.ktg.mes.ai.domain.KbDocument$Version">
+        <include refid="versionRows"/>
+        where v.version_id = #{versionId} and v.deleted_at is null and d.deleted_at is null
+          and parse.status = 'pending'
+    </select>
+
+    <select id="findVersion" resultType="com.ktg.mes.ai.domain.KbDocument$Version">
+        <include refid="versionRows"/>
+        where <include refid="documentScope"/> and v.version_id = #{versionId} and v.deleted_at is null
+    </select>
+
+    <sql id="visibleChunks">
+        from kb_document_chunk c
+        join kb_document_version v on v.version_id = c.version_id and v.deleted_at is null
+        join kb_document d on d.doc_id = c.doc_id and d.deleted_at is null
+        where c.dept_id = #{scope.deptId} and c.library_id = #{scope.libraryId} and c.version_id = #{versionId}
+    </sql>
+
+    <select id="listChunks" resultMap="chunk">
+        select c.chunk_index, c.page_no, c.section_label, c.content
+        <include refid="visibleChunks"/>
+        order by c.chunk_index limit #{limit} offset #{offset}
+    </select>
+
+    <select id="countChunks" resultType="long">
+        select count(*) <include refid="visibleChunks"/>
+    </select>
+
+    <insert id="insertChunks">
+        insert into kb_document_chunk (version_id, doc_id, library_id, dept_id, chunk_index, page_no, section_label, content)
+        values
+        <foreach collection="chunks" item="chunk" separator=",">
+            (#{version.versionId}, #{version.docId}, #{version.libraryId}, #{version.deptId}, #{chunk.chunkIndex},
+             #{chunk.pageNo,jdbcType=INTEGER}, #{chunk.sectionLabel}, #{chunk.content})
+        </foreach>
+    </insert>
+
+    <update id="deactivateVersions">
+        update kb_document_version set active = 0, deactivated_at = now() where doc_id = #{docId} and active = 1
+    </update>
+
+    <update id="publishVersion">
+        update kb_document_version set active = 1, chars = #{chars} where version_id = #{versionId}
+    </update>
+
+    <update id="publishDocument">
+        update kb_document set current_version = #{version}, status = 'parsed' where doc_id = #{docId}
+    </update>
+
+    <update id="finishParse">
+        update kb_ingest_task set status = #{status}, error = #{error,jdbcType=VARCHAR},
+            started_at = coalesce(started_at, now()), finished_at = now()
+        where task_id = #{taskId}
+    </update>
+
+    <update id="retryParse">
+        update kb_ingest_task set status = 'pending', error = null, started_at = null, finished_at = null
+        where version_id = #{versionId} and stage = 'parse' and status = 'failed'
+    </update>
+
+    <delete id="deleteChunks">
+        delete from kb_document_chunk where dept_id = #{scope.deptId} and library_id = #{scope.libraryId}
+          and doc_id = #{docId}
+    </delete>
+
+    <update id="deleteTasks">
+        update kb_ingest_task t join kb_document_version v on v.version_id = t.version_id
+        set t.status = 'failed', t.finished_at = now() where v.doc_id = #{docId} and t.status = 'pending'
+    </update>
+
+    <update id="deleteVersions">
+        update kb_document_version set active = 0, deleted_at = now() where doc_id = #{docId} and deleted_at is null
+    </update>
+
+    <update id="deleteDocument">
+        update kb_document d set d.deleted_at = now(), d.current_version = null, d.status = 'deleted'
+        where <include refid="documentScope"/> and d.doc_id = #{docId}
+    </update>
+
+    <select id="expiredOriginals" resultType="com.ktg.mes.ai.domain.KbDocument$Version">
+        select v.version_id as versionId, v.storage_path as storagePath, d.dept_id as deptId, d.library_id as libraryId
+        from kb_document_version v join kb_document d on d.doc_id = v.doc_id
+        where v.deleted_at &lt; now() - interval 7 day and v.storage_path &lt;&gt; ''
+        order by v.deleted_at limit 100
+    </select>
+
+    <update id="clearOriginal">
+        update kb_document_version set storage_path = '' where version_id = #{versionId} and deleted_at is not null
+    </update>
+</mapper>

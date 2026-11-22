@@ -1,7 +1,8 @@
 <template>
   <div class="navbar">
-    <hamburger v-if="device==='mobile'" id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
+    <hamburger v-if="device==='mobile'" id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container" role="button" tabindex="0" aria-label="菜单" :aria-expanded="sidebar.opened" @keyup.enter.native="toggleSideBar" @keyup.space.native.prevent="toggleSideBar" @toggleClick="toggleSideBar" />
 
+    <brand v-if="$store.state.settings.sidebarLogo" />
     <div v-if="!topNav" class="nav-divider" aria-hidden="true"></div>
     <breadcrumb id="breadcrumb-container" class="breadcrumb-container" v-if="!topNav"/>
     <top-nav id="topmenu-container" class="topmenu-container" v-if="topNav"/>
@@ -31,6 +32,7 @@
           <el-dropdown-item @click.native="setting = true">
             <span>布局设置</span>
           </el-dropdown-item>
+          <li class="el-dropdown-menu__item is-disabled">按钮字体：OPPO Sans 4.0</li>
           <el-dropdown-item divided @click.native="logout">
             <span>退出登录</span>
           </el-dropdown-item>
@@ -48,6 +50,7 @@ import Hamburger from '@/components/Hamburger'
 import Screenfull from '@/components/Screenfull'
 import SizeSelect from '@/components/SizeSelect'
 import Search from '@/components/HeaderSearch'
+import Brand from './Brand'
 
 export default {
   components: {
@@ -56,7 +59,8 @@ export default {
     Hamburger,
     Screenfull,
     SizeSelect,
-    Search
+    Search,
+    Brand
   },
   computed: {
     ...mapGetters([
@@ -109,135 +113,101 @@ export default {
 
 <style lang="scss" scoped>
 .navbar {
-  height: 50px;
-  position: relative;
-  background: #fff;
-  box-shadow: none;
   display: flex;
   align-items: center;
-  padding: 0 14px 0 10px;
-  gap: 10px;
+  gap: 14px;
+  height: var(--mes-header-height);
+  padding: 0 clamp(12px, 1.6vw, 24px);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
 
-  /* 折叠按钮：白透圆角块（图标深蓝灰） */
   .hamburger-container {
-    flex: 0 0 auto;
-    height: 36px;
-    width: 36px;
-    line-height: 36px;
-    text-align: center;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.6);
-    transition: transform 0.2s ease, background 0.2s ease;
-    -webkit-tap-highlight-color: transparent;
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    height: 34px;
+    padding: 0 !important;
+    border-radius: 6px;
+    color: var(--color-text);
+    cursor: pointer;
 
     svg {
-      fill: #3f5170;
-    }
-
-    &:hover {
-      transform: scale(1.06);
-      background: rgba(255, 255, 255, 0.9);
+      fill: currentColor;
     }
   }
 
   .nav-divider {
-    flex: 0 0 auto;
-    width: 1px;
-    height: 22px;
-    background: #c2d1ea;
+    flex: 0 0 1px;
+    height: 20px;
+    background: var(--color-border);
   }
 
-  .breadcrumb-container {
-    flex: 0 1 auto;
+  .breadcrumb-container,
+  .topmenu-container {
+    min-width: 0;
     overflow: hidden;
     white-space: nowrap;
   }
 
-  .topmenu-container {
-    position: absolute;
-    left: 50px;
-  }
-
-  .errLog-container {
-    display: inline-block;
-    vertical-align: top;
-  }
-
   .right-menu {
-    margin-left: auto;
     display: flex;
     align-items: center;
-    height: 100%;
+    gap: 10px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
 
-    &:focus {
-      outline: none;
+  .tool-pill {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .right-menu-item,
+  .avatar-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 6px;
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .avatar-wrapper {
+    gap: 5px;
+
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--color-border);
+      border-radius: 50%;
+      object-fit: cover;
     }
 
-    /* 快捷工具：整体胶囊容器，按钮各自圆形 */
-    .tool-pill {
-      display: flex;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.55);
-      border-radius: 999px;
-      padding: 3px 6px;
-      gap: 2px;
-
-      .right-menu-item {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        padding: 0;
-        border-radius: 50%;
-        font-size: 17px;
-        color: #4b5c7e;
-        vertical-align: baseline;
-
-        &.hover-effect {
-          cursor: pointer;
-          transition: background 0.2s, transform 0.2s;
-
-          &:hover {
-            background: #ffffff;
-            transform: translateY(-1px);
-          }
-        }
-      }
-
-      /* 每个工具按钮 hover 一种柔和色 */
-      .right-menu-item:nth-child(1):hover { color: #5b7fc7; }
-      .right-menu-item:nth-child(2):hover { color: #7fa98b; }
-      .right-menu-item:nth-child(3):hover { color: #c2a17b; }
+    .el-icon-caret-bottom {
+      font-size: 10px;
     }
+  }
 
-    .avatar-container {
-      margin-left: 8px;
-      height: auto;
+  .hamburger-container:hover,
+  .right-menu-item:hover,
+  .avatar-wrapper:hover {
+    color: var(--color-primary);
+    background: var(--color-rail-hover);
+  }
+}
 
-      .avatar-wrapper {
-        margin-top: 0;
-        position: relative;
-        display: flex;
-        align-items: center;
+@media (max-width: 600px) {
+  .navbar {
+    gap: 7px;
 
-        .user-avatar {
-          cursor: pointer;
-          width: 34px;
-          height: 34px;
-          border-radius: 50%;
-          border: 2px solid #ffffff;
-          box-shadow: 0 0 0 2px #b9cbe8, 0 3px 8px rgba(91, 127, 199, 0.22);
-        }
-
-        .el-icon-caret-bottom {
-          cursor: pointer;
-          position: static;
-          margin-left: 5px;
-          font-size: 12px;
-          color: #6d7f9e;
-        }
-      }
+    .nav-divider,
+    .breadcrumb-container {
+      display: none;
     }
   }
 }

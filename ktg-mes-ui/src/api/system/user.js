@@ -70,6 +70,27 @@ export function changeUserStatus(userId, status) {
   })
 }
 
+export function getUserFaceStatus(userId) {
+  return request({
+    url: `/system/user/${userId}/face-status`,
+    method: 'get'
+  })
+}
+
+export function changeUserFaceLogin(userId, enabled) {
+  return request({
+    url: `/system/user/${userId}/face-status?enabled=${enabled}`,
+    method: 'put'
+  })
+}
+
+export function unbindUserFace(userId) {
+  return request({
+    url: `/system/user/${userId}/face-status`,
+    method: 'delete'
+  })
+}
+
 // 查询用户个人信息
 export function getUserProfile() {
   return request({

@@ -1,18 +1,19 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
+    <h1 class="mes-page-heading">采购入库</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="入库单编号" prop="recptCode">
         <el-input
           v-model="queryParams.recptCode"
           placeholder="请输入入库单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="入库单名称" prop="recptName">
-        <el-input
-          v-model="queryParams.recptName"
-          placeholder="请输入入库单名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -25,14 +26,6 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="订单编号" prop="poCode">
-        <el-input
-          v-model="queryParams.poCode"
-          placeholder="请输入订单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="入库日期" prop="recptDate">
         <el-date-picker clearable
           v-model="queryParams.recptDate"
@@ -41,13 +34,27 @@
           placeholder="请选择入库日期">
         </el-date-picker>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="入库单名称" prop="recptName">
+          <el-input
+            v-model="queryParams.recptName"
+            placeholder="请输入入库单名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="订单编号" prop="poCode">
+          <el-input
+            v-model="queryParams.poCode"
+            placeholder="请输入订单编号"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
-    <el-row :gutter="10" class="mb8">
+    <el-row class="mes-list-actions">
       <el-col :span="1.5">
         <el-button
           type="primary"
@@ -70,7 +77,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -81,7 +88,7 @@
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"
@@ -93,8 +100,12 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table
+    <el-alert v-if="listLoadError" title="采购入库单加载失败" type="error" :closable="false" show-icon>
+      <el-button type="text" @click="getList">重新加载</el-button>
+    </el-alert>
+    <el-table v-else
       v-loading="loading"
+      :empty-text="loading ? '正在加载采购入库单' : '未查询到采购入库单'"
       :data="itemrecptList"
       :row-class-name="rowClassName"
       @selection-change="handleSelectionChange"
@@ -136,7 +147,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button
+          <el-button class="mes-action--execute"
             size="mini"
             type="text"
             icon="el-icon-video-play"
@@ -144,7 +155,7 @@
             @click="handleExecute(scope.row)"
             v-hasPermi="['mes:wm:itemrecpt:edit']"
           >执行入库</el-button>
-          <el-button
+          <el-button class="mes-action--execute"
             size="mini"
             type="text"
             icon="el-icon-shopping-cart-full"
@@ -168,7 +179,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['mes:wm:itemrecpt:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -181,7 +192,7 @@
     </el-table>
 
     <pagination
-      v-show="total>0"
+      v-show="total>0 && !listLoadError"
       :total="total"
       :page.sync="queryParams.pageNum"
       :limit.sync="queryParams.pageSize"
@@ -190,7 +201,8 @@
 
     <!-- 添加或修改物料入库单对话框；宽度 1200px 以容纳“来源到货行/检验状态/来料检验单”三列 -->
     <el-dialog :title="title" :visible.sync="open" width="1200px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+      <el-form ref="form" class="mes-document-form" :model="form" :rules="rules" label-width="100px">
+        <h2 class="mes-form-section__title">基本信息</h2>
         <el-row>
           <el-col :span="8">
             <el-form-item label="入库单编号" prop="recptCode">
@@ -276,10 +288,10 @@
           <ItemrecptDetail ref="detail" :recptId="form.recptId" :optType="optType"></ItemrecptDetail>
         </el-card>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="saveForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
-        <el-button type="warning" @click="submitToStock" v-if="form.status =='PREPARE' && form.recptId !=null && optType !='view' ">提 交</el-button>
-        <el-button type="warning" @click="submitToExecute" v-if="form.status =='APPROVING' && form.recptId !=null && optType !='view' ">提 交</el-button>
-        <el-button type="danger" @click="cancel"  v-if="form.status !='PREPARE' && form.status !='FINISHED' && optType !='view' " >取 消</el-button>
+        <el-button type="primary" :loading="saving" @click="saveForm" v-if="form.status =='PREPARE' && optType !='view' ">{{ saving ? '保存中' : '保存' }}</el-button>
+        <el-button class="mes-action--review" type="warning" @click="submitToStock" v-if="form.status =='PREPARE' && form.recptId !=null && optType !='view' ">提 交</el-button>
+        <el-button class="mes-action--execute" type="warning" @click="submitToExecute" v-if="form.status =='APPROVING' && form.recptId !=null && optType !='view' ">提 交</el-button>
+        <el-button class="mes-action--destructive" type="danger" @click="cancel"  v-if="form.status !='PREPARE' && form.status !='FINISHED' && optType !='view' " >取 消</el-button>
         <el-button @click="close">关 闭</el-button>
       </div>
     </el-dialog>
@@ -321,6 +333,8 @@ export default {
       },
       // 遮罩层
       loading: true,
+      listLoadError: false,
+      saving: false,
       // 选中数组
       ids: [],
       // 非单个禁用
@@ -423,6 +437,7 @@ export default {
     },
     /** 查询物料入库单列表 */
     getList() {
+      this.listLoadError = false;
       this.loading = true;
       const sequence = this._receiptRequestSequence = (this._receiptRequestSequence || 0) + 1;
       listItemrecpt(Object.assign({}, this.queryParams)).then(response => {
@@ -430,7 +445,11 @@ export default {
         this.itemrecptList = response.rows;
         this.total = response.total;
         this.loading = false;
-      }).catch(() => { if (sequence === this._receiptRequestSequence) this.loading = false; });
+      }).catch(() => {
+        if (sequence !== this._receiptRequestSequence) return;
+        this.listLoadError = true;
+        this.loading = false;
+      });
     },
     getWarehouseList(){
       getTreeList().then( response =>{
@@ -572,19 +591,21 @@ export default {
     },
     /** 保存按钮 */
     saveForm() {
+      if (this.saving) return;
       this.$refs["form"].validate(valid => {
-        if (valid) {
+        if (valid && !this.saving) {
+          this.saving = true;
           if (this.form.recptId != null) {
             updateItemrecpt(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.getList();
-            });
+            }).catch(() => {}).finally(() => { this.saving = false; });
           } else {
             addItemrecpt(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.form.recptId = response.data.recptId;
               this.getList();
-            });
+            }).catch(() => {}).finally(() => { this.saving = false; });
           }
         }
       });

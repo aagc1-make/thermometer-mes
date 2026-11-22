@@ -46,6 +46,15 @@ public class SysUserFace implements Serializable {
     /** 备注（用途与授权说明） */
     private String remark;
 
+    /** 授权同意时间 */
+    private Date consentAt;
+
+    /** 授权说明版本 */
+    private String consentVersion;
+
+    /** 补充角度序号；主模板为空，补充模板从 1 开始 */
+    private Integer seq;
+
     public Long getUserId() {
         return userId;
     }
@@ -132,5 +141,29 @@ public class SysUserFace implements Serializable {
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public Date getConsentAt() {
+        return consentAt;
+    }
+
+    public void setConsentAt(Date consentAt) {
+        this.consentAt = consentAt;
+    }
+
+    public String getConsentVersion() {
+        return consentVersion;
+    }
+
+    public void setConsentVersion(String consentVersion) {
+        this.consentVersion = consentVersion;
+    }
+
+    public Integer getSeq() {
+        return seq;
+    }
+
+    public void setSeq(Integer seq) {
+        this.seq = seq;
     }
 }

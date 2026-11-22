@@ -57,8 +57,13 @@ export function createDetector(api) {
   return new api.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })
 }
 
-/** 对当前视频帧做一次检测；withDescriptor 为 true 时同时计算 128 维特征 */
-export function detectOnce(api, video, withDescriptor) {
-  const task = api.detectSingleFace(video, createDetector(api)).withFaceLandmarks()
-  return withDescriptor ? task.withFaceDescriptor() : task
+/** 检测取样帧中所有人脸及关键点。 */
+export function detectFaces(api, image) {
+  return api.detectAllFaces(image, createDetector(api)).withFaceLandmarks()
+}
+
+/** 在同一取样帧上沿用原有对齐方法计算特征，兼容已录入的模板。 */
+export async function describeFace(api, image, landmarks) {
+  const [face] = await api.extractFaces(image, [landmarks.align(null, { useDlibAlignment: true })])
+  return api.nets.faceRecognitionNet.computeFaceDescriptor(face)
 }

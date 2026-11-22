@@ -1,24 +1,19 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
+    <h1 class="mes-page-heading">退料检验</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="检验单编号" prop="rqcCode">
         <el-input
           v-model="queryParams.rqcCode"
           placeholder="请输入检验单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-     
-      <el-form-item label="来源单据类型" prop="sourceDocType">
-        <el-select v-model="queryParams.sourceDocType" placeholder="请选择来源单据类型" clearable>
-          <el-option label="请选择字典生成" value="" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="来源单据编号" prop="sourceDocCode">
-        <el-input
-          v-model="queryParams.sourceDocCode"
-          placeholder="请输入来源单据编号"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -31,22 +26,6 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="产品物料名称" prop="itemName">
-        <el-input
-          v-model="queryParams.itemName"
-          placeholder="请输入产品物料名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="批次号" prop="batchCode">
-        <el-input
-          v-model="queryParams.batchCode"
-          placeholder="请输入批次号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="检测结果" prop="checkResult">
         <el-input
           v-model="queryParams.checkResult"
@@ -55,19 +34,46 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="检测人员" prop="nickName">
-        <el-input
-          v-model="queryParams.nickName"
-          placeholder="请输入检测人员"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="来源单据类型" prop="sourceDocType">
+          <el-select v-model="queryParams.sourceDocType" placeholder="请选择来源单据类型" clearable>
+            <el-option label="请选择字典生成" value="" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="来源单据编号" prop="sourceDocCode">
+          <el-input
+            v-model="queryParams.sourceDocCode"
+            placeholder="请输入来源单据编号"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="产品物料名称" prop="itemName">
+          <el-input
+            v-model="queryParams.itemName"
+            placeholder="请输入产品物料名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="批次号" prop="batchCode">
+          <el-input
+            v-model="queryParams.batchCode"
+            placeholder="请输入批次号"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="检测人员" prop="nickName">
+          <el-input
+            v-model="queryParams.nickName"
+            placeholder="请输入检测人员"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -92,7 +98,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -153,7 +159,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['qc:rqc:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

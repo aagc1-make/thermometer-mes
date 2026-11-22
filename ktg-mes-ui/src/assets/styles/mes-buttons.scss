@@ -1,0 +1,191 @@
+@font-face {
+  font-family: "OPPO Sans 4.0";
+  src: url("~@/assets/fonts/oppo/OPPO-Sans-4.0.ttf") format("truetype");
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-button: "OPPO Sans 4.0", var(--font-ui);
+  --button-primary-ink: #173f74;
+  --button-primary-fill: #e0edff;
+  --button-primary-hover: #d0e2fc;
+  --button-primary-edge: #6c8fb9;
+  --button-neutral-ink: #3d4b5b;
+  --button-neutral-fill: #f1f4f7;
+  --button-neutral-hover: #e4eaf1;
+  --button-neutral-edge: #8b99a8;
+  --button-danger-ink: #842f35;
+  --button-danger-fill: #fbe7e9;
+  --button-danger-hover: #f5d7dc;
+  --button-danger-edge: #af6c72;
+  --button-query-ink: #155654;
+  --button-query-fill: #d9f2ee;
+  --button-query-hover: #c9ebe4;
+  --button-query-edge: #57968e;
+  --button-export-ink: #50366f;
+  --button-export-fill: #eee6fa;
+  --button-export-hover: #e3d6f6;
+  --button-export-edge: #947db2;
+  --button-review-ink: #684006;
+  --button-review-fill: #fff0d2;
+  --button-review-hover: #fbe3b5;
+  --button-review-edge: #aa8548;
+  --button-execute-ink: #20563b;
+  --button-execute-fill: #e0f1e6;
+  --button-execute-hover: #d1e9da;
+  --button-execute-edge: #6d9a81;
+  --button-radius: 9px;
+}
+
+.el-button,
+.mes-button {
+  font-family: var(--font-button);
+  letter-spacing: normal;
+}
+
+@mixin button-role($role) {
+  --button-ink: var(--button-#{$role}-ink);
+  --button-fill: var(--button-#{$role}-fill);
+  --button-hover: var(--button-#{$role}-hover);
+  --button-edge: var(--button-#{$role}-edge);
+}
+
+.el-button:not(.el-button--text):not(.is-circle):not(.el-transfer__button),
+.mes-button {
+  @include button-role(neutral);
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--button-edge);
+  border-radius: var(--button-radius);
+  background: var(--button-fill);
+  color: var(--button-ink);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  transition: background-color var(--transition-control), border-color var(--transition-control);
+
+  &:hover:not(.is-disabled):not(:disabled),
+  &:focus:not(.is-disabled):not(:disabled) {
+    background: var(--button-hover);
+    color: var(--button-ink);
+    border-color: var(--button-edge);
+  }
+
+  &:active:not(.is-disabled):not(:disabled) {
+    box-shadow: inset 0 1px 2px rgba(35, 63, 94, .18);
+  }
+
+  &.el-button--primary,
+  &.mes-button--primary {
+    @include button-role(primary);
+    font-weight: 600;
+  }
+
+  &.el-button--danger,
+  &.el-button--danger.is-plain {
+    @include button-role(danger);
+  }
+
+  &.el-button--danger:not(.is-plain) {
+    font-weight: 600;
+  }
+
+  @each $role in query, export, review, execute, neutral {
+    &.mes-action--#{$role} {
+      @include button-role($role);
+      font-weight: if($role == query or $role == execute, 600, 500);
+    }
+  }
+
+  &.mes-action--destructive {
+    @include button-role(danger);
+  }
+
+  &.is-disabled,
+  &:disabled {
+    background: #eef1f4;
+    border-color: #b0bac5;
+    color: #586574;
+    box-shadow: none;
+  }
+
+  &.is-loading:not(.is-disabled) {
+    background: var(--button-fill);
+    border-color: var(--button-edge);
+    color: var(--button-ink);
+    cursor: wait;
+  }
+}
+
+.el-button-group .el-button:not(.el-button--text):not(.is-circle) {
+  &:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+  &:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
+
+.el-input-group__append .el-button:not(.el-button--text):not(.is-circle),
+.el-input-group__prepend .el-button:not(.el-button--text):not(.is-circle) {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--button-primary-ink);
+}
+
+.el-button--text {
+  color: var(--color-primary);
+  &:hover,
+  &:focus { color: var(--color-primary-hover); }
+}
+
+@each $action, $role in (query: query, export: export, review: review, execute: execute, destructive: danger, neutral: neutral) {
+  .el-button--text.mes-action--#{$action}:not(.is-disabled):not(:disabled) {
+    color: var(--button-#{$role}-ink);
+
+    &:hover {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
+}
+
+.el-table .el-button--text {
+  min-height: 28px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  font: 500 13px/20px var(--font-button);
+
+  &.mes-text-danger { color: var(--button-danger-ink); }
+}
+
+.mes-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:disabled { cursor: not-allowed; }
+}
+
+.el-button:focus-visible,
+.mes-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.mes-font-credit {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+

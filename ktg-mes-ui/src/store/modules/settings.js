@@ -1,11 +1,14 @@
 import defaultSettings from '@/settings'
+import palette from '@/assets/styles/element-variables.scss'
 
 const { sideTheme, showSettings, topNav, tagsView, fixedHeader, sidebarLogo, dynamicTitle } = defaultSettings
 
 const storageSetting = JSON.parse(localStorage.getItem('layout-setting')) || ''
 const state = {
   title: '',
-  theme: storageSetting.theme || '#409EFF',
+  theme: !storageSetting.theme || /^#(?:409eff|1890ff)$/i.test(storageSetting.theme)
+    ? palette.theme
+    : storageSetting.theme,
   sideTheme: storageSetting.sideTheme || sideTheme,
   showSettings: showSettings,
   topNav: storageSetting.topNav === undefined ? topNav : storageSetting.topNav,

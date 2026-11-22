@@ -1,26 +1,19 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
+    <h1 class="mes-page-heading">生产领料</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="领料单编号" prop="issueCode">
         <el-input
           v-model="queryParams.issueCode"
           placeholder="请输入领料单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="领料单名称" prop="issueName">
-        <el-input
-          v-model="queryParams.issueName"
-          placeholder="请输入领料单名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="仓库名称" prop="warehouseName">
-        <el-input
-          v-model="queryParams.warehouseName"
-          placeholder="请输入仓库名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -43,11 +36,25 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="领料单名称" prop="issueName">
+          <el-input
+            v-model="queryParams.issueName"
+            placeholder="请输入领料单名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="仓库名称" prop="warehouseName">
+          <el-input
+            v-model="queryParams.warehouseName"
+            placeholder="请输入仓库名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -72,7 +79,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -83,7 +90,7 @@
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"
@@ -153,7 +160,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['mes:wm:issueheader:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -289,8 +296,8 @@
       </el-card>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="saveForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
-        <el-button type="warning" @click="submitToStock" v-if="form.status =='PREPARE' && form.issueId !=null && optType !='view' ">提 交</el-button>
-        <el-button :disabled="picking" @click="submitToExecute" v-if="form.status =='APPROVING' && form.issueId !=null && optType !='view' ">完成手工拣货</el-button>
+        <el-button class="mes-action--review" type="warning" @click="submitToStock" v-if="form.status =='PREPARE' && form.issueId !=null && optType !='view' ">提 交</el-button>
+        <el-button class="mes-action--execute" :disabled="picking" @click="submitToExecute" v-if="form.status =='APPROVING' && form.issueId !=null && optType !='view' ">完成手工拣货</el-button>
         <el-button :disabled="picking" type="text" @click="cancel" v-if="['APPROVING', 'APPROVED'].includes(form.status) && optType !='view'">撤销领料单</el-button>
         <el-button :disabled="picking" @click="close">关 闭</el-button>
       </div>

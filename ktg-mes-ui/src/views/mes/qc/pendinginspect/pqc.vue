@@ -201,7 +201,7 @@
       </el-card>
       <el-form label-width="100px">
         <el-form-item style="text-align: center;margin-left:-120px;margin-top:30px;">
-            <el-button type="primary" @click="cancel" v-if="optType =='view' || form.status !='PREPARE' ">返回</el-button>
+            <el-button class="mes-action--neutral" type="primary" @click="cancel" v-if="optType =='view' || form.status !='PREPARE' ">返回</el-button>
             <el-button type="primary" @click="submitForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
             <el-button type="success" @click="handleFinish" v-if="form.status =='PREPARE' && optType !='view'  && form.ipqcId !=null">完成</el-button>
             <el-button @click="cancel">取 消</el-button>

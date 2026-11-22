@@ -2,11 +2,10 @@
   <el-dialog
     :title="title"
     :visible.sync="dialogVisible"
-    width="440px"
+    width="min(440px, calc(100vw - 28px))"
     append-to-body
     :close-on-click-modal="false"
     custom-class="face-dialog"
-    @closed="stop"
   >
     <div class="face-box" :class="'is-' + status">
       <video ref="video" class="face-video" autoplay muted playsinline></video>
@@ -21,8 +20,11 @@
       </div>
     </div>
 
-    <div class="face-progress"><span :style="{ width: progress + '%' }"></span></div>
-    <p class="face-hint">{{ hint }}</p>
+    <div class="face-progress" role="progressbar" aria-label="人脸采集进度"
+      aria-valuemin="0" aria-valuemax="100" :aria-valuenow="progress">
+      <span :style="{ width: progress + '%' }"></span>
+    </div>
+    <p class="face-hint" role="status">{{ hint }}</p>
     <p v-if="tip" class="face-tip">{{ tip }}</p>
     <p v-if="error" class="face-error">{{ error }}</p>
 
@@ -34,19 +36,35 @@
 </template>
 
 <script>
-import { loadFaceEngine, detectOnce } from '@/utils/faceEngine'
+import { loadFaceEngine, detectFaces, describeFace } from '@/utils/faceEngine'
 import {
   averageDescriptors,
   euclideanDistance,
   isValidDescriptor,
-  landmarkEar,
   noseRatio,
-  createLivenessTracker
+  createActiveLivenessTracker
 } from '@/utils/faceMath'
 
 const CAPTURE_SAMPLES = 3
-const TOTAL_TIMEOUT = 30000
+const TOTAL_TIMEOUT = 45000
+const SAMPLE_TIMEOUT = 10000
 const SAME_FACE_LIMIT = 0.45
+/** 动作顺序固定：向左转头、向右转头，每步回正即可 */
+const ACTION_ORDER = ['turn-left', 'turn-right']
+const ACTION_HINTS = {
+  'turn-left': { action: '请把脸缓缓转向左侧', return: '请回正面向镜头' },
+  'turn-right': { action: '再请把脸转向右侧', return: '请回正面向镜头' }
+}
+
+function releaseStream(stream) {
+  if (stream) stream.getTracks().forEach(track => track.stop())
+}
+
+function overlaps(previous, current) {
+  const width = Math.max(0, Math.min(previous.x + previous.width, current.x + current.width) - Math.max(previous.x, current.x))
+  const height = Math.max(0, Math.min(previous.y + previous.height, current.y + current.height) - Math.max(previous.y, current.y))
+  return width * height >= 0.3 * Math.max(previous.width * previous.height, current.width * current.height)
+}
 
 export default {
   name: 'FaceCapture',
@@ -65,10 +83,17 @@ export default {
       engine: null,
       stream: null,
       running: false,
-      busy: false,
+      captureRun: 0,
       timer: null,
       startedAt: 0,
-      lostFrames: 0,
+      passedAt: 0,
+      frameSurface: null,
+      previousBox: null,
+      anchor: null,
+      actionStep: 0,
+      misses: 0,
+      boxMisses: 0,
+      anchorMisses: 0,
       samples: [],
       liveness: null
     }
@@ -76,13 +101,16 @@ export default {
   computed: {
     dialogVisible: {
       get() { return this.visible },
-      set(value) { this.$emit('update:visible', value) }
+      set(value) {
+        if (!value) this.stop()
+        this.$emit('update:visible', value)
+      }
     },
     statusText() {
       const map = {
         idle: '准备中',
         loading: '加载模型',
-        live: '活体检测',
+        live: this.liveness ? `动作 ${this.actionStep + 1}/${ACTION_ORDER.length}` : '活体检测',
         collecting: '采集特征',
         done: '识别成功',
         error: '识别失败'
@@ -102,6 +130,7 @@ export default {
   methods: {
     async start() {
       this.reset()
+      const run = this.captureRun
       this.status = 'loading'
       this.hint = '正在打开摄像头…'
       try {
@@ -120,99 +149,195 @@ export default {
           },
           audio: false
         })
+        if (!this.isCurrent(run)) {
+          releaseStream(stream)
+          return
+        }
         this.stream = stream
-        const video = await this.waitForVideo()
+        const video = await this.waitForVideo(run)
+        if (!this.isCurrent(run)) return
         if (!video) throw new Error('采集窗口未就绪，请重试')
         video.srcObject = stream
-        await video.play().catch(() => {})
+        await video.play()
+        if (!this.isCurrent(run)) return
 
         this.hint = '正在加载人脸模型…'
-        this.engine = await loadFaceEngine()
-        this.liveness = createLivenessTracker()
+        const engine = await loadFaceEngine()
+        if (!this.isCurrent(run)) return
+        this.engine = engine
+        this.frameSurface = document.createElement('canvas')
         this.status = 'live'
-        this.hint = '请正对屏幕，保持脸部在取景框内，然后眨一下眼睛或轻轻左右转头'
+        this.hint = '请正对镜头，将一张脸放在取景框中央'
         this.running = true
-        this.startedAt = Date.now()
-        this.tick()
+        this.startedAt = performance.now()
+        this.tick(run)
       } catch (error) {
-        this.fail(this.friendly(error))
+        if (this.isCurrent(run)) this.fail(this.friendly(error))
       }
     },
-    async waitForVideo() {
-      for (let i = 0; i < 40; i++) {
+    isCurrent(run) {
+      return this.visible && this.captureRun === run
+    },
+    async waitForVideo(run) {
+      for (let i = 0; i < 40 && this.isCurrent(run); i++) {
         if (this.$refs.video) return this.$refs.video
         await new Promise(resolve => setTimeout(resolve, 50))
       }
       return null
     },
-    tick() {
-      if (!this.running) return
+    tick(run) {
+      if (!this.running || !this.isCurrent(run)) return
       this.timer = setTimeout(async () => {
-        if (!this.running) return
-        await this.frame()
-        this.tick()
-      }, 130)
+        if (!this.running || !this.isCurrent(run)) return
+        await this.frame(run)
+        this.tick(run)
+      }, 55)
     },
-    async frame() {
-      if (this.busy || !this.running) return
-      if (Date.now() - this.startedAt > TOTAL_TIMEOUT) {
+    async frame(run) {
+      const now = performance.now()
+      if (now - this.startedAt > TOTAL_TIMEOUT) {
         this.fail('识别超时，请重新开始')
         return
       }
       const video = this.$refs.video
-      if (!video || video.readyState < 2) return
-      this.busy = true
-      try {
-        if (this.status === 'collecting') await this.collectFrame(video)
-        else await this.liveFrame(video)
-      } catch (error) {
-        console.warn('[人脸采集] 单帧检测失败', error)
-      } finally {
-        this.busy = false
-      }
-    },
-    async liveFrame(video) {
-      const result = await detectOnce(this.engine, video, false)
-      if (!result || !result.detection || !result.landmarks) {
-        this.lostFrames += 1
-        this.progress = 0
-        if (this.lostFrames >= 8) {
-          this.status = 'live'
-          this.hint = '没有检测到人脸，请靠近一点、正对镜头并保证光线充足'
-        }
+      if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+        if (this.anchor) this.resetChallenge('摄像头画面中断，请重新正对镜头')
         return
       }
-      this.lostFrames = 0
-      this.status = 'live'
-      const ear = landmarkEar(result.landmarks.positions)
-      const nose = noseRatio(result.detection.box, result.landmarks.positions)
-      const live = this.liveness.push({ ear, nose })
-      this.progress = Math.round(live.progress * 55)
+      try {
+        const image = this.frameSurface
+        if (image.width !== video.videoWidth || image.height !== video.videoHeight) {
+          image.width = video.videoWidth
+          image.height = video.videoHeight
+        }
+        image.getContext('2d', { willReadFrequently: true }).drawImage(video, 0, 0)
+        const faces = await detectFaces(this.engine, image)
+        if (!this.isCurrent(run)) return
+        if (faces.length !== 1) {
+          // 眨眼、转头时检测可能瞬断一两帧，连续丢失才判定为异常
+          this.misses += 1
+          if (this.misses >= 3) {
+            this.resetChallenge(faces.length ? '检测到多人，请在画面中只保留一人' : '请回到取景框中央，并保证光线充足')
+          } else if (!faces.length) {
+            this.hint = '画面有点模糊，请保持不动'
+          }
+          return
+        }
+        this.misses = 0
+        const face = faces[0]
+        const box = face.detection.box
+        const minimumSize = Math.min(image.width, image.height) * 0.18
+        if (box.width < minimumSize || box.height < minimumSize || box.x < 2 || box.y < 2
+          || box.x + box.width > image.width - 2 || box.y + box.height > image.height - 2) {
+          this.resetChallenge('请调整距离，让整张脸进入取景框')
+          return
+        }
+        if (this.previousBox && !overlaps(this.previousBox, box)) {
+          // 转头会让人脸框快速位移，短暂不重叠不算换人，连续多帧才重置
+          this.boxMisses += 1
+          if (this.boxMisses >= 4) {
+            this.resetChallenge('人脸位置变化过大，请正对镜头重新开始')
+          }
+          return
+        }
+        this.boxMisses = 0
+        this.previousBox = box
+        if (this.status === 'collecting') await this.collectFrame(run, image, face, now)
+        else await this.liveFrame(run, image, face, now)
+      } catch {
+        if (this.isCurrent(run)) this.resetChallenge('暂时无法读取人脸，请调整距离和光线')
+      }
+    },
+    async liveFrame(run, image, face, now) {
+      const positions = face.landmarks.positions
+      const nose = noseRatio(face.detection.box, positions)
+      if (!Number.isFinite(nose)) {
+        this.resetChallenge('请让脸部清晰可见，并正对镜头')
+        return
+      }
+      if (!this.liveness) {
+        if (Math.abs(nose - 0.5) > 0.12) {
+          this.hint = '请正对镜头'
+          return
+        }
+        const anchor = Array.from(await describeFace(this.engine, image, face.landmarks))
+        if (!this.isCurrent(run)) return
+        if (!isValidDescriptor(anchor)) {
+          this.resetChallenge('未能提取清晰的特征，请调整光线')
+          return
+        }
+        const order = ACTION_ORDER.slice()
+        this.anchor = anchor
+        this.liveness = createActiveLivenessTracker({ order, baselineNose: nose })
+        this.progress = 5
+        this.hint = ACTION_HINTS[order[0]].action
+        return
+      }
+
+      const live = this.liveness.push({ nose, at: now })
+      if (live.phase === 'expired') {
+        this.resetChallenge('动作超时，正对镜头后重新开始')
+        return
+      }
+      if (live.step > this.actionStep) {
+        // 刚完成动作时人脸可能还在回正中，允许连续几帧特征波动再做判定
+        const descriptor = Array.from(await describeFace(this.engine, image, face.landmarks))
+        if (!this.isCurrent(run)) return
+        if (this.sameFace(descriptor)) {
+          this.anchorMisses = 0
+          this.actionStep = live.step
+        } else if (++this.anchorMisses >= 3) {
+          this.resetChallenge('画面中的人脸发生变化，请由同一人重新完成动作')
+          return
+        }
+      }
       if (live.passed) {
         this.status = 'collecting'
-        this.samples = []
-        this.hint = '活体通过，正在采集人脸特征…'
+        this.passedAt = performance.now()
+        this.progress = 65
+        this.hint = '动作已完成，请正对镜头，保持不动'
       } else {
-        this.hint = '请眨一下眼睛，或轻轻左右转头（不要只动手机）'
+        this.progress = 5 + live.step * 30 + (live.phase === 'return' ? 8 : 0)
+        this.hint = ACTION_HINTS[live.action][live.phase]
       }
     },
-    async collectFrame(video) {
-      const result = await detectOnce(this.engine, video, true)
-      if (!result || !result.detection || !result.descriptor) return
-      const descriptor = Array.from(result.descriptor)
-      if (!isValidDescriptor(descriptor)) return
-      if (this.samples.length && euclideanDistance(this.samples[0].descriptor, descriptor) > SAME_FACE_LIMIT) {
-        this.samples = []
-        this.progress = 55
-        this.hint = '画面中人脸变化较大，请保持同一人后重试'
+    async collectFrame(run, image, face, now) {
+      if (now - this.passedAt > SAMPLE_TIMEOUT) {
+        this.resetChallenge('采集超时，正对镜头后重新开始')
         return
       }
-      this.samples.push({ descriptor, score: result.detection.score || 0 })
-      this.progress = 55 + Math.round((this.samples.length / CAPTURE_SAMPLES) * 45)
+      const descriptor = Array.from(await describeFace(this.engine, image, face.landmarks))
+      if (!this.isCurrent(run) || !this.matchesAnchor(descriptor)) return
+      this.samples.push({ descriptor, score: face.detection.score || 0 })
+      this.progress = 65 + Math.round((this.samples.length / CAPTURE_SAMPLES) * 35)
       this.hint = `正在采集特征 ${Math.min(this.samples.length, CAPTURE_SAMPLES)}/${CAPTURE_SAMPLES}，请保持不动`
       if (this.samples.length >= CAPTURE_SAMPLES) {
         this.finish()
       }
+    },
+    matchesAnchor(descriptor) {
+      if (!this.sameFace(descriptor)) {
+        this.resetChallenge('画面中的人脸发生变化，请由同一人重新完成动作')
+        return false
+      }
+      return true
+    },
+    sameFace(descriptor) {
+      return isValidDescriptor(descriptor)
+        && euclideanDistance(this.anchor, descriptor) <= SAME_FACE_LIMIT
+    },
+    resetChallenge(message) {
+      this.status = 'live'
+      this.hint = message
+      this.progress = 0
+      this.liveness = null
+      this.anchor = null
+      this.actionStep = 0
+      this.misses = 0
+      this.boxMisses = 0
+      this.anchorMisses = 0
+      this.previousBox = null
+      this.samples = []
     },
     finish() {
       const average = averageDescriptors(this.samples.map(item => item.descriptor))
@@ -220,15 +345,15 @@ export default {
         this.fail('采集到的特征无效，请调整光线后重试')
         return
       }
-      const quality = this.samples.reduce((sum, item) => sum + item.score, 0) / this.samples.length
+      const samples = this.samples.length
+      const quality = this.samples.reduce((sum, item) => sum + item.score, 0) / samples
       this.status = 'done'
       this.progress = 100
       this.hint = '识别成功'
-      this.running = false
-      this.stopCamera()
+      this.stop()
       this.$emit('captured', {
         descriptor: average,
-        samples: this.samples.length,
+        samples,
         quality: Math.round(Math.max(0, Math.min(1, quality)) * 10000) / 10000
       })
     },
@@ -238,8 +363,7 @@ export default {
       this.hint = ''
       this.progress = 0
       this.retryable = true
-      this.running = false
-      this.stopCamera()
+      this.stop()
     },
     friendly(error) {
       const name = error && error.name
@@ -258,29 +382,30 @@ export default {
       return (error && error.message) || '摄像头启动失败，请重试'
     },
     restart() {
-      this.stop()
       this.start()
     },
     close() {
       this.dialogVisible = false
     },
     stopCamera() {
-      if (this.stream) {
-        this.stream.getTracks().forEach(track => {
-          try { track.stop() } catch (error) { /* 已停止 */ }
-        })
-        this.stream = null
-      }
+      releaseStream(this.stream)
+      this.stream = null
       const video = this.$refs.video
       if (video) video.srcObject = null
     },
     stop() {
+      this.captureRun += 1
       this.running = false
       if (this.timer) {
         clearTimeout(this.timer)
         this.timer = null
       }
       this.stopCamera()
+      this.frameSurface = null
+      this.previousBox = null
+      this.liveness = null
+      this.anchor = null
+      this.samples = []
     },
     reset() {
       this.stop()
@@ -289,9 +414,10 @@ export default {
       this.error = ''
       this.progress = 0
       this.retryable = false
-      this.lostFrames = 0
-      this.samples = []
-      this.busy = false
+      this.actionStep = 0
+      this.misses = 0
+      this.boxMisses = 0
+      this.anchorMisses = 0
     }
   }
 }

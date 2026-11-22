@@ -13,7 +13,7 @@
                     <el-table-column label="班组名称" align="center" prop="teamName" />
                     <el-table-column label="操作" align="center" v-if="optType !='view'" class-name="small-padding fixed-width">
                         <template slot-scope="scope">
-                        <el-button
+                        <el-button class="mes-action--destructive"
                             size="mini"
                             type="text"
                             icon="el-icon-delete"

@@ -10,6 +10,7 @@ const CompressionPlugin = require('compression-webpack-plugin')
 const name = process.env.VUE_APP_TITLE || '红外测温枪MES系统' // 网页标题
 
 const port = process.env.port || process.env.npm_config_port || 80 // 端口
+const backendTarget = process.env.MES_BACKEND_URL || 'http://127.0.0.1:8080'
 
 // vue.config.js 配置说明
 //官方vue.config.js 参考文档 https://cli.vuejs.org/zh/config/#css-loaderoptions
@@ -35,7 +36,7 @@ module.exports = {
     proxy: {
       // detail: https://cli.vuejs.org/config/#devserver-proxy
       [process.env.VUE_APP_BASE_API]: {
-        target: `http://localhost:8081`,
+        target: backendTarget,
         changeOrigin: true,
         pathRewrite: {
           ['^' + process.env.VUE_APP_BASE_API]: ''
@@ -82,6 +83,16 @@ module.exports = {
   chainWebpack(config) {
     config.plugins.delete('preload') // TODO: need test
     config.plugins.delete('prefetch') // TODO: need test
+
+    // 受限目录下 node_modules 不可写时，用 DSH_NO_FS_CACHE=1 启动，关闭 babel/webpack 磁盘缓存
+    if (process.env.DSH_NO_FS_CACHE === '1') {
+      try {
+        config.module.rule('js').use('babel-loader').tap(options => ({ ...options, cacheDirectory: false }))
+      } catch (ignored) { /* 规则不存在时忽略 */ }
+      try {
+        config.cache(false)
+      } catch (ignored) { /* webpack 4 不支持时忽略 */ }
+    }
 
     // set svg-sprite-loader
     config.module

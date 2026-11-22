@@ -1,50 +1,19 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
-      <el-form-item label="工作站编号" prop="workstationCode">
-        <el-input
-          v-model="queryParams.workstationCode"
-          placeholder="请输入工作站编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="工作站名称" prop="workstationName">
-        <el-input
-          v-model="queryParams.workstationName"
-          placeholder="请输入工作站名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="发起人" prop="nickName">
-        <el-input
-          v-model="queryParams.nickName"
-          placeholder="请输入发起人名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
+    <h1 class="mes-page-heading">安灯呼叫</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="生产工单编号" prop="workorderCode">
         <el-input
           v-model="queryParams.workorderCode"
           placeholder="请输入生产工单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="工序名称" prop="processName">
-        <el-input
-          v-model="queryParams.processName"
-          placeholder="请输入工序名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="处置人名称" prop="handlerNickName">
-        <el-input
-          v-model="queryParams.handlerNickName"
-          placeholder="请输入处置人名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -54,18 +23,49 @@
           <el-option label="请选择字典生成" value="" />
         </el-select>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-        <el-button
-          type="success"
-          icon="el-icon-s-tools"
-          size="mini"
-          @click="handleConfig"
-          v-hasPermi="['mes:pro:andonconfig:list']"
-        >安灯设置</el-button>
+      <el-form-item label="工作站名称" prop="workstationName">
+        <el-input
+          v-model="queryParams.workstationName"
+          placeholder="请输入工作站名称"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
       </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="工作站编号" prop="workstationCode">
+          <el-input
+            v-model="queryParams.workstationCode"
+            placeholder="请输入工作站编号"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="发起人" prop="nickName">
+          <el-input
+            v-model="queryParams.nickName"
+            placeholder="请输入发起人名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="工序名称" prop="processName">
+          <el-input
+            v-model="queryParams.processName"
+            placeholder="请输入工序名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="处置人名称" prop="handlerNickName">
+          <el-input
+            v-model="queryParams.handlerNickName"
+            placeholder="请输入处置人名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
     <el-table v-loading="loading" :data="andonrecordList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="工作站编号" align="center" prop="workstationCode" />

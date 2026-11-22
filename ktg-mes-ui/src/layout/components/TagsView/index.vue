@@ -9,7 +9,6 @@
         :to="{ path: tag.path, query: tag.query, fullPath: tag.fullPath }"
         tag="span"
         class="tags-view-item"
-        :style="activeStyle(tag)"
         @click.middle.native="!isAffix(tag)?closeSelectedTag(tag):''"
         @contextmenu.prevent.native="openMenu(tag,$event)"
       >
@@ -49,9 +48,6 @@ export default {
     },
     routes() {
       return this.$store.state.permission.routes
-    },
-    theme() {
-      return this.$store.state.settings.theme;
     }
   },
   watch: {
@@ -74,13 +70,6 @@ export default {
   methods: {
     isActive(route) {
       return route.path === this.$route.path
-    },
-    activeStyle(tag) {
-      if (!this.isActive(tag)) return {};
-      return {
-        "background-color": this.theme,
-        "border-color": this.theme
-      };
     },
     isAffix(tag) {
       return tag.meta && tag.meta.affix
@@ -217,7 +206,7 @@ export default {
         this.left = left
       }
 
-      this.top = e.clientY
+      this.top = e.clientY - this.$el.getBoundingClientRect().top
       this.visible = true
       this.selectedTag = tag
     },
@@ -233,11 +222,9 @@ export default {
 
 <style lang="scss" scoped>
 .tags-view-container {
-  height: 34px;
-  width: 100%;
-  background: #fff;
-  border-bottom: 1px solid #d8dce5;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .12), 0 0 3px 0 rgba(0, 0, 0, .04);
+  height: var(--mes-tabs-height);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
   .tags-view-wrapper {
     .tags-view-item {
       display: inline-block;
@@ -245,10 +232,10 @@ export default {
       cursor: pointer;
       height: 26px;
       line-height: 26px;
-      border: 1px solid #d8dce5;
-      color: #495060;
-      background: #fff;
-      padding: 0 8px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      color: var(--color-text-secondary);
+      padding: 0 10px;
       font-size: 12px;
       margin-left: 5px;
       margin-top: 4px;
@@ -259,19 +246,13 @@ export default {
         margin-right: 15px;
       }
       &.active {
-        background-color: #42b983;
-        color: #fff;
-        border-color: #42b983;
-        &::before {
-          content: '';
-          background: #fff;
-          display: inline-block;
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          position: relative;
-          margin-right: 2px;
-        }
+        background: var(--color-primary-bg);
+        color: var(--current-color, var(--color-primary));
+        font-weight: 600;
+      }
+
+      &:hover:not(.active) {
+        background: var(--color-rail-hover);
       }
     }
   }
@@ -285,14 +266,15 @@ export default {
     border-radius: 4px;
     font-size: 12px;
     font-weight: 400;
-    color: #333;
-    box-shadow: 2px 2px 3px 0 rgba(0, 0, 0, .3);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 4px 12px rgba(37, 44, 53, .1);
     li {
       margin: 0;
       padding: 7px 16px;
       cursor: pointer;
       &:hover {
-        background: #eee;
+        background: var(--color-rail-hover);
       }
     }
   }
@@ -317,8 +299,8 @@ export default {
         vertical-align: -3px;
       }
       &:hover {
-        background-color: #b4bccc;
-        color: #fff;
+        background-color: var(--color-primary-bg);
+        color: var(--color-primary);
       }
     }
   }

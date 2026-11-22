@@ -48,6 +48,7 @@ function chat({ denied = [], indexes = INDEXES, iqc = IQC } = {}) {
   const source = fs.readFileSync('ktg-mes-ui/src/views/mes/ai/index.vue', 'utf8')
   const code = source.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/^import .*$/mg, '').replace('export default', 'component =')
   const box = { ...answerRules(), component: null, request, Date, console, setTimeout: () => 1, clearTimeout() {},
+    askBusinessQuestion: async () => ({ data: { mode: 'legacy' } }),
     sessionStorage: { setItem() {}, getItem() { return null }, removeItem() {} } }
   vm.createContext(box)
   vm.runInContext(code, box)

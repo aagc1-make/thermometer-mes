@@ -38,6 +38,7 @@ server:
 logging:
   level:
     com.ktg: debug
+    com.ktg.system.mapper.SysUserFaceMapper: warn
     org.springframework: warn
 
 # Spring配置
@@ -61,9 +62,9 @@ spring:
   servlet:
      multipart:
        # 单个文件大小
-       max-file-size:  10MB
+       max-file-size: 50MB
        # 设置总上传的文件大小
-       max-request-size:  20MB
+       max-request-size: 60MB
   # 服务模块
   devtools:
     restart:
@@ -147,6 +148,30 @@ minio:
 #   MES_AI_FB_KEY  智谱 GLM-4-Flash 兜底（免费，主模型失败时切换）
 mes:
   ai:
+    kb:
+      storage-root: ${MES_AI_KB_STORAGE_ROOT:./kb-storage}
+    rag:
+      ollama-url: ${MES_AI_OLLAMA_URL:http://127.0.0.1:11434}
+      local-model: ${MES_AI_LOCAL_MODEL:qwen2.5:7b-instruct-q4_K_M}
+      embedding-model: ${MES_AI_EMBEDDING_MODEL:bge-m3}
+      qdrant-url: ${MES_AI_QDRANT_URL:http://127.0.0.1:6333}
+      qdrant-key: ${MES_AI_QDRANT_KEY:}
+      collection: ${MES_AI_QDRANT_COLLECTION:mes_kb_bge_m3_v1}
+      allow-external: ${MES_AI_ALLOW_EXTERNAL:true}
+    graph:
+      url: ${MES_AI_NEO4J_URL:}
+      database: ${MES_AI_NEO4J_DATABASE:neo4j}
+      user: ${MES_AI_NEO4J_USER:neo4j}
+      password: ${MES_AI_NEO4J_PASSWORD:}
+      namespace: ${MES_AI_NEO4J_NAMESPACE:mes}
+    dify:
+      # 带 /v1 的基址，例如 http://127.0.0.1/v1；留空或缺少密钥时助手沿用 MES 既有问答
+      api-base-url: ${MES_AI_DIFY_URL:}
+      api-key: ${MES_AI_DIFY_KEY:}
+      # 单轮工作流等待上限（毫秒）：超时后 Dify 仍可回调，MES 复用已完成阶段
+      timeout-ms: ${MES_AI_DIFY_TIMEOUT_MS:12000}
+    evaluation:
+      suite-file: ${MES_AI_EVALUATION_SUITE_FILE:}
     deepseek-key: ${MES_AI_KEY:}
     deepseek-url: https://api.deepseek.com/v1/chat/completions
     deepseek-model: deepseek-chat
@@ -158,6 +183,11 @@ mes:
   face:
     # 关闭后登录与录入接口直接拒绝，前端入口仍显示
     enabled: true
+    # 由运行环境提供持久的 32 字节 Base64 密钥
+    encryption-key: ${MES_FACE_TEMPLATE_KEY:}
+    qdrant-url: ${MES_FACE_QDRANT_URL:}
+    qdrant-key: ${MES_FACE_QDRANT_KEY:}
+    qdrant-collection: ${MES_FACE_QDRANT_COLLECTION:mes_face_templates}
     # 欧氏距离阈值：同一人通常 0.3~0.5，不同人通常大于 0.6；调大更宽松、调小更严格
     threshold: 0.55
     # 同一账号连续失败多少次后短期封禁

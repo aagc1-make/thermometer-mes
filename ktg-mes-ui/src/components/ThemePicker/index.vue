@@ -8,6 +8,8 @@
 </template>
 
 <script>
+import palette from '@/assets/styles/element-variables.scss'
+
 const version = require('element-ui/package.json').version // element-ui version from node_modules
 const ORIGINAL_THEME = '#409EFF' // default color
 
@@ -35,15 +37,20 @@ export default {
     }
   },
   created() {
-    if(this.defaultTheme !== ORIGINAL_THEME) {
+    if (this.defaultTheme && this.defaultTheme.toLowerCase() !== palette.theme.toLowerCase()) {
       this.setTheme(this.defaultTheme)
     }
   },
 
   methods: {
     async setTheme(val) {
-      const oldVal = this.chalk ? this.theme : ORIGINAL_THEME
       if (typeof val !== 'string') return
+      if (val.toLowerCase() === palette.theme.toLowerCase()) {
+        const customStyle = document.getElementById('chalk-style')
+        if (customStyle) customStyle.remove()
+        this.$emit('change', val)
+        return
+      }
       const themeCluster = this.getThemeCluster(val.replace('#', ''))
       const originalCluster = this.getThemeCluster(oldVal.replace('#', ''))
 
@@ -67,20 +74,11 @@ export default {
         await this.getCSSString(url, 'chalk')
       }
 
+      if (this.theme !== val) return
+
       const chalkHandler = getHandler('chalk', 'chalk-style')
 
       chalkHandler()
-
-      const styles = [].slice.call(document.querySelectorAll('style'))
-        .filter(style => {
-          const text = style.innerText
-          return new RegExp(oldVal, 'i').test(text) && !/Chalk Variables/.test(text)
-        })
-      styles.forEach(style => {
-        const { innerText } = style
-        if (typeof innerText !== 'string') return
-        style.innerText = this.updateStyle(innerText, originalCluster, themeCluster)
-      })
 
       this.$emit('change', val)
     },

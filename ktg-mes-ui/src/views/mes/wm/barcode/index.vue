@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <h1 class="mes-page-heading">赋码管理</h1>
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="条码类型" prop="barcodeType">
         <el-select v-model="queryParams.barcodeType" placeholder="请选择条码类型">
@@ -28,7 +29,7 @@
         />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button class="mes-action--query" type="primary" icon="el-icon-search" size="mini" @click="handleQuery">查询</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
@@ -46,7 +47,7 @@
       </el-col>
 
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -118,7 +119,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['mes:wm:barcode:edit']"
           >编辑</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -393,7 +394,7 @@
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="cancel" v-if="optType =='view'">返回</el-button>
+        <el-button class="mes-action--neutral" type="primary" @click="cancel" v-if="optType =='view'">返回</el-button>
         <el-button type="primary" @click="submitForm" v-if="optType !='view' ">保 存</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>

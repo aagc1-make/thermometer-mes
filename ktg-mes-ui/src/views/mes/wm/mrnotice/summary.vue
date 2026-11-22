@@ -1,6 +1,39 @@
 <template>
     <div class="app-container">
-      <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="68px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
+      <el-form-item label="产品物料编码" prop="itemCode">
+        <el-input
+          v-model="queryParams.itemCode"
+          placeholder="请输入产品物料编码"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="产品物料名称" prop="itemName">
+        <el-input
+          v-model="queryParams.itemName"
+          placeholder="请输入产品物料名称"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="单位名称" prop="unitName">
+        <el-input
+          v-model="queryParams.unitName"
+          placeholder="请输入单位名称"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <template #more>
         <el-form-item label="通知ID" prop="noticeId">
           <el-input
             v-model="queryParams.noticeId"
@@ -17,34 +50,10 @@
             @keyup.enter.native="handleQuery"
           />
         </el-form-item>
-        <el-form-item label="产品物料编码" prop="itemCode">
-          <el-input
-            v-model="queryParams.itemCode"
-            placeholder="请输入产品物料编码"
-            clearable
-            @keyup.enter.native="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="产品物料名称" prop="itemName">
-          <el-input
-            v-model="queryParams.itemName"
-            placeholder="请输入产品物料名称"
-            clearable
-            @keyup.enter.native="handleQuery"
-          />
-        </el-form-item>
         <el-form-item label="单位" prop="unitOfMeasure">
           <el-input
             v-model="queryParams.unitOfMeasure"
             placeholder="请输入单位"
-            clearable
-            @keyup.enter.native="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="单位名称" prop="unitName">
-          <el-input
-            v-model="queryParams.unitName"
-            placeholder="请输入单位名称"
             clearable
             @keyup.enter.native="handleQuery"
           />
@@ -57,11 +66,8 @@
             @keyup.enter.native="handleQuery"
           />
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-          <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
+      </template>
+    </query-bar>
   
       <el-row :gutter="10" class="mb8">
         <el-col :span="1.5">
@@ -86,7 +92,7 @@
           >修改</el-button>
         </el-col>
         <el-col :span="1.5">
-          <el-button
+          <el-button class="mes-action--destructive"
             type="danger"
             plain
             icon="el-icon-delete"
@@ -97,7 +103,7 @@
           >删除</el-button>
         </el-col>
         <el-col :span="1.5">
-          <el-button
+          <el-button class="mes-action--export"
             type="warning"
             plain
             icon="el-icon-download"
@@ -130,7 +136,7 @@
               @click="handleUpdate(scope.row)"
               v-hasPermi="['wm:mrnoticeline:edit']"
             >修改</el-button>
-            <el-button
+            <el-button class="mes-action--destructive"
               size="mini"
               type="text"
               icon="el-icon-delete"

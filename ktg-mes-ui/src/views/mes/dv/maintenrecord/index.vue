@@ -1,16 +1,15 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-
-      <el-form-item label="计划名称" prop="planName">
-        <el-input
-          v-model="queryParams.planName"
-          placeholder="请输入计划名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-
+    <h1 class="mes-page-heading">保养记录</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="68px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="设备编码" prop="machineryCode">
         <el-input
           v-model="queryParams.machineryCode"
@@ -27,14 +26,6 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="保养人" prop="nickName">
-        <el-input
-          v-model="queryParams.nickName"
-          placeholder="请输入名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="保养时间" prop="maintenTime">
         <el-date-picker clearable
           v-model="queryParams.maintenTime"
@@ -43,12 +34,25 @@
           placeholder="请选择保养时间">
         </el-date-picker>
       </el-form-item>
-
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="计划名称" prop="planName">
+          <el-input
+            v-model="queryParams.planName"
+            placeholder="请输入计划名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="保养人" prop="nickName">
+          <el-input
+            v-model="queryParams.nickName"
+            placeholder="请输入名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -73,7 +77,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -122,7 +126,7 @@
             v-if="scope.row.status === 'PREPARE'"
             v-hasPermi="['dv:maintenrecord:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -213,7 +217,7 @@
         <MaintenRecordLine ref="maintenRecordLine" :optType="optType" :recordId="form.recordId"></MaintenRecordLine>
       </el-card>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="cancel" v-if="optType =='view' || form.status !='PREPARE' ">返 回</el-button>
+        <el-button class="mes-action--neutral" type="primary" @click="cancel" v-if="optType =='view' || form.status !='PREPARE' ">返 回</el-button>
         <el-button type="primary" @click="submitForm" v-if="optType !=='view' && form.status =='PREPARE' " >保 存</el-button>
         <el-button type="success" @click="handleFinish" v-if="optType !=='view' && form.status =='PREPARE' " >提 交</el-button>
         <el-button @click="cancel">取 消</el-button>

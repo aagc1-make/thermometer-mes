@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-dialog title="我的知识库" :visible.sync="visible" width="880px" append-to-body custom-class="mes-knowledge-dialog">
+    <el-dialog title="浏览器资料" :visible.sync="visible" width="880px" append-to-body custom-class="mes-knowledge-dialog">
       <p class="kb-intro">导入 BOM、工艺说明、检验规范等资料，知识问答会检索已启用的版本并引用原文。</p>
       <el-alert title="资料仅保存在当前浏览器、当前账号下。清理本站浏览器数据会移除资料，请保留原文件。" type="info" :closable="false" show-icon />
       <div class="kb-toolbar">
@@ -17,7 +17,7 @@
         <el-table-column label="启用" width="70"><template slot-scope="scope"><el-switch :value="scope.row.active" :disabled="busy" :aria-label="scope.row.title + ' ' + scope.row.version + ' 启用状态'" @change="active => toggle(scope.row, active)" /></template></el-table-column>
         <el-table-column label="操作" width="130"><template slot-scope="scope">
           <el-button type="text" size="small" @click="showSource({ documentId: scope.row.id, version: scope.row.version })">原文</el-button>
-          <el-button type="text" size="small" :disabled="busy" @click="remove(scope.row)">删除</el-button>
+          <el-button class="mes-action--destructive" type="text" size="small" :disabled="busy" @click="remove(scope.row)">删除</el-button>
         </template></el-table-column>
       </el-table>
       <p class="kb-note">同名称、同分类的资料作为一份文档管理。导入新版本会停用旧版，也可手动切换；删除当前版本不会自动启用历史版本。</p>
@@ -164,13 +164,18 @@ export default {
       this.publish(rows)
       return { sources: searchKnowledge(rows, question), documentCount: rows.length, activeCount: rows.filter(doc => doc.active).length }
     },
+    async getSourceDocument(source) {
+      if (!this.store) throw new Error('知识库尚未就绪，请稍后重试')
+      const generation = this.generation
+      const rows = await this.store.list()
+      if (generation !== this.generation) throw new Error('登录账号已切换，请重新查询知识库')
+      const document = rows.find(doc => doc.id === source.documentId && doc.version === source.version)
+      if (!document) throw new Error('该引用对应的文档版本已删除')
+      return document
+    },
     async showSource(source) {
       try {
-        if (!this.store) throw new Error('知识库尚未就绪，请稍后重试')
-        const generation = this.generation; const rows = await this.store.list()
-        if (generation !== this.generation) return
-        const document = rows.find(doc => doc.id === source.documentId && doc.version === source.version)
-        if (!document) throw new Error('该引用对应的文档版本已删除；聊天中保留的是当时的引用片段')
+        const document = await this.getSourceDocument(source)
         this.sourceDocument = document; this.sourceIndex = Number.isInteger(source.sectionIndex) ? source.sectionIndex : -1; this.sourceVisible = true
       } catch (error) { this.$message.warning(error.message) }
     },

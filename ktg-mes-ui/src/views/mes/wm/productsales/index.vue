@@ -1,26 +1,19 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
+    <h1 class="mes-page-heading">销售出库</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="出库单编号" prop="salesCode">
         <el-input
           v-model="queryParams.salesCode"
           placeholder="请输入出库单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="销售订单编号" prop="soCode">
-        <el-input
-          v-model="queryParams.soCode"
-          placeholder="请输入销售订单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="客户名称" prop="clientName">
-        <el-input
-          v-model="queryParams.clientName"
-          placeholder="请输入客户名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -43,11 +36,25 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="销售订单编号" prop="soCode">
+          <el-input
+            v-model="queryParams.soCode"
+            placeholder="请输入销售订单编号"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="客户名称" prop="clientName">
+          <el-input
+            v-model="queryParams.clientName"
+            placeholder="请输入客户名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -72,7 +79,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -131,7 +138,7 @@
             v-if="scope.row.status == 'PREPARE'"
             v-hasPermi="['mes:wm:productsales:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -155,7 +162,7 @@
             @click="handleShipping(scope.row)"
             v-hasPermi="['mes:wm:productsales:edit']"
           >填写运单</el-button>             
-          <el-button
+          <el-button class="mes-action--execute"
             size="mini"
             type="text"
             icon="el-icon-video-play"
@@ -365,10 +372,10 @@
         </el-card>
         <div slot="footer" class="dialog-footer">
           <el-button type="primary" @click="saveForm" v-if="(form.status =='PREPARE' || form.status =='UNSHIPPING')&& optType !='view' ">保 存</el-button>
-          <el-button type="warning" @click="submitToStock" v-if="form.status =='PREPARE' && form.salesId !=null && optType !='view' ">提 交</el-button>
+          <el-button class="mes-action--review" type="warning" @click="submitToStock" v-if="form.status =='PREPARE' && form.salesId !=null && optType !='view' ">提 交</el-button>
           <el-button type="warning" @click="submitToShipping" v-if="form.status =='UNSTOCK' && form.salesId !=null && optType !='view' ">提 交</el-button>
-          <el-button type="warning" @click="submitToExecute" v-if="form.status =='UNSHIPPING' && form.salesId !=null && optType !='view' ">提 交</el-button>
-          <el-button type="danger" @click="cancel"  v-if="form.status !='PREPARE' && form.status !='FINISHED' && optType !='view' " >取 消</el-button>
+          <el-button class="mes-action--execute" type="warning" @click="submitToExecute" v-if="form.status =='UNSHIPPING' && form.salesId !=null && optType !='view' ">提 交</el-button>
+          <el-button class="mes-action--destructive" type="danger" @click="cancel"  v-if="form.status !='PREPARE' && form.status !='FINISHED' && optType !='view' " >取 消</el-button>
           <el-button @click="close">关 闭</el-button>
         </div>
     </el-dialog>

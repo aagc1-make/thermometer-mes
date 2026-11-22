@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.ktg.common.annotation.Log;
@@ -29,8 +30,10 @@ import com.ktg.common.enums.BusinessType;
 import com.ktg.common.utils.SecurityUtils;
 import com.ktg.common.utils.StringUtils;
 import com.ktg.common.utils.poi.ExcelUtil;
+import com.ktg.system.domain.SysUserFaceStatus;
 import com.ktg.system.service.ISysPostService;
 import com.ktg.system.service.ISysRoleService;
+import com.ktg.system.service.ISysUserFaceService;
 import com.ktg.system.service.ISysUserService;
 
 /**
@@ -50,6 +53,9 @@ public class SysUserController extends BaseController
 
     @Autowired
     private ISysPostService postService;
+
+    @Autowired
+    private ISysUserFaceService userFaceService;
 
     /**
      * 获取用户列表
@@ -214,6 +220,42 @@ public class SysUserController extends BaseController
         userService.checkUserDataScope(user.getUserId());
         user.setUpdateBy(getUsername());
         return toAjax(userService.updateUserStatus(user));
+    }
+
+    /** 查询指定用户的人脸录入状态和登录策略。 */
+    @PreAuthorize("@ss.hasPermi('system:user:edit')")
+    @GetMapping("/{userId}/face-status")
+    public AjaxResult getFaceStatus(@PathVariable("userId") Long userId)
+    {
+        userService.checkUserDataScope(userId);
+        SysUserFaceStatus status = userFaceService.getFaceStatus(userId);
+        return status == null ? error("用户不存在") : AjaxResult.success(status);
+    }
+
+    /** 启用或停用指定用户的人脸登录。 */
+    @PreAuthorize("@ss.hasPermi('system:user:edit')")
+    @Log(title = "人脸登录管理", businessType = BusinessType.UPDATE, isSaveResponseData = false)
+    @PutMapping("/{userId}/face-status")
+    public AjaxResult updateFaceStatus(@PathVariable("userId") Long userId,
+                                      @RequestParam("enabled") boolean enabled)
+    {
+        userService.checkUserAllowed(new SysUser(userId));
+        userService.checkUserDataScope(userId);
+        SysUserFaceStatus status = userFaceService.updateFaceLoginPolicy(userId, enabled);
+        return status == null ? error("用户不存在") : AjaxResult.success(status);
+    }
+
+    /** 解绑指定用户已录入的人脸模板。 */
+    @PreAuthorize("@ss.hasPermi('system:user:edit')")
+    @Log(title = "管理员解绑人脸", businessType = BusinessType.DELETE,
+         isSaveRequestData = false, isSaveResponseData = false)
+    @DeleteMapping("/{userId}/face-status")
+    public AjaxResult removeFaceTemplate(@PathVariable("userId") Long userId)
+    {
+        userService.checkUserAllowed(new SysUser(userId));
+        userService.checkUserDataScope(userId);
+        userFaceService.deleteByUserId(userId);
+        return AjaxResult.success("人脸已解绑");
     }
 
     /**

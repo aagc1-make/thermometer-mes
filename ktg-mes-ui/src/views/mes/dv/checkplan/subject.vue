@@ -13,7 +13,7 @@
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -35,7 +35,7 @@
       <el-table-column label="标准" align="center" width="300px" prop="subjectStandard" :show-overflow-tooltip="true"/>
       <el-table-column label="操作" align="center" v-if="optType !='view'" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

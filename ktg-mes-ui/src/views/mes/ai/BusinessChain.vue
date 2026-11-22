@@ -94,8 +94,8 @@ export default {
 .chain-step-number { width: 26px; height: 26px; border: 1px solid #d8e0ec; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; background: white; }
 .chain-steps strong { display: block; font-size: 13px; line-height: 26px; }
 .chain-steps p { margin: 3px 0 0; font-size: 11px; line-height: 1.7; }
-.chain-step--running { color: #2563eb !important; }
-.chain-step--running .chain-step-number { border-color: #2563eb; background: #eff6ff; }
+.chain-step--running { color: var(--color-primary) !important; }
+.chain-step--running .chain-step-number { border-color: var(--color-rail-marker); background: var(--color-primary-soft); }
 .chain-step--completed .chain-step-number { background: #eaf8f1; border-color: #bce4cf; color: #22845a; }
 .chain-step--completed strong { color: #334a63; }
 .chain-step--failed { color: #bd4141 !important; }
@@ -104,9 +104,9 @@ export default {
 .chain-detail h4 span { font-weight: 400; color: #8290a4; padding-left: 6px; }
 .chain-documents { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-height: 290px; overflow: auto; }
 .chain-document { display: flex; flex-direction: column; text-align: left; gap: 5px; padding: 11px 13px; border: 1px solid #e3eaf3; background: #fff; border-radius: 6px; cursor: pointer; min-width: 0; }
-.chain-document:hover { border-color: #7da8ed; background: #f7faff; }
+.chain-document:hover { border-color: var(--color-rail-marker); background: var(--color-primary-soft); }
 .chain-document span, .chain-document small { font-size: 11px; color: #718198; }
-.chain-document strong { font-size: 12px; color: #2f64b2; overflow-wrap: anywhere; }
+.chain-document strong { font-size: 12px; color: var(--color-primary); overflow-wrap: anywhere; }
 .chain-empty { text-align: center; padding: 42px 0; color: #8290a4; background: #f8fafc; border-radius: 8px; }
 .chain-empty > i { font-size: 32px; color: #b0c0d5; }
 .chain-empty p { font-size: 13px; }

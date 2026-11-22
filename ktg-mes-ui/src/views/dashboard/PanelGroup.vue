@@ -1,16 +1,41 @@
 <template>
-  <section class="device-overview" aria-label="设备概览">
-    <div class="device-overview__head"><div><h3>设备概览</h3><span>数据来源：设备台账</span></div><el-button v-if="error" type="text" @click="loadDevices">加载失败，点击重试</el-button><el-button v-else type="text" @click="openDevices">查看设备台账 →</el-button></div>
-    <el-row :gutter="16" v-loading="loading">
-      <el-col v-for="card in cards" :key="card.key" :xs="12" :sm="12" :lg="6" class="device-overview__col">
-        <button class="device-card" type="button" @click="openDevices">
-          <span class="device-card__icon"><i :class="card.icon"></i></span><span class="device-card__content"><span class="device-card__label">{{ card.label }}</span><strong>{{ error ? '—' : stats[card.key] }}</strong><small>台 · 查看台账</small></span>
-        </button>
-      </el-col>
-    </el-row>
-    <p v-if="!loading && !error && stats.other" class="device-overview__note">另有 {{ stats.other }} 台设备状态未归入以上分类，请查看设备台账。</p>
+  <section class="device-overview" aria-labelledby="home-device-title">
+    <div class="device-overview__head">
+      <div>
+        <h2 id="home-device-title">设备概览</h2>
+        <p>数据来源：设备台账</p>
+      </div>
+      <el-button v-if="error" size="small" @click="loadDevices">加载失败，点击重试</el-button>
+      <el-button v-else size="small" @click="openDevices">
+        查看设备台账 <i class="el-icon-arrow-right" aria-hidden="true" />
+      </el-button>
+    </div>
+
+    <div v-loading="loading" class="device-overview__grid">
+      <button
+        v-for="card in cards"
+        :key="card.key"
+        class="device-card"
+        :class="'device-card--' + card.key"
+        type="button"
+        @click="openDevices"
+      >
+        <span class="device-card__label">
+          <span class="device-card__icon"><i :class="card.icon" aria-hidden="true" /></span>
+          {{ card.label }}
+        </span>
+        <span class="device-card__value">
+          <strong>{{ loading || error ? '—' : stats[card.key] }}</strong>
+          <small>台</small>
+        </span>
+      </button>
+    </div>
+    <p v-if="!loading && !error && stats.other" class="device-overview__note">
+      另有 {{ stats.other }} 台设备状态未归入以上分类，请查看设备台账。
+    </p>
   </section>
 </template>
+
 <script>
 import { listMachinery } from '@/api/mes/dv/machinery'
 export default {
@@ -41,17 +66,126 @@ export default {
   }
 }
 </script>
+
 <style lang="scss" scoped>
-.device-overview { margin: 20px 0 24px; }
-.device-overview__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.device-overview__head h3 { display: inline; margin: 0 12px 0 0; color: #203a31; font-size: 16px; }
-.device-overview__head span, .device-overview__note { color: #73877b; font-size: 12px; }
-.device-overview__col { margin-bottom: 12px; }
-.device-card { width: 100%; min-height: 100px; padding: 18px; border: 1px solid #dfe8e1; border-top: 3px solid #a7d65f; border-radius: 8px; background: #fff; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; }
-.device-card:hover { border-color: #83b598; box-shadow: 0 4px 15px rgba(28,55,46,.08); }
-.device-card:focus-visible { outline: 2px solid #246d5e; outline-offset: 2px; }
-.device-card__icon { display: grid; place-items: center; width: 42px; height: 42px; flex: none; border-radius: 9px; background: #edf5e6; color: #246d5e; font-size: 21px; }
-.device-card__content { display: flex; flex-direction: column; gap: 4px; color: #6e8379; font-size: 12px; }
-.device-card__content strong { color: #203a31; font-size: 23px; line-height: 1; }
-.device-card__content small { color: #789082; font-size: 11px; }
+.device-overview {
+  min-width: 0;
+
+  &__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+
+    h2 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    p {
+      margin: 3px 0 0;
+      color: var(--color-text-secondary);
+      font-size: 12px;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  &__note {
+    margin: 10px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+  }
+}
+
+.device-card {
+  min-width: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: #fff;
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    border-color: var(--color-primary);
+  }
+
+  &__label,
+  &__value {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  &__label {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+  }
+
+  &__icon {
+    display: grid;
+    flex: 0 0 26px;
+    height: 26px;
+    place-items: center;
+    border-radius: var(--radius-control);
+    color: #3d5a91;
+    background: var(--color-primary-bg);
+    font-size: 15px;
+  }
+
+  &__value {
+    align-items: baseline;
+    flex-wrap: wrap;
+    margin-top: 7px;
+
+    strong {
+      overflow-wrap: anywhere;
+      font-size: 26px;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.12;
+    }
+
+    small {
+      color: var(--color-text-secondary);
+      font-size: 12px;
+    }
+  }
+
+  &--working .device-card__icon {
+    color: #246d5e;
+    background: #edf5e6;
+  }
+
+  &--repair .device-card__icon {
+    color: #986014;
+    background: #fff8eb;
+  }
+
+  &--stop .device-card__icon {
+    color: var(--color-text-secondary);
+    background: var(--color-bg);
+  }
+}
+
+@media (max-width: 700px) {
+  .device-overview__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .device-card {
+    padding: 9px 12px;
+  }
+}
 </style>

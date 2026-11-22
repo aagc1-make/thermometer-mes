@@ -1,5 +1,5 @@
 /**
- * 人脸登录的纯计算逻辑：特征校验、1:1 距离、多帧平均、眨眼/转头活体判定。
+ * 人脸登录的纯计算逻辑：特征校验、1:1 距离、多帧平均、左右转头活体判定。
  *
  * 这里不依赖 DOM、摄像头或 Vue，便于在 Node 里直接做单元测试。
  * 判定阈值与后端 mes.face.threshold 保持一致；改阈值时两边一起改。
@@ -7,16 +7,6 @@
 
 export const FACE_DIMENSION = 128
 export const FACE_THRESHOLD = 0.55
-
-/** 眼睛开合阈值（EAR = 上下眼睑距离 / 眼睛宽度） */
-export const EYE_OPEN_RATIO = 0.23
-export const EYE_CLOSED_RATIO = 0.17
-
-/** 鼻尖相对人脸框的水平位移，超过该比例视为转头 */
-export const HEAD_TURN_RATIO = 0.12
-
-/** 活体窗口：只保留最近约 2 秒的鼻尖位置，避免慢速漂移误判 */
-export const LIVENESS_WINDOW = 20
 
 /** 128 维特征是否可用于比对：维度正确、有限、非常量、数值范围合理 */
 export function isValidDescriptor(values) {
@@ -64,23 +54,6 @@ export function averageDescriptors(list) {
   return average
 }
 
-/** 单只眼睛的宽高比：points 为 68 点中的 6 个眼睑点 */
-export function eyeAspectRatio(points) {
-  if (!Array.isArray(points) || points.length < 6) return 0
-  const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y)
-  const vertical = distance(points[1], points[5]) + distance(points[2], points[4])
-  const horizontal = 2 * distance(points[0], points[3])
-  return horizontal === 0 ? 0 : vertical / horizontal
-}
-
-/** 68 点 landmark 的双眼平均开合度 */
-export function landmarkEar(positions) {
-  if (!Array.isArray(positions) || positions.length < 68) return 0
-  const left = eyeAspectRatio(positions.slice(36, 42))
-  const right = eyeAspectRatio(positions.slice(42, 48))
-  return (left + right) / 2
-}
-
 /** 鼻尖在人脸框内的相对位置，用于识别左右转头 */
 export function noseRatio(box, positions) {
   if (!box || !positions || positions.length < 48) return NaN
@@ -89,78 +62,84 @@ export function noseRatio(box, positions) {
   return (nose.x - box.x) / box.width
 }
 
-/**
- * 活体状态机：满足"眨一次眼"或"左右转头"任一条件即通过。
- *
- * 传入每一帧的 ear 与 nose，返回 { passed, blinked, turned, progress, state }。
- * 静默照片不会眨眼、也不会产生足够横向位移，因此无法通过。
- */
-export function createLivenessTracker(options = {}) {
-  const open = options.open || EYE_OPEN_RATIO
-  const closed = options.closed || EYE_CLOSED_RATIO
-  const turn = options.turn || HEAD_TURN_RATIO
-  const windowSize = options.windowSize || LIVENESS_WINDOW
-  const minClosedFrames = options.minClosedFrames || 1
+/** 活体动作：向左转头、向右转头。 */
+export const LIVENESS_ACTIONS = ['turn-left', 'turn-right']
 
-  let state = 'waiting'
-  let closedFrames = 0
-  let blinked = false
-  let turned = false
-  const noseWindow = []
-
-  const computeProgress = () => {
-    if (blinked || turned) return 0.85
-    if (state === 'closed') return 0.55
-    if (state === 'open') return 0.3
-    return 0.1
+/** 验证按指定顺序完成的左右转头，每步都要转到位并回正。 */
+export function createActiveLivenessTracker({ order, baselineNose } = {}) {
+  if (!Array.isArray(order) || order.length < 2
+    || order.some(action => LIVENESS_ACTIONS.indexOf(action) < 0)) {
+    throw new Error('活体动作需由左右转头组成')
+  }
+  if (!Number.isFinite(baselineNose)) {
+    throw new Error('活体检测缺少正脸基准')
   }
 
+  const actions = order.slice()
+  const turnDistance = 0.09
+  const centerDistance = 0.07
+  const actionTimeout = { 'turn-left': 6000, 'turn-right': 6000 }
+  const minimumDuration = 100
+  let step = 0
+  let phase = 'action'
+  let neutralSeen = false
+  let actionStartedAt = null
+  let movementAt = null
+  let lastFrameAt = null
+
+  const state = () => ({
+    action: phase === 'done' || phase === 'expired' ? null : actions[step],
+    phase,
+    step,
+    total: actions.length,
+    passed: phase === 'done'
+  })
+
   return {
-    push(frame = {}) {
-      const ear = frame.ear
-      if (Number.isFinite(ear) && ear > 0) {
-        if (state === 'waiting') {
-          if (ear >= open) state = 'open'
-        } else if (state === 'open') {
-          if (ear <= closed) {
-            state = 'closed'
-            closedFrames = 1
-          }
-        } else if (state === 'closed') {
-          if (ear <= closed) {
-            closedFrames += 1
-          } else if (ear >= open) {
-            if (closedFrames >= minClosedFrames) {
-              blinked = true
-              state = 'done'
-            } else {
-              state = 'open'
-            }
-          }
+    push({ nose, at } = {}) {
+      if (phase === 'done' || phase === 'expired') return state()
+      if (!Number.isFinite(at) || (lastFrameAt !== null && at <= lastFrameAt)) return state()
+      lastFrameAt = at
+      if (actionStartedAt === null) actionStartedAt = at
+      if (at - actionStartedAt >= actionTimeout[actions[step]]) {
+        phase = 'expired'
+        return state()
+      }
+      if (!Number.isFinite(nose)) return state()
+
+      const action = actions[step]
+      // 带符号位移：用户向左转头时，画面中鼻尖偏向图像右侧，偏移为正
+      const offset = nose - baselineNose
+      const centered = Math.abs(offset) <= centerDistance
+
+      if (!neutralSeen) {
+        neutralSeen = centered
+        return state()
+      }
+
+      if (phase === 'action') {
+        const moved = action === 'turn-left' ? offset >= turnDistance : offset <= -turnDistance
+        if (moved) {
+          phase = 'return'
+          movementAt = at
         }
+        return state()
       }
-      const nose = frame.nose
-      if (Number.isFinite(nose)) {
-        noseWindow.push(nose)
-        if (noseWindow.length > windowSize) noseWindow.shift()
-        if (noseWindow.length >= 4 && Math.max.apply(null, noseWindow) - Math.min.apply(null, noseWindow) >= turn) {
-          turned = true
-        }
+
+      if (!centered) return state()
+      if (at - movementAt < minimumDuration) {
+        phase = 'action'
+        neutralSeen = centered
+        movementAt = null
+        return state()
       }
-      return {
-        passed: blinked || turned,
-        blinked,
-        turned,
-        progress: computeProgress(),
-        state
-      }
-    },
-    reset() {
-      state = 'waiting'
-      closedFrames = 0
-      blinked = false
-      turned = false
-      noseWindow.length = 0
+
+      step += 1
+      phase = step === actions.length ? 'done' : 'action'
+      neutralSeen = false
+      actionStartedAt = at
+      movementAt = null
+      return state()
     }
   }
 }

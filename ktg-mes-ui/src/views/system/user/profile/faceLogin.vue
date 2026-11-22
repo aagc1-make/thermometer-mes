@@ -7,34 +7,49 @@
       title="人脸登录使用说明"
     >
       <div class="face-profile__note">
-        录入后可在登录页选择「人脸登录」，账号 + 人脸 1:1 比对通过后发放同样的登录令牌。<br>
-        服务端只保存 128 维特征向量，不保存照片；录入与解绑都需要再次输入登录密码，可随时解绑。
+        人脸照片只在浏览器内处理。系统加密保存特征，录入或解绑时需验证登录密码。
       </div>
     </el-alert>
 
     <div class="face-profile__panel">
-      <div class="face-profile__state">
-        <i :class="status.enrolled ? 'el-icon-success face-profile__ok' : 'el-icon-warning-outline face-profile__off'"></i>
+      <div v-if="status" class="face-profile__state" aria-live="polite">
+        <i :class="status.enrolled ? 'el-icon-success face-profile__ok' : 'el-icon-warning-outline face-profile__off'" aria-hidden="true"></i>
         <div>
-          <p class="face-profile__title">{{ status.enrolled ? '已录入人脸' : '尚未录入人脸' }}</p>
+          <div class="face-profile__headline">
+            <p class="face-profile__title">{{ status.enrolled ? '已录入人脸' : '尚未录入人脸' }}</p>
+            <el-tag v-if="loginState" size="small" :type="loginState.type">{{ loginState.label }}</el-tag>
+          </div>
           <p class="face-profile__desc" v-if="status.enrolled">
-            样本 {{ status.samples || 0 }} 帧 · 更新于 {{ formatTime(status.updateTime) }} · 算法 {{ status.algorithm || 'face-api-0.22.2' }}
+            样本 {{ status.samples || 0 }} 帧 · 模板 {{ status.templateCount || 1 }} 个 ·
+            更新于 {{ formatTime(status.updateTime) }} · 算法 {{ status.algorithm || 'face-api-0.22.2' }}
           </p>
-          <p class="face-profile__desc" v-else>录入后即可在登录页使用人脸登录；未录入时只能使用密码登录。</p>
+          <p v-if="status && status.needReenroll" class="face-profile__desc face-profile__warn">
+            当前模板由旧版算法录入，识别可能不准，请重新录入一次。
+          </p>
+          <p v-if="statusHint" class="face-profile__desc">{{ statusHint }}</p>
         </div>
       </div>
-      <div class="face-profile__buttons">
-        <el-button type="primary" size="small" icon="el-icon-camera" @click="openEnroll">
+      <div v-else aria-live="polite">
+        <p class="face-profile__title">{{ statusLoading ? '正在读取人脸状态…' : '人脸状态读取失败' }}</p>
+        <p v-if="!statusLoading" class="face-profile__desc">可继续使用密码登录。</p>
+      </div>
+      <div v-if="status" class="face-profile__buttons">
+        <el-button type="primary" size="small" icon="el-icon-camera" :disabled="!canEnroll" @click="openEnroll('enroll')">
           {{ status.enrolled ? '更新人脸' : '录入人脸' }}
         </el-button>
-        <el-button v-if="status.enrolled" type="danger" plain size="small" icon="el-icon-delete" @click="openUnbind">
+        <el-button v-if="canAppend" size="small" icon="el-icon-plus" :disabled="!canEnroll" @click="openEnroll('append')">
+          追加角度
+        </el-button>
+        <el-button v-if="status.enrolled" type="danger" plain size="small" icon="el-icon-delete"
+          :disabled="statusLoading || unbinding || enrolling" @click="openUnbind">
           解绑人脸
         </el-button>
       </div>
+      <el-button v-else-if="!statusLoading" size="small" @click="loadStatus">重新加载</el-button>
     </div>
 
     <el-dialog
-      title="录入人脸"
+      :title="enrollMode === 'append' ? '追加一个角度' : '录入人脸'"
       :visible.sync="enrollVisible"
       width="440px"
       append-to-body
@@ -43,6 +58,9 @@
       <div class="face-profile__form">
         <p class="face-profile__hint">
           请确认：人脸特征仅用于本系统登录比对，不保存照片，可随时解绑。需要再次输入登录密码以确认是本人操作。
+        </p>
+        <p v-if="enrollMode === 'append'" class="face-profile__hint">
+          追加角度用于改善侧脸、戴眼镜等场景的识别效果，主模板保持不变，最多保存 3 个。
         </p>
         <el-input
           v-model="password"
@@ -60,7 +78,7 @@
         <el-button
           type="primary"
           size="small"
-          :disabled="!agree || !password"
+          :disabled="!agree || !password || !canEnroll"
           :loading="enrolling"
           @click="startCapture"
         >
@@ -104,18 +122,24 @@
 </template>
 
 <script>
-import { getFaceStatus, enrollFace, unbindFace } from '@/api/face'
+import { getFaceStatus, enrollFace, appendFace, unbindFace } from '@/api/face'
 import FaceCapture from '@/components/FaceCapture'
 
 export default {
   name: 'ProfileFaceLogin',
   components: { FaceCapture },
+  props: {
+    active: { type: Boolean, default: true }
+  },
   data() {
     return {
-      status: { enrolled: false, samples: 0, updateTime: null, algorithm: '' },
+      status: null,
+      statusLoading: false,
+      statusRequest: 0,
       enrollVisible: false,
       unbindVisible: false,
       captureVisible: false,
+      enrollMode: 'enroll',
       password: '',
       unbindPassword: '',
       agree: false,
@@ -123,16 +147,49 @@ export default {
       unbinding: false
     }
   },
-  created() {
-    this.loadStatus()
+  computed: {
+    canEnroll() {
+      return Boolean(this.status && this.status.enrollmentEnabled && !this.statusLoading && !this.enrolling && !this.unbinding)
+    },
+    canAppend() {
+      return Boolean(this.status && this.status.enrolled && (this.status.templateCount || 1) < 4)
+    },
+    loginState() {
+      if (!this.status) return null
+      if (!this.status.enrollmentEnabled) return { label: '人脸登录暂不可用', type: 'info' }
+      if (!this.status.loginAllowed) return { label: '人脸登录已停用', type: 'warning' }
+      return this.status.enrolled ? { label: '可使用人脸登录', type: 'success' } : null
+    },
+    statusHint() {
+      if (!this.status) return ''
+      if (!this.status.enrollmentEnabled || !this.status.loginAllowed) return '可继续使用密码登录。'
+      return this.status.enrolled ? '' : '录入后可在登录页使用人脸登录。'
+    }
+  },
+  watch: {
+    active: {
+      immediate: true,
+      handler(active) {
+        if (active) this.loadStatus()
+      }
+    }
   },
   methods: {
-    loadStatus() {
-      getFaceStatus().then(res => {
-        this.status = (res && res.data) || { enrolled: false }
-      }).catch(() => {})
+    async loadStatus() {
+      const request = ++this.statusRequest
+      this.statusLoading = true
+      try {
+        const response = await getFaceStatus()
+        if (request === this.statusRequest) this.status = response.data || null
+      } catch {
+        if (request === this.statusRequest) this.status = null
+      } finally {
+        if (request === this.statusRequest) this.statusLoading = false
+      }
     },
-    openEnroll() {
+    openEnroll(mode) {
+      if (!this.canEnroll) return
+      this.enrollMode = mode === 'append' ? 'append' : 'enroll'
       this.password = ''
       this.agree = false
       this.enrollVisible = true
@@ -142,24 +199,28 @@ export default {
       this.unbindVisible = true
     },
     startCapture() {
-      if (!this.agree || !this.password) return
+      if (!this.agree || !this.password || !this.canEnroll) return
       this.captureVisible = true
     },
     async handleCaptured(payload) {
       this.captureVisible = false
+      if (!this.canEnroll) return
       this.enrolling = true
+      const appending = this.enrollMode === 'append'
+      const request = appending ? appendFace : enrollFace
       try {
-        await enrollFace({
+        await request({
           password: this.password,
           descriptor: Array.from(payload.descriptor),
           samples: payload.samples,
           quality: payload.quality,
           agree: true
         })
-        this.$message.success('人脸已录入，可在登录页使用人脸登录')
+        this.$message.success(appending ? '已追加一个角度' : '人脸已录入')
         this.enrollVisible = false
         this.password = ''
         this.agree = false
+        this.enrollMode = 'enroll'
         this.loadStatus()
       } catch (error) {
         // 请求拦截器已提示服务端返回的原因，保留弹窗便于重试
@@ -212,6 +273,12 @@ export default {
   align-items: flex-start;
   gap: 12px;
 }
+.face-profile__headline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .face-profile__ok {
   color: #16a34a;
   font-size: 26px;
@@ -232,6 +299,9 @@ export default {
   margin: 4px 0 0;
   font-size: 12px;
   color: #64748b;
+}
+.face-profile__warn {
+  color: #b45309;
 }
 .face-profile__buttons {
   display: flex;

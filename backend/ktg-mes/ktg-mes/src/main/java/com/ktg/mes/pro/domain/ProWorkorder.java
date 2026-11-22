@@ -116,6 +116,12 @@ public class ProWorkorder extends TreeEntity
     @Excel(name = "需求日期", width = 30, dateFormat = "yyyy-MM-dd")
     private Date requestDate;
 
+    /** 需求日期起（查询条件，yyyy-MM-dd，含当日起） */
+    private String requestDateBegin;
+
+    /** 需求日期止（查询条件，yyyy-MM-dd，含当日全天） */
+    private String requestDateEnd;
+
     /** 完成时间 */
     @JsonFormat(pattern = "yyyy-MM-dd hh:mm:ss")
     @Excel(name = "完成时间", width = 30, dateFormat = "yyyy-MM-dd hh:mm:ss")
@@ -342,6 +348,22 @@ public class ProWorkorder extends TreeEntity
     public void setRequestDate(Date requestDate)
     {
         this.requestDate = requestDate;
+    }
+
+    public String getRequestDateBegin() {
+        return requestDateBegin;
+    }
+
+    public void setRequestDateBegin(String requestDateBegin) {
+        this.requestDateBegin = requestDateBegin;
+    }
+
+    public String getRequestDateEnd() {
+        return requestDateEnd;
+    }
+
+    public void setRequestDateEnd(String requestDateEnd) {
+        this.requestDateEnd = requestDateEnd;
     }
 
     public Date getCancelDate() {

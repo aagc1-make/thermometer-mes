@@ -1,34 +1,19 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
+    <h1 class="mes-page-heading">发货通知单</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
       <el-form-item label="通知单编号" prop="noticeCode">
         <el-input
           v-model="queryParams.noticeCode"
           placeholder="请输入通知单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="通知单名称" prop="noticeName">
-        <el-input
-          v-model="queryParams.noticeName"
-          placeholder="请输入通知单名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="销售订单编号" prop="soCode">
-        <el-input
-          v-model="queryParams.soCode"
-          placeholder="请输入销售订单编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="客户编码" prop="clientCode">
-        <el-input
-          v-model="queryParams.clientCode"
-          placeholder="请输入客户编码"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -41,19 +26,41 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="客户简称" prop="clientNick">
+      <el-form-item label="销售订单编号" prop="soCode">
         <el-input
-          v-model="queryParams.clientNick"
-          placeholder="请输入客户简称"
+          v-model="queryParams.soCode"
+          placeholder="请输入销售订单编号"
           clearable
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <template #more>
+        <el-form-item label="通知单名称" prop="noticeName">
+          <el-input
+            v-model="queryParams.noticeName"
+            placeholder="请输入通知单名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="客户编码" prop="clientCode">
+          <el-input
+            v-model="queryParams.clientCode"
+            placeholder="请输入客户编码"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="客户简称" prop="clientNick">
+          <el-input
+            v-model="queryParams.clientNick"
+            placeholder="请输入客户简称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -78,7 +85,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -89,7 +96,7 @@
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"
@@ -138,7 +145,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['mes:wm:salesnotice:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

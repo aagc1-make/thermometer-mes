@@ -55,24 +55,27 @@ public class SysUserFaceController extends BaseController {
         Long userId = SecurityUtils.getUserId();
         SysUserFace face = userFaceService.selectByUserId(userId);
         Map<String, Object> data = new HashMap<String, Object>();
-        boolean enrolled = face != null && "0".equals(face.getStatus());
-        data.put("enrolled", enrolled);
+        data.put("enrolled", face != null);
+        data.put("enrollmentEnabled", userFaceService.isFaceServiceAvailable());
+        data.put("loginAllowed", userFaceService.isAccountFaceLoginAllowed(userId)
+                && (face == null || "0".equals(face.getStatus())));
         data.put("algorithm", face == null ? "" : face.getAlgorithm());
         data.put("samples", face == null ? 0 : face.getSamples());
+        data.put("templateCount", userFaceService.countTemplates(userId));
+        data.put("needReenroll", userFaceService.needsReenroll(userId));
+        data.put("consentAt", face == null ? null : face.getConsentAt());
         data.put("updateTime", face == null ? null
                 : (face.getUpdateTime() != null ? face.getUpdateTime() : face.getCreateTime()));
         return AjaxResult.success(data);
     }
 
     /** 录入或更新人脸 */
-    @Log(title = "人脸登录", businessType = BusinessType.UPDATE)
+    @Log(title = "人脸登录", businessType = BusinessType.UPDATE, isSaveRequestData = false)
     @PostMapping("/enroll")
     public AjaxResult enroll(@RequestBody FaceEnrollBody body) {
-        if (body == null) {
-            return AjaxResult.error("参数不能为空");
-        }
-        if (!Boolean.TRUE.equals(body.getAgree())) {
-            return AjaxResult.error("请先阅读并同意人脸特征使用说明");
+        String invalid = validate(body);
+        if (invalid != null) {
+            return AjaxResult.error(invalid);
         }
         LoginUser loginUser = getLoginUser();
         SysUser current = loginUser.getUser();
@@ -86,6 +89,55 @@ public class SysUserFaceController extends BaseController {
         if (!FaceTemplate.isUsable(descriptor)) {
             return AjaxResult.error("人脸特征无效，请重新采集");
         }
+        userFaceService.enroll(buildFace(current, body, descriptor));
+        redisCache.deleteObject(ENROLL_FAIL_KEY + current.getUserId());
+        AjaxResult ajax = AjaxResult.success("人脸已录入");
+        ajax.put("enrolled", true);
+        return ajax;
+    }
+
+    /** 追加一个补充角度：主模板保持不变，最多 3 个角度 */
+    @Log(title = "人脸登录", businessType = BusinessType.UPDATE, isSaveRequestData = false)
+    @PostMapping("/append")
+    public AjaxResult append(@RequestBody FaceEnrollBody body) {
+        String invalid = validate(body);
+        if (invalid != null) {
+            return AjaxResult.error(invalid);
+        }
+        LoginUser loginUser = getLoginUser();
+        SysUser current = loginUser.getUser();
+        ensurePasswordAttempts(current.getUserId());
+        if (StringUtils.isEmpty(body.getPassword())
+                || !SecurityUtils.matchesPassword(body.getPassword(), current.getPassword())) {
+            countPasswordFail(current.getUserId());
+            return AjaxResult.error("登录密码不正确");
+        }
+        double[] descriptor = FaceTemplate.toArray(body.getDescriptor());
+        if (!FaceTemplate.isUsable(descriptor)) {
+            return AjaxResult.error("人脸特征无效，请重新采集");
+        }
+        userFaceService.appendTemplate(buildFace(current, body, descriptor));
+        redisCache.deleteObject(ENROLL_FAIL_KEY + current.getUserId());
+        AjaxResult ajax = AjaxResult.success("已追加一个角度");
+        ajax.put("templateCount", userFaceService.countTemplates(current.getUserId()));
+        return ajax;
+    }
+
+    /** 请求体基础校验：参数、授权确认、特征长度与取值范围 */
+    private String validate(FaceEnrollBody body) {
+        if (body == null) {
+            return "参数不能为空";
+        }
+        if (!Boolean.TRUE.equals(body.getAgree())) {
+            return "请先阅读并同意人脸特征使用说明";
+        }
+        if (body.getDescriptor() == null || body.getDescriptor().size() != FaceTemplate.DIMENSION) {
+            return "人脸特征格式不正确，请重新采集";
+        }
+        return null;
+    }
+
+    private SysUserFace buildFace(SysUser current, FaceEnrollBody body, double[] descriptor) {
         int samples = body.getSamples() == null ? 0 : Math.max(0, Math.min(30, body.getSamples()));
         BigDecimal quality = null;
         if (body.getQuality() != null) {
@@ -95,22 +147,18 @@ public class SysUserFaceController extends BaseController {
         SysUserFace face = new SysUserFace();
         face.setUserId(current.getUserId());
         face.setDescriptor(FaceTemplate.format(descriptor));
-        face.setAlgorithm("face-api-0.22.2");
+        face.setAlgorithm(FaceTemplate.ALGORITHM);
         face.setSamples(samples);
         face.setQuality(quality);
         face.setStatus("0");
         face.setCreateBy(current.getUserName());
         face.setUpdateBy(current.getUserName());
         face.setRemark("用户授权：人脸特征仅用于本系统登录比对，可随时解绑删除");
-        userFaceService.enroll(face);
-        redisCache.deleteObject(ENROLL_FAIL_KEY + current.getUserId());
-        AjaxResult ajax = AjaxResult.success("人脸已录入，下次可直接人脸登录");
-        ajax.put("enrolled", true);
-        return ajax;
+        return face;
     }
 
     /** 解绑人脸：删除特征，立即失效 */
-    @Log(title = "人脸登录", businessType = BusinessType.DELETE)
+    @Log(title = "人脸登录", businessType = BusinessType.DELETE, isSaveRequestData = false)
     @DeleteMapping
     public AjaxResult unbind(@RequestBody(required = false) FaceEnrollBody body) {
         if (body == null || StringUtils.isEmpty(body.getPassword())) {

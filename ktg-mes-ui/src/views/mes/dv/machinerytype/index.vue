@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <h1 class="mes-page-heading">设备类型设置</h1>
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="类型名称" prop="machineryTypeName">
         <el-input
@@ -20,7 +21,7 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-	    <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+	    <el-button class="mes-action--query" type="primary" icon="el-icon-search" size="mini" @click="handleQuery">查询</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
@@ -56,7 +57,7 @@
             @click="handleAdd(scope.row)"
             v-hasPermi="['mes:dv:machinerytype:add']"
           >新增</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             v-if="scope.row.parentTypeId != 0"
             size="mini"
             type="text"

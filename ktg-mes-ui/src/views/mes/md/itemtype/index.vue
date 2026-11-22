@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <h1 class="mes-page-heading">物料产品分类</h1>
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
       <el-form-item label="分类名称" prop="itemTypeName">
         <el-input
@@ -20,7 +21,7 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button class="mes-action--query" type="primary" icon="el-icon-search" size="mini" @click="handleQuery">查询</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
@@ -80,7 +81,7 @@
             @click="handleAdd(scope.row)"
             v-hasPermi="['mes:md:itemtype:add']"
           >新增</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             v-if="scope.row.parentTypeId != 0"
             size="mini"
             type="text"

@@ -2,13 +2,10 @@
   <div ref="cockpit" class="app-container cockpit" :class="{ 'is-fullscreen': isFullscreen }">
     <!-- 顶部标题区：沿用模板的居中标题 + 箭头装饰 -->
     <header class="pc-hero">
-      <span class="pc-hero__frame" aria-hidden="true"></span>
       <div class="pc-hero__center">
-        <h2 class="pc-hero__title">
-          <span class="pc-hero__chev" aria-hidden="true">«‹</span>
+        <h1 class="pc-hero__title">
           <span class="pc-hero__text">生产驾驶舱</span>
-          <span class="pc-hero__chev" aria-hidden="true">›»</span>
-        </h2>
+        </h1>
         <p class="pc-hero__sub">工单进度 · 库存水位 · 设备状态 · 产量趋势（每 30 秒自动刷新）</p>
       </div>
       <div class="pc-hero__meta">
@@ -30,8 +27,6 @@
     <!-- 指标总览：仿模板“数额总览”的斜切标题条 -->
     <div class="pc-sec">
       <h3 class="pc-sec__title"><span>指标总览</span></h3>
-      <span class="pc-sec__rule"></span>
-      <span class="pc-sec__dots" aria-hidden="true"><i></i><i></i><i></i></span>
     </div>
 
     <div class="pc-kpis">
@@ -93,8 +88,6 @@
       <section class="pc-panel pc-panel--half">
         <header class="pc-panel__head">
           <h3 class="pc-panel__title"><span>工单进度</span></h3>
-          <span class="pc-panel__rule"></span>
-          <span class="pc-panel__dots" aria-hidden="true"><i></i><i></i><i></i></span>
         </header>
         <div ref="chartWorkorder" class="pc-panel__chart"></div>
       </section>
@@ -102,8 +95,6 @@
       <section class="pc-panel pc-panel--half">
         <header class="pc-panel__head">
           <h3 class="pc-panel__title"><span>产量趋势（近 14 天报工合格数）</span></h3>
-          <span class="pc-panel__rule"></span>
-          <span class="pc-panel__dots" aria-hidden="true"><i></i><i></i><i></i></span>
         </header>
         <div ref="chartTrend" class="pc-panel__chart"></div>
       </section>
@@ -111,8 +102,6 @@
       <section class="pc-panel pc-panel--wide">
         <header class="pc-panel__head">
           <h3 class="pc-panel__title"><span>库存水位（按仓库与单位）</span></h3>
-          <span class="pc-panel__rule"></span>
-          <span class="pc-panel__dots" aria-hidden="true"><i></i><i></i><i></i></span>
         </header>
         <div ref="chartStock" class="pc-panel__chart pc-panel__chart--bars"></div>
         <div class="pc-warn" v-if="stockWarnings.length">
@@ -127,8 +116,6 @@
       <section class="pc-panel pc-panel--narrow">
         <header class="pc-panel__head">
           <h3 class="pc-panel__title"><span>设备状态</span></h3>
-          <span class="pc-panel__rule"></span>
-          <span class="pc-panel__dots" aria-hidden="true"><i></i><i></i><i></i></span>
         </header>
         <div ref="chartMachinery" class="pc-panel__chart"></div>
       </section>
@@ -138,7 +125,6 @@
     <section class="pc-panel pc-panel--full">
       <header class="pc-panel__head">
         <h3 class="pc-panel__title"><span>安全库存预警与补货建议</span></h3>
-        <span class="pc-panel__rule"></span>
         <span class="pc-badge pc-badge--warn" v-if="stockAlerts.length">
           <i class="el-icon-warning"></i> {{ stockAlerts.length }} 种物料低于安全库存
         </span>
@@ -180,7 +166,6 @@
     <section class="pc-panel pc-panel--full">
       <header class="pc-panel__head">
         <h3 class="pc-panel__title"><span>工单进度明细</span></h3>
-        <span class="pc-panel__rule"></span>
         <span class="pc-badge pc-badge--warn" v-if="overdue > 0">
           <i class="el-icon-warning"></i> {{ overdue }} 个工单已超交期
         </span>
@@ -195,7 +180,7 @@
         <el-table-column prop="quantityProduced" label="已生产" width="86" align="right" />
         <el-table-column label="进度" width="180">
           <template slot-scope="s">
-            <el-progress :percentage="s.row.percent" :stroke-width="8" :show-text="true" :color="s.row.percent >= 100 ? '#b6e86a' : '#2fd8bd'" />
+            <el-progress :percentage="s.row.percent" :stroke-width="8" :show-text="true" :color="s.row.percent >= 100 ? '#4d7b64' : '#4272c7'" />
           </template>
         </el-table-column>
         <el-table-column prop="requestDate" label="交期" width="110" />
@@ -215,24 +200,24 @@ import screenfull from 'screenfull'
 import request from '@/utils/request'
 import { getMdItem } from '@/api/mes/md/mdItem'
 
-// 数字孪生大屏统一的深色图表样式
+// 生产驾驶舱图表沿用工作区的蓝灰配色
 const PC_TOOLTIP = {
-  backgroundColor: 'rgba(7,28,36,.94)',
-  borderColor: 'rgba(63,224,192,.36)',
+  backgroundColor: '#ffffff',
+  borderColor: '#cbd4df',
   borderWidth: 1,
   padding: [8, 12],
-  textStyle: { color: '#dff5f2', fontSize: 12 },
-  extraCssText: 'box-shadow:0 10px 26px rgba(0,0,0,.45);border-radius:8px;'
+  textStyle: { color: '#252c35', fontSize: 12 },
+  extraCssText: 'box-shadow:0 4px 12px rgba(37,44,53,.12);border-radius:8px;'
 }
-const PC_AXIS_LABEL = { color: '#8fb0ba', fontSize: 11 }
-const PC_AXIS_LINE = { lineStyle: { color: 'rgba(140,190,200,.24)' }}
-const PC_SPLIT_LINE = { lineStyle: { color: 'rgba(140,190,200,.10)', type: 'dashed' }}
+const PC_AXIS_LABEL = { color: '#55616f', fontSize: 11 }
+const PC_AXIS_LINE = { lineStyle: { color: '#cbd4df' }}
+const PC_SPLIT_LINE = { lineStyle: { color: '#e1e6ed', type: 'dashed' }}
 const vGrad = (from, to) => new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: from }, { offset: 1, color: to }])
 const hGrad = (from, to) => new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: from }, { offset: 1, color: to }])
 const STOCK_GRADIENTS = [
-  hGrad('rgba(16,110,102,.45)', '#5df0d5'),
-  hGrad('rgba(16,110,102,.32)', '#2fd8bd'),
-  hGrad('rgba(150,88,30,.45)', '#ffb266')
+  hGrad('#a4b8cc', '#547aa3'),
+  hGrad('#b3c9be', '#4272c7'),
+  hGrad('#e5d3b1', '#b18344')
 ]
 
 // 长名称折行显示，避免坐标轴标签互相压字
@@ -478,7 +463,7 @@ export default {
         legend: {
           data: ['计划数量', '已生产'], top: 0, right: 2, icon: 'roundRect',
           itemWidth: 12, itemHeight: 8, itemGap: 18,
-          textStyle: { color: '#a9c7d0', fontSize: 11 }
+          textStyle: { color: '#55616f', fontSize: 11 }
         },
         grid: { left: 2, right: 8, top: 40, bottom: 2, containLabel: true },
         xAxis: {
@@ -495,12 +480,12 @@ export default {
         series: [
           {
             name: '计划数量', type: 'bar', barWidth: 15, barGap: '50%',
-            itemStyle: { color: vGrad('rgba(93,240,213,.95)', 'rgba(15,120,112,.15)'), borderRadius: [5, 5, 0, 0], barBorderRadius: [5, 5, 0, 0] },
+            itemStyle: { color: vGrad('#7190af', '#dbe6ef'), borderRadius: [5, 5, 0, 0], barBorderRadius: [5, 5, 0, 0] },
             data: names.map(n => byProduct[n].plan)
           },
           {
             name: '已生产', type: 'bar', barWidth: 15,
-            itemStyle: { color: vGrad('rgba(255,178,102,.95)', 'rgba(190,105,40,.15)'), borderRadius: [5, 5, 0, 0], barBorderRadius: [5, 5, 0, 0] },
+            itemStyle: { color: vGrad('#4d7b64', '#d8e6de'), borderRadius: [5, 5, 0, 0], barBorderRadius: [5, 5, 0, 0] },
             data: names.map(n => byProduct[n].done)
           }
         ]
@@ -575,7 +560,7 @@ export default {
             barBorderRadius: [0, 6, 6, 0],
             color: p => STOCK_GRADIENTS[p.dataIndex % STOCK_GRADIENTS.length]
           },
-          label: { show: true, position: 'right', distance: 6, color: '#cfe6e9', fontSize: 11 },
+          label: { show: true, position: 'right', distance: 6, color: '#252c35', fontSize: 11 },
           data: targets.map(n => Math.round(byWh[n] * 100) / 100)
         }]
       }, true)
@@ -592,15 +577,15 @@ export default {
         tooltip: Object.assign({ trigger: 'item', formatter: '{b}：{c} 台（{d}%）' }, PC_TOOLTIP),
         legend: {
           bottom: 0, icon: 'circle', itemWidth: 8, itemHeight: 8, itemGap: 14,
-          textStyle: { color: '#a9c7d0', fontSize: 11 }
+          textStyle: { color: '#55616f', fontSize: 11 }
         },
-        color: ['#2fd8bd', '#ffb266', '#6f8b98', '#b6e86a', '#7aa7d9'],
+        color: ['#4272c7', '#b18344', '#6f8b98', '#4d7b64', '#7aa7d9'],
         series: [{
           type: 'pie', radius: ['46%', '66%'], center: ['50%', '44%'],
           avoidLabelOverlap: true,
-          itemStyle: { borderColor: '#08212b', borderWidth: 3 },
-          label: { formatter: '{b}\n{c} 台', color: '#cfe6e9', fontSize: 11, lineHeight: 15 },
-          labelLine: { length: 6, length2: 8, lineStyle: { color: 'rgba(140,190,200,.35)' }},
+          itemStyle: { borderColor: '#ffffff', borderWidth: 3 },
+          label: { formatter: '{b}\n{c} 台', color: '#252c35', fontSize: 11, lineHeight: 15 },
+          labelLine: { length: 6, length2: 8, lineStyle: { color: '#a7b4c3' }},
           data
         }]
       }, true)
@@ -632,7 +617,7 @@ export default {
           type: 'category', data: days.map(d => d.slice(5)), boundaryGap: false,
           axisTick: { show: false },
           axisLine: PC_AXIS_LINE,
-          axisLabel: Object.assign({}, PC_AXIS_LABEL, { interval: 0, fontSize: 9, color: '#8fb0ba' })
+          axisLabel: Object.assign({}, PC_AXIS_LABEL, { interval: 0, fontSize: 9, color: '#55616f' })
         },
         yAxis: {
           type: 'value', minInterval: 1, splitNumber: 4,
@@ -641,10 +626,10 @@ export default {
         },
         series: [{
           type: 'line', smooth: true, symbol: 'circle', symbolSize: 7, showSymbol: true,
-          lineStyle: { width: 2.4, color: '#eafcff', shadowColor: 'rgba(87,232,208,.55)', shadowBlur: 12, shadowOffsetY: 2 },
-          itemStyle: { color: '#08222c', borderColor: '#9ff6e6', borderWidth: 2 },
-          label: { show: true, distance: 9, color: '#dff5f2', fontSize: 11, formatter: p2 => (p2.value ? p2.value : '') },
-          areaStyle: { color: vGrad('rgba(87,232,208,.30)', 'rgba(87,232,208,0)') },
+          lineStyle: { width: 2.4, color: '#34577d', shadowColor: 'transparent', shadowBlur: 12, shadowOffsetY: 2 },
+          itemStyle: { color: '#ffffff', borderColor: '#34577d', borderWidth: 2 },
+          label: { show: true, distance: 9, color: '#252c35', fontSize: 11, formatter: p2 => (p2.value ? p2.value : '') },
+          areaStyle: { color: vGrad('rgba(84,122,163,.22)', 'rgba(84,122,163,0)') },
           data: days.map(d => Math.round((sum[d] || 0) * 100) / 100)
         }]
       }, true)
@@ -654,747 +639,218 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-// 数字孪生大屏配色：深蓝底 + 青色描边 + 橙色数值
-$pc-cyan: #3fe0c0;
-$pc-cyan-bright: #5df0d5;
-$pc-orange: #ff9d4d;
-$pc-text: #dff5f2;
-$pc-text-2: #a9c7d0;
-$pc-text-3: #7d97a2;
-$pc-line: rgba(63, 224, 192, 0.16);
-$pc-panel-bg: linear-gradient(180deg, rgba(14, 42, 52, 0.92) 0%, rgba(7, 24, 31, 0.94) 100%);
-$pc-ease: cubic-bezier(0.4, 0, 0.2, 1);
-
-@keyframes pc-rise {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes pc-glow {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 .cockpit {
-  position: relative;
-  padding: 18px 22px 26px !important;
-  border: 1px solid rgba(63, 224, 192, 0.18);
-  border-radius: 14px;
-  color: $pc-text;
-  font-feature-settings: "palt";
-  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  background-color: #05161d;
-  background-image:
-    radial-gradient(1100px 420px at 50% -12%, rgba(35, 160, 150, 0.28), transparent 65%),
-    radial-gradient(820px 360px at 0% 0%, rgba(30, 90, 160, 0.18), transparent 62%),
-    radial-gradient(820px 360px at 100% 0%, rgba(20, 130, 115, 0.16), transparent 62%),
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(180deg, #061a22 0%, #04121a 100%);
-  background-size: auto, auto, auto, 46px 46px, 46px 46px, auto;
-  background-repeat: no-repeat, no-repeat, no-repeat, repeat, repeat, no-repeat;
+  color: var(--color-text);
+  background: var(--color-bg);
 
   &.is-fullscreen {
     width: 100%;
     height: 100%;
-    margin: 0 !important;
-    border: 0;
-    border-radius: 0;
     overflow: auto;
 
     .pc-hero {
       position: sticky;
       top: 0;
       z-index: 10;
-      background-color: #061a22;
+      background: var(--color-bg);
     }
   }
-
-  @media (max-width: 900px) {
-    padding: 14px 14px 20px !important;
-  }
 }
 
-/* ---------- 顶部标题区 ---------- */
 .pc-hero {
-  position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  min-height: 96px;
-  margin-bottom: 16px;
-  padding: 16px 210px;
-  border: 1px solid rgba(63, 224, 192, 0.2);
-  border-radius: 12px;
-  background:
-    radial-gradient(620px 200px at 50% -20%, rgba(63, 224, 192, 0.22), transparent 70%),
-    linear-gradient(180deg, rgba(10, 38, 47, 0.92) 0%, rgba(5, 20, 27, 0.86) 100%);
-  overflow: hidden;
-  animation: pc-rise 420ms $pc-ease both;
-
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(63, 224, 192, 0.4) 18%, rgba(63, 224, 192, 0.9) 50%, rgba(63, 224, 192, 0.4) 82%, transparent);
-  }
-
-  &::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    bottom: -1px;
-    width: 260px;
-    height: 3px;
-    transform: translateX(-50%);
-    border-radius: 3px;
-    background: linear-gradient(90deg, transparent, $pc-cyan-bright 45%, $pc-cyan-bright 55%, transparent);
-    filter: blur(1px);
-    animation: pc-glow 3.6s ease-in-out infinite;
-  }
-
-  @media (max-width: 1680px) {
-    flex-direction: column;
-    gap: 10px;
-    padding: 18px;
-  }
-}
-
-/* 四角 L 形描边，模仿模板的科技边框 */
-.pc-hero__frame {
-  position: absolute;
-  inset: 7px;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(63, 224, 192, 0.55), rgba(63, 224, 192, 0)) left top / 120px 1px no-repeat,
-    linear-gradient(180deg, rgba(63, 224, 192, 0.55), rgba(63, 224, 192, 0)) left top / 1px 30px no-repeat,
-    linear-gradient(270deg, rgba(63, 224, 192, 0.55), rgba(63, 224, 192, 0)) right top / 120px 1px no-repeat,
-    linear-gradient(180deg, rgba(63, 224, 192, 0.55), rgba(63, 224, 192, 0)) right top / 1px 30px no-repeat,
-    linear-gradient(90deg, rgba(63, 224, 192, 0.3), rgba(63, 224, 192, 0)) left bottom / 120px 1px no-repeat,
-    linear-gradient(0deg, rgba(63, 224, 192, 0.3), rgba(63, 224, 192, 0)) left bottom / 1px 30px no-repeat,
-    linear-gradient(270deg, rgba(63, 224, 192, 0.3), rgba(63, 224, 192, 0)) right bottom / 120px 1px no-repeat,
-    linear-gradient(0deg, rgba(63, 224, 192, 0.3), rgba(63, 224, 192, 0)) right bottom / 1px 30px no-repeat;
+  justify-content: space-between;
+  gap: 14px 20px;
+  padding: 4px 0 20px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .pc-hero__title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin: 0;
-  font-size: 27px;
+  margin: 0 0 6px;
+  font-size: clamp(24px, 2.2vw, 32px);
   font-weight: 700;
-  letter-spacing: 0.2em;
-  line-height: 1.2;
-  color: #f2fffd;
-  text-shadow: 0 0 22px rgba(63, 224, 192, 0.45);
+  line-height: 1.25;
 }
 
-.pc-hero__text {
-  text-indent: 0.2em;
-}
-
-.pc-hero__chev {
-  font-size: 17px;
-  font-weight: 400;
-  letter-spacing: 0;
-  color: rgba(120, 226, 210, 0.75);
-  transform: translateY(-2px);
+.pc-hero__sub, .pc-hero__time, .pc-kpi__desc, .pc-tip {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .pc-hero__sub {
-  margin: 9px 0 0;
-  text-align: center;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  color: $pc-text-2;
+  margin: 0;
 }
 
-.pc-hero__meta {
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
+.pc-hero__meta, .pc-panel__head, .pc-kpi__top, .pc-kpi__foot {
   display: flex;
   align-items: center;
-  gap: 10px;
   flex-wrap: wrap;
-  justify-content: center;
-
-  @media (max-width: 1680px) {
-    position: static;
-    transform: none;
-  }
+  gap: 8px;
 }
 
-.pc-hero__time {
-  font-size: 12px;
-  color: $pc-text-2;
-  font-variant-numeric: tabular-nums;
-
-  i {
-    margin-right: 5px;
-    color: rgba(120, 226, 210, 0.8);
-  }
+.pc-hero__time i {
+  margin-right: 4px;
 }
 
 .pc-hero__btn.el-button {
-  padding: 7px 14px;
-  border-radius: 999px;
-  border-color: rgba(63, 224, 192, 0.35);
-  background: rgba(12, 44, 52, 0.72);
-  color: #8fe9d7;
-  font-size: 12px;
-
-  &:hover,
-  &:focus {
-    border-color: rgba(63, 224, 192, 0.7);
-    background: rgba(18, 62, 70, 0.85);
-    color: #d6fff6;
-  }
+  margin: 0;
 }
 
-/* ---------- 斜切标题条（模板“数额总览”样式） ---------- */
 .pc-sec {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 2px 0 12px;
+  margin: 20px 0 12px;
 }
 
-.pc-sec__title {
-  flex: none;
+.pc-sec__title, .pc-panel__title {
   margin: 0;
-  padding: 1px;
-  background: linear-gradient(90deg, rgba(63, 224, 192, 0.8) 0%, rgba(63, 224, 192, 0.08) 100%);
-  clip-path: polygon(18px 0, 100% 0, 100% 100%, 0 100%);
-
-  span {
-    display: block;
-    height: 32px;
-    line-height: 32px;
-    padding: 0 26px 0 30px;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    color: #eafef9;
-    background: linear-gradient(90deg, #12454f 0%, #0a2b34 68%, #071d25 100%);
-    clip-path: polygon(17px 0, 100% 0, 100% 100%, 0 100%);
-  }
+  font-size: 16px;
+  font-weight: 600;
 }
 
-.pc-panel__title {
-  flex: none;
-  margin: 0;
-  padding: 1px;
-  background: linear-gradient(90deg, rgba(63, 224, 192, 0.65) 0%, rgba(63, 224, 192, 0.06) 100%);
-  clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
-
-  span {
-    display: block;
-    height: 26px;
-    line-height: 26px;
-    padding: 0 16px 0 22px;
-    font-size: 12.5px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    color: #e6fdf7;
-    background: linear-gradient(90deg, #123f49 0%, #0a2830 70%, #071d25 100%);
-    clip-path: polygon(13px 0, 100% 0, 100% 100%, 0 100%);
-  }
-}
-
-.pc-sec__rule,
-.pc-panel__rule {
-  flex: 1 1 auto;
-  min-width: 18px;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(63, 224, 192, 0.45), rgba(63, 224, 192, 0));
-}
-
-.pc-sec__dots,
-.pc-panel__dots {
-  display: inline-flex;
-  flex: none;
-  gap: 4px;
-
-  i {
-    display: block;
-    width: 9px;
-    height: 9px;
-    border-radius: 2px;
-    background: rgba(63, 224, 192, 0.55);
-
-    &:nth-child(2) {
-      background: rgba(63, 224, 192, 0.38);
-    }
-
-    &:nth-child(3) {
-      background: rgba(63, 224, 192, 0.22);
-    }
-  }
-}
-
-.pc-panel__dots i {
-  width: 8px;
-  height: 8px;
-  border-radius: 1.5px;
-}
-
-/* ---------- KPI 卡片 ---------- */
-.pc-kpis {
+.pc-kpis, .pc-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
-  margin-bottom: 16px;
-
-  @media (max-width: 1440px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @media (max-width: 720px) {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  margin-bottom: 14px;
 }
 
-.pc-kpi {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: 15px 16px 14px;
-  border: 1px solid $pc-line;
-  border-radius: 12px;
-  background: $pc-panel-bg;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  overflow: hidden;
-  transition: transform 300ms $pc-ease, box-shadow 300ms $pc-ease, border-color 300ms $pc-ease;
-  animation: pc-rise 480ms $pc-ease both;
-
-  /* 四角括线，呼应模板的科技描边 */
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    border: 0 solid rgba(63, 224, 192, 0.5);
-    pointer-events: none;
-  }
-
-  &::before {
-    left: 0;
-    top: 0;
-    border-left-width: 2px;
-    border-top-width: 2px;
-    border-top-left-radius: 12px;
-  }
-
-  &::after {
-    right: 0;
-    bottom: 0;
-    border-right-width: 2px;
-    border-bottom-width: 2px;
-    border-bottom-right-radius: 12px;
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    border-color: rgba(63, 224, 192, 0.38);
-    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  }
+.pc-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.pc-kpi__top {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.pc-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.pc-kpi, .pc-panel {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-bg);
 }
 
 .pc-kpi__icon {
   display: grid;
   place-items: center;
-  flex: none;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  font-size: 19px;
-  color: $pc-cyan-bright;
-  background: rgba(63, 224, 192, 0.1);
-  box-shadow: 0 0 0 3px rgba(5, 22, 29, 0.9), 0 0 0 4px rgba(63, 224, 192, 0.22);
-
-  &--check {
-    color: #7ff3df;
-  }
-
-  &--stock {
-    color: #ffc07a;
-    background: rgba(255, 170, 90, 0.12);
-    box-shadow: 0 0 0 3px rgba(5, 22, 29, 0.9), 0 0 0 4px rgba(255, 170, 90, 0.22);
-  }
-
-  &--cpu {
-    color: #8fc4ff;
-    background: rgba(120, 170, 255, 0.12);
-    box-shadow: 0 0 0 3px rgba(5, 22, 29, 0.9), 0 0 0 4px rgba(120, 170, 255, 0.2);
-  }
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 .pc-kpi__label {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  color: $pc-text-2;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .pc-kpi__value {
-  margin: 12px 0 0;
-  font-size: 31px;
-  font-weight: 700;
-  line-height: 1.12;
-  letter-spacing: 0.01em;
-  color: $pc-orange;
-  text-shadow: 0 0 18px rgba(255, 157, 77, 0.35);
+  margin: 9px 0;
+  font-size: clamp(24px, 2.3vw, 32px);
   font-variant-numeric: tabular-nums;
-  word-break: break-word;
+  line-height: 1.15;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .pc-kpi__value--long {
-  font-size: 16px;
-  line-height: 1.6;
-  color: #ffd0a3;
-  text-shadow: none;
+  font-size: 20px;
 }
 
 .pc-kpi__unit {
-  margin-left: 2px;
-  font-size: 16px;
+  margin-left: 3px;
+  font-size: 15px;
+}
+
+.pc-kpi__delta, .pc-badge {
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: #edf5ef;
+  color: #36664f;
+  font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 176, 116, 0.85);
 }
 
-.pc-kpi__foot {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  margin-top: auto;
-  padding-top: 10px;
+.pc-kpi__delta.is-down, .pc-badge--warn, .pc-warn {
+  background: #fbf3e2;
+  color: #785316;
 }
 
-.pc-kpi__desc {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 11px;
-  line-height: 1.5;
-  color: $pc-text-3;
+.pc-panel--half {
+  grid-column: span 3;
 }
 
-.pc-kpi__delta {
-  flex: none;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(63, 224, 192, 0.12);
-  color: #5fe3c8;
-  font-size: 11px;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-
-  &.is-down {
-    background: rgba(255, 140, 90, 0.14);
-    color: #ffab7a;
-  }
+.pc-panel--wide {
+  grid-column: span 4;
 }
 
-/* ---------- 面板与图表栅格 ---------- */
-.pc-grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 14px;
+.pc-panel--narrow {
+  grid-column: span 2;
+}
+
+.pc-panel--full {
   margin-bottom: 14px;
-
-  @media (max-width: 1200px) {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.pc-panel {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: 14px 16px;
-  border: 1px solid $pc-line;
-  border-radius: 12px;
-  background: $pc-panel-bg;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  transition: box-shadow 300ms $pc-ease, border-color 300ms $pc-ease;
-  animation: pc-rise 520ms $pc-ease both;
-
-  /* 面板左上角的一点亮色描边 */
-  &::before {
-    content: "";
-    position: absolute;
-    left: 14px;
-    top: 0;
-    width: 96px;
-    height: 2px;
-    border-radius: 0 0 2px 2px;
-    background: linear-gradient(90deg, $pc-cyan-bright, rgba(63, 224, 192, 0));
-    pointer-events: none;
-  }
-
-  /* 右上角括线，和模板面板一致 */
-  &::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 14px;
-    height: 14px;
-    border-right: 2px solid rgba(63, 224, 192, 0.35);
-    border-top: 2px solid rgba(63, 224, 192, 0.35);
-    border-top-right-radius: 12px;
-    pointer-events: none;
-  }
-
-  &:hover {
-    border-color: rgba(63, 224, 192, 0.32);
-    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  }
-
-  &--half {
-    grid-column: span 3;
-  }
-
-  &--wide {
-    grid-column: span 4;
-  }
-
-  &--narrow {
-    grid-column: span 2;
-  }
-
-  &--full {
-    grid-column: 1 / -1;
-    margin-bottom: 14px;
-  }
-
-  @media (max-width: 1200px) {
-    &--half,
-    &--wide,
-    &--narrow {
-      grid-column: 1 / -1;
-    }
-  }
 }
 
 .pc-panel__head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
 .pc-panel__chart {
-  flex: 1 1 auto;
   width: 100%;
-  min-height: 236px;
+  height: 260px;
 }
 
 .pc-panel__chart--bars {
-  min-height: 272px;
-}
-
-/* 面板右上角的状态胶囊 */
-.pc-badge {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 4px;
-  height: 22px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  letter-spacing: 0.02em;
-
-  &--warn {
-    background: rgba(255, 170, 90, 0.14);
-    color: #ffc07a;
-  }
-
-  &--ok {
-    background: rgba(63, 224, 192, 0.12);
-    color: #5fe3c8;
-  }
+  height: 284px;
 }
 
 .pc-warn {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin-top: 8px;
-  padding: 7px 10px;
-  border-radius: 8px;
-  border-left: 3px solid #d99a3d;
-  background: rgba(255, 170, 90, 0.1);
-  color: #f0c48a;
-  font-size: 11.5px;
-  line-height: 1.5;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
 
-  &--ok {
-    border-left-color: rgba(63, 224, 192, 0.6);
-    background: rgba(63, 224, 192, 0.08);
-    color: #7fe8d4;
-  }
-
-  i {
-    margin-top: 1px;
-  }
+.pc-warn--ok {
+  background: #edf5ef;
+  color: #36664f;
 }
 
 .pc-tip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   margin: 8px 0 0;
-  font-size: 11.5px;
-  color: $pc-text-3;
 }
 
-/* ---------- 表格（无竖线、深色表头、斑马纹） ---------- */
-.pc-panel {
-  ::v-deep .el-table {
-    background: transparent;
-    color: #cfe2e6;
-    font-size: 12px;
-    /* 作为弹性子项时不要被拉伸，行数少时表格自然收短 */
-    flex: 0 0 auto;
-    min-height: 0;
-
-    &::before,
-    &::after {
-      display: none;
-    }
-
-    .el-table__header-wrapper,
-    .el-table__fixed-header-wrapper {
-      background-image: linear-gradient(90deg, rgba(29, 105, 94, 0.5) 0%, rgba(12, 44, 52, 0.16) 68%, rgba(12, 44, 52, 0) 100%);
-    }
-
-    th.el-table__cell {
-      background: transparent !important;
-      color: #a8dcd6 !important;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      border-bottom: 1px solid rgba(63, 224, 192, 0.2) !important;
-    }
-
-    tr {
-      background: transparent !important;
-    }
-
-    td.el-table__cell {
-      padding: 8px 0;
-      background: transparent;
-      color: #cfe2e6;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.055) !important;
-    }
-
-    .el-table__body tr:nth-child(even) > td.el-table__cell {
-      background: rgba(255, 255, 255, 0.022);
-    }
-
-    .el-table__body tr:hover > td.el-table__cell {
-      background: rgba(63, 224, 192, 0.09) !important;
-    }
-
-    .el-table__empty-block {
-      background: transparent;
-    }
-
-    .el-table__empty-text {
-      color: $pc-text-3;
-    }
-
-    .el-table__body-wrapper {
-      &::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        border-radius: 4px;
-        background: rgba(63, 224, 192, 0.25);
-      }
-
-      &::-webkit-scrollbar-track {
-        background: transparent;
-      }
-    }
-
-    .el-progress-bar__outer {
-      background-color: rgba(255, 255, 255, 0.08) !important;
-    }
-
-    .el-progress-bar__inner {
-      background-image: linear-gradient(90deg, rgba(63, 224, 192, 0.45), #2fd8bd);
-    }
-
-    .el-progress__text {
-      font-size: 11px !important;
-      color: #a9c7d0 !important;
-    }
-
-    .pc-row--done .el-progress-bar__inner {
-      background-image: linear-gradient(90deg, rgba(182, 232, 106, 0.5), #b6e86a);
-    }
-
-    .pc-row--critical > td:first-child {
-      box-shadow: inset 3px 0 0 #ffb266;
-    }
+.pc-panel ::v-deep .el-table {
+  .pc-row--critical td {
+    background-color: #fcf3f1;
   }
 
-  ::v-deep .el-tag {
-    border: none;
-    background: rgba(63, 224, 192, 0.12);
-    color: #5fe3c8;
-
-    &--danger {
-      background: rgba(255, 110, 90, 0.16);
-      color: #ff9b84;
-    }
-
-    &--warning {
-      background: rgba(255, 170, 90, 0.16);
-      color: #ffc07a;
-    }
-
-    &--success {
-      background: rgba(63, 224, 192, 0.14);
-      color: #5fe3c8;
-    }
+  .pc-row--done td {
+    background-color: #f4f8f5;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .pc-hero,
-  .pc-kpi,
-  .pc-panel,
-  .pc-hero::after {
-    animation: none;
+@media (max-width: 1280px) {
+  .pc-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pc-panel--half, .pc-panel--wide, .pc-panel--narrow {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 550px) {
+  .pc-kpis, .pc-grid {
+    gap: 8px;
+  }
+
+  .pc-kpi, .pc-panel {
+    padding: 10px;
   }
 }
 </style>

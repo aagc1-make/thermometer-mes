@@ -11,7 +11,7 @@ rem ============================================================
 
 set "JAVA_HOME=C:\Program Files\Java\jdk1.8.0_261"
 set "PATH=%JAVA_HOME%\bin;%PATH%"
-set "MYSQL_HOME=D:\mysql-8.0.44-winx64"
+if not defined MYSQL_HOME set "MYSQL_HOME=E:\D\mysql-8.0.44-winx64"
 set "REDIS_HOME=E:\dev\redis"
 set "MINIO_HOME=E:\dev\minio"
 set "PROJECT=%~dp0backend\ktg-mes"
@@ -22,8 +22,13 @@ echo ============================================
 call :port_open 3307
 if errorlevel 1 (
     echo     not running -^> starting mysqld ...
-    start "MES-MySQL" /min "%MYSQL_HOME%\bin\mysqld.exe" --defaults-file=%MYSQL_HOME%\my.ini
+    start "MES-MySQL" /min "%MYSQL_HOME%\bin\mysqld.exe" --defaults-file="%MYSQL_HOME%\my.ini"
     call :wait_port 3307 30
+    if errorlevel 1 (
+        echo     [ERROR] MySQL did not start. Check "%MYSQL_HOME%\my.ini" and the MySQL error log.
+        pause
+        exit /b 1
+    )
 ) else (
     echo     already listening -^> skip
 )
@@ -90,7 +95,7 @@ call :port_open %1
 if not errorlevel 1 exit /b 0
 set /a tries=%tries%-1
 if %tries% leq 0 (
-    echo     [WARN] port %1 still not reachable, continue anyway ...
+    echo     [WARN] port %1 still not reachable.
     exit /b 1
 )
 timeout /t 1 /nobreak >nul

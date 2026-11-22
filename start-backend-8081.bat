@@ -4,11 +4,8 @@ setlocal
 rem ============================================================
 rem  MES demo backend on port 8081 (database: j2eedb_it)
 rem
-rem  Why this script:
-rem    The frontend dev server (port 80) proxies /dev-api to
-rem    http://localhost:8081 (see ktg-mes-ui\vue.config.js).
-rem    If only the 8080 instance runs, the browser console shows
-rem    "Proxy error ... ECONNREFUSED" and login captcha fails.
+rem  To connect the frontend to this demo instance, set
+rem    MES_BACKEND_URL=http://127.0.0.1:8081 before starting the frontend.
 rem
 rem  This starts the same instance used by the demo:
 rem    --server.port=8081  +  j2eedb_it datasource
@@ -16,7 +13,7 @@ rem ============================================================
 
 set "JAVA_HOME=C:\Program Files\Java\jdk1.8.0_261"
 set "PATH=%JAVA_HOME%\bin;%PATH%"
-set "MYSQL_HOME=D:\mysql-8.0.44-winx64"
+if not defined MYSQL_HOME set "MYSQL_HOME=E:\D\mysql-8.0.44-winx64"
 set "REDIS_HOME=E:\dev\redis"
 set "PROJECT=%~dp0backend\ktg-mes"
 set "JAR=%PROJECT%\ktg-admin\target\ktg-admin.jar"
@@ -37,8 +34,13 @@ echo ============================================
 call :port_open 3307
 if errorlevel 1 (
     echo     not running -^> starting mysqld ...
-    start "MES-MySQL" /min "%MYSQL_HOME%\bin\mysqld.exe" --defaults-file=%MYSQL_HOME%\my.ini
+    start "MES-MySQL" /min "%MYSQL_HOME%\bin\mysqld.exe" --defaults-file="%MYSQL_HOME%\my.ini"
     call :wait_port 3307 30
+    if errorlevel 1 (
+        echo     [ERROR] MySQL did not start. Check "%MYSQL_HOME%\my.ini" and the MySQL error log.
+        pause
+        exit /b 1
+    )
 ) else (
     echo     already listening -^> skip
 )
@@ -58,7 +60,7 @@ if errorlevel 1 (
 )
 
 echo ============================================
-echo  [3/3] Backend :8081  ^(db=j2eedb_it, proxy target of frontend :80^)
+echo  [3/3] Backend :8081  ^(db=j2eedb_it^)
 echo ============================================
 if not exist "%JAR%" (
     echo     [ERROR] jar not found: %JAR%
@@ -91,7 +93,7 @@ call :port_open %1
 if not errorlevel 1 exit /b 0
 set /a tries=%tries%-1
 if %tries% leq 0 (
-    echo     [WARN] port %1 still not reachable, continue anyway ...
+    echo     [WARN] port %1 still not reachable.
     exit /b 1
 )
 timeout /t 1 /nobreak >nul

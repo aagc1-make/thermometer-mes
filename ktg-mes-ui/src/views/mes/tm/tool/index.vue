@@ -1,81 +1,70 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
-      <el-row>
-        <el-col :span="8">
-          <el-form-item label="工装夹具编码" prop="toolCode">
-            <el-input
-              v-model="queryParams.toolCode"
-              placeholder="请输入工装夹具编码"
-              clearable
-              @keyup.enter.native="handleQuery"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="工装夹具名称" prop="toolName">
-            <el-input
-              v-model="queryParams.toolName"
-              placeholder="请输入工装夹具名称"
-              clearable
-              @keyup.enter.native="handleQuery"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="工装夹具类型" prop="toolTypeId">
-            <el-select v-model="form.toolTypeId" placeholder="请选择类型">
-              <el-option
-                v-for="dict in toolTypeOptions"
-                :key="dict.toolTypeId"
-                :label="dict.toolTypeName"
-                :value="dict.toolTypeId"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="6">
-          <el-form-item label="品牌" label-width="60px" prop="brand">
-            <el-input
-              v-model="queryParams.brand"
-              placeholder="请输入品牌"
-              clearable
-              @keyup.enter.native="handleQuery"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="型号" label-width="60px" prop="spec">
-            <el-input
-              v-model="queryParams.spec"
-              placeholder="请输入型号"
-              clearable
-              @keyup.enter.native="handleQuery"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="状态" label-width="60px" prop="status">
-            <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
-              <el-option
-                v-for="dict in dict.type.mes_tool_status"
-                :key="dict.value"
-                :label="dict.label"
-                :value="dict.value"
-              />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item>
-            <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-            <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
+    <h1 class="mes-page-heading">工装夹具台账</h1>
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="100px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
+      <el-form-item label="工装夹具编码" prop="toolCode">
+        <el-input
+          v-model="queryParams.toolCode"
+          placeholder="请输入工装夹具编码"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="工装夹具名称" prop="toolName">
+        <el-input
+          v-model="queryParams.toolName"
+          placeholder="请输入工装夹具名称"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="状态" label-width="60px" prop="status">
+        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+          <el-option
+            v-for="dict in dict.type.mes_tool_status"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <template #more>
+        <el-form-item label="工装夹具类型" prop="toolTypeId">
+          <el-select v-model="form.toolTypeId" placeholder="请选择类型">
+            <el-option
+              v-for="dict in toolTypeOptions"
+              :key="dict.toolTypeId"
+              :label="dict.toolTypeName"
+              :value="dict.toolTypeId"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="品牌" label-width="60px" prop="brand">
+          <el-input
+            v-model="queryParams.brand"
+            placeholder="请输入品牌"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="型号" label-width="60px" prop="spec">
+          <el-input
+            v-model="queryParams.spec"
+            placeholder="请输入型号"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+      </template>
+    </query-bar>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -100,7 +89,7 @@
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--destructive"
           type="danger"
           plain
           icon="el-icon-delete"
@@ -111,7 +100,7 @@
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
+        <el-button class="mes-action--export"
           type="warning"
           plain
           icon="el-icon-download"
@@ -166,7 +155,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['mes:tm:tool:edit']"
           >修改</el-button>
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"

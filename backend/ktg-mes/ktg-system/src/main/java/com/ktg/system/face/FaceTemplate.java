@@ -13,6 +13,9 @@ public final class FaceTemplate {
     /** face-api.js FaceRecognitionNet 输出维度。 */
     public static final int DIMENSION = 128;
 
+    /** 当前人脸特征算法版本；换模型后旧模板需重新录入，比对时会按此版本校验。 */
+    public static final String ALGORITHM = "face-api-0.22.2";
+
     /** 方差下限：全 0 或常量向量视为无效采集，避免"空模板"匹配任何人。 */
     private static final double MIN_VARIANCE = 1.0E-6;
 

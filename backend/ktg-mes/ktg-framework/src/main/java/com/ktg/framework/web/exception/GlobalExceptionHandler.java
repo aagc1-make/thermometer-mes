@@ -24,6 +24,12 @@ import com.ktg.common.utils.StringUtils;
 public class GlobalExceptionHandler
 {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private final ForbiddenRequestAudit forbiddenRequestAudit;
+
+    public GlobalExceptionHandler(ForbiddenRequestAudit forbiddenRequestAudit)
+    {
+        this.forbiddenRequestAudit = forbiddenRequestAudit;
+    }
 
     /**
      * 权限校验异常
@@ -33,6 +39,7 @@ public class GlobalExceptionHandler
     {
         String requestURI = request.getRequestURI();
         log.error("请求地址'{}',权限校验失败'{}'", requestURI, e.getMessage());
+        forbiddenRequestAudit.record(request, e.getMessage());
         return AjaxResult.error(HttpStatus.FORBIDDEN, "没有权限，请联系管理员授权");
     }
 
@@ -56,6 +63,10 @@ public class GlobalExceptionHandler
     {
         log.error(e.getMessage(), e);
         Integer code = e.getCode();
+        if (Integer.valueOf(HttpStatus.FORBIDDEN).equals(code))
+        {
+            forbiddenRequestAudit.record(request, e.getMessage());
+        }
         return StringUtils.isNotNull(code) ? AjaxResult.error(code, e.getMessage()) : AjaxResult.error(e.getMessage());
     }
 

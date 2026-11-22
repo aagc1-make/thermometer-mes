@@ -54,7 +54,7 @@
       </el-table-column>
       <el-table-column label="操作" v-if="optType !='view'" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button
+          <el-button class="mes-action--destructive"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -74,7 +74,7 @@
       @pagination="getList"
     />
     <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="cancel" v-if="optType =='view'">返回</el-button>
+        <el-button class="mes-action--neutral" type="primary" @click="cancel" v-if="optType =='view'">返回</el-button>
         <el-button type="primary"  v-else @click="confirm">确 定</el-button>
         <el-button @click="showFlag=false">取 消</el-button>
     </div>

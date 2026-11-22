@@ -151,20 +151,25 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100%;
-  background-image: url("../assets/images/login-background.jpg");
-  background-size: cover;
+  padding: 24px 16px 48px;
+  background: var(--color-rail);
 }
-.title {
+.register-form .title {
   margin: 0px auto 30px auto;
   text-align: center;
-  color: #707070;
+  color: var(--color-text);
+  font-size: 24px;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 .register-form {
-  border-radius: 6px;
-  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-bg);
   width: 400px;
-  padding: 25px 25px 5px 25px;
+  max-width: 100%;
+  padding: 24px 24px 12px;
   .el-input {
     height: 38px;
     input {
@@ -180,7 +185,7 @@ export default {
 .register-tip {
   font-size: 13px;
   text-align: center;
-  color: #bfbfbf;
+  color: var(--color-text-secondary);
 }
 .register-code {
   width: 33%;
@@ -198,10 +203,8 @@ export default {
   bottom: 0;
   width: 100%;
   text-align: center;
-  color: #fff;
-  font-family: Arial;
+  color: var(--color-text-secondary);
   font-size: 12px;
-  letter-spacing: 1px;
 }
 .register-code-img {
   height: 38px;

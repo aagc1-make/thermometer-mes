@@ -1,10 +1,11 @@
 <template>
     <div class="app-container">
-    <el-row :gutter="10" class="mb8">
+    <h1 class="mes-page-heading">甘特图排产</h1>
+    <el-row class="mes-list-actions">
       <el-col :span="1"></el-col>
       <el-col :span="1.5">
         <el-button
-          type="success"
+          type="primary"
           plain
           icon="el-icon-edit"
           size="mini"
@@ -14,7 +15,6 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="danger"
           plain
           icon="el-icon-delete"
           size="mini"
@@ -23,7 +23,6 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="warning"
           plain
           icon="el-icon-refresh"
           size="mini"
@@ -31,7 +30,7 @@
         >重新加载</el-button>
       </el-col>
     </el-row>
-    <div class="wrapper">
+    <div class="wrapper mes-timeline-scroll" role="region" tabindex="0" aria-label="排产甘特图编辑区">
       <div class="container">
         <GanttChar class="left-container" ref="ganttChar" optType="edit" :ids="changedTaskIds" :tasks="tasks"></GanttChar>
       </div>      

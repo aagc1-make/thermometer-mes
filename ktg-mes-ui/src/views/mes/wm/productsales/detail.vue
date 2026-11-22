@@ -18,7 +18,7 @@
                   @click="handleUpdate(scope.row)"
                   v-hasPermi="['mes:wm:productsales:edit']"
                 >修改</el-button>
-                <el-button
+                <el-button class="mes-action--destructive"
                   size="mini"
                   type="text"
                   icon="el-icon-delete"

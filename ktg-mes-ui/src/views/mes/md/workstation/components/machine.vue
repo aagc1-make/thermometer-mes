@@ -6,7 +6,7 @@
       <el-table-column label="数量" width="50px" align="center" prop="quantity" />
       <el-table-column label="操作" v-if="optType !='view'" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button
+          <el-button class="mes-action--destructive"
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"

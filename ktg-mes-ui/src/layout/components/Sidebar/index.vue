@@ -1,15 +1,11 @@
 <template>
-    <div :class="{'has-logo':showLogo}" class="sidebar-light">
-        <logo v-if="showLogo" :collapse="false" />
+    <div class="sidebar-light">
         <el-scrollbar class="theme-light" wrap-class="scrollbar-wrapper">
             <el-menu
                 :default-active="activeMenu"
                 :collapse="false"
                 :default-openeds="openeds"
-                background-color="#ffffff"
-                text-color="#303133"
                 :unique-opened="false"
-                active-text-color="#2563eb"
                 :collapse-transition="false"
                 mode="vertical"
                 role="navigation"
@@ -27,17 +23,14 @@
 </template>
 
 <script>
-import { mapGetters, mapState } from "vuex";
-import Logo from "./Logo";
+import { mapGetters } from "vuex";
 import SidebarItem from "./SidebarItem";
-import variables from "@/assets/styles/variables.scss";
 import { findDomainByPath, isMenuHidden } from "../../rail-config";
 
 export default {
-    components: { SidebarItem, Logo },
+    components: { SidebarItem },
     computed: {
-        ...mapState(["settings"]),
-        ...mapGetters(["sidebarRouters", "sidebar", "device"]),
+        ...mapGetters(["sidebarRouters"]),
         activeMenu() {
             const route = this.$route;
             const { meta, path } = route;
@@ -46,9 +39,6 @@ export default {
                 return meta.activeMenu;
             }
             return path;
-        },
-        showLogo() {
-            return this.$store.state.settings.sidebarLogo;
         },
         // 只展示当前域（左栏选中项）下的菜单，形成「左总右分」结构
         visibleRouters() {
@@ -109,12 +99,6 @@ export default {
                 });
             }
             return groups;
-        },
-        variables() {
-            return variables;
-        },
-        isCollapse() {
-            return this.device === 'mobile' ? !this.sidebar.opened : false;
         },
         // 分组样式：默认展开当前域下的全部母目录（渲染后的分组节点），呈现「分组标题 + 组内菜单」
         openeds() {

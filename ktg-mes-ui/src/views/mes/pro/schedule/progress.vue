@@ -2,73 +2,74 @@
     <div>
     <el-row :gutter="20">
         <el-col :span="24">
-            <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-            <el-form-item label="工单编码" prop="workorderCode">
-                <el-input
-                v-model="queryParams.workorderCode"
-                placeholder="请输入工单编码"
-                clearable
-                @keyup.enter.native="handleQuery"
-                />
-            </el-form-item>
-            <el-form-item label="工单名称" prop="workorderName">
-                <el-input
-                v-model="queryParams.workorderName"
-                placeholder="请输入工单名称"
-                clearable
-                @keyup.enter.native="handleQuery"
-                />
-            </el-form-item>
-            <el-form-item label="来源单据" prop="sourceCode">
-                <el-input
-                v-model="queryParams.sourceCode"
-                placeholder="请输入来源单据"
-                clearable
-                @keyup.enter.native="handleQuery"
-                />
-            </el-form-item>
-
-            <el-form-item label="产品编号" prop="productCode">
-                <el-input
-                v-model="queryParams.productCode"
-                placeholder="请输入产品编号"
-                clearable
-                @keyup.enter.native="handleQuery"
-                />
-            </el-form-item>
-            <el-form-item label="产品名称" prop="productName">
-                <el-input
-                v-model="queryParams.productName"
-                placeholder="请输入产品名称"
-                clearable
-                @keyup.enter.native="handleQuery"
-                />
-            </el-form-item>
-
-            <el-form-item label="客户编码" prop="clientCode">
-                <el-input
-                v-model="queryParams.clientCode"
-                placeholder="请输入客户编码"
-                clearable
-                @keyup.enter.native="handleQuery"
-                />
-            </el-form-item>
-            <el-form-item label="客户名称" prop="clientName">
-                <el-input
-                v-model="queryParams.clientName"
-                placeholder="请输入客户名称"
-                clearable
-                @keyup.enter.native="handleQuery"
-                />
-            </el-form-item>
-            <el-form-item>
-                <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-                <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>        
-            </el-form-item>
-            <el-form-item>
-                <el-button type="primary" icon="el-icon-refresh" v-hasPermi="['mes:pro:protask:list']" circle="" @click="getList"></el-button>
-            </el-form-item>
-            </el-form>  
+    <query-bar
+      v-show="showSearch"
+      ref="queryForm"
+      :model="queryParams"
+      size="small"
+      label-width="68px"
+      @search="handleQuery"
+      @reset="resetQuery"
+    >
+      <el-form-item label="工单编码" prop="workorderCode">
+          <el-input
+          v-model="queryParams.workorderCode"
+          placeholder="请输入工单编码"
+          clearable
+          @keyup.enter.native="handleQuery"
+          />
+      </el-form-item>
+      <el-form-item label="产品名称" prop="productName">
+          <el-input
+          v-model="queryParams.productName"
+          placeholder="请输入产品名称"
+          clearable
+          @keyup.enter.native="handleQuery"
+          />
+      </el-form-item>
+      <el-form-item label="客户名称" prop="clientName">
+          <el-input
+          v-model="queryParams.clientName"
+          placeholder="请输入客户名称"
+          clearable
+          @keyup.enter.native="handleQuery"
+          />
+      </el-form-item>
+      <template #more>
+        <el-form-item label="工单名称" prop="workorderName">
+            <el-input
+            v-model="queryParams.workorderName"
+            placeholder="请输入工单名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+            />
+        </el-form-item>
+        <el-form-item label="来源单据" prop="sourceCode">
+            <el-input
+            v-model="queryParams.sourceCode"
+            placeholder="请输入来源单据"
+            clearable
+            @keyup.enter.native="handleQuery"
+            />
+        </el-form-item>
+        <el-form-item label="产品编号" prop="productCode">
+            <el-input
+            v-model="queryParams.productCode"
+            placeholder="请输入产品编号"
+            clearable
+            @keyup.enter.native="handleQuery"
+            />
+        </el-form-item>
+        <el-form-item label="客户编码" prop="clientCode">
+            <el-input
+            v-model="queryParams.clientCode"
+            placeholder="请输入客户编码"
+            clearable
+            @keyup.enter.native="handleQuery"
+            />
+        </el-form-item>
+      </template>
+    </query-bar>
         </el-col>
     </el-row>
     <el-row :gutter="20">
