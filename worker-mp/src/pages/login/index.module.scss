@@ -1,0 +1,127 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: 0 $page-padding calc(#{$spacing-xl} + env(safe-area-inset-bottom));
+  background: $color-bg-page;
+}
+
+.hero {
+  margin: 0 calc(-1 * #{$page-padding});
+  padding: 120rpx $page-padding 100rpx;
+  background: linear-gradient(160deg, $color-primary-light, $color-primary 60%, $color-primary-dark);
+  border-bottom-left-radius: 48rpx;
+  border-bottom-right-radius: 48rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.badge {
+  align-self: flex-start;
+  padding: 6rpx 20rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: $font-size-xs;
+}
+
+.title {
+  margin-top: $spacing-md;
+  color: #fff;
+  font-size: 52rpx;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin-top: $spacing-xs;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: $font-size-sm;
+}
+
+.card {
+  margin-top: -60rpx;
+  padding: $spacing-lg;
+  background: #fff;
+  border-radius: $radius-2xl;
+  box-shadow: 0 12rpx 40rpx rgba(43, 107, 235, 0.16);
+}
+
+.field {
+  margin-bottom: $spacing-md;
+
+  .label {
+    display: block;
+    margin-bottom: $spacing-xs;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+  }
+
+  .input {
+    height: 88rpx;
+    padding: 0 $spacing-md;
+    border-radius: $radius-md;
+    background: $color-bg-soft;
+    font-size: $font-size-md;
+  }
+}
+
+.submit {
+  margin-top: $spacing-sm;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-primary-light, $color-primary);
+  color: #fff;
+  font-size: $font-size-lg;
+  font-weight: 600;
+
+  &::after {
+    border: none;
+  }
+}
+
+.tip {
+  display: block;
+  margin-top: $spacing-sm;
+  text-align: center;
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+}
+
+.demo {
+  margin-top: $spacing-xl;
+}
+
+.demoTitle {
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+}
+
+.demoList {
+  margin-top: $spacing-sm;
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.demoItem {
+  width: calc(50% - #{$spacing-sm});
+  padding: $spacing-md;
+  background: #fff;
+  border-radius: $radius-md;
+  box-shadow: $shadow-card;
+}
+
+.demoUser {
+  display: block;
+  color: $color-text-primary;
+  font-size: $font-size-sm;
+  font-weight: 600;
+}
+
+.demoRole {
+  display: block;
+  margin-top: 4rpx;
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+}

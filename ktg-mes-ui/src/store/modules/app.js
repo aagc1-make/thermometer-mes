@@ -12,16 +12,15 @@ const state = {
 
 const mutations = {
   TOGGLE_SIDEBAR: state => {
-    // 已禁用收起功能：始终展开
-    state.sidebar.opened = true
+    // 桌面固定展开；移动端需要抽屉开关。
+    state.sidebar.opened = state.device === 'mobile' ? !state.sidebar.opened : true
     state.sidebar.withoutAnimation = false
-    Cookies.set('sidebarStatus', 1)
+    Cookies.set('sidebarStatus', state.sidebar.opened ? 1 : 0)
   },
   CLOSE_SIDEBAR: (state, withoutAnimation) => {
-    // 已禁用收起功能：忽略外部收起请求（如窗口 resize）
-    state.sidebar.opened = true
+    state.sidebar.opened = state.device !== 'mobile'
     state.sidebar.withoutAnimation = withoutAnimation
-    Cookies.set('sidebarStatus', 1)
+    Cookies.set('sidebarStatus', state.sidebar.opened ? 1 : 0)
   },
   TOGGLE_DEVICE: (state, device) => {
     state.device = device

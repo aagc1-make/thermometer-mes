@@ -147,16 +147,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="任务编号" prop="takingCode">
-              <el-input v-model="form.takingCode" placeholder="请输入盘点单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.takingCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -278,10 +269,10 @@
 
 <script>
 import { listStocktaking, getStocktaking, delStocktaking, addStocktaking, updateStocktaking ,execute} from "@/api/mes/wm/stocktaking";
+import { nextBizCode } from "@/api/mes/code";
 import UserSingleSelect from "@/components/userSelect/single.vue"
 import PlanSelect from '@/components/stocktakingplanSelect/single.vue'
 import {getUserProfile} from "@/api/system/user";
-import {genCode} from "@/api/system/autocode/rule"
 import TakingLine from './line.vue';
 import TakingResult from './result.vue';
 export default {
@@ -290,8 +281,6 @@ export default {
   dicts: ['mes_stock_taking_type','sys_yes_no','mes_stock_taking_status'],
   data() {
     return {
-      //自动生成编码
-      autoGenFlag:false,
       optType: undefined,
       user:{},
       // 遮罩层
@@ -361,7 +350,6 @@ export default {
         this.form.userId = this.user.userId;
       this.form.userName = this.user.userName;
       this.form.nickName = this.user.nickName;
-      this.autoGenFlag = false;
         this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -383,6 +371,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('PD').then(res => {
+        this.form.takingCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加库存盘点任务";
       this.optType = 'add';
@@ -490,16 +481,6 @@ export default {
       this.form.startTime = row.startTime;
       this.form.endTime = row.endTime;
     },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('WM_STOCK_TAKING_CODE').then(response =>{
-          this.form.takingCode = response;
-        });
-      }else{
-        this.form.takingCode = null;
-      }
-    }
   }
 };
 </script>

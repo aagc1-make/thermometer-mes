@@ -102,6 +102,24 @@
           v-hasPermi="['mes:pro:workorder:export']"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          @click="openChainCleanup"
+          v-hasPermi="['mes:pro:workorder:remove']"
+        >清理贯通单据</el-button>
+      </el-col>
+      <el-col :span="1.5" v-if="isSuperAdmin">
+        <el-checkbox
+          v-model="queryParams.showDeleted"
+          true-label="Y"
+          false-label="N"
+          @change="getList"
+        >显示已删除</el-checkbox>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -149,7 +167,8 @@
       </el-table-column>
       <el-table-column label="单据状态" align="center" prop="status">
         <template slot-scope="scope">
-          <dict-tag :options="dict.type.mes_order_status" :value="scope.row.status"/>
+          <el-tag v-if="scope.row.status === 'DELETED'" type="danger" size="mini">已删除</el-tag>
+          <dict-tag v-else :options="dict.type.mes_order_status" :value="scope.row.status"/>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="250px" align="center" class-name="small-padding fixed-width">
@@ -217,18 +236,9 @@
         <el-row>
           <el-col :span="16">
             <el-row>
-              <el-col :span="16">
+              <el-col :span="24">
                 <el-form-item label="工单编号" prop="workorderCode">
-                  <el-input v-model="form.workorderCode" placeholder="请输入工单编号" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item  label-width="80">
-                  <el-switch v-model="autoGenFlag"
-                             active-color="#13ce66"
-                             active-text="自动生成"
-                             @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-                  </el-switch>
+                  <el-input v-model="form.workorderCode" disabled placeholder="保存后由系统自动生成" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -381,6 +391,19 @@
         <el-tab-pane label="物料需求" name="item">
           <WorkorderItemList ref="itemlist"  :workorder="form" :itemStatus="itemStatus"></WorkorderItemList>
         </el-tab-pane>
+        <el-tab-pane label="生产任务" name="task">
+          <el-table v-loading="taskLoading" :data="taskList" size="mini" border style="width: 100%">
+            <el-table-column label="任务编号" prop="taskCode" min-width="190" />
+            <el-table-column label="工序" prop="processName" min-width="130" />
+            <el-table-column label="工作站" prop="workstationName" min-width="130" />
+            <el-table-column label="排产数量" prop="quantity" width="100" align="right" />
+            <el-table-column label="已生产" prop="quantityProduced" width="100" align="right" />
+            <el-table-column label="状态" prop="status" width="100" align="center" />
+          </el-table>
+          <div v-if="!taskLoading && !taskList.length" class="task-empty-tip">
+            暂无生产任务。工单确认后将按工艺路线自动生成全部工序任务。
+          </div>
+        </el-tab-pane>
       </el-tabs>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
@@ -388,22 +411,128 @@
         <el-button @click="cancel">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <!-- 贯通单据清理：仅删除生产链路单据并按库存流水反冲 -->
+    <el-dialog title="清理贯通单据" :visible.sync="chainOpen" width="980px" append-to-body @closed="resetChainState">
+      <el-alert
+        type="warning"
+        :closable="false"
+        show-icon
+        title="仅清理生产链路：任务、报工、过程检验、产品产出、物料消耗、生产领料、成品入库，并按库存流水反冲库存；物料主数据、工艺路线、销售出库、发货通知与出货检验保留不删。"
+      />
+      <div class="chain-clean__filter">
+        <el-input
+          v-model="chainQuery.keyword"
+          size="small"
+          placeholder="按工单编号/名称筛选"
+          clearable
+          style="width: 240px"
+          @keyup.enter.native="loadChainCandidates"
+        />
+        <el-checkbox v-model="chainQuery.onlyChain">只看贯通标记（备注含“全流程贯通”）</el-checkbox>
+        <el-button size="mini" type="primary" icon="el-icon-search" @click="loadChainCandidates">查询</el-button>
+        <el-button size="mini" icon="el-icon-refresh" @click="resetChainFilter">重置</el-button>
+      </div>
+      <el-table
+        ref="chainTable"
+        v-loading="chainLoading"
+        :data="chainCandidates"
+        size="mini"
+        border
+        max-height="240"
+        @selection-change="onChainSelectionChange"
+      >
+        <el-table-column type="selection" width="42" />
+        <el-table-column prop="workorder_code" label="工单编号" width="150" />
+        <el-table-column prop="workorder_name" label="工单名称" show-overflow-tooltip />
+        <el-table-column prop="status" label="状态" width="88" align="center">
+          <template slot-scope="s">
+            <dict-tag :options="dict.type.mes_order_status" :value="s.row.status" />
+          </template>
+        </el-table-column>
+        <el-table-column label="任务" width="56" align="center" prop="task_count" />
+        <el-table-column label="报工" width="56" align="center" prop="feedback_count" />
+        <el-table-column label="检验" width="56" align="center" prop="ipqc_count" />
+        <el-table-column label="领料" width="56" align="center" prop="issue_count" />
+        <el-table-column label="入库" width="56" align="center" prop="recpt_count" />
+        <el-table-column label="贯通" width="60" align="center">
+          <template slot-scope="s">
+            <el-tag v-if="s.row.chain_flag" size="mini" type="warning">贯通</el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div v-if="chainPreview" class="chain-clean__preview">
+        <p class="chain-clean__summary">
+          将删除：工单 <b>{{ chainPreview.counts.pro_workorder }}</b> 张（自动带入子工单 {{ chainPreview.childCount }} 张）、
+          任务 {{ chainPreview.counts.pro_task }}、报工 {{ chainPreview.counts.pro_feedback }}、
+          过程检验 {{ chainPreview.counts.qc_ipqc }}（检验行 {{ chainPreview.counts.qc_ipqc_line }}）、
+          领料 {{ chainPreview.counts.wm_issue_header }}、消耗 {{ chainPreview.counts.wm_item_consume }}、
+          产出 {{ chainPreview.counts.wm_product_produce }}、入库 {{ chainPreview.counts.wm_product_recpt }}、
+          库存流水 {{ chainPreview.counts.wm_transaction }} 条
+        </p>
+        <el-table
+          v-if="chainPreview.stockImpact && chainPreview.stockImpact.length"
+          :data="chainPreview.stockImpact"
+          size="mini"
+          border
+          max-height="160"
+        >
+          <el-table-column prop="item_code" label="物料" width="120" />
+          <el-table-column prop="item_name" label="名称" show-overflow-tooltip />
+          <el-table-column prop="warehouse_code" label="仓库" width="110" />
+          <el-table-column label="库存变动" width="110" align="right">
+            <template slot-scope="s">{{ s.row.restore }}</template>
+          </el-table-column>
+        </el-table>
+        <p v-for="(w, i) in chainPreview.warnings" :key="i" class="chain-clean__warn">
+          <i class="el-icon-warning-outline"></i> {{ w }}
+        </p>
+      </div>
+
+      <div class="chain-clean__confirm">
+        <el-input v-model="chainConfirmText" size="small" placeholder="输入 DELETE 以确认删除" style="width: 220px" />
+        <el-button
+          size="mini"
+          type="primary"
+          plain
+          icon="el-icon-view"
+          :disabled="!chainSelected.length || chainLoading"
+          @click="handleChainPreview"
+        >预览</el-button>
+        <el-button
+          size="mini"
+          type="danger"
+          icon="el-icon-delete"
+          :disabled="chainConfirmText !== 'DELETE' || !chainPreview"
+          :loading="chainLoading"
+          @click="handleChainExecute"
+        >执行删除</el-button>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button size="small" @click="chainOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
+import pipelineWorkorderContext from '@/mixins/pipelineWorkorderContext'
 import { listWorkorder, getWorkorder, delWorkorder, addWorkorder, updateWorkorder ,dofinish ,doCancel, submitSubWorkorderBatch} from "@/api/mes/pro/workorder";
+import { nextBizCode } from "@/api/mes/code";
+import { listChainCandidates, previewChainCleanup, executeChainCleanup } from "@/api/mes/pro/chainCleanup";
+import { listProtask } from "@/api/mes/pro/protask";
 import Workorderbom from "./bom/bom.vue";
 import WorkorderItemList from "./items/item.vue";
 import ItemSelect  from "@/components/itemSelect/single.vue";
 import ClientSelect from "@/components/clientSelect/single.vue";
 import VendorSelect from "@/components/vendorSelect/single.vue";
-import {genCode} from "@/api/system/autocode/rule"
 import Treeselect from "@riophae/vue-treeselect";
 import BarcodeImg from "@/components/barcodeImg/index.vue"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
 export default {
+  mixins: [pipelineWorkorderContext],
   name: "Workorder",
   dicts: ['mes_order_status','mes_workorder_sourcetype','mes_workorder_type'],
   components: {
@@ -419,8 +548,17 @@ export default {
     return {
       itemStatus: false,
       activeName: 'bom',
-      //自动生成编码
-      autoGenFlag:false,
+      // 工单详情「生产任务」页签
+      taskList: [],
+      taskLoading: false,
+      // 贯通单据清理
+      chainOpen: false,
+      chainLoading: false,
+      chainCandidates: [],
+      chainSelected: [],
+      chainQuery: { keyword: '', onlyChain: false },
+      chainPreview: null,
+      chainConfirmText: '',
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -464,6 +602,7 @@ export default {
         parentId: null,
         ancestors: null,
         status: null,
+        showDeleted: 'N',
       },
       // 表单参数
       form: {},
@@ -474,7 +613,6 @@ export default {
       // 表单校验
       rules: {
         workorderCode: [
-          { required: true, message: "工单编码不能为空", trigger: "blur" },
           { max: 64, message: "字段过长", trigger: "blur" }
         ],
         workorderName: [
@@ -508,16 +646,57 @@ export default {
       }
     };
   },
+  computed: {
+    isSuperAdmin() {
+      const roles = this.$store.getters && this.$store.getters.roles;
+      return Array.isArray(roles) && roles.includes('admin');
+    }
+  },
   created() {
     this.getList();
+    this.openFromAssistant();
+  },
+  watch: {
+    '$route.query.openWorkorderId'() { this.openFromAssistant(); }
   },
   methods: {
+    openFromAssistant() {
+      const id = this.$route.query.openWorkorderId;
+      if (id && /^\d+$/.test(String(id)) && this.$auth.hasPermi('mes:pro:workorder:query')) {
+        this.handleView({ workorderId: id });
+      }
+    },
     handleClickTab(tab) {
       if (tab.name == 'item') {
         this.itemStatus = true
       } else {
         this.itemStatus = false
       }
+      if (tab.name == 'task') {
+        this.loadTasks()
+      }
+    },
+    /** 加载当前工单的工序任务；工单确认后自动刷新，直接看到新生成的任务 */
+    loadTasks() {
+      const workorderId = this.form && this.form.workorderId
+      if (!workorderId) {
+        this.taskList = []
+        return
+      }
+      this.taskLoading = true
+      listProtask({ workorderId, pageNum: 1, pageSize: 200 }).then(response => {
+        const rows = (response && response.rows) || []
+        // 任务编号「工单号-两位工序序号」可直接按工序顺序排列
+        this.taskList = rows.slice().sort((a, b) => {
+          const left = String(a.taskCode || '')
+          const right = String(b.taskCode || '')
+          return left.localeCompare(right) || Number(a.taskId) - Number(b.taskId)
+        })
+      }).catch(() => {
+        this.taskList = []
+      }).finally(() => {
+        this.taskLoading = false
+      })
     },
     /** 查询生产工单列表 */
     getList() {
@@ -604,8 +783,10 @@ export default {
         updateBy: null,
         updateTime: null
       };
-      this.autoGenFlag = false;
       this.resetForm("form");
+      this.taskList = [];
+      this.taskLoading = false;
+      this.activeName = 'bom';
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -614,6 +795,7 @@ export default {
     /** 重置按钮操作 */
     resetQuery() {
       this.resetForm("queryForm");
+      this.clearPipelineWorkorderContext();
       this.handleQuery();
     },
     //从BOM行中直接新增
@@ -634,6 +816,9 @@ export default {
       this.open = true;
       this.title = "添加生产工单";
       this.optType="add";
+      nextBizCode('GD').then(res => {
+        this.form.workorderCode = (res && res.data) || '';
+      });
     },
     /**
      * 从 BOM 行批量生成半成品子工单。
@@ -667,6 +852,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd(row) {
       this.reset();
+      nextBizCode('GD').then(res => {
+        this.form.workorderCode = (res && res.data) || '';
+      });
       this.getTreeselect();
       if (row != null && row.workorderId) {
         this.form.parentId = row.workorderId;
@@ -696,6 +884,7 @@ export default {
         })
         this.title = "查看工单信息";
         this.optType = "view";
+        this.loadTasks();
       });
     },
     /** 修改按钮操作 */
@@ -713,6 +902,7 @@ export default {
         this.open = true;
         this.title = "修改生产工单";
         this.optType="edit";
+        this.loadTasks();
       });
     },
     /** 提交按钮 */
@@ -725,6 +915,11 @@ export default {
               //this.open = false;
               this.$refs["bomlist"].getList();
               this.getList();
+              // 确认后排产任务已生成，切到「生产任务」页签直接展示
+              if (this.form.status === 'CONFIRMED') {
+                this.activeName = 'task';
+                this.loadTasks();
+              }
             });
           } else {
             addWorkorder(this.form).then(response => {
@@ -743,7 +938,7 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      this.$modal.confirm('是否确认删除生产工单编号为"' + row.workorderId + '"的数据项？').then(function() {
+      this.$modal.confirm('是否确认删除生产工单编号为"' + row.workorderId + '"的数据项？删除后记录保留供审计，仅超级管理员可查看。').then(function() {
         return delWorkorder(row.workorderId);
       }).then(() => {
         this.getList();
@@ -819,16 +1014,107 @@ export default {
         this.form.vendorName = obj.vendorName;
       }
     },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('WORKORDER_CODE').then(response =>{
-          this.form.workorderCode = response;
-        });
-      }else{
-        this.form.workorderCode = null;
+    /* ------------------ 贯通单据清理 ------------------ */
+    openChainCleanup() {
+      this.chainOpen = true;
+      this.chainPreview = null;
+      this.chainConfirmText = '';
+      this.chainSelected = [];
+      this.chainCandidates = [];
+      this.loadChainCandidates();
+    },
+    loadChainCandidates() {
+      this.chainLoading = true;
+      listChainCandidates({ keyword: this.chainQuery.keyword, onlyChain: this.chainQuery.onlyChain }).then(res => {
+        this.chainCandidates = res.data || [];
+        this.chainPreview = null;
+      }).finally(() => {
+        this.chainLoading = false;
+      });
+    },
+    resetChainFilter() {
+      this.chainQuery = { keyword: '', onlyChain: false };
+      this.loadChainCandidates();
+    },
+    onChainSelectionChange(rows) {
+      this.chainSelected = rows;
+      this.chainPreview = null;
+    },
+    handleChainPreview() {
+      if (!this.chainSelected.length) {
+        return;
       }
+      this.chainLoading = true;
+      previewChainCleanup(this.chainSelected.map(r => r.workorder_id)).then(res => {
+        this.chainPreview = res.data;
+      }).finally(() => {
+        this.chainLoading = false;
+      });
+    },
+    handleChainExecute() {
+      if (this.chainConfirmText !== 'DELETE' || !this.chainPreview) {
+        return;
+      }
+      const ids = this.chainSelected.map(r => r.workorder_id);
+      this.$modal.confirm('确认删除选中的 ' + ids.length + ' 张工单及其全部关联单据？库存会按流水回退，该操作不可撤销。').then(() => {
+        this.chainLoading = true;
+        return executeChainCleanup(ids, this.chainConfirmText);
+      }).then(res => {
+        const data = res.data || {};
+        this.$modal.msgSuccess('清理完成：删除工单 ' + (data.pro_workorder || 0) + ' 张，库存回退 ' + (data.stockRows || 0) + ' 行');
+        this.chainOpen = false;
+        this.chainPreview = null;
+        this.chainConfirmText = '';
+        this.getList();
+      }).catch(() => {}).finally(() => {
+        this.chainLoading = false;
+      });
+    },
+    resetChainState() {
+      this.chainPreview = null;
+      this.chainConfirmText = '';
+      this.chainSelected = [];
     }
   }
 };
 </script>
+
+<style scoped>
+.chain-clean__filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 10px;
+  flex-wrap: wrap;
+}
+.chain-clean__preview {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+.chain-clean__summary {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #1f2937;
+}
+.chain-clean__warn {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #b45309;
+}
+.chain-clean__confirm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.task-empty-tip {
+  padding: 18px 4px;
+  text-align: center;
+  font-size: 13px;
+  color: #909399;
+}
+</style>

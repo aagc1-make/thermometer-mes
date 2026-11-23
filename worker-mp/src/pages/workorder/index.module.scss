@@ -1,0 +1,128 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-md $page-padding calc(#{$spacing-xl} + env(safe-area-inset-bottom));
+  background: $color-bg-page;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.search {
+  flex: 1;
+  height: 76rpx;
+  padding: 0 $spacing-md;
+  border-radius: $radius-button;
+  background: #fff;
+  font-size: $font-size-sm;
+  box-shadow: $shadow-card;
+}
+
+.searchBtn {
+  padding: 0 $spacing-md;
+  height: 76rpx;
+  line-height: 76rpx;
+  border-radius: $radius-button;
+  background: $color-primary;
+  color: #fff;
+  font-size: $font-size-sm;
+}
+
+.filters {
+  margin-top: $spacing-md;
+  white-space: nowrap;
+}
+
+.chip {
+  display: inline-block;
+  padding: 10rpx 28rpx;
+  margin-right: $spacing-sm;
+  border-radius: 999rpx;
+  background: #fff;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+}
+
+.chipActive {
+  background: $color-primary;
+  color: #fff;
+}
+
+.list {
+  margin-top: $spacing-md;
+}
+
+.card {
+  padding: $spacing-md;
+  margin-bottom: $spacing-sm;
+  background: #fff;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.code {
+  font-size: $font-size-md;
+  font-weight: 700;
+}
+
+.status {
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background: $color-primary-soft;
+  color: $color-primary;
+  font-size: $font-size-xs;
+}
+
+.product {
+  display: block;
+  margin-top: $spacing-xs;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  @include text-ellipsis;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: $spacing-xs;
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+}
+
+.progress {
+  margin-top: $spacing-sm;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: $color-bg-hover;
+  overflow: hidden;
+}
+
+.progressInner {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, $color-primary-light, $color-primary);
+}
+
+.more {
+  padding: $spacing-md;
+  text-align: center;
+  color: $color-primary;
+  font-size: $font-size-sm;
+}
+
+.empty {
+  padding: 120rpx 0;
+  text-align: center;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}

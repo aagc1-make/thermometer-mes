@@ -38,12 +38,17 @@
 
     <el-table v-loading="loading" :data="productsaleslineList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="产品编码" width="120px" align="center" prop="itemCode" />
-      <el-table-column label="产品名称" width="150px" align="center" prop="itemName" :show-overflow-tooltip="true"/>
+      <el-table-column label="产品编码" width="110px" align="center" prop="itemCode" />
+      <el-table-column label="产品名称" width="140px" align="center" prop="itemName" :show-overflow-tooltip="true"/>
       <el-table-column label="规格型号" align="center" prop="specification" :show-overflow-tooltip="true"/>
       <el-table-column label="单位" align="center" prop="unitName" />
       <el-table-column label="出库数量" align="center" prop="quantitySales" />
-      <el-table-column label="批次号" width="120px" align="center" prop="batchCode" /> 
+      <el-table-column label="批次号" width="110px" align="center" prop="batchCode" />
+      <el-table-column label="来源工单" width="150px" align="center" prop="workorderCode">
+        <template slot-scope="scope">
+          <span>{{ scope.row.workorderCode || '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="是否检验" align="center" prop="iqcCheck">
         <template slot-scope="scope">
           <dict-tag :options="dict.type.sys_yes_no" :value="scope.row.oqcCheck"/>
@@ -83,6 +88,27 @@
     <!-- 添加或修改产品销售出库行对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="960px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-row>
+          <el-col :span="10">
+            <el-form-item label="来源工单" prop="workorderCode">
+              <el-input v-model="form.workorderCode" readonly="readonly" placeholder="请选择工单成品（可选）">
+                <el-button
+                  v-if="optType != 'view'"
+                  slot="append"
+                  icon="el-icon-search"
+                  @click="handleSelectWorkorderProduct"
+                ></el-button>
+              </el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <div class="workorder-product__hint">
+              选择工单成品后自动带出产品、批次与可售数量；出库行会挂到该生产工单，工单流水线据此判断「销售完成」。
+            </div>
+          </el-col>
+        </el-row>
         <el-row>
           <el-col :span="8">
             <el-form-item label="物料编码"  prop="itemCode">
@@ -151,6 +177,11 @@
           </el-col>
         </el-row>
       </el-form>
+      <WorkorderProductSelect
+        ref="workorderProductSelect"
+        :excludeLineId="form.lineId"
+        @onSelected="onWorkorderProductSelected"
+      ></WorkorderProductSelect>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" v-if="optType != 'view'" @click="submitForm">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>
@@ -163,10 +194,11 @@
 import { listProductsalesline, getProductsalesline, delProductsalesline, addProductsalesline, updateProductsalesline } from "@/api/mes/wm/productsalesline";
 import NoticeLineSelect from "@/components/noticeSelect/salesNoticeLineSingle.vue"
 import ItemSelect  from "@/components/itemSelect/single.vue";
+import WorkorderProductSelect from "@/components/workorderProductSelect/single.vue";
 export default {
   name: "Productsalesline",
   dicts: ['sys_yes_no'],
-  components: {ItemSelect,NoticeLineSelect},
+  components: {ItemSelect,NoticeLineSelect,WorkorderProductSelect},
   props: {
     salesId: null,
     optType: null,
@@ -256,6 +288,8 @@ export default {
         quantitySales: null,
         batchId: null,
         batchCode: null,
+        workorderId: null,
+        workorderCode: null,
         oqcCheck: 'N',
         oqcId: null,
         oqcCode: null,
@@ -351,7 +385,38 @@ export default {
           this.form.specification = obj.specification;
           this.form.unitOfMeasure = obj.unitOfMeasure;
           this.form.unitName = obj.unitName
+          // 换了产品就不能沿用上一张工单的成品来源，避免出库行挂错工单
+          this.form.workorderId = null;
+          this.form.workorderCode = null;
         }
+    },
+    // 工单成品选择：按"工单生成的产品"带出产品、批次与可售数量
+    handleSelectWorkorderProduct(){
+      this.$refs.workorderProductSelect.handleOpen();
+    },
+    onWorkorderProductSelected(obj){
+      if(obj == undefined || obj == null){
+        return;
+      }
+      this.form.workorderId = obj.workorderId;
+      this.form.workorderCode = obj.workorderCode;
+      this.form.itemId = obj.itemId;
+      this.form.itemCode = obj.itemCode;
+      this.form.itemName = obj.itemName;
+      this.form.specification = obj.specification;
+      this.form.unitOfMeasure = obj.unitOfMeasure;
+      this.form.unitName = obj.unitName;
+      this.form.batchId = obj.batchId;
+      this.form.batchCode = obj.batchCode;
+      // 可售数量 = 已入库 − 已开单，默认带出全部可售，允许改小
+      const available = Number(obj.availableQuantity);
+      if (Number.isFinite(available) && available > 0) {
+        this.form.quantitySales = available;
+        this.form.quantityMax = available;
+      }
+      this.$nextTick(() => {
+        if (this.$refs.form) this.$refs.form.clearValidate(['itemCode', 'quantitySales']);
+      });
     },
     //选择到货通知单行
     handleSelectNoticeLine(){
@@ -369,8 +434,23 @@ export default {
           this.form.batchId = obj.batchId;
           this.form.batchCode = obj.batchCode;          
           this.form.quantitySales = obj.quantitySales;
+          // 来源换成发货通知行后，工单由后端按产品+批次回溯，不沿用旧值
+          this.form.workorderId = null;
+          this.form.workorderCode = null;
         }
     },
   }
 };
 </script>
+
+<style lang="scss" scoped>
+.workorder-product__hint {
+  padding: 6px 10px;
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #8a90a2;
+  background: #f7f8fc;
+  border-radius: 6px;
+}
+</style>

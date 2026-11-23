@@ -2,11 +2,13 @@
   <div class="navbar">
     <hamburger v-if="device==='mobile'" id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
 
+    <div v-if="!topNav" class="nav-divider" aria-hidden="true"></div>
     <breadcrumb id="breadcrumb-container" class="breadcrumb-container" v-if="!topNav"/>
     <top-nav id="topmenu-container" class="topmenu-container" v-if="topNav"/>
 
     <div class="right-menu">
       <template v-if="device!=='mobile'">
+        <div class="tool-pill" role="group" aria-label="快捷工具">
         <search id="header-search" class="right-menu-item" aria-label="全局搜索" />
 
         <screenfull id="screenfull" class="right-menu-item hover-effect" aria-label="切换全屏" />
@@ -14,10 +16,10 @@
         <el-tooltip content="布局大小" effect="dark" placement="bottom">
           <size-select id="size-select" class="right-menu-item hover-effect" aria-label="调整布局大小" />
         </el-tooltip>
-
+        </div>
       </template>
 
-      <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="click">
+      <el-dropdown class="avatar-container" trigger="click">
         <div class="avatar-wrapper" role="button" tabindex="0" aria-label="用户菜单" aria-haspopup="true">
           <img :src="avatar" class="user-avatar" alt="用户头像" width="40" height="40" loading="lazy" decoding="async" @error="handleAvatarError">
           <i class="el-icon-caret-bottom" aria-hidden="true" />
@@ -108,26 +110,47 @@ export default {
 <style lang="scss" scoped>
 .navbar {
   height: 50px;
-  overflow: hidden;
   position: relative;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(0,21,41,.08);
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  padding: 0 14px 0 10px;
+  gap: 10px;
 
+  /* 折叠按钮：白透圆角块（图标深蓝灰） */
   .hamburger-container {
-    line-height: 46px;
-    height: 100%;
-    float: left;
-    cursor: pointer;
-    transition: background .3s;
-    -webkit-tap-highlight-color:transparent;
+    flex: 0 0 auto;
+    height: 36px;
+    width: 36px;
+    line-height: 36px;
+    text-align: center;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.6);
+    transition: transform 0.2s ease, background 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+
+    svg {
+      fill: #3f5170;
+    }
 
     &:hover {
-      background: rgba(0, 0, 0, .025)
+      transform: scale(1.06);
+      background: rgba(255, 255, 255, 0.9);
     }
   }
 
+  .nav-divider {
+    flex: 0 0 auto;
+    width: 1px;
+    height: 22px;
+    background: #c2d1ea;
+  }
+
   .breadcrumb-container {
-    float: left;
+    flex: 0 1 auto;
+    overflow: hidden;
+    white-space: nowrap;
   }
 
   .topmenu-container {
@@ -141,52 +164,78 @@ export default {
   }
 
   .right-menu {
-    float: right;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
     height: 100%;
-    line-height: 50px;
 
     &:focus {
       outline: none;
     }
 
-    .right-menu-item {
-      display: inline-block;
-      padding: 0 8px;
-      height: 100%;
-      font-size: 18px;
-      color: #5a5e66;
-      vertical-align: text-bottom;
+    /* 快捷工具：整体胶囊容器，按钮各自圆形 */
+    .tool-pill {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.55);
+      border-radius: 999px;
+      padding: 3px 6px;
+      gap: 2px;
 
-      &.hover-effect {
-        cursor: pointer;
-        transition: background .3s;
+      .right-menu-item {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 17px;
+        color: #4b5c7e;
+        vertical-align: baseline;
 
-        &:hover {
-          background: rgba(0, 0, 0, .025)
+        &.hover-effect {
+          cursor: pointer;
+          transition: background 0.2s, transform 0.2s;
+
+          &:hover {
+            background: #ffffff;
+            transform: translateY(-1px);
+          }
         }
       }
+
+      /* 每个工具按钮 hover 一种柔和色 */
+      .right-menu-item:nth-child(1):hover { color: #5b7fc7; }
+      .right-menu-item:nth-child(2):hover { color: #7fa98b; }
+      .right-menu-item:nth-child(3):hover { color: #c2a17b; }
     }
 
     .avatar-container {
-      margin-right: 30px;
+      margin-left: 8px;
+      height: auto;
 
       .avatar-wrapper {
-        margin-top: 5px;
+        margin-top: 0;
         position: relative;
+        display: flex;
+        align-items: center;
 
         .user-avatar {
           cursor: pointer;
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          border: 2px solid #ffffff;
+          box-shadow: 0 0 0 2px #b9cbe8, 0 3px 8px rgba(91, 127, 199, 0.22);
         }
 
         .el-icon-caret-bottom {
           cursor: pointer;
-          position: absolute;
-          right: -20px;
-          top: 25px;
+          position: static;
+          margin-left: 5px;
           font-size: 12px;
+          color: #6d7f9e;
         }
       }
     }

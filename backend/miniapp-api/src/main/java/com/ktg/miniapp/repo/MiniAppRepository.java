@@ -1,5 +1,6 @@
 package com.ktg.miniapp.repo;
 
+import com.ktg.miniapp.auth.ClientContext;
 import com.ktg.miniapp.common.BizException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -18,14 +19,19 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 小程序后端数据访问层（JdbcTemplate，演示环境固定 client_id = 1）
- * 询价单复用 mes_inquiry_* 表，其余业务表统一 miniapp_ 前缀。
+ * 小程序后端数据访问层（JdbcTemplate）
+ * 询价单复用 mes_inquiry_* 表，其余业务表统一 miniapp_ 前缀；
+ * 客户ID 由令牌带入（ClientContext），保证不同企业账号看到各自的数据。
  */
 @Repository
 public class MiniAppRepository {
 
-    private static final long CLIENT_ID = 1L;
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+    /** 当前登录企业ID；未登录的公开接口回退到演示客户 */
+    private long clientId() {
+        return ClientContext.clientId();
+    }
 
     /** 允许生成单号的目标表.列（白名单，避免把外部入参拼进 SQL） */
     private static final Set<String> NO_TARGETS = new HashSet<>(Arrays.asList(
@@ -42,11 +48,13 @@ public class MiniAppRepository {
     // ==================== 产品目录 ====================
 
     public List<Map<String, Object>> catalogProducts() {
-        String sql = "SELECT item_id AS itemId, item_code AS itemCode, item_name AS itemName, "
-                + "specification, unit_name AS unitName, unit_of_measure AS unitOfMeasure, "
-                + "item_or_product AS itemOrProduct, item_type_name AS itemTypeName, remark, "
-                + "attr1, attr2, attr3, attr4 "
-                + "FROM md_item WHERE item_code LIKE 'IRG%' AND enable_flag = 'Y' ORDER BY item_code";
+        // 目录与 MES 主数据一致：商品范围由 miniapp_product 维护，规格/单位/类型取 md_item 真实值
+        String sql = "SELECT i.item_id AS itemId, i.item_code AS itemCode, i.item_name AS itemName, "
+                + "i.specification, i.unit_name AS unitName, i.item_or_product AS itemOrProduct, "
+                + "i.item_type_name AS itemTypeName, i.remark, "
+                + "p.moq, p.lead_days AS leadDays, p.art, p.summary, p.sort_no AS sortNo "
+                + "FROM miniapp_product p JOIN md_item i ON i.item_code = p.item_code "
+                + "WHERE p.enabled = 'Y' AND i.enable_flag = 'Y' ORDER BY p.sort_no, i.item_code";
         return jdbc.queryForList(sql);
     }
 
@@ -58,7 +66,7 @@ public class MiniAppRepository {
                 + "sales_name AS salesName, sales_phone AS salesPhone, "
                 + "stat_consulting AS statConsulting, stat_pending AS statPending, stat_closed AS statClosed "
                 + "FROM miniapp_customer WHERE client_id = ?";
-        List<Map<String, Object>> rows = jdbc.queryForList(sql, CLIENT_ID);
+        List<Map<String, Object>> rows = jdbc.queryForList(sql, clientId());
         if (rows.isEmpty()) {
             throw new BizException("客户信息不存在");
         }
@@ -81,7 +89,7 @@ public class MiniAppRepository {
         counts.put("delivered", 0);
         List<Map<String, Object>> rows = jdbc.queryForList(
                 "SELECT LOWER(status) AS status, COUNT(*) AS cnt FROM miniapp_order WHERE client_id = ? GROUP BY status",
-                CLIENT_ID);
+                clientId());
         for (Map<String, Object> row : rows) {
             String status = str(row.get("status"));
             if (status != null && counts.containsKey(status)) {
@@ -94,7 +102,7 @@ public class MiniAppRepository {
     public Map<String, Object> sales() {
         List<Map<String, Object>> rows = jdbc.queryForList(
                 "SELECT sales_name AS name, sales_phone AS phone, region FROM miniapp_customer WHERE client_id = ?",
-                CLIENT_ID);
+                clientId());
         if (rows.isEmpty()) {
             return new HashMap<>();
         }
@@ -111,7 +119,7 @@ public class MiniAppRepository {
         String sql = "SELECT address_id AS id, contact_name AS contactName, contact_tel AS contactTel, "
                 + "region, detail, tag, CASE is_default WHEN 'Y' THEN 1 ELSE 0 END AS isDefault "
                 + "FROM miniapp_address WHERE client_id = ? ORDER BY is_default DESC, address_id";
-        return jdbc.queryForList(sql, CLIENT_ID);
+        return jdbc.queryForList(sql, clientId());
     }
 
     @Transactional
@@ -123,16 +131,16 @@ public class MiniAppRepository {
         String tag = str(payload.get("tag"));
         boolean makeDefault = bool(payload.get("isDefault"));
         Integer total = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM miniapp_address WHERE client_id = ?", Integer.class, CLIENT_ID);
+                "SELECT COUNT(*) FROM miniapp_address WHERE client_id = ?", Integer.class, clientId());
         if (total != null && total == 0) {
             makeDefault = true;
         }
         if (makeDefault) {
-            jdbc.update("UPDATE miniapp_address SET is_default = 'N' WHERE client_id = ?", CLIENT_ID);
+            jdbc.update("UPDATE miniapp_address SET is_default = 'N' WHERE client_id = ?", clientId());
         }
         jdbc.update("INSERT INTO miniapp_address (client_id, contact_name, contact_tel, region, detail, tag, is_default, create_time, update_time) "
                         + "VALUES (?,?,?,?,?,?,?,NOW(),NOW())",
-                CLIENT_ID, contactName, contactTel, region, detail, tag, makeDefault ? "Y" : "N");
+                clientId(), contactName, contactTel, region, detail, tag, makeDefault ? "Y" : "N");
         Long id = jdbc.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
         return addressById(id);
     }
@@ -147,19 +155,19 @@ public class MiniAppRepository {
         String tag = str(payload.get("tag"));
         boolean makeDefault = bool(payload.get("isDefault"));
         if (makeDefault) {
-            jdbc.update("UPDATE miniapp_address SET is_default = 'N' WHERE client_id = ?", CLIENT_ID);
+            jdbc.update("UPDATE miniapp_address SET is_default = 'N' WHERE client_id = ?", clientId());
         }
         jdbc.update("UPDATE miniapp_address SET contact_name=?, contact_tel=?, region=?, detail=?, tag=?, "
                         + "is_default = CASE WHEN ? = 1 THEN 'Y' ELSE is_default END, update_time=NOW() "
                         + "WHERE address_id=? AND client_id=?",
-                contactName, contactTel, region, detail, tag, makeDefault ? 1 : 0, id, CLIENT_ID);
+                contactName, contactTel, region, detail, tag, makeDefault ? 1 : 0, id, clientId());
         return addressById(id);
     }
 
     @Transactional
     public void deleteAddress(Long id) {
         Map<String, Object> address = addressById(id);
-        jdbc.update("DELETE FROM miniapp_address WHERE address_id = ? AND client_id = ?", id, CLIENT_ID);
+        jdbc.update("DELETE FROM miniapp_address WHERE address_id = ? AND client_id = ?", id, clientId());
         if ("Y".equalsIgnoreCase(str(address.get("isDefaultRaw"))) || Boolean.TRUE.equals(address.get("isDefault"))) {
             List<Map<String, Object>> rest = addresses();
             if (!rest.isEmpty()) {
@@ -171,9 +179,9 @@ public class MiniAppRepository {
     @Transactional
     public Map<String, Object> setDefaultAddress(Long id) {
         addressById(id);
-        jdbc.update("UPDATE miniapp_address SET is_default = 'N' WHERE client_id = ?", CLIENT_ID);
+        jdbc.update("UPDATE miniapp_address SET is_default = 'N' WHERE client_id = ?", clientId());
         jdbc.update("UPDATE miniapp_address SET is_default = 'Y', update_time = NOW() WHERE address_id = ? AND client_id = ?",
-                id, CLIENT_ID);
+                id, clientId());
         return addressById(id);
     }
 
@@ -182,7 +190,7 @@ public class MiniAppRepository {
                 + "region, detail, tag, is_default AS isDefaultRaw, "
                 + "CASE is_default WHEN 'Y' THEN 1 ELSE 0 END AS isDefault "
                 + "FROM miniapp_address WHERE address_id = ? AND client_id = ?";
-        List<Map<String, Object>> rows = jdbc.queryForList(sql, id, CLIENT_ID);
+        List<Map<String, Object>> rows = jdbc.queryForList(sql, id, clientId());
         if (rows.isEmpty()) {
             throw new BizException("收货地址不存在");
         }
@@ -203,7 +211,7 @@ public class MiniAppRepository {
                         + "DATE_FORMAT(create_time,'%Y-%m-%d %H:%i') AS createTime "
                         + "FROM mes_inquiry_header WHERE (client_id = ? OR client_id IS NULL) ");
         List<Object> args = new ArrayList<>();
-        args.add(CLIENT_ID);
+        args.add(clientId());
         if (status != null && !status.trim().isEmpty()) {
             sql.append("AND status = ? ");
             args.add(status.trim().toUpperCase());
@@ -224,7 +232,7 @@ public class MiniAppRepository {
                 + "sales_name AS salesName, sales_tel AS salesTel, "
                 + "DATE_FORMAT(create_time,'%Y-%m-%d %H:%i') AS createTime "
                 + "FROM mes_inquiry_header WHERE inquiry_no = ? AND (client_id = ? OR client_id IS NULL)";
-        List<Map<String, Object>> rows = jdbc.queryForList(sql, inquiryNo, CLIENT_ID);
+        List<Map<String, Object>> rows = jdbc.queryForList(sql, inquiryNo, clientId());
         if (rows.isEmpty()) {
             throw new BizException("询价单不存在");
         }
@@ -243,7 +251,7 @@ public class MiniAppRepository {
         List<Map<String, Object>> rows = jdbc.queryForList(
                 "SELECT inquiry_id AS inquiryId, UPPER(status) AS status FROM mes_inquiry_header "
                         + "WHERE inquiry_no = ? AND (client_id = ? OR client_id IS NULL)",
-                inquiryNo, CLIENT_ID);
+                inquiryNo, clientId());
         if (rows.isEmpty()) {
             throw new BizException("询价单不存在");
         }
@@ -284,7 +292,7 @@ public class MiniAppRepository {
         jdbc.update("INSERT INTO mes_inquiry_header (inquiry_no, client_id, client_name, buyer, contact_tel, status, "
                         + "expected_date, delivery_address, invoice_type, remark, item_count, total_qty, create_by, create_time) "
                         + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())",
-                inquiryNo, CLIENT_ID, clientName, buyer, str(payload.get("contactTel")), "SUBMITTED",
+                inquiryNo, clientId(), clientName, buyer, str(payload.get("contactTel")), "SUBMITTED",
                 dateOrNull(payload.get("expectedDate")), str(payload.get("deliveryAddress")),
                 str(payload.get("invoiceType")), str(payload.get("remark")), itemCount, totalQty, "miniapp");
 
@@ -344,7 +352,7 @@ public class MiniAppRepository {
                         + "DATE_FORMAT(update_time,'%Y-%m-%d %H:%i') AS updateTime "
                         + "FROM miniapp_order WHERE client_id = ? ");
         List<Object> args = new ArrayList<>();
-        args.add(CLIENT_ID);
+        args.add(clientId());
         if (status != null && !status.trim().isEmpty()) {
             sql.append("AND status = ? ");
             args.add(status.trim().toUpperCase());
@@ -363,7 +371,7 @@ public class MiniAppRepository {
                 + "DATE_FORMAT(create_time,'%Y-%m-%d %H:%i') AS createTime, "
                 + "DATE_FORMAT(update_time,'%Y-%m-%d %H:%i') AS updateTime "
                 + "FROM miniapp_order WHERE order_no = ? AND client_id = ?";
-        List<Map<String, Object>> rows = jdbc.queryForList(sql, orderNo, CLIENT_ID);
+        List<Map<String, Object>> rows = jdbc.queryForList(sql, orderNo, clientId());
         if (rows.isEmpty()) {
             throw new BizException("订单不存在");
         }
@@ -397,7 +405,7 @@ public class MiniAppRepository {
                         + "carrier, tracking_no AS trackingNo, address, progress, "
                         + "DATE_FORMAT(update_time,'%Y-%m-%d %H:%i') AS updateTime "
                         + "FROM miniapp_delivery WHERE order_no = ? AND client_id = ?",
-                orderNo, CLIENT_ID);
+                orderNo, clientId());
         return rows.isEmpty() ? null : rows.get(0);
     }
 
@@ -419,7 +427,7 @@ public class MiniAppRepository {
         }
         List<Map<String, Object>> exists = jdbc.queryForList(
                 "SELECT order_no AS orderNo FROM miniapp_order WHERE inquiry_no = ? AND client_id = ?",
-                inquiryNo, CLIENT_ID);
+                inquiryNo, clientId());
         if (!exists.isEmpty()) {
             return order(str(exists.get(0).get("orderNo")));
         }
@@ -449,7 +457,7 @@ public class MiniAppRepository {
         jdbc.update("INSERT INTO miniapp_order (order_no, client_id, inquiry_no, status, status_name, item_count, "
                         + "total_qty, total_amount, delivery_address, invoice_type, expected_date, remark, create_time, update_time) "
                         + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())",
-                orderNo, CLIENT_ID, inquiryNo, "CONFIRMED", "待确认", lines.size(), totalQty, totalAmount,
+                orderNo, clientId(), inquiryNo, "CONFIRMED", "待确认", lines.size(), totalQty, totalAmount,
                 str(inquiry.get("deliveryAddress")), str(inquiry.get("invoiceType")),
                 dateOrNull(inquiry.get("expectedDate")), str(inquiry.get("remark")));
         Long orderId = jdbc.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
@@ -476,7 +484,7 @@ public class MiniAppRepository {
                         + "DATE_FORMAT(update_time,'%Y-%m-%d %H:%i') AS updateTime "
                         + "FROM miniapp_delivery WHERE client_id = ? ");
         List<Object> args = new ArrayList<>();
-        args.add(CLIENT_ID);
+        args.add(clientId());
         if (orderNo != null && !orderNo.trim().isEmpty()) {
             sql.append("AND order_no = ? ");
             args.add(orderNo.trim());
@@ -491,7 +499,7 @@ public class MiniAppRepository {
                         + "total_amount AS totalAmount, paid_amount AS paidAmount, unpaid_amount AS unpaidAmount, "
                         + "LOWER(status) AS status, status_name AS statusName, "
                         + "DATE_FORMAT(bill_date,'%Y-%m-%d') AS billDate, DATE_FORMAT(due_date,'%Y-%m-%d') AS dueDate, remark "
-                        + "FROM miniapp_statement WHERE client_id = ? ORDER BY bill_date DESC", CLIENT_ID);
+                        + "FROM miniapp_statement WHERE client_id = ? ORDER BY bill_date DESC", clientId());
     }
 
     public List<Map<String, Object>> invoices() {
@@ -500,7 +508,7 @@ public class MiniAppRepository {
                         + "invoice_type AS invoiceType, amount, LOWER(status) AS status, status_name AS statusName, "
                         + "DATE_FORMAT(apply_time,'%Y-%m-%d %H:%i') AS applyTime, "
                         + "DATE_FORMAT(issue_time,'%Y-%m-%d') AS issueTime, email, remark "
-                        + "FROM miniapp_invoice WHERE client_id = ? ORDER BY apply_time DESC", CLIENT_ID);
+                        + "FROM miniapp_invoice WHERE client_id = ? ORDER BY apply_time DESC", clientId());
     }
 
     @Transactional
@@ -524,7 +532,7 @@ public class MiniAppRepository {
         String invoiceNo = nextNo("miniapp_invoice", "invoice_no", "FP" + LocalDate.now().format(DAY) + "-");
         jdbc.update("INSERT INTO miniapp_invoice (invoice_no, client_id, invoice_title, tax_no, invoice_type, amount, "
                         + "status, status_name, apply_time, email, remark) VALUES (?,?,?,?,?,?,?,?,NOW(),?,?)",
-                invoiceNo, CLIENT_ID, title, taxNo, invoiceType, amount, "APPLIED", "开票中",
+                invoiceNo, clientId(), title, taxNo, invoiceType, amount, "APPLIED", "开票中",
                 str(payload.get("email")), str(payload.get("remark")));
         Long id = jdbc.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
         List<Map<String, Object>> rows = jdbc.queryForList(
@@ -539,7 +547,7 @@ public class MiniAppRepository {
         return jdbc.queryForList(
                 "SELECT contact_id AS id, name, dept, tel, email, "
                         + "CASE is_default WHEN 'Y' THEN 1 ELSE 0 END AS isDefault "
-                        + "FROM miniapp_contact WHERE client_id = ? ORDER BY is_default DESC, contact_id", CLIENT_ID);
+                        + "FROM miniapp_contact WHERE client_id = ? ORDER BY is_default DESC, contact_id", clientId());
     }
 
     public List<Map<String, Object>> faqs() {
@@ -567,7 +575,7 @@ public class MiniAppRepository {
     }
 
     private String firstValue(String sql) {
-        List<Map<String, Object>> rows = jdbc.queryForList(sql, CLIENT_ID);
+        List<Map<String, Object>> rows = jdbc.queryForList(sql, clientId());
         if (rows.isEmpty()) {
             return null;
         }

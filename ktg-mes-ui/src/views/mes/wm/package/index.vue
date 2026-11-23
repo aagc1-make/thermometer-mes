@@ -137,16 +137,7 @@
             <el-row>
               <el-col :span="16">
                 <el-form-item label="装箱单编号" prop="packageCode">
-                  <el-input v-model="form.packageCode" placeholder="请输入装箱单编号" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item  label-width="80">
-                  <el-switch v-model="autoGenFlag"
-                      active-color="#13ce66"
-                      active-text="自动生成"
-                      @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-                  </el-switch>
+                  <el-input v-model="form.packageCode" disabled placeholder="保存后由系统自动生成" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -273,11 +264,11 @@
 
 <script>
 import { listPackage, getPackage, delPackage, addPackage, updatePackage } from "@/api/mes/wm/package";
+import { nextBizCode } from "@/api/mes/code";
 import ClientSelect from "@/components/clientSelect/single.vue";
 import Packageline from "./line.vue";
 import SubPackage from "./subpackge.vue";
 import { listAllUnitmeasure} from "@/api/mes/md/unitmeasure";
-import {genCode} from "@/api/system/autocode/rule"
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 export default {
@@ -288,8 +279,6 @@ export default {
   },
   data() {
     return {
-      //自动生成编码
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -459,7 +448,6 @@ export default {
         updateBy: null,
         updateTime: null
       };
-      this.autoGenFlag = false;
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -493,6 +481,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('BZ').then(res => {
+        this.form.packageCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加装箱单";
       this.optType="add";
@@ -563,16 +554,6 @@ export default {
         ...this.queryParams
       }, `package_${new Date().getTime()}.xlsx`)
     },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('PACKAGE_CODE').then(response =>{
-          this.form.packageCode = response;
-        });
-      }else{
-        this.form.packageCode = null;
-      }
-    }
   }
 };
 </script>

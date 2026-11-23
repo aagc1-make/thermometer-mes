@@ -1,0 +1,251 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-md $page-padding calc(180rpx + env(safe-area-inset-bottom));
+  background: $color-bg-page;
+}
+
+.header {
+  padding: $spacing-lg;
+  border-radius: $radius-2xl;
+  background: linear-gradient(160deg, $color-primary-light, $color-primary 70%, $color-primary-dark);
+  color: #fff;
+}
+
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.code {
+  font-size: $font-size-lg;
+  font-weight: 700;
+}
+
+.status {
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: $font-size-xs;
+}
+
+.product {
+  display: block;
+  margin-top: $spacing-xs;
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.metaRow {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-md;
+  font-size: $font-size-xs;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.progress {
+  margin-top: $spacing-sm;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.24);
+  overflow: hidden;
+}
+
+.progressInner {
+  height: 100%;
+  border-radius: 999rpx;
+  background: #fff;
+}
+
+.nextCard {
+  margin-top: $spacing-md;
+  padding: $spacing-lg;
+  border-radius: $radius-lg;
+  background: #fff;
+  border-left: 8rpx solid $color-primary;
+  box-shadow: $shadow-card;
+}
+
+.nextLabel {
+  display: block;
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+}
+
+.nextTitle {
+  display: block;
+  margin-top: 4rpx;
+  font-size: $font-size-lg;
+  font-weight: 700;
+}
+
+.nextGuide {
+  display: block;
+  margin-top: $spacing-xs;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  line-height: 1.6;
+}
+
+.nextError {
+  display: block;
+  margin-top: $spacing-xs;
+  color: $color-error;
+  font-size: $font-size-xs;
+}
+
+.section {
+  margin-top: $spacing-lg;
+}
+
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: $spacing-sm;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: 700;
+}
+
+.sectionSub {
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+}
+
+.steps {
+  white-space: nowrap;
+}
+
+.step {
+  display: inline-block;
+  width: 220rpx;
+  min-height: 260rpx;
+  padding: $spacing-md;
+  margin-right: $spacing-sm;
+  vertical-align: top;
+  white-space: normal;
+  border-radius: $radius-lg;
+  background: #fff;
+  box-shadow: $shadow-card;
+  border: 2rpx solid transparent;
+}
+
+.stepDone {
+  border-color: rgba(18, 183, 106, 0.35);
+}
+
+.stepDoing {
+  border-color: $color-primary;
+  background: $color-primary-soft;
+}
+
+.stepSkipped {
+  opacity: 0.65;
+}
+
+.stepTop {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.stepIndex {
+  width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  border-radius: 50%;
+  text-align: center;
+  background: $color-bg-hover;
+  color: $color-text-secondary;
+  font-size: 20rpx;
+}
+
+.stepName {
+  font-size: $font-size-sm;
+  font-weight: 600;
+}
+
+.stepState {
+  display: block;
+  margin-top: $spacing-sm;
+  color: $color-primary;
+  font-size: $font-size-xs;
+}
+
+.stepDone .stepState {
+  color: $color-success;
+}
+
+.stepDoc {
+  display: block;
+  margin-top: 4rpx;
+  color: $color-text-secondary;
+  font-size: 20rpx;
+  word-break: break-all;
+}
+
+.stepGuide {
+  display: block;
+  margin-top: $spacing-xs;
+  color: $color-text-tertiary;
+  font-size: 20rpx;
+  line-height: 1.5;
+}
+
+.actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  padding: $spacing-md $page-padding calc(#{$spacing-md} + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+.actionPrimary,
+.actionGhost,
+.actionDanger {
+  flex: 1;
+  min-width: 200rpx;
+  height: 76rpx;
+  line-height: 76rpx;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+
+  &::after {
+    border: none;
+  }
+}
+
+.actionPrimary {
+  background: $color-primary;
+  color: #fff;
+}
+
+.actionGhost {
+  background: #fff;
+  color: $color-primary;
+  border: 2rpx solid $color-primary;
+  line-height: 72rpx;
+}
+
+.actionDanger {
+  background: $color-warning;
+  color: #fff;
+}
+
+.empty {
+  padding: 160rpx 0;
+  text-align: center;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}

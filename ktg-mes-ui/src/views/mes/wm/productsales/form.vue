@@ -4,16 +4,7 @@
       <el-row>
         <el-col :span="8">
           <el-form-item label="出库单编号" prop="salesCode">
-            <el-input v-model="form.salesCode" placeholder="请输入出库单编号" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="4">
-          <el-form-item  label-width="80">
-            <el-switch v-model="autoGenFlag"
-                       active-color="#13ce66"
-                       active-text="自动生成"
-                       @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-            </el-switch>
+            <el-input v-model="form.salesCode" disabled placeholder="保存后由系统自动生成" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -83,7 +74,6 @@
 </template>
 
 <script>
-import {genCode} from "@/api/system/autocode/rule";
 import Productsalesline from "@/views/mes/wm/productsales/line.vue";
 import ClientSelect from "@/components/clientSelect/single.vue";
 import {getProductsales} from "@/api/mes/wm/productsales";
@@ -97,8 +87,6 @@ export default {
       salesId: '',
       // 销售出库数据
       form: {},
-      //自动生成物料编码标识
-      autoGenFlag: false,
       //弹框的操作类型 view add edit
       optType: undefined,
       // 表单校验
@@ -160,16 +148,6 @@ export default {
         this.form.clientName = obj.clientName;
       }
     },
-    //自动生成物料编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('PRODUCTSALSE_CODE').then(response =>{
-          this.form.salesCode = response;
-        });
-      }else{
-        this.form.salesCode = null;
-      }
-    }
   }
 };
 </script>

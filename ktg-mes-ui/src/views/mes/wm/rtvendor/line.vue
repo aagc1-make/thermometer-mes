@@ -8,6 +8,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
+          v-if="returnMode !== 'PRE_STOCK'"
           v-hasPermi="['mes:wm:rtvendor:add']"
         >新增</el-button>
       </el-col>
@@ -19,6 +20,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
+          v-if="returnMode !== 'PRE_STOCK'"
           v-hasPermi="['mes:wm:rtvendor:remove']"
         >删除</el-button>
       </el-col>
@@ -48,6 +50,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
+            v-if="returnMode !== 'PRE_STOCK'"
             v-hasPermi="['mes:wm:rtvendor:remove']"
           >删除</el-button>
         </template>
@@ -69,7 +72,7 @@
             <el-col :span="8">
                 <el-form-item label="产品物料编码" prop="itemCode">
                     <el-input v-model="form.itemCode" readonly="readonly" placeholder="请选择产品物料编码" >
-                      <el-button slot="append" @click="handleSelectProduct" icon="el-icon-search"></el-button>
+                      <el-button slot="append" @click="handleSelectProduct" icon="el-icon-search" :disabled="returnMode === 'PRE_STOCK' || returnMode === 'STOCK'"></el-button>
                     </el-input>
                 </el-form-item>
                 <ItemSelect ref="itemSelect" @onSelected="onItemSelected" > </ItemSelect>
@@ -101,7 +104,7 @@
             <el-col :span="8">
               <el-form-item label="批次号" prop="batchCode">
                 <el-input v-model="form.batchCode" readonly="readonly" placeholder="请选择批次号" >
-                  <el-button slot="append" @click="handleSelectBatch" icon="el-icon-search"></el-button>
+                  <el-button slot="append" @click="handleSelectBatch" icon="el-icon-search" :disabled="returnMode === 'PRE_STOCK' || returnMode === 'STOCK'"></el-button>
                 </el-input>
               </el-form-item>
               <BatchSelect ref="batchSelect" :itemId="form.itemId" :vendorId="vendorId" @onSelected="onBatchSelected" ></BatchSelect>
@@ -132,6 +135,7 @@ export default {
   components:{ItemSelect ,BatchSelect},
   props:{
     optType: null,
+    returnMode: null,
     rtId: null,
     batchCode: null,
     vendorId: null

@@ -4,16 +4,7 @@
       <el-row>
         <el-col :span="8">
           <el-form-item label="入库单编号" prop="recptCode">
-            <el-input v-model="form.recptCode" placeholder="请输入入库单编号" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="4">
-          <el-form-item  label-width="80">
-            <el-switch v-model="autoGenFlag"
-                       active-color="#13ce66"
-                       active-text="自动生成"
-                       @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-            </el-switch>
+            <el-input v-model="form.recptCode" disabled placeholder="保存后由系统自动生成" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -82,7 +73,6 @@
 import Itemrecptline from "@/views/mes/wm/itemrecpt/line.vue";
 import VendorSelect from "@/components/vendorSelect/single.vue";
 import NoticeSelect from "@/components/noticeSelect/single.vue";
-import {genCode} from "@/api/system/autocode/rule";
 import {getItemrecpt} from "@/api/mes/wm/itemrecpt";
 
 export default {
@@ -92,14 +82,11 @@ export default {
   data() {
     return {
       recptId: '',
-      //自动生成编码
-      autoGenFlag:false,
       // 表单参数
       form: {},
       // 表单校验
       rules: {
         recptCode: [
-          { required: true, message: "入库单编号不能为空", trigger: "blur" },
           { max: 64, message: "字段过长", trigger: "blur" }
         ],
         recptName: [
@@ -172,16 +159,6 @@ export default {
     //到货通知单选择
     handleSelectNotice(){
       this.$refs.noticeSelect.handleOpen(this.form.noticeId)
-    },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('ITEMRECPT_CODE').then(response =>{
-          this.form.recptCode = response;
-        });
-      }else{
-        this.form.recptCode = null;
-      }
     }
   }
 }

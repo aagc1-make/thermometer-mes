@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import { railDomains, findDomainByPath } from '../../rail-config'
+import { railDomains, findDomainByPath, isMenuHidden } from '../../rail-config'
 
 export default {
   name: 'Rail',
@@ -116,7 +116,7 @@ export default {
       const all = fromRouter()
       const source = all.length ? all : fromSidebar()
 
-      const matched = source.filter(p => domain.roots.some(root =>
+      const matched = source.filter(p => !isMenuHidden(p) && domain.roots.some(root =>
         p === root || p.indexOf(root + '/') === 0
       ))
       if (!matched.length) {

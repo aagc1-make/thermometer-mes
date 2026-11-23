@@ -154,16 +154,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="方案编号" prop="planCode">
-              <el-input v-model="form.planCode" placeholder="请输入方案编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.planCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -253,16 +244,14 @@
 
 <script>
 import { listStocktakingplan, getStocktakingplan, delStocktakingplan, addStocktakingplan, updateStocktakingplan } from "@/api/mes/wm/stocktakingplan";
+import { nextBizCode } from "@/api/mes/code";
 import ParamLine from "./param.vue"
-import {genCode} from "@/api/system/autocode/rule"
 export default {
   name: "Stocktakingplan",
   components: { ParamLine },
   dicts: ['mes_stock_taking_type','sys_yes_no'],
   data() {
     return {
-      //自动生成编码
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -345,6 +334,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('PDJH').then(res => {
+        this.form.planCode = (res && res.data) || '';
+      });
       this.open = true;
       this.optType = "add";
       this.title = "添加库存盘点方案";
@@ -421,16 +413,6 @@ export default {
         ...this.queryParams
       }, `stocktakingplan_${new Date().getTime()}.xlsx`)
     },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('WM_STOCK_TAKING_PLAN_CODE').then(response =>{
-          this.form.planCode = response;
-        });
-      }else{
-        this.form.planCode = null;
-      }
-    }
   }
 };
 </script>

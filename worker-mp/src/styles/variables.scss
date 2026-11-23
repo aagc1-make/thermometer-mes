@@ -1,0 +1,60 @@
+// 工人端视觉规范：与下单小程序保持同一套色彩与节奏
+$color-primary: #2b6beb;
+$color-primary-light: #5b93ff;
+$color-primary-dark: #1e4fbf;
+$color-primary-soft: #eaf1ff;
+$color-success: #12b76a;
+$color-warning: #f79009;
+$color-error: #f04438;
+$color-bg-page: #f5f7fc;
+$color-bg-card: #ffffff;
+$color-bg-soft: #f1f6ff;
+$color-bg-hover: #eef2fa;
+$color-text-primary: #17233d;
+$color-text-secondary: #5a6b87;
+$color-text-tertiary: #8a99b3;
+$color-text-disabled: #c3ccdd;
+$color-border: #e8edf7;
+$color-divider: #f0f3fa;
+
+$page-padding: 32rpx;
+$spacing-xs: 8rpx;
+$spacing-sm: 16rpx;
+$spacing-md: 24rpx;
+$spacing-lg: 32rpx;
+$spacing-xl: 48rpx;
+
+$radius-sm: 8rpx;
+$radius-md: 12rpx;
+$radius-lg: 16rpx;
+$radius-2xl: 32rpx;
+$radius-button: 48rpx;
+
+$shadow-card: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+$shadow-float: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+
+$font-size-xs: 22rpx;
+$font-size-sm: 24rpx;
+$font-size-md: 28rpx;
+$font-size-lg: 32rpx;
+$font-size-xl: 36rpx;
+$font-size-xxl: 40rpx;
+
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  padding: $spacing-lg;
+}

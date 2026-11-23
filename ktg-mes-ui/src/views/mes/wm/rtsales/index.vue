@@ -167,16 +167,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="退货单编号" prop="rtCode">
-              <el-input v-model="form.rtCode" placeholder="请输入退货单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.rtCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -267,10 +258,10 @@
 
 <script>
 import { listRtsales, getRtsales, delRtsales, addRtsales, updateRtsales ,execute} from "@/api/mes/wm/rtsales";
+import { nextBizCode } from "@/api/mes/code";
 import Rtsalesline from "./line.vue";
 import RtsalesDetail from "./detail.vue";
 import ClientSelectSingle from "@/components/clientSelect/single.vue"
-import {genCode} from "@/api/system/autocode/rule"
 export default {
   name: "Rtsales",
   dicts: ['mes_rt_sales_status'],
@@ -279,8 +270,6 @@ export default {
   },
   data() {
     return {
-      //自动生成编码
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -386,7 +375,6 @@ export default {
         updateBy: null,
         updateTime: null
       };
-      this.autoGenFlag = false;
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -420,6 +408,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('XSTH').then(res => {
+        this.form.rtCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加产品销售退货单";
       this.optType = "add";
@@ -554,16 +545,6 @@ export default {
         ...this.queryParams
       }, `rtsales_${new Date().getTime()}.xlsx`)
     },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('WM_RTSALSE_CODE').then(response =>{
-          this.form.rtCode = response;
-        });
-      }else{
-        this.form.rtCode = null;
-      }
-    }
   }
 };
 </script>

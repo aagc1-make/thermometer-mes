@@ -2,11 +2,12 @@
       <div class="app-container">
           <el-container>
                   <el-aside width="150px">
-                        <el-radio-group v-model="selectedType" class="x-fillitem el-group-list" @change="onSelected">
+                        <el-radio-group v-model="selectedType" class="x-fillitem el-group-list team-selector" @change="onSelected">
                               <el-radio-button
                                     v-for="item in teamList"
                                     :key="item.teamId"
                                     :label="item.teamId"
+                                    :title="item.teamName"
                               >{{item.teamName}}</el-radio-button>
                         </el-radio-group>
                   </el-aside>
@@ -90,7 +91,6 @@ export default {
       watch:{
             date:{
                   handler(newVal,oldVal){
-                        console.log(newVal.getFullYear()+'-'+(newVal.getMonth()+1)+'-'+newVal.getDate());
                         this.teamShiftQueryParams.date = newVal.getFullYear()+'-'+(newVal.getMonth()+1)+'-'+newVal.getDate();
                         this.loading = true;
                         listCalendars(this.teamShiftQueryParams).then(response =>{
@@ -136,7 +136,8 @@ export default {
             onSelected(teamId){
                   this.loading = true;
                   this.teamShiftQueryParams.teamId = teamId;
-                  this.teamShiftQueryParams.date = this.date;
+                  // 与 calendarType.vue 保持一致：date 必须是字符串；Date 对象会被 tansParams 丢弃，后端回落到当前月
+                  this.teamShiftQueryParams.date = this.date.getFullYear() + '-' + (this.date.getMonth() + 1) + '-' + this.date.getDate();
                   listCalendars(this.teamShiftQueryParams).then(response =>{
                         this.calendarDayList = response.data;
                         this.loading = false;
@@ -174,6 +175,26 @@ export default {
 }
 </script>
 <style>
+      .team-selector.el-radio-group {
+            width: 100%;
+            box-sizing: border-box;
+      }
+
+      .team-selector.el-radio-group .el-radio-button {
+            width: 100%;
+            min-width: 0;
+      }
+
+      .team-selector.el-radio-group > label > .el-radio-button__inner {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 10px 12px;
+            line-height: 1.5;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+      }
+
       .grid-content{
             padding: 5px 0;
       }

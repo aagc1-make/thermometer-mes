@@ -173,16 +173,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="入库单编号" prop="recptCode">
-              <el-input v-model="form.recptCode" placeholder="请输入入库单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.recptCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -264,7 +255,7 @@
 
 <script>
 import { listMiscrecpt, getMiscrecpt, delMiscrecpt, addMiscrecpt, updateMiscrecpt, execute } from "@/api/mes/wm/miscrecpt";
-import {genCode} from "@/api/system/autocode/rule"
+import { nextBizCode } from "@/api/mes/code";
 import MiscRecptLine from "./line.vue";
 export default {
   name: "Miscrecpt",
@@ -274,7 +265,6 @@ export default {
   },
   data() {
     return {
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -353,6 +343,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('ZCR').then(res => {
+        this.form.recptCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加杂项入库单";
       this.optType = "add";
@@ -449,16 +442,6 @@ export default {
         ...this.queryParams
       }, `miscrecpt_${new Date().getTime()}.xlsx`)
     },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('MISC_RECPT_CODE').then(response =>{
-          this.form.recptCode = response;
-        });
-      }else{
-        this.form.recptCode = null;
-      }
-    }
   }
 };
 </script>

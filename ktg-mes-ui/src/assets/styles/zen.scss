@@ -149,11 +149,16 @@ $zen-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .zen-card__dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 40px;
   height: 40px;
   border-radius: 12px;
   margin-bottom: 18px;
   animation: zen-breathe 4s ease-in-out infinite;
+  font-size: 20px;
+  color: rgba(45, 49, 66, 0.55);
 
   &--sakura {
     background: rgba(255, 183, 197, 0.45);

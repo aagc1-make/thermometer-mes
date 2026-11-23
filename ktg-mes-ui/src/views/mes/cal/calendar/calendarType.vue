@@ -91,7 +91,6 @@ export default {
       watch:{
             date:{
                   handler(newVal,oldVal){
-                        console.log(newVal.getFullYear()+'-'+(newVal.getMonth()+1)+'-'+newVal.getDate());
                         this.teamShiftQueryParams.date = newVal.getFullYear()+'-'+(newVal.getMonth()+1)+'-'+newVal.getDate();
                         this.loading = true;
                         listCalendars(this.teamShiftQueryParams).then(response =>{

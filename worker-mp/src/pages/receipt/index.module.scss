@@ -1,0 +1,89 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-md $page-padding calc(#{$spacing-xl} + env(safe-area-inset-bottom));
+  background: $color-bg-page;
+}
+
+.tip {
+  margin-bottom: $spacing-md;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+}
+
+.card {
+  padding: $spacing-md;
+  margin-bottom: $spacing-sm;
+  border-radius: $radius-lg;
+  background: #fff;
+  box-shadow: $shadow-card;
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.code {
+  font-size: $font-size-sm;
+  font-weight: 700;
+}
+
+.status {
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(247, 144, 9, 0.12);
+  color: $color-warning;
+  font-size: $font-size-xs;
+}
+
+.statusReady {
+  background: rgba(43, 107, 235, 0.1);
+  color: $color-primary;
+}
+
+.item {
+  display: block;
+  margin-top: $spacing-xs;
+  font-size: $font-size-sm;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4rpx;
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+}
+
+.action,
+.actionPrimary {
+  margin-top: $spacing-sm;
+  height: 72rpx;
+  line-height: 72rpx;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+
+  &::after {
+    border: none;
+  }
+}
+
+.action {
+  background: $color-primary-soft;
+  color: $color-primary;
+}
+
+.actionPrimary {
+  background: linear-gradient(135deg, $color-primary-light, $color-primary);
+  color: #fff;
+}
+
+.empty {
+  padding: 120rpx 0;
+  text-align: center;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}

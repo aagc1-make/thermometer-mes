@@ -155,16 +155,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="入库单编号" prop="recptCode">
-              <el-input v-model="form.recptCode" placeholder="请输入入库单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.recptCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -227,7 +218,7 @@
 
 <script>
 import { listOutsourcerecpt, getOutsourcerecpt, delOutsourcerecpt, addOutsourcerecpt, updateOutsourcerecpt, execute } from "@/api/mes/wm/outsourcerecpt";
-import {genCode} from "@/api/system/autocode/rule"
+import { nextBizCode } from "@/api/mes/code";
 import WorkorderSelect from "@/components/workorderSelect/single.vue"
 import Itemrecptline from "./line.vue";
 import ItemrecptDetail from './detail.vue';
@@ -237,8 +228,6 @@ export default {
   components :{WorkorderSelect,Itemrecptline,ItemrecptDetail},
   data() {
     return {
-      //自动生成编码
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -319,7 +308,6 @@ export default {
         recptDate: new Date(),
         status: "PREPARE", remark: null, attr1: null, attr2: null, attr3: null, attr4: null, createBy: null, createTime: null, updateBy: null, updateTime: null
       };
-        this.autoGenFlag = false;
         this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -341,6 +329,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('WXRK').then(res => {
+        this.form.recptCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加外协入库单";
       this.optType = "add";
@@ -490,16 +481,6 @@ export default {
         this.form.vendorName = row.vendorName;
       }
     },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('WM_OUTSOURCE_RECPT_CODE').then(response =>{
-          this.form.recptCode = response;
-        });
-      }else{
-        this.form.recptCode = null;
-      }
-    }
   }
 };
 </script>

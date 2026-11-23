@@ -149,6 +149,8 @@
 
 <script>
 import { listSalesnoticeline, getSalesnoticeline, delSalesnoticeline, addSalesnoticeline, updateSalesnoticeline } from "@/api/mes/wm/salesnoticeline";
+import { listBatch } from "@/api/mes/wm/batch";
+import { listWorkorder } from "@/api/mes/pro/workorder";
 import ItemSelect  from "@/components/itemSelect/single.vue";
 export default {
   name: "Salesnoticeline",
@@ -159,6 +161,8 @@ export default {
   props:{
     noticeId: null,
     optType: null,
+    // 来源销售订单号：用于自动带出该订单已产出的成品批次
+    soCode: null,
   },
   data() {
     return {
@@ -241,6 +245,7 @@ export default {
       this.reset();
       this.open = true;
       this.title = "添加发货通知单行";
+      this.autoFillBatch();
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -250,7 +255,31 @@ export default {
         this.form = response.data;
         this.open = true;
         this.title = "修改发货通知单行";
+        this.autoFillBatch();
       });
+    },
+    /**
+     * 按「订单 → 工单 → 成品批次」自动带出批次号：
+     * 批次在工单完工入库时生成并绑定工单，这里只读带出，避免手输错号。
+     */
+    async autoFillBatch() {
+      if (!this.soCode || this.form.itemId == null || this.form.batchCode) return;
+      try {
+        const workorderResponse = await listWorkorder({ sourceCode: this.soCode, pageNum: 1, pageSize: 50 });
+        const workorders = (workorderResponse && workorderResponse.rows) || [];
+        const workorder = workorders.find(row => String(row.productId) === String(this.form.itemId)) || workorders[0];
+        if (!workorder) return;
+        const batchResponse = await listBatch({ workorderCode: workorder.workorderCode, itemId: this.form.itemId, pageNum: 1, pageSize: 50 });
+        const batch = ((batchResponse && batchResponse.rows) || [])
+          .filter(row => row.batchStatus !== 'CLOSED')
+          .sort((a, b) => Number(b.batchId) - Number(a.batchId))[0];
+        if (batch) {
+          this.form.batchId = batch.batchId;
+          this.form.batchCode = batch.batchCode;
+        }
+      } catch (e) {
+        // 带不出批次时保留手工填写
+      }
     },
     /** 提交按钮 */
     submitForm() {
@@ -300,6 +329,9 @@ export default {
           this.form.specification = obj.specification;
           this.form.unitOfMeasure = obj.unitOfMeasure;
           this.form.unitName = obj.unitName
+          this.form.batchId = null;
+          this.form.batchCode = null;
+          this.autoFillBatch();
         }
     },
   }

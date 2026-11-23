@@ -190,19 +190,10 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="检验单编号" prop="oqcCode">
-              <el-input v-model="form.oqcCode" placeholder="请输入出货检验单编号" />
+              <el-input v-model="form.oqcCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
 
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'" >
-              </el-switch>
-            </el-form-item>
-          </el-col>
 
           <el-col :span="12">
             <el-form-item label="检验单名称" prop="oqcName">
@@ -385,9 +376,9 @@
 
 <script>
 import { listOqc, getOqc, delOqc, addOqc, updateOqc } from "@/api/mes/qc/oqc";
+import { nextBizCode } from "@/api/mes/code";
 import ItemSelect  from "@/components/itemSelect/single.vue";
 import ClientSelect from "@/components/clientSelect/single.vue";
-import {genCode} from "@/api/system/autocode/rule";
 import Oqcline from "./line.vue";
 import QCResutl from "../qcresult/index.vue";
 export default {
@@ -398,8 +389,6 @@ export default {
   },
   data() {
     return {
-      //自动生成编码
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -545,7 +534,6 @@ export default {
         updateBy: null,
         updateTime: null
       };
-      this.autoGenFlag = false;
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -578,6 +566,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('OQC').then(res => {
+        this.form.oqcCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加出货检验单";
       this.optType = "add";
@@ -619,6 +610,17 @@ export default {
       if(this.form.checkResult == null){
         this.$modal.msgError("请选择检测结果！");
         return;
+      }
+      // 页面只有“检测数量/不合格数量”输入，合格数量由两者之差补齐（后端仍校验三者守恒）
+      if(this.form.quantityCheck != null){
+        const unqualified = Number(this.form.quantityUnqualified || 0);
+        const qualified = Number(this.form.quantityCheck) - unqualified;
+        if(qualified < 0){
+          this.$modal.msgError("不合格数量不能大于检测数量！");
+          return;
+        }
+        this.form.quantityQualified = qualified;
+        this.form.quantityUnqualified = unqualified;
       }
 
       this.$refs["form"].validate(valid => {
@@ -670,16 +672,6 @@ export default {
       this.download('qc/oqc/export', {
         ...this.queryParams
       }, `oqc_${new Date().getTime()}.xlsx`)
-    },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('QC_OQC_CODE').then(response =>{
-          this.form.oqcCode = response;
-        });
-      }else{
-        this.form.oqcCode = null;
-      }
     },
     /** 联动自动生成、尚未完成检验的行：闪烁高亮（attr1 以 AUTO: 开头且状态 PREPARE） */
     isAutoPending(row) {

@@ -97,9 +97,14 @@
   
   <script>
   import { hiprint, defaultElementTypeProvider } from "vue-plugin-hiprint";
+  import webSite from "@/config/website";
   export default {
     name: "start-01",
     created(){
+      if (!webSite.print_transfer_url) {
+        console.warn('[print] 未配置 VUE_APP_PRINT_TRANSFER_URL，设计器暂不可用');
+        return;
+      }
       // 初始化 provider
       hiprint.init({
         providers: [defaultElementTypeProvider()],

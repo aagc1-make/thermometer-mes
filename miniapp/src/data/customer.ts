@@ -1,30 +1,31 @@
 import type { Customer, InquiryMeta } from '@/types';
 
 /**
- * 当前登录的企业客户
- * 由服务器 miniapp-api 读取 MES 数据库（j2eedb）同步生成，请勿手工修改
+ * 当前登录的企业客户（离线兜底）
+ * 正式数据由 miniapp-api 按登录账号从 miniapp_customer 返回，内容与 md_client 一致；
+ * 这里默认演示账号 c-tg-001（华东医疗，client_id 9751）。
  */
 export const CUSTOMER: Customer = {
-  "company": "华瑞医疗器械有限公司",
-  "shortName": "华",
-  "creditCode": "91320594MA1X***7K",
-  "level": "金牌客户",
-  "levelDesc": "金牌客户 · 月结 30 天",
-  "buyer": "采购员 王工 · 苏州工业园区",
-  "region": "苏州工业园区",
-  "salesName": "张经理",
-  "salesPhone": "138****6621",
+  "company": "华东医疗器械经销有限公司",
+  "shortName": "华东医疗",
+  "creditCode": "91310115MA1K35XXXX",
+  "level": "A 级战略客户",
+  "levelDesc": "A 级战略客户 · 月结 30 天",
+  "buyer": "张采购",
+  "region": "上海浦东新区",
+  "salesName": "李销售",
+  "salesPhone": "13800000001",
   "stats": {
-    "consulting": 3,
+    "consulting": 2,
     "pending": 1,
-    "closed": 8
+    "closed": 6
   }
 };
 
 /** 询价单默认基础信息 */
 export const DEFAULT_INQUIRY_META: InquiryMeta = {
   "expectedDate": "2026-11-07",
-  "address": "江苏省苏州市 苏州工业园区星湖街 328 号 B 座 5 楼",
+  "address": "上海市浦东新区 张江路 88 号 3 号楼",
   "invoice": "增值税专用发票 13%",
   "remark": ""
 };

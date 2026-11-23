@@ -60,3 +60,11 @@ export function delBatch(batchId) {
     method: 'delete'
   })
 }
+
+// 批次只读追溯（产品入库/工单/领料明细/原料批次/流水/销售）
+export function traceBatch(batchCode) {
+  return request({
+    url: '/mes/wm/batchTrace/' + encodeURIComponent(batchCode),
+    method: 'get'
+  })
+}

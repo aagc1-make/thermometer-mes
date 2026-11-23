@@ -2,18 +2,9 @@
     <div class="app-container">
         <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-row>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="检验单编号" prop="iqcCode">
-              <el-input v-model="form.iqcCode" placeholder="请输入来料检验单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'" >               
-              </el-switch>
+              <el-input v-model="form.iqcCode" disabled placeholder="系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="9">
@@ -181,14 +172,13 @@ import { listIqc, getIqc, delIqc, addIqc, updateIqc } from "@/api/mes/qc/iqc";
 import ItemSelect  from "@/components/itemSelect/single.vue";
 import VendorSelect from "@/components/vendorSelect/single.vue";
 import IqcLine from "../iqc/iqcline.vue";
-import {genCode} from "@/api/system/autocode/rule"
+import { nextBizCode } from "@/api/mes/code";
 export default {
     name: "pendingIqc",
     components: {ItemSelect,VendorSelect,IqcLine},
     dicts: ['mes_ipqc_type','mes_qc_result','mes_order_status'],
     data(){
         return {
-            autoGenFlag: false,
             optType: 'add',
             acceptImg:  require('@/assets/images/accept.png'),
             rejectImg: require('@/assets/images/reject.png'),
@@ -198,7 +188,7 @@ export default {
             // 表单校验
             rules: {
                 iqcCode: [
-                { required: true, message: "请输入检验单编号", trigger: "blur" }
+                { max: 64, message: "字段过长", trigger: "blur" }
                 ],
 
                 iqcName: [
@@ -229,6 +219,10 @@ export default {
       if (this.$route.params.qcId) {
         getIqc(this.$route.params.qcId).then(response => {
           this.form = response.data;
+        });
+      } else {
+        nextBizCode('IQC').then(res => {
+          this.form.iqcCode = (res && res.data) || '';
         });
       }
     },
@@ -287,7 +281,6 @@ export default {
           updateBy: null,
           updateTime: null
         };
-        this.autoGenFlag = false;
         this.resetForm("form");
       },
       /** 提交按钮 */
@@ -324,16 +317,6 @@ export default {
             });
           }
           });
-      },
-      //自动生成编码
-      handleAutoGenChange(autoGenFlag){
-        if(autoGenFlag){
-          genCode('QC_IQC_CODE').then(response =>{
-            this.form.iqcCode = response;
-          });
-        }else{
-          this.form.iqcCode = null;
-        }
       },
     }
 }

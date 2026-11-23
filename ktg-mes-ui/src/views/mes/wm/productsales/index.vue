@@ -85,6 +85,25 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <el-alert
+      v-if="pipelineBanner"
+      class="mb8"
+      :type="pipelineBanner.type"
+      :closable="false"
+      show-icon
+      :title="pipelineBanner.title"
+    >
+      <span>{{ pipelineBanner.text }}</span>
+      <template v-if="pipelineBanner.row">
+        <el-button v-if="pipelineBanner.row.status == 'PREPARE'" type="text" size="mini" @click="handleUpdate(pipelineBanner.row)">打开草稿</el-button>
+        <el-button v-if="pipelineBanner.row.status == 'UNSTOCK'" type="text" size="mini" @click="handleStocking(pipelineBanner.row)">去拣货</el-button>
+        <el-button v-if="pipelineBanner.row.status == 'UNSHIPPING'" type="text" size="mini" @click="handleShipping(pipelineBanner.row)">填写运单</el-button>
+        <el-button v-if="pipelineBanner.row.status == 'UNEXECUTE'" type="text" size="mini" @click="handleExecute(pipelineBanner.row)">执行出库</el-button>
+        <el-button v-if="pipelineBanner.row.status == 'FINISHED'" type="text" size="mini" @click="handleView(pipelineBanner.row)">查看单据</el-button>
+        <el-button v-if="pipelineBanner.showNotice" type="text" size="mini" @click="goSalesNotice">去发货通知</el-button>
+      </template>
+    </el-alert>
+
     <el-table
       v-loading="loading"
       :data="productsalesList"
@@ -178,22 +197,23 @@
 
     <!-- 添加或修改销售出库单对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="960px" append-to-body>
+      <el-alert
+        v-if="form.salesId != null"
+        class="mb8"
+        :type="salesAlertType"
+        :closable="false"
+        show-icon
+        :title="'出库单 ' + (form.salesCode || '-') + ' · 发货通知 ' + (form.noticeCode || '-') + ' · 订单 ' + (form.soCode || '-') + ' · ' + salesStatusLabel"
+      >
+        <span>{{ salesFlowTip }}</span>
+      </el-alert>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <!--草稿状态下可修改的部分-->
         <div v-if="form.status =='PREPARE'">
         <el-row>
           <el-col :span="8">
             <el-form-item label="出库单编号" prop="salesCode">
-              <el-input v-model="form.salesCode" placeholder="请输入出库单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.salesCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -264,7 +284,7 @@
           <el-row>
           <el-col :span="8">
             <el-form-item label="出库单编号" prop="salesCode">
-              <el-input v-model="form.salesCode" readonly="readonly" />
+              <el-input v-model="form.salesCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="4">
@@ -377,19 +397,17 @@
 
 <script>
 import { listProductsales, getProductsales, delProductsales, addProductsales, updateProductsales, checkQuantity, execute } from "@/api/mes/wm/productsales";
+import { nextBizCode } from "@/api/mes/code";
 import Productsalesline from "./line.vue"
 import ProductsalesDetail from "./detail.vue"
 import NoticeSelect from "@/components/noticeSelect/salesNoticeSingle.vue"
 import ClientSelect from "@/components/clientSelect/single.vue";
-import {genCode} from "@/api/system/autocode/rule"
 export default {
   name: "Productsales",
   dicts: ['mes_product_sales_status'],
   components: {NoticeSelect,Productsalesline,ProductsalesDetail,ClientSelect},
   data() {
     return {
-      //自动生成编码
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -449,10 +467,89 @@ export default {
       }
     };
   },
+  computed: {
+    /** 当前订单下优先需要处理的出库单 */
+    activeSale() {
+      const rows = this.productsalesList || [];
+      return rows.find(row => row.status === 'UNEXECUTE')
+        || rows.find(row => row.status === 'UNSHIPPING')
+        || rows.find(row => row.status === 'UNCHECK')
+        || rows.find(row => row.status === 'UNSTOCK')
+        || rows.find(row => row.status === 'PREPARE')
+        || rows.find(row => row.status === 'FINISHED')
+        || null;
+    },
+    /** 按订单过滤时，提示出库单与发货通知的绑定关系及下一步 */
+    pipelineBanner() {
+      if (this.loading || !this.queryParams.soCode) return null;
+      const soCode = this.queryParams.soCode;
+      const row = this.activeSale;
+      if (!row) {
+        return {
+          type: 'info',
+          title: '订单 ' + soCode + ' 暂无销售出库单',
+          text: '发货通知确认后会自动生成销售出库草稿，单号与订单同源（xc + 日期 + 流水），批次同步带出。',
+          row: null,
+          showNotice: true
+        };
+      }
+      const labels = { PREPARE: '草稿', UNSTOCK: '待拣货', UNCHECK: '待检验', UNSHIPPING: '待填运单', UNEXECUTE: '待执行出库', FINISHED: '已出库', CANCELED: '已取消' };
+      const next = {
+        PREPARE: '草稿已由发货通知自动生成并带出批次，核对后点击「提交」进入待拣货。',
+        UNSTOCK: '待拣货：按库位完成拣货，数量核对一致后提交。',
+        UNCHECK: '待检验：需完成出货检验并放行后才能继续出库。',
+        UNSHIPPING: '待填写运单：录入承运商与运输单号后提交。',
+        UNEXECUTE: '待执行出库：点击「执行出库」完成发货，工单销售环节闭环。',
+        FINISHED: '已出库：发货完成，库存与批次流水已同步。'
+      }[row.status] || '';
+      return {
+        type: row.status === 'FINISHED' ? 'success' : (row.status === 'PREPARE' ? 'info' : 'warning'),
+        title: '订单 ' + soCode + ' · 出库单 ' + row.salesCode + '（' + (labels[row.status] || row.status) + '）'
+          + (row.noticeCode ? ' · 发货通知 ' + row.noticeCode : ''),
+        text: next + ' 单号由系统按订单链自动绑定，全局唯一。',
+        row,
+        showNotice: false
+      };
+    },
+    salesStatusLabel() {
+      return { PREPARE: '草稿', UNSTOCK: '待拣货', UNCHECK: '待检验', UNSHIPPING: '待填运单', UNEXECUTE: '待执行出库', FINISHED: '已出库', CANCELED: '已取消' }[this.form.status] || (this.form.status || '');
+    },
+    salesAlertType() {
+      if (this.form.status === 'FINISHED') return 'success';
+      return this.form.status === 'PREPARE' ? 'info' : 'warning';
+    },
+    salesFlowTip() {
+      return {
+        PREPARE: '草稿已自动绑定发货通知、客户与批次；核对出库行后点击「提交」进入待拣货。',
+        UNSTOCK: '待拣货：按库位拣货，数量核对一致后提交。',
+        UNCHECK: '待检验：完成出货检验并放行后才能继续出库。',
+        UNSHIPPING: '待填写运单：录入承运商与运输单号后提交，进入待执行出库。',
+        UNEXECUTE: '待执行出库：点击「执行出库」完成发货。',
+        FINISHED: '已出库：发货完成，销售出库单不可再修改。',
+        CANCELED: '已取消：如需重新发货，请重新确认发货通知。'
+      }[this.form.status] || '';
+    }
+  },
+  watch: {
+    // 页面被 keep-alive 复用时，路由上的订单号变化也要重新过滤
+    '$route.query.pipelineSoCode'(value) {
+      this.queryParams.soCode = value || null;
+      this.queryParams.pageNum = 1;
+      this._autoOpenedSoCode = null;
+      this.getList();
+    }
+  },
   created() {
+    this._autoOpenedSoCode = null;
+    // 销售出库按订单号绑定，流水线跳转时用来源订单过滤
+    const pipelineSoCode = this.$route && this.$route.query && this.$route.query.pipelineSoCode;
+    if (pipelineSoCode) this.queryParams.soCode = pipelineSoCode;
     this.getList();
   },
   methods: {
+    goSalesNotice() {
+      this.$router.push('/mes/wm/salesnotice').catch(() => {});
+    },
     /** 查询销售出库单列表 */
     getList() {
       this.loading = true;
@@ -460,7 +557,26 @@ export default {
         this.productsalesList = response.rows;
         this.total = response.total;
         this.loading = false;
+        this.autoOpenPipelineDraft();
       });
+    },
+    /**
+     * 从流水线按订单进入且只有一张可办理出库单时，自动打开对应单据，
+     * 避免用户到页面后还要自己找单。同一订单只自动打开一次。
+     */
+    autoOpenPipelineDraft() {
+      const soCode = this.queryParams.soCode;
+      if (!soCode || this.open) return;
+      if (String(this._autoOpenedSoCode || '') === String(soCode)) return;
+      const actionable = (this.productsalesList || []).filter(row =>
+        ['UNEXECUTE', 'UNSHIPPING', 'UNSTOCK', 'PREPARE'].includes(row.status));
+      if (actionable.length !== 1) return;
+      this._autoOpenedSoCode = String(soCode);
+      const row = actionable[0];
+      if (row.status === 'UNEXECUTE') this.handleView(row);
+      else if (row.status === 'UNSHIPPING') this.handleShipping(row);
+      else if (row.status === 'UNSTOCK') this.handleStocking(row);
+      else this.handleUpdate(row);
     },
     // 关闭按钮
     close() {
@@ -497,7 +613,6 @@ export default {
         updateBy: null,
         updateTime: null
       };
-      this.autoGenFlag = false;
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -508,6 +623,7 @@ export default {
     /** 重置按钮操作 */
     resetQuery() {
       this.resetForm("queryForm");
+      this._autoOpenedSoCode = null;
       this.handleQuery();
     },
     // 多选框选中数据
@@ -530,8 +646,16 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      // 从流水线按订单进入时，手工新增也绑定该订单，单号沿订单链的日期与流水
+      const soCode = this.queryParams.soCode || (this.$route && this.$route.query.pipelineSoCode) || null;
+      // 手工新增后不再自动弹出刚保存的草稿
+      if (soCode) this._autoOpenedSoCode = String(soCode);
+      if (soCode) this.form.soCode = soCode;
+      nextBizCode('XSCK', soCode || undefined).then(res => {
+        this.form.salesCode = (res && res.data) || '';
+      });
       this.open = true;
-      this.title = "添加销售出库单";
+      this.title = soCode ? '添加订单 ' + soCode + ' 的销售出库单' : '添加销售出库单';
       this.optType = "add";
     },
     /** 修改按钮操作 */
@@ -599,9 +723,10 @@ export default {
     submitToStock(){
       this.$refs["form"].validate(valid => {
         if (valid) {
+          const code = this.form.salesCode;
           this.form.status = 'UNSTOCK';
           updateProductsales(this.form).then(response => {
-            this.$modal.msgSuccess("提交成功");
+            this.$modal.msgSuccess("出库单 " + code + " 已提交，下一步：按库位拣货");
             this.open = false;
             this.getList();
           } 
@@ -616,9 +741,10 @@ export default {
       let that = this;
       checkQuantity(this.form.salesId).then( response =>{
         if(response.data){
+            const code = that.form.salesCode;
             that.form.status = 'UNSHIPPING';
             updateProductsales(that.form).then(response => {
-              that.$modal.msgSuccess("提交成功");
+              that.$modal.msgSuccess("出库单 " + code + " 拣货数量核对通过，下一步：填写运单信息");
               that.open = false;
               that.getList();
             } 
@@ -636,9 +762,10 @@ export default {
     submitToExecute(){
       this.$refs["form"].validate(valid => {
         if (valid) {
+          const code = this.form.salesCode;
           this.form.status = 'UNEXECUTE';
           updateProductsales(this.form).then(response => {
-            this.$modal.msgSuccess("提交成功");
+            this.$modal.msgSuccess("出库单 " + code + " 已提交，下一步：执行出库");
             this.open = false;
             this.getList();
           } 
@@ -685,12 +812,14 @@ export default {
     //执行出库
     handleExecute(row){
       const salesIds = row.salesId || this.ids;
-      this.$modal.confirm('确认执行出库？').then(function() {
-        return execute(salesIds)//执行入库
-      }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("出库成功");
-      }).catch(() => {});
+      const code = row.salesCode || this.form.salesCode || '';
+      this.$modal.confirm('销售出库单 ' + code + ' 确认执行出库？出库后库存与批次流水将同步扣减。')
+        .then(() => execute(salesIds))
+        .then(() => {
+          if (this.open) this.open = false;
+          this.getList();
+          this.$modal.msgSuccess("出库单 " + code + " 出库成功");
+        }).catch(() => {});
     },
     //到货通知单选择
     handleSelectNotice(){
@@ -701,11 +830,19 @@ export default {
       if(obj != undefined && obj != null){
           this.form.noticeId = obj.noticeId;
           this.form.noticeCode = obj.noticeCode;
+          // 出库单名称自动带出，避免手工新增时因名称为空保存失败
+          if (!this.form.salesName) this.form.salesName = '发货通知' + (obj.noticeCode || '') + '销售出库';
           this.form.soCode = obj.soCode;
           this.form.clientId = obj.clientId;
           this.form.clientCode = obj.clientCode;
           this.form.clientName = obj.clientName;
           this.form.clientNick = obj.clientNick;
+          // 新增单据在选定发货通知后重新取链号：前缀为 xc，日期与流水与订单号一致
+          if (this.form.salesId == null && obj.soCode) {
+            nextBizCode('XSCK', obj.soCode).then(res => {
+              this.form.salesCode = (res && res.data) || this.form.salesCode;
+            });
+          }
         }
     },
     handleSelectClient(){
@@ -720,16 +857,6 @@ export default {
           this.form.clientName = obj.clientName;
           this.form.clientNick = obj.clientNick;
         }
-    },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('PRODUCTSALSE_CODE').then(response =>{
-          this.form.salesCode = response;
-        });
-      }else{
-        this.form.salesCode = null;
-      }
     },
     /**
      * 发货通知联动生成、尚未执行的销售出库草稿行：闪烁高亮。

@@ -260,12 +260,46 @@ export async function login(username: string, password: string): Promise<LoginRe
 // ==================== 产品目录 ====================
 
 /**
- * 产品目录：直接使用与 MES 一致的本地结构（17 条：成品 1 / 半成品 2 / 物料 14）
- * 说明：miniapp-api 的目录接口只返回 IRG 前缀物料，与 MES 现有 TG 结构不一致，
- *      因此目录以 MES 主数据快照为准，不再被接口覆盖。
+ * 产品目录：读取 miniapp-api 的 /api/v1/catalog/products
+ * 商品来自 MES md_item 真实主数据，订货参数（起订量/交期/示意图）来自 miniapp_product；
+ * 接口不可用时回落到本地快照，保证离线也能浏览。
  */
 export async function loadCatalog(): Promise<Product[]> {
-  return PRODUCTS;
+  try {
+    const rows = await request<Record<string, unknown>[]>({
+      url: '/api/v1/catalog/products',
+      method: 'GET'
+    });
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return PRODUCTS;
+    }
+    return rows.map((row) => {
+      const typeName = text(row.itemTypeName);
+      const isFinished = text(row.itemOrProduct) === 'PRODUCT' && typeName === '整机成品';
+      const category: Product['category'] = isFinished
+        ? 'finished'
+        : text(row.itemOrProduct) === 'PRODUCT'
+          ? 'semi'
+          : 'material';
+      return {
+        id: String(num(row.itemId)),
+        name: text(row.itemName),
+        code: text(row.itemCode),
+        category,
+        categoryName: category === 'finished' ? '成品' : category === 'semi' ? '半成品' : '物料',
+        group: (typeName || undefined) as Product['group'],
+        param: text(row.specification) || text(row.remark),
+        moq: num(row.moq, 1),
+        unit: text(row.unitName, '件'),
+        leadDays: num(row.leadDays, 7),
+        art: normalizeArt(row.art, isFinished),
+        desc: text(row.summary) || text(row.remark)
+      };
+    });
+  } catch (error) {
+    console.info('[Api] 产品目录接口不可用，使用本地快照', error);
+    return PRODUCTS;
+  }
 }
 
 // ==================== 客户档案 ====================

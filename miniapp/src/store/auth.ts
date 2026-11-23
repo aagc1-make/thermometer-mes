@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import Taro from '@tarojs/taro';
 import type { EnterpriseAccount } from '@/data/accounts';
 import { findAccount } from '@/data/accounts';
-import { clearToken, ensureToken } from '@/services/request';
+import { clearToken, setToken } from '@/services/request';
+import { login as loginRemote } from '@/services/api';
 
 const ACCOUNT_KEY = 'ktg_mes_account';
 
@@ -32,15 +33,12 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
   login: async (username, password) => {
     const account = findAccount(username);
-    if (!account || account.password !== password.trim()) {
+    if (!account) {
       throw new Error('账号或密码错误');
     }
-    try {
-      // 换取接口令牌，失败时仍允许登录，页面会回落到本地数据
-      await ensureToken();
-    } catch (error) {
-      console.info('[Auth] 接口令牌获取失败，使用本地数据', error);
-    }
+    // 以服务端账号为准：换取令牌后所有业务接口按该企业隔离数据
+    const result = await loginRemote(username.trim(), password.trim());
+    setToken(result.token);
     Taro.setStorageSync(ACCOUNT_KEY, JSON.stringify(account));
     set({ account });
     return account;

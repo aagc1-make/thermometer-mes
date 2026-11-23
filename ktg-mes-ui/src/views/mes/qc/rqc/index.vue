@@ -178,16 +178,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="检验单编号" prop="rqcCode">
-              <el-input v-model="form.rqcCode" placeholder="请输入检验单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.rqcCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -342,18 +333,17 @@
 
 <script>
 import { listRqc, getRqc, delRqc, addRqc, updateRqc } from "@/api/mes/qc/rqc";
+import { nextBizCode } from "@/api/mes/code";
 import ItemSelect  from "@/components/itemSelect/single.vue";
 import UserSingleSelect from "@/components/userSelect/single.vue"
 import QCResutl from "../qcresult/index.vue";
 import RqcLine from "./line.vue"
-import {genCode} from "@/api/system/autocode/rule";
 export default {
   name: "Rqc",
   components: {ItemSelect,UserSingleSelect,RqcLine,QCResutl},
   dicts: ['mes_rqc_type','mes_qc_result','mes_source_doc_type','mes_rt_issue_status'],
   data() {
     return {
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -427,7 +417,6 @@ export default {
         itemId: null,        itemCode: null,        itemName: null,        specification: null,        unitOfMeasure: null,        unitName: null,        batchId: null,        batchCode: null,       
          quantityCheck: null,        quantityUnqualified: 0,        quantityQualified: 0,        checkResult: null,        inspectDate: new Date(),        userId: null,        userName: null,        nickName: null,        status: "PREPARE",        remark: null,        attr1: null,        attr2: null,        attr3: null,        attr4: null,        createBy: null,        createTime: null,        updateBy: null,        updateTime: null      };
       this.resetForm("form");
-      this.autoGenFlag = false;
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -459,6 +448,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('RQC').then(res => {
+        this.form.rqcCode = (res && res.data) || '';
+      });
       this.open = true;
       this.optType = "add";
       this.title = "添加退料检验单";
@@ -515,6 +507,47 @@ export default {
         }
       });
     },
+    /** 数量守恒校验：合格数 + 不合格数 = 检测数量，且各自不超过检测数量 */
+    checkQuantities() {
+      const q = this.form.quantityQualified;
+      const uq = this.form.quantityUnqualified;
+      const qc = this.form.quantityCheck;
+      if (q != null && uq != null && q !== '' && uq !== '' && qc != null
+          && (Number(q) + Number(uq)) !== Number(qc)) {
+        this.$message.warning("合格数与不合格数之和必须等于检测总数！");
+        return false;
+      }
+      if (q != null && q !== '' && Number(q) > Number(qc)) {
+        this.$message.warning("合格数不能大于检测总数！");
+        return false;
+      }
+      if (uq != null && uq !== '' && Number(uq) > Number(qc)) {
+        this.$message.warning("不合格数不能大于检测总数！");
+        return false;
+      }
+      return true;
+    },
+    /** 提 交：完成检验（状态置为已完成，由后端回写来源退料行/退料单） */
+    submitForm() {
+      if (!this.checkQuantities()) return;
+      this.$refs["form"].validate(valid => {
+        if (!valid) {
+          this.$message.warning("请补全必填项后再提交检验");
+          return;
+        }
+        this.$confirm('提交后检验单将完成，来源退料行质量状态随之回写，确定继续？', '提示', { type: 'warning' })
+          .then(() => {
+            const payload = Object.assign({}, this.form, { status: 'FINISHED' });
+            return updateRqc(payload);
+          })
+          .then(() => {
+            this.$modal.msgSuccess("检验已完成");
+            this.open = false;
+            this.getList();
+          })
+          .catch(() => {});
+      });
+    },
     /** 删除按钮操作 */
     handleDelete(row) {
       const rqcIds = row.rqcId || this.ids;
@@ -555,16 +588,6 @@ export default {
         this.form.userName = row.userName;
         this.form.nickName = row.nickName;                
     },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('QC_RQC_CODE').then(response =>{
-          this.form.rqcCode = response;
-        });
-      }else{
-        this.form.rqcCode = null;
-      }
-    }
   }
 };
 </script>

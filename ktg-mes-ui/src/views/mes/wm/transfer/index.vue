@@ -162,16 +162,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="转移单编号" prop="transferCode">
-              <el-input v-model="form.transferCode" placeholder="请输入转移单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.transferCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -273,8 +264,8 @@
 
 <script>
 import { listTransfer, getTransfer, delTransfer, addTransfer, updateTransfer, execute} from "@/api/mes/wm/transfer";
+import { nextBizCode } from "@/api/mes/code";
 import {listWarehouse} from "@/api/mes/wm/warehouse";
-import {genCode} from "@/api/system/autocode/rule";
 import Transferline from "./line.vue";
 import TransferDetail from "./detail.vue";
 export default {
@@ -283,8 +274,6 @@ export default {
   dicts: ['mes_transfer_type','mes_transfer_status','sys_yes_no'],
   data() {
     return {
-      //自动生成编码
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -385,7 +374,6 @@ export default {
         updateBy: null,
         updateTime: null
       };
-      this.autoGenFlag = false;
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -407,6 +395,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('YKD').then(res => {
+        this.form.transferCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加转移单";
       this.optType = "add";
@@ -550,16 +541,6 @@ export default {
         ...this.queryParams
       }, `transfer_${new Date().getTime()}.xlsx`)
     },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('TRANSFER_CODE').then(response =>{
-          this.form.transferCode = response;
-        });
-      }else{
-        this.form.transferCode = null;
-      }
-    }
   }
 };
 </script>

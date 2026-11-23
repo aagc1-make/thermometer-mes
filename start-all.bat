@@ -8,7 +8,7 @@ rem    [1] MySQL          :3306  (check only)
 rem    [2] Redis          :6379  (auto start, no password)
 rem    [3] MES backend    :8080  backend\ktg-mes\ktg-admin\target\ktg-admin.jar
 rem    [4] MES frontend   :80    ktg-mes-ui (npm run dev, falls back to 81)
-rem    [5] MiniApp API    :8081  backend\miniapp-api\target\miniapp-api.jar
+rem    [5] MiniApp API    :8082  backend\miniapp-api\target\miniapp-api.jar
 rem    [6] MiniApp H5     :10086 miniapp (npm run dev:h5)
 rem  NOTE: KTG_DB_PASSWORD fallback below is the local DB password.
 rem        DO NOT commit this file to git.
@@ -80,9 +80,9 @@ if not errorlevel 1 (
 )
 
 echo ============================================
-echo  [5/6] MiniApp API :8081
+echo  [5/6] MiniApp API :8082
 echo ============================================
-call :port_open 8081
+call :port_open 8082
 if not errorlevel 1 (
     echo     already listening - skip
 ) else (
@@ -118,7 +118,7 @@ echo ============================================
 echo  Waiting for services ...
 echo ============================================
 call :wait_port 8080 90
-call :wait_port 8081 60
+call :wait_port 8082 60
 call :wait_port 10086 120
 
 set "MES_WEB=http://localhost"
@@ -136,7 +136,7 @@ echo   MES web UI        : %MES_WEB%
 echo   MES backend API   : http://localhost:8080
 echo.
 echo   MiniApp H5        : http://localhost:10086
-echo   MiniApp API       : http://localhost:8081/api/v1/health
+echo   MiniApp API       : http://localhost:8082/api/v1/health
 echo.
 echo   WeChat devtools   : open miniapp folder, run npm run build:weapp after changes
 echo ============================================================

@@ -4,7 +4,7 @@
       @close="hideModal"
       title="模板预览"
       show-close
-      close-on-click-modal
+      :close-on-click-modal="false"
       :width="(width + 20) + 'mm'">
       <div v-show="isMultiPanel" id="template-preview-printPagination" style="margin: 14px 0 0 10px;"></div>
       <el-card class="card-design">

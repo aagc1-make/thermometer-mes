@@ -160,7 +160,9 @@
           endDate: null,
           cycleType: null,
           cycleCount: null,
-          status: 'FINISHED'
+          // 可用于点检/保养的方案：种子数据为“已确认(CONFIRMED)”，通过方案页“启用”后为 FINISHED；
+          // PREPARE(草稿)/CANCELED(已取消) 不允许被选择。后端按 List<String> 接收，逗号分隔。
+          statusList: 'CONFIRMED,FINISHED'
         }
       };
     },

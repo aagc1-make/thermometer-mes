@@ -22,5 +22,8 @@ selenium-debug.log
 .eslintignore
 .eslintrc.js
 .env.*
-package-lock.json
+!.env.development
+!.env.production
+!.env.staging
+!package-lock.json
 yarn.lock

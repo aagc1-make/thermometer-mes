@@ -1,0 +1,106 @@
+/* 工业控制室：只覆盖外观，不调整导航层级、表单字段或数据。 */
+:root {
+  --color-primary: #246d5e;
+  --color-primary-hover: #195447;
+  --color-primary-bg: #e8f2e1;
+  --color-text: #1d302d;
+  --color-text-secondary: #657b74;
+  --color-border: #dce5df;
+  --color-bg: #edf1ee;
+  --shadow-card: 0 3px 14px rgba(28, 55, 46, .06);
+}
+
+html, body, .app-wrapper, .main-container { background: #edf1ee; color: #1d302d; }
+.app-container { background: #fff; box-shadow: var(--shadow-card); border: 1px solid #e1e9e3; }
+
+/* 左侧域导航和右侧分组导航各自保留，沿用现有宽度与交互。 */
+.navbar { background: linear-gradient(90deg, #142a28, #22453c) !important; box-shadow: 0 2px 10px rgba(16, 42, 35, .18) !important; }
+.rail { background: #142a28; border-right-color: #29463c; }
+.rail .rail-item { color: #c5d5cb; }
+.rail .rail-item i { color: #a9c1b4; }
+.rail .rail-item:hover { background: #29483e; color: #fff; }
+.rail .rail-item.active { background: #b1df68; color: #17342a; }
+.rail .rail-item.active i { color: #17342a; }
+.rail .rail-item__dot { background: #e9b957; box-shadow: 0 0 0 2px #142a28; }
+.rail .rail-item.active .rail-item__dot { background: #996319; box-shadow: 0 0 0 2px #b1df68; }
+.sidebar-container, .sidebar-container .sidebar-light, .sidebar-container .el-scrollbar,
+.sidebar-container .el-scrollbar__wrap, .sidebar-container .el-scrollbar__view,
+.sidebar-container .el-menu, .sidebar-container .el-submenu .el-menu { background-color: #f8faf7 !important; }
+.sidebar-container .logo-container, .sidebar-container .sidebar-logo-container { background: #f8faf7 !important; border-bottom-color: #e1e9e2; }
+.sidebar-container .sidebar-title, .sidebar-container h1 { color: #1c3b31 !important; }
+.sidebar-container .el-menu .el-menu-item, .sidebar-container .el-menu .el-menu-item span { color: #334b42 !important; }
+.sidebar-container .el-menu .el-submenu__title, .sidebar-container .el-menu .el-submenu__title span { color: #61796d !important; }
+.sidebar-container .el-menu .el-menu-item i, .sidebar-container .el-menu .el-submenu__title i { color: #789084 !important; }
+.sidebar-container .el-menu .el-menu-item:hover, .sidebar-container .el-menu .el-submenu__title:hover { background: #e9f0e9 !important; }
+.sidebar-container .el-menu .el-menu-item.is-active { background: #e2f0d2 !important; }
+.sidebar-container .el-menu .el-menu-item.is-active, .sidebar-container .el-menu .el-menu-item.is-active span,
+.sidebar-container .el-menu .el-menu-item.is-active i { color: #205746 !important; }
+.sidebar-container .menu-notice-dot { background: #c78a2d !important; box-shadow: 0 0 0 2px #f8faf7; }
+.sidebar-container .el-menu .el-menu-item:focus-visible, .sidebar-container .el-menu .el-submenu__title:focus-visible { outline-color: #398268; }
+
+/* 表单、按钮和表格沿用原来的组件与尺寸。 */
+.tags-view-container { border-bottom-color: #dfe9e0; }
+.tags-view-container .tags-view-item.active { color: #205746 !important; background: #e2f0d2 !important; }
+.tags-view-container .tags-view-item.active::before { background: #246d5e !important; }
+.el-button--primary { background: #246d5e !important; border-color: #246d5e !important; color: #fff !important; }
+.el-button--primary:hover, .el-button--primary:focus { background: #195447 !important; border-color: #195447 !important; }
+.el-button--primary.is-disabled, .el-button--primary.is-disabled:hover { background: #9bbdb0 !important; border-color: #9bbdb0 !important; }
+.el-button--primary.is-plain { color: #246d5e !important; background: #eef5ed !important; border-color: #b4d1bc !important; }
+.el-button--primary.is-plain:hover { background: #dcebd8 !important; }
+.el-button--text { color: #246d5e; }
+.el-input__inner:focus, .el-textarea__inner:focus { border-color: #579b7d; }
+.el-dialog { border-radius: 10px; box-shadow: 0 16px 48px rgba(19, 43, 35, .22); }
+.el-dialog__header { border-bottom: 1px solid #e5ede6; }
+.el-dialog__title { color: #1c3b31; font-weight: 600; }
+.el-table th.el-table__cell { background: #f3f7f3; color: #506a5e; }
+.el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell { background: #f4f8f2; }
+.el-pagination.is-background .el-pager li:not(.disabled).active { background: #246d5e; }
+
+/* 驾驶舱只改底色、文字和卡片，不改 KPI、图表、告警及刷新逻辑。 */
+.cockpit.zen-page { background: #edf1ee !important; background-image: none; color: #1d302d; }
+.cockpit .zen-head__title { color: #203a31; font-weight: 650; letter-spacing: .02em; }
+.cockpit .zen-head__sub { color: #6c8176; }
+.cockpit .zen-card, .cockpit .zen-panel { background: #fff; border: 1px solid #dfe8e1; box-shadow: 0 3px 14px rgba(28, 55, 46, .05); }
+.cockpit .zen-card { border-top: 3px solid #a7d65f; }
+.cockpit .zen-card__label, .cockpit .zen-card__desc { color: #6e8379; }
+.cockpit .zen-card__value, .cockpit .zen-panel__title { color: #203a31; }
+.cockpit .zen-card__dot { background: #eaf3e2; color: #246d5e; }
+
+/* 首页标题区：柔和工艺绿；编号为纯装饰，不影响标题与提示内容。 */
+.home-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 130px;
+  background: #e1ebe0;
+  background-image: none;
+  border: 1px solid #d0dfd1;
+  border-radius: 10px;
+  box-shadow: none;
+  color: #203c32;
+}
+.home-hero::before {
+  content: '01';
+  position: absolute;
+  right: 23%;
+  top: 50%;
+  transform: translateY(-50%);
+  font: 700 150px/1 Consolas, monospace;
+  color: rgba(105, 153, 112, .16);
+  pointer-events: none;
+}
+.home-hero__text, .home-hero__tip { position: relative; z-index: 1; }
+.home-hero__text::before {
+  content: 'FACTORY OPERATIONS / 工作台 01';
+  display: block;
+  margin-bottom: 10px;
+  color: #608b70;
+  font: 10px/1.2 Consolas, monospace;
+  letter-spacing: .12em;
+}
+.home-hero .home-hero__title { color: #203c32; }
+.home-hero .home-hero__sub { color: #536f61; }
+.home-hero .home-hero__tip { color: #466b56; border-color: #aac3aa; border-radius: 5px; }
+@media (max-width: 700px) {
+  .home-hero { flex-wrap: wrap; gap: 14px; }
+  .home-hero::before { right: 5%; font-size: 100px; }
+}

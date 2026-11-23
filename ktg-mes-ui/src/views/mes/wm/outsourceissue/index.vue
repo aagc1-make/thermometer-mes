@@ -151,16 +151,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="发料单编号" prop="issueCode">
-              <el-input v-model="form.issueCode" placeholder="请输入发料单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.issueCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -223,8 +214,8 @@
 
 <script>
 import { listOutsourceissue, getOutsourceissue, checkQuantity, delOutsourceissue, addOutsourceissue, updateOutsourceissue, execute } from "@/api/mes/wm/outsourceissue";
+import { nextBizCode } from "@/api/mes/code";
 import WorkorderSelect from "@/components/workorderSelect/single.vue"
-import {genCode} from "@/api/system/autocode/rule"
 import Issueline from "./line.vue";
 import IssueDetail from './detail.vue'
 export default {
@@ -233,7 +224,6 @@ export default {
   components: {Issueline,IssueDetail,WorkorderSelect},
   data() {
     return {
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -326,7 +316,6 @@ export default {
         updateBy: null,
         updateTime: null
       };
-      this.autoGenFlag = false;
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -348,6 +337,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('WXLL').then(res => {
+        this.form.issueCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加外协发料单头";
       this.optType = "add";
@@ -525,16 +517,6 @@ export default {
           this.form.vendorNick = obj.vendorNick;
         }
     },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('WM_OUTSOURCE_ISSUE_CODE').then(response =>{
-          this.form.issueCode = response;
-        });
-      }else{
-        this.form.issueCode = null;
-      }
-    }
   }
 };
 </script>

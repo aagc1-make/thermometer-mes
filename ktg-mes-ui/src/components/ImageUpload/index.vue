@@ -128,7 +128,13 @@ export default {
     },
     // 上传成功回调
     handleUploadSuccess(res) {
-      debugger;
+      if (!res || res.code !== 200 || !res.fileName) {
+        this.uploadList = [];
+        this.number = 0;
+        this.$modal.msgError((res && res.msg) || "上传失败，请检查 MinIO 服务");
+        this.$modal.closeLoading();
+        return;
+      }
       this.uploadList.push({ name: res.fileName, url: res.fileName });
       if (this.uploadList.length === this.number) {
         this.fileList = this.fileList.concat(this.uploadList);

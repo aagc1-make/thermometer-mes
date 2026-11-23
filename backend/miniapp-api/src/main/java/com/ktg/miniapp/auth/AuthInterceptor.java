@@ -43,6 +43,15 @@ public class AuthInterceptor implements HandlerInterceptor {
             return false;
         }
         request.setAttribute("miniappAccount", payload);
+        // 令牌里的 cid 即企业客户ID，后续数据层按该客户隔离
+        Object clientId = payload.get("cid");
+        ClientContext.set(clientId instanceof Number ? ((Number) clientId).longValue() : null);
         return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        // 线程复用，请求结束必须清理，避免串到下一个客户
+        ClientContext.clear();
     }
 }

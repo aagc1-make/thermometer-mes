@@ -1,0 +1,105 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-md $page-padding calc(#{$spacing-xl} + env(safe-area-inset-bottom));
+  background: $color-bg-page;
+}
+
+.summary {
+  padding: $spacing-lg;
+  border-radius: $radius-2xl;
+  background: linear-gradient(160deg, $color-primary-light, $color-primary);
+  color: #fff;
+}
+
+.summaryValue {
+  display: block;
+  font-size: 64rpx;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.summaryLabel {
+  display: block;
+  margin-top: 4rpx;
+  font-size: $font-size-sm;
+  opacity: 0.86;
+}
+
+.group {
+  margin-top: $spacing-lg;
+  padding: $spacing-md $spacing-lg;
+  border-radius: $radius-lg;
+  background: #fff;
+  box-shadow: $shadow-card;
+}
+
+.groupHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.groupTitle {
+  font-size: $font-size-md;
+  font-weight: 700;
+}
+
+.groupCount {
+  min-width: 40rpx;
+  height: 40rpx;
+  line-height: 40rpx;
+  padding: 0 12rpx;
+  border-radius: 999rpx;
+  background: $color-primary-soft;
+  color: $color-primary;
+  text-align: center;
+  font-size: $font-size-xs;
+}
+
+.none {
+  display: block;
+  padding: $spacing-md 0;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md 0;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.itemMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemCode {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: 600;
+}
+
+.itemDesc {
+  display: block;
+  margin-top: 4rpx;
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+  @include text-ellipsis;
+}
+
+.itemMeta {
+  margin-left: $spacing-sm;
+  color: $color-primary;
+  font-size: $font-size-xs;
+}

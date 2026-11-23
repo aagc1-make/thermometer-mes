@@ -1,5 +1,14 @@
 import request from '@/utils/request'
 
+// 整单自动匹配库存、批次和库位，拣齐后转为待领出。
+export function autoPickIssue(issueId) {
+  return request({
+    url: '/mes/wm/issueheader/' + issueId + '/auto-pick',
+    method: 'post',
+    timeout: 60000
+  })
+}
+
 // 查询生产领料单头列表
 export function listIssueheader(query) {
   return request({

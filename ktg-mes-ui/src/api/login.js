@@ -18,6 +18,19 @@ export function login(username, password, code, uuid) {
   })
 }
 
+// 人脸登录：只提交特征向量，服务端比对通过后返回 token
+export function faceLogin(username, descriptor) {
+  return request({
+    url: '/faceLogin',
+    headers: {
+      isToken: false
+    },
+    method: 'post',
+    data: { username, descriptor },
+    timeout: 20000
+  })
+}
+
 // 注册方法
 export function register(data) {
   return request({

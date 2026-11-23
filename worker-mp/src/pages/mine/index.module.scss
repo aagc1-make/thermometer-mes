@@ -1,0 +1,127 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-lg $page-padding calc(#{$spacing-xl} + env(safe-area-inset-bottom));
+  background: $color-bg-page;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  padding: $spacing-lg;
+  border-radius: $radius-2xl;
+  background: linear-gradient(160deg, $color-primary-light, $color-primary);
+  color: #fff;
+}
+
+.avatar {
+  width: 112rpx;
+  height: 112rpx;
+  line-height: 112rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.24);
+  text-align: center;
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.profileMain {
+  margin-left: $spacing-md;
+}
+
+.name {
+  display: block;
+  font-size: $font-size-xl;
+  font-weight: 700;
+}
+
+.role {
+  display: block;
+  margin-top: 4rpx;
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.dept {
+  display: block;
+  margin-top: 2rpx;
+  font-size: $font-size-xs;
+  opacity: 0.8;
+}
+
+.section {
+  margin-top: $spacing-lg;
+  padding: $spacing-lg;
+  border-radius: $radius-lg;
+  background: #fff;
+  box-shadow: $shadow-card;
+}
+
+.sectionTitle {
+  display: block;
+  margin-bottom: $spacing-md;
+  font-size: $font-size-md;
+  font-weight: 700;
+}
+
+.permList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.perm {
+  padding: 8rpx 20rpx;
+  border-radius: 999rpx;
+  background: $color-primary-soft;
+  color: $color-primary;
+  font-size: $font-size-xs;
+}
+
+.muted {
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}
+
+.permCount {
+  display: block;
+  margin-top: $spacing-md;
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-sm 0;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.rowValue {
+  max-width: 60%;
+  color: $color-text-primary;
+  font-size: $font-size-xs;
+  text-align: right;
+  word-break: break-all;
+}
+
+.logout {
+  margin-top: $spacing-xl;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: $radius-button;
+  background: #fff;
+  color: $color-error;
+  font-size: $font-size-md;
+
+  &::after {
+    border: none;
+  }
+}

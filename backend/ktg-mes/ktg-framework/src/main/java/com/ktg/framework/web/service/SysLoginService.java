@@ -94,6 +94,42 @@ public class SysLoginService
     }
 
     /**
+     * 工人端登录：免图形验证码，仅校验账号密码并签发与管理端相同的令牌
+     * 用于车间小程序，避免小屏输入验证码；权限仍由角色菜单决定。
+     *
+     * @param username 用户名
+     * @param password 密码
+     * @return 令牌
+     */
+    public String loginForWorker(String username, String password)
+    {
+        if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password))
+        {
+            throw new ServiceException("账号或密码不能为空");
+        }
+        Authentication authentication = null;
+        try
+        {
+            authentication = authenticationManager
+                    .authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        }
+        catch (Exception e)
+        {
+            if (e instanceof BadCredentialsException)
+            {
+                AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.password.not.match")));
+                throw new UserPasswordNotMatchException();
+            }
+            AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, e.getMessage()));
+            throw new ServiceException(e.getMessage());
+        }
+        AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_SUCCESS, MessageUtils.message("user.login.success")));
+        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+        recordLoginInfo(loginUser.getUserId());
+        return tokenService.createToken(loginUser);
+    }
+
+    /**
      * 校验验证码
      * 
      * @param username 用户名

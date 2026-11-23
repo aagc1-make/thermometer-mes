@@ -90,7 +90,6 @@ export default {
             this.workdayList =[];
             let that = this;         
             listCalholiday(this.queryParams).then(response => {
-                debugger;
                 if(response.data !=null){
                     response.data.forEach(theDay => {
                         if(theDay.holidayType =='HOLIDAY'){

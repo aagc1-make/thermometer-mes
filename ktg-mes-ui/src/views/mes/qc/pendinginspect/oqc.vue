@@ -4,19 +4,10 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="检验单编号" prop="oqcCode">
-              <el-input v-model="form.oqcCode" placeholder="请输入出货检验单编号" />
+              <el-input v-model="form.oqcCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
 
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'" >               
-              </el-switch>
-            </el-form-item>
-          </el-col>
 
           <el-col :span="12">
             <el-form-item label="检验单名称" prop="oqcName">
@@ -185,7 +176,7 @@
 </template>
 <script>
 import { listOqc, getOqc, delOqc, addOqc, updateOqc } from "@/api/mes/qc/oqc";
-import {genCode} from "@/api/system/autocode/rule";
+import { nextBizCode } from "@/api/mes/code";
 import Oqcline from "../oqc/line.vue";
 export default {
   name: "Oqc",
@@ -195,7 +186,6 @@ export default {
   },
   data(){
     return {
-      autoGenFlag:false,
       optType: 'add',
         // 表单参数
       form: {},
@@ -230,6 +220,10 @@ export default {
     if (this.$route.params.qcId) {
       getOqc(this.$route.params.qcId).then(response => {
         this.form = response.data;
+      });
+    } else {
+      nextBizCode('OQC').then(res => {
+        this.form.oqcCode = (res && res.data) || '';
       });
     }
   },
@@ -287,7 +281,6 @@ export default {
         updateBy: null,
         updateTime: null
       };
-      this.autoGenFlag = false;
       this.resetForm("form");
     },
     /** 提交按钮 */
@@ -324,16 +317,6 @@ export default {
           });
         }
         });
-    },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('QC_OQC_CODE').then(response =>{
-          this.form.oqcCode = response;
-        });
-      }else{
-        this.form.oqcCode = null;
-      }
     },
   }
 

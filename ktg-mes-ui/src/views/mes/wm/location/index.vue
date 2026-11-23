@@ -64,6 +64,7 @@
       </el-table-column>
       <el-table-column label="库区名称" align="center" prop="locationName" />
       <el-table-column label="面积" align="center" prop="area" />
+      <el-table-column label="最大存放数量" align="center" prop="maxQty" />
       <el-table-column label="是否冻结" align="center" width="100">
         <template slot-scope="scope">
           <el-switch
@@ -156,6 +157,14 @@
             <el-col :span="24">
               <el-form-item label="面积" prop="area">
                 <el-input-number :min="0" :max="99999999" :step="1" :percision="2" v-model="form.area" placeholder="请输入面积" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="24">
+              <el-form-item label="最大存放数量" prop="maxQty">
+                <el-input-number :min="0" :max="99999999" :step="1" :precision="0" v-model="form.maxQty" placeholder="留空表示不限量" />
+                <span style="margin-left: 8px; color: #909399; font-size: 12px">用于产品上架余量计算，留空=不限</span>
               </el-form-item>
             </el-col>
           </el-row>
@@ -367,6 +376,7 @@ export default {
         warehouseId: this.warehouseId,
         area: null,
         areaFlag: null,
+        maxQty: null,
         remark: null,
         attr1: null,
         attr2: null,

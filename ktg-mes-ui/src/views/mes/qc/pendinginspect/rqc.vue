@@ -5,16 +5,7 @@
           <el-row>
             <el-col :span="8">
               <el-form-item label="检验单编号" prop="rqcCode">
-                <el-input v-model="form.rqcCode" placeholder="请输入检验单编号" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="4">
-              <el-form-item  label-width="80">
-                <el-switch v-model="autoGenFlag"
-                    active-color="#13ce66"
-                    active-text="自动生成"
-                    @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-                </el-switch>
+                <el-input v-model="form.rqcCode" disabled placeholder="保存后由系统自动生成" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -170,11 +161,11 @@
   
   <script>
   import { listRqc, getRqc, delRqc, addRqc, updateRqc } from "@/api/mes/qc/rqc";
+  import { nextBizCode } from "@/api/mes/code";
   import ItemSelect  from "@/components/itemSelect/single.vue";
   import UserSingleSelect from "@/components/userSelect/single.vue"
   import QCResutl from "../qcresult/index.vue";
   import RqcLine from "../rqc/line.vue"
-  import {genCode} from "@/api/system/autocode/rule";
   export default {
     name: "Rqc",
     components: {QCResutl,RqcLine,ItemSelect,UserSingleSelect},
@@ -197,7 +188,6 @@
     },
     data() {
       return {
-        autoGenFlag:false,
         optType: 'add',
         // 表单参数
         form: {
@@ -227,6 +217,9 @@
     },
     created() {
         this.reset();
+        nextBizCode('RQC').then(res => {
+            this.form.rqcCode = (res && res.data) || '';
+        });
     },
     methods: {
       // 表单重置
@@ -236,7 +229,6 @@
           itemId: this.itemId,        itemCode: this.itemCode,        itemName: this.itemName,        specification: this.specification,        unitOfMeasure: this.unitOfMeasure,        unitName: this.unitName,        batchId: this.batchId,        batchCode: this.batchCode,       
            quantityCheck: this.quantityCheck,        quantityUnqualified: 0,        quantityQualified: 0,        checkResult: null,        inspectDate: new Date(),        userId: null,        userName: null,        nickName: null,        status: "PREPARE",        remark: null,        attr1: null,        attr2: null,        attr3: null,        attr4: null,        createBy: null,        createTime: null,        updateBy: null,        updateTime: null      };
         this.resetForm("form");
-        this.autoGenFlag = false;
       },
     // 取消按钮
         cancel() {
@@ -323,16 +315,6 @@
             this.form.userName = row.userName;
             this.form.nickName = row.nickName;                
         },
-        //自动生成编码
-        handleAutoGenChange(autoGenFlag){
-            if(autoGenFlag){
-            genCode('QC_RQC_CODE').then(response =>{
-                this.form.rqcCode = response;
-            });
-            }else{
-            this.form.rqcCode = null;
-            }
-        }
     }
   };
   </script>

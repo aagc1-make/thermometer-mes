@@ -41,43 +41,8 @@ const INITIAL_DRAFT: InquiryItem[] = [];
 /** 已提交（待报价）历史记录，实际数据从后端加载 */
 const INITIAL_SUBMITTED: InquiryRecord[] = [];
 
-/** 已报价历史记录，与后端询价单保持同步 */
-const INITIAL_QUOTED: InquiryRecord[] = [
-  {
-    id: 'XJ20261019-001',
-    status: 'quoted',
-    items: [
-      {
-        productId: '9218',
-        name: '基础款红外测温枪',
-        code: 'IRG-FG-001',
-        categoryName: '成品',
-        art: 'thermometer',
-        qty: 100,
-        moq: 50,
-        unit: '件'
-      },
-      {
-        productId: '9223',
-        name: '测温显示电控预装件',
-        code: 'IRG-SA-CTRL-001',
-        categoryName: '成品',
-        art: 'pcb',
-        qty: 200,
-        moq: 100,
-        unit: '件'
-      }
-    ],
-    itemCount: 2,
-    totalQty: 300,
-    submitTime: '2026-10-19 09:30',
-    expectedDate: '2026-11-15',
-    address: DEFAULT_INQUIRY_META.address,
-    invoice: DEFAULT_INQUIRY_META.invoice,
-    remark: '报价含税含运费，有效期 7 天',
-    quoteAmount: 74000
-  }
-];
+/** 已报价历史记录：一律以后端询价单为准，不再内置与 MES 不一致的演示单 */
+const INITIAL_QUOTED: InquiryRecord[] = [];
 
 interface InquiryState {
   draftId: string;

@@ -8,8 +8,6 @@
 </template>
 <script>
 import { printBarcodeLabel } from "@/api/print/print";
-import {hiprint} from 'vue-plugin-hiprint'
-import provider from "@/views/print/printtemplate/ProviderData";
 import {PRINT_DICT} from "@/utils/print";
 import {getMdItem} from "../../api/mes/md/mdItem";
 import {getByTemplateType, getTemplate} from "@/api/print/template";
@@ -17,8 +15,20 @@ import {getBatchconfig} from "@/api/mes/md/batchconfig";
 import {getItemrecptline} from "../../api/mes/wm/itemrecptline";
 import {getDefaultPrinter} from "../../api/print/printerconfig";
 import {Message} from "element-ui";
+import webSite from "@/config/website";
 
 let hiprintTemplate
+let hiprintLib = null
+let providerLib = null
+function loadPrintLibs() {
+  return Promise.all([
+    import(/* webpackChunkName: "chunk-hiprint" */ 'vue-plugin-hiprint'),
+    import(/* webpackChunkName: "chunk-hiprint" */ '@/views/print/printtemplate/ProviderData')
+  ]).then(([mod, providerModule]) => ({
+    hiprint: mod.hiprint || mod.default || mod,
+    provider: providerModule.default || providerModule
+  }))
+}
 export default {
     name: 'printLabel',
     data(){
@@ -63,14 +73,29 @@ export default {
             });
         },
       // 初始化打印插件
-      init() {
-        hiprint.init({
-          providers: [provider]
-        });
-        hiprintTemplate = new hiprint.PrintTemplate()
+      async init() {
+        if (!webSite.print_transfer_url) {
+          console.warn('[print] 未配置 VUE_APP_PRINT_TRANSFER_URL，标签打印暂不可用');
+          return;
+        }
+        try {
+          const libs = await loadPrintLibs();
+          hiprintLib = libs.hiprint;
+          providerLib = libs.provider;
+          hiprintLib.init({
+            providers: [providerLib]
+          });
+          hiprintTemplate = new hiprintLib.PrintTemplate()
+        } catch (e) {
+          console.warn('[print] 打印插件加载失败：' + e.message);
+        }
       },
       // 标签打印
       async handleHiPrint() {
+        if (!hiprintTemplate) {
+          this.$modal.msgWarning('打印服务未配置，标签打印暂不可用');
+          return;
+        }
         // 根据 businessType 类型查询具体打印数据
         let printData
         switch (this.businessType) {

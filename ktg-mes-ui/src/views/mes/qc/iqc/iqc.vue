@@ -225,18 +225,9 @@
     <el-dialog :title="title" :visible.sync="open" width="1080px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-row>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="检验单编号" prop="iqcCode">
-              <el-input v-model="form.iqcCode" placeholder="请输入来料检验单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'" >
-              </el-switch>
+              <el-input v-model="form.iqcCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="9">
@@ -248,6 +239,38 @@
               <el-image fit="contain" v-if="form.checkResult == 'ACCEPT'" :src="acceptImg" />
               <el-image fit="contain" v-else-if="form.checkResult == 'REJECT'" :src="rejectImg" />
               <el-image fit="contain" v-else :src="prepareImg" />
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="8">
+            <el-form-item label="来源到货通知">
+              <el-button
+                v-if="form.sourceDocType === 'ARRIVAL_NOTICE' && form.sourceDocId"
+                type="text"
+                size="mini"
+                @click="openLinkage('ARRIVAL', form.sourceDocId)"
+              >{{ form.sourceDocCode || form.sourceDocId }}</el-button>
+              <span v-else>未关联</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="来源物料行">
+              <span v-if="sourceLine">
+                {{ sourceLine.itemCode }} / {{ sourceLine.itemName }}（到货 {{ sourceLine.quantityArrival }}，来源行 #{{ sourceLine.lineId }}）
+              </span>
+              <span v-else>未关联</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="相关采购入库单">
+              <el-button
+                v-if="relatedReceipts.length"
+                type="text"
+                size="mini"
+                @click="openLinkage('ARRIVAL', form.sourceDocId)"
+              >查看关联入库单（{{ relatedReceipts.length }}）</el-button>
+              <span v-else>暂无关联入库单</span>
+            </el-form-item>
           </el-col>
         </el-row>
         <el-divider content-position="center">物料与供应商</el-divider>
@@ -393,10 +416,10 @@
         </el-collapse>
         <el-tabs type="border-card" v-if="form.iqcId != null">
         <el-tab-pane label="检测项">
-          <IqcLine ref=line :iqcId="form.iqcId" :optType="optType"></IqcLine>
+          <IqcLine :key="'line-' + form.iqcId" ref=line :iqcId="form.iqcId" :optType="optType"></IqcLine>
         </el-tab-pane>
         <el-tab-pane label="检测结果">
-          <QCResutl ref="qcResult" :qcId="form.iqcId" :qcType="'IQC'" :optType="optType"></QCResutl>
+          <QCResutl :key="'result-' + form.iqcId" ref="qcResult" :qcId="form.iqcId" :qcType="'IQC'" :optType="optType"></QCResutl>
         </el-tab-pane>
       </el-tabs>
       </el-form>
@@ -406,25 +429,32 @@
         <el-button @click="cancel">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <linkage-doc-dialog
+      :visible.sync="linkVisible"
+      :doc-type="linkType"
+      :doc-id="linkId"
+    />
   </div>
 </template>
 
 <script>
 import { listIqc, getIqc, delIqc, addIqc, updateIqc } from "@/api/mes/qc/iqc";
+import { nextBizCode } from "@/api/mes/code";
+import { getArrivalnoticeline } from "@/api/mes/wm/arrivalnoticeline";
+import { listItemrecpt } from "@/api/mes/wm/itemrecpt";
+import LinkageDocDialog from "@/components/LinkageDocDialog/index.vue";
 import ItemSelect  from "@/components/itemSelect/single.vue";
 import VendorSelect from "@/components/vendorSelect/single.vue";
 import IqcLine from "./iqcline.vue";
 import QCResutl from "../qcresult/index.vue";
-import {genCode} from "@/api/system/autocode/rule"
 // 报表服务未部署，viewReport 只做提示，无需再引入报表接口（避免打包无用依赖）
 export default {
   name: "Iqc",
   dicts: ['mes_qc_result','mes_order_status'],
-  components: {ItemSelect,VendorSelect,IqcLine,QCResutl},
+  components: {ItemSelect,VendorSelect,IqcLine,QCResutl, LinkageDocDialog},
   data() {
     return {
-      //自动生成编码
-      autoGenFlag:false,
       optType: undefined,
       acceptImg:  require('@/assets/images/accept.png'),
       rejectImg: require('@/assets/images/reject.png'),
@@ -447,6 +477,11 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      linkVisible: false,
+      linkType: "",
+      linkId: null,
+      sourceLine: null,
+      relatedReceipts: [],
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -487,7 +522,7 @@ export default {
       // 表单校验
       rules: {
         iqcCode: [
-          { required: true, message: "来料检验单编号不能为空", trigger: "blur" }
+          { max: 64, message: "字段过长", trigger: "blur" }
         ],
         iqcName: [
           { required: true, message: "来料检验单名称不能为空", trigger: "blur" }
@@ -515,9 +550,32 @@ export default {
     };
   },
   created() {
-    this.getList();
+    this.applyAssistantRoute();
+  },
+  watch: {
+    '$route.query'() { this.applyAssistantRoute(); }
   },
   methods: {
+    applyAssistantRoute() {
+      if (this.$route.path && this.$route.path !== '/mes/qc/iqc') return;
+      const query = this.$route.query || {};
+      this.queryParams.iqcCode = query.iqcCode ? String(query.iqcCode) : null;
+      if (query.iqcCode) this.queryParams.inspectDate = null;
+      this.queryParams.pageNum = 1;
+      this.getList();
+      const id = String(query.openIqcId || '');
+      if (!/^\d+$/.test(id) || !this.$auth.hasPermi('mes:qc:iqc:query')) return;
+      this.reset();
+      getIqc(id).then(response => {
+        if (!response.data || (this.$route.path && this.$route.path !== '/mes/qc/iqc') || String((this.$route.query || {}).openIqcId) !== id) return;
+        this.form = response.data;
+        const editable = this.form.status === 'PREPARE' && this.$auth.hasPermi('mes:qc:iqc:edit');
+        this.optType = editable ? 'edit' : 'view';
+        this.title = editable ? '修改来料检验单' : '查看来料检验单信息';
+        this.open = true;
+        this.loadSourceInfo();
+      });
+    },
     /** 查询来料检验单列表 */
     getList() {
       this.loading = true;
@@ -534,6 +592,8 @@ export default {
     },
     // 表单重置
     reset() {
+      this.sourceLine = null;
+      this.relatedReceipts = [];
       this.form = {
         iqcId: null,
         iqcCode: null,
@@ -575,7 +635,6 @@ export default {
         updateBy: null,
         updateTime: null
       };
-      this.autoGenFlag = false;
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -597,6 +656,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('IQC').then(res => {
+        this.form.iqcCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加来料检验单";
       this.optType = 'add';
@@ -610,6 +672,7 @@ export default {
         this.open = true;
         this.title = "查看来料检验单信息";
         this.optType = "view";
+        this.loadSourceInfo();
       });
     },
     /** 修改按钮操作 */
@@ -621,7 +684,28 @@ export default {
         this.open = true;
         this.title = "修改来料检验单";
         this.optType = 'edit';
+        this.loadSourceInfo();
       });
+    },
+    loadSourceInfo() {
+      this.sourceLine = null;
+      this.relatedReceipts = [];
+      if (this.form.sourceLineId) {
+        getArrivalnoticeline(this.form.sourceLineId).then(res => {
+          this.sourceLine = res.data || null;
+        }).catch(() => {});
+      }
+      if (this.form.sourceDocType === 'ARRIVAL_NOTICE' && this.form.sourceDocId) {
+        listItemrecpt({ noticeId: this.form.sourceDocId, pageSize: 100 }).then(res => {
+          this.relatedReceipts = res.rows || [];
+        }).catch(() => {});
+      }
+    },
+    openLinkage(type, id) {
+      if (id == null) return;
+      this.linkType = type;
+      this.linkId = id;
+      this.linkVisible = true;
     },
     /** 提交按钮 */
     submitForm() {
@@ -725,16 +809,6 @@ export default {
           this.form.vendorName = obj.vendorName;
           this.form.vendorNick = obj.vendorNick;
         }
-    },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('QC_IQC_CODE').then(response =>{
-          this.form.iqcCode = response;
-        });
-      }else{
-        this.form.iqcCode = null;
-      }
     },
     viewReport(){
       // 说明：后端 jasperreports 依赖已注释、也没有 /jasper-report 控制器，

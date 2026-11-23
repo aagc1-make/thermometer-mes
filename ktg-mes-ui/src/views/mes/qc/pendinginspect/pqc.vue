@@ -4,16 +4,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="检验单编号" prop="ipqcCode">
-              <el-input v-model="form.ipqcCode" placeholder="请输入检验单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.ipqcCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -211,7 +202,7 @@
 </template>
 <script>
 import { listIpqc, getIpqc, delIpqc, addIpqc, updateIpqc } from "@/api/mes/qc/ipqc";
-import {genCode} from "@/api/system/autocode/rule"
+import { nextBizCode } from "@/api/mes/code";
 import WorkorderSelect from "@/components/workorderSelect/single.vue"
 import WorkstationSelect from "@/components/workstationSelect/simpletableSingle.vue"
 import UserSingleSelect from "@/components/userSelect/single.vue"
@@ -247,7 +238,6 @@ export default {
     },
     data() {
         return {
-            autoGenFlag: false,
             optType: 'add',
             // 表单参数
             form: {},
@@ -298,6 +288,10 @@ export default {
         if (this.$route.params.qcId) {
             getIpqc(this.$route.params.qcId).then(response => {
                 this.form = response.data;
+            });
+        } else {
+            nextBizCode('IPQC').then(res => {
+                this.form.ipqcCode = (res && res.data) || '';
             });
         }
     },
@@ -364,7 +358,6 @@ export default {
                 updateBy: null,
                 updateTime: null
             };
-            this.autoGenFlag = false;
             this.resetForm("form");
         },
         /** 提交按钮 */
@@ -415,16 +408,6 @@ export default {
           this.form.quantityUnqualified = this.form.quantityLaborScrap + this.form.quantityMaterialScrap + this.form.quantityOtherScrap;
         },
 
-        //自动生成编码
-        handleAutoGenChange(autoGenFlag){
-            if(autoGenFlag){
-                genCode('QC_PQC_CODE').then(response =>{
-                this.form.ipqcCode = response;
-                });
-            }else{
-                this.form.ipqcCode = null;
-            }
-        }
     }
 }
 </script>

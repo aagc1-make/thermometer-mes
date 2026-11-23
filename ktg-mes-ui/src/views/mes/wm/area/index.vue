@@ -119,6 +119,7 @@
       <el-table-column label="库位名称" align="center" prop="areaName" />
       <el-table-column label="面积" align="center" prop="area" />
       <el-table-column label="最大载重量" align="center" prop="maxLoa" />
+      <el-table-column label="最大存放数量" align="center" prop="maxQty" />
       <el-table-column label="库位位置X" align="center" prop="positionX" />
       <el-table-column label="库位位置y" align="center" prop="positionY" />
       <el-table-column label="库位位置z" align="center" prop="positionZ" />
@@ -222,6 +223,11 @@
               <el-col :span="12">
                 <el-form-item label="最大载重量" prop="maxLoa">
                   <el-input-number v-model="form.maxLoa" :max="99999999" :step="1" :percision="2" placeholder="请输入最大载重量" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="最大存放数量" prop="maxQty">
+                  <el-input-number v-model="form.maxQty" :min="0" :max="99999999" :step="1" :precision="0" placeholder="留空表示不限量" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -430,6 +436,7 @@ export default {
         locationId: this.locationId,
         area: null,
         maxLoa: null,
+        maxQty: null,
         productMixing: 'N',
         batchMixing: 'N',
         positionX: null,

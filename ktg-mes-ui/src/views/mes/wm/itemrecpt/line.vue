@@ -33,6 +33,31 @@
       <el-table-column label="单位" align="center" prop="unitName" />
       <el-table-column label="入库数量" align="center" prop="quantityRecived" />
       <el-table-column label="批次号" align="center" prop="batchCode" />
+      <el-table-column label="来源到货行" width="110" align="center">
+        <template slot-scope="scope">{{ scope.row.noticeLineId || '未关联' }}</template>
+      </el-table-column>
+      <el-table-column label="检验状态" width="100" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="inspectionStatusType(inspectionStatus(scope.row))" size="mini">
+            {{ inspectionStatus(scope.row) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="来料检验单" min-width="150" align="center">
+        <template slot-scope="scope">
+          <span v-if="scope.row.iqcCheck !== 'Y'">免检</span>
+          <span v-else-if="!lineIqcs(scope.row).length">未关联</span>
+          <span v-else>
+            <el-button
+              v-for="iqc in lineIqcs(scope.row)"
+              :key="iqc.iqcId || iqc.iqcCode"
+              type="text"
+              size="mini"
+              @click="openIqc(iqc.iqcId)"
+            >{{ iqc.iqcCode }}</el-button>
+          </span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" width="100px" v-if="optType != 'view'" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -138,11 +163,20 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <linkage-doc-dialog
+      :visible.sync="linkVisible"
+      :doc-type="linkType"
+      :doc-id="linkId"
+    />
   </div>
 </template>
 
 <script>
 import { listItemrecptline, getItemrecptline, delItemrecptline, addItemrecptline, updateItemrecptline } from "@/api/mes/wm/itemrecptline";
+import { listIqc } from "@/api/mes/qc/iqc";
+import LinkageDocDialog from "@/components/LinkageDocDialog/index.vue";
+import { mergeIqcLinks, inspectionStatus as calcInspectionStatus, inspectionStatusType as calcInspectionStatusType } from "@/utils/linkage";
 import ItemSelect  from "@/components/itemSelect/single.vue";
 import NoticeLineSelect from "@/components/noticeSelect/lineSingle.vue"
 import IqcSelect from "@/components/iqcSelect/single.vue";
@@ -150,7 +184,7 @@ import {getTreeList} from "@/api/mes/wm/warehouse"
 export default {
   name: "Itemrecptline",
   dicts: ['sys_yes_no'],
-  components :{ItemSelect,IqcSelect,NoticeLineSelect},
+  components :{ItemSelect,IqcSelect,NoticeLineSelect, LinkageDocDialog},
   props:{
     recptId: null,
     noticeId: null,
@@ -186,6 +220,9 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      linkVisible: false,
+      linkType: "",
+      linkId: null,
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -243,10 +280,42 @@ export default {
     getList() {
       this.loading = true;
       listItemrecptline(this.queryParams).then(response => {
-        this.itemrecptlineList = response.rows;
+        this.itemrecptlineList = (response.rows || []).map(row => ({
+          ...row,
+          iqcLinks: mergeIqcLinks(row, [])
+        }));
         this.total = response.total;
         this.loading = false;
+        this.loadLineIqcs();
       });
+    },
+    loadLineIqcs() {
+      this.itemrecptlineList.forEach(row => {
+        if (row.iqcCheck !== 'Y' || !row.noticeLineId) {
+          this.$set(row, 'iqcLinks', mergeIqcLinks(row, []));
+          return;
+        }
+        listIqc({ sourceLineId: row.noticeLineId, pageSize: 50 }).then(res => {
+          this.$set(row, 'iqcLinks', mergeIqcLinks(row, res.rows || []));
+        }).catch(() => {
+          this.$set(row, 'iqcLinks', mergeIqcLinks(row, []));
+        });
+      });
+    },
+    lineIqcs(row) {
+      return row.iqcLinks || mergeIqcLinks(row, []);
+    },
+    inspectionStatus(row) {
+      return calcInspectionStatus(row);
+    },
+    inspectionStatusType(status) {
+      return calcInspectionStatusType(status);
+    },
+    openIqc(iqcId) {
+      if (iqcId == null) return;
+      this.linkType = 'IQC';
+      this.linkId = iqcId;
+      this.linkVisible = true;
     },
     getWarehouseList(){
       getTreeList().then( response =>{

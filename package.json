@@ -1,0 +1,23 @@
+{
+  "name": "thermometer-mes-linkage",
+  "version": "1.0.0",
+  "description": "基于若依（RuoYi 3.8.2）+ KTG MES 改造的制造执行系统，覆盖红外测温枪从采购到货、生产装配、\r 质量检验到成品销售出库的全流程业务闭环。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aagc1-make/thermometer-mes.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aagc1-make/thermometer-mes/issues"
+  },
+  "homepage": "https://github.com/aagc1-make/thermometer-mes#readme"
+}

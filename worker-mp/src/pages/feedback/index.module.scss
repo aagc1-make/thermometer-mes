@@ -1,0 +1,142 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-md $page-padding calc(#{$spacing-xl} + env(safe-area-inset-bottom));
+  background: $color-bg-page;
+}
+
+.woCard {
+  padding: $spacing-lg;
+  border-radius: $radius-lg;
+  background: linear-gradient(135deg, $color-primary-light, $color-primary);
+  color: #fff;
+}
+
+.woCode {
+  display: block;
+  font-size: $font-size-lg;
+  font-weight: 700;
+}
+
+.woProduct {
+  display: block;
+  margin-top: 4rpx;
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.section {
+  margin-top: $spacing-lg;
+}
+
+.sectionTitle {
+  display: block;
+  margin-bottom: $spacing-sm;
+  font-size: $font-size-md;
+  font-weight: 700;
+}
+
+.task {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md;
+  margin-bottom: $spacing-sm;
+  border-radius: $radius-lg;
+  background: #fff;
+  border: 2rpx solid transparent;
+  box-shadow: $shadow-card;
+}
+
+.taskActive {
+  border-color: $color-primary;
+  background: $color-primary-soft;
+}
+
+.taskDone {
+  opacity: 0.55;
+}
+
+.taskMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.taskName {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: 600;
+}
+
+.taskCode {
+  display: block;
+  margin-top: 4rpx;
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+  @include text-ellipsis;
+}
+
+.taskRemain {
+  color: $color-primary;
+  font-size: $font-size-xs;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-sm 0;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.field {
+  margin-top: $spacing-md;
+
+  .label {
+    display: block;
+    margin-bottom: $spacing-xs;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+  }
+
+  .input {
+    height: 84rpx;
+    padding: 0 $spacing-md;
+    border-radius: $radius-md;
+    background: #fff;
+    font-size: $font-size-md;
+  }
+
+  .textarea {
+    width: 100%;
+    min-height: 140rpx;
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius-md;
+    background: #fff;
+    font-size: $font-size-sm;
+  }
+}
+
+.submit {
+  margin-top: $spacing-lg;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-primary-light, $color-primary);
+  color: #fff;
+  font-size: $font-size-lg;
+  font-weight: 600;
+
+  &::after {
+    border: none;
+  }
+}
+
+.empty {
+  padding: 60rpx 0;
+  text-align: center;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}

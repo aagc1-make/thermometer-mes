@@ -44,9 +44,13 @@ import VueMeta from 'vue-meta'
 // 字典数据组件
 import DictData from '@/components/DictData'
 import webSite from '@/config/website'
-import {hiPrintPlugin} from 'vue-plugin-hiprint'
-Vue.use(hiPrintPlugin);
 Vue.prototype.website = webSite
+// 可选打印插件按需加载：未配置打印服务时不引入 hiprint，避免自动连接 17521。
+if (process.env.VUE_APP_PRINT_TRANSFER_URL) {
+  import(/* webpackChunkName: "chunk-hiprint" */ 'vue-plugin-hiprint')
+    .then(({ hiPrintPlugin }) => { if (hiPrintPlugin) Vue.use(hiPrintPlugin) })
+    .catch(e => console.warn('[print] 打印插件加载失败：' + e.message))
+}
 
 // 全局方法挂载
 Vue.prototype.getDicts = getDicts
@@ -83,6 +87,9 @@ DictData.install()
  * Currently MockJs will be used in the production environment,
  * please remove it before going online! ! !
  */
+
+// 拖动选择文字时鼠标可能在遮罩层释放，避免误关闭表单并丢失输入。
+Element.Dialog.props.closeOnClickModal.default = false
 
 Vue.use(Element, {
   size: Cookies.get('size') || 'medium' // set element-ui default size

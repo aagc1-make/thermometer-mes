@@ -1,11 +1,16 @@
 import Taro from '@tarojs/taro';
 
 /**
- * 小程序独立后端地址（backend/miniapp-api，端口 8081，与 MES 后端 8080 完全隔离）
- * - 体验版/线上：阿里云 ECS 公网地址 http://101.37.129.105:8081
- * - 本地调试：改回 http://localhost:8081
+ * 小程序独立后端地址（backend/miniapp-api，与 MES 后端 8080 完全隔离）
+ * - 本地调试：http://127.0.0.1:8082（8081 常被 VMware NAT 占用）
+ * - 体验版/线上：构建时注入 TARO_APP_API_BASE，或直接改下面的常量
  */
-export const API_BASE_URL = 'http://101.37.129.105:8081';
+const DEFAULT_BASE_URL = 'http://127.0.0.1:8082';
+
+const ENV_BASE_URL =
+  typeof process !== 'undefined' && process.env ? (process.env.TARO_APP_API_BASE as string) || '' : '';
+
+export const API_BASE_URL = (ENV_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, '');
 
 const TOKEN_KEY = 'ktg_mes_token';
 
@@ -38,54 +43,6 @@ export function clearToken(): void {
   Taro.removeStorageSync(TOKEN_KEY);
 }
 
-/** 演示环境用于换取接口令牌的账号（企业身份由本地账号体系维护） */
-const SERVER_USER = 'demo';
-const SERVER_PASS = 'demo123';
-
-let tokenTask: Promise<string | null> | null = null;
-
-/**
- * 静默换取接口令牌
- * 并发请求共用同一个任务，避免同时发起多次登录
- */
-function fetchServerToken(): Promise<string | null> {
-  if (!tokenTask) {
-    tokenTask = Taro.request<ApiResponse<{ token?: string }>>({
-      url: `${API_BASE_URL}/api/v1/auth/login`,
-      method: 'POST',
-      data: { username: SERVER_USER, password: SERVER_PASS },
-      header: { 'Content-Type': 'application/json' },
-      timeout: 10000
-    })
-      .then((res) => {
-        const token = res.data?.data?.token;
-        if (token) {
-          setToken(token);
-          return token;
-        }
-        return null;
-      })
-      .catch((error) => {
-        console.info('[Api] 接口令牌获取失败', error);
-        return null;
-      })
-      .then((token) => {
-        tokenTask = null;
-        return token;
-      });
-  }
-  return tokenTask;
-}
-
-/** 启动时确保有可用令牌（已有则直接返回） */
-export async function ensureToken(): Promise<string> {
-  const token = getToken();
-  if (token) {
-    return token;
-  }
-  return (await fetchServerToken()) || '';
-}
-
 /** 令牌失效时跳转登录页；同一时间只跳一次，且不重复跳转 */
 let redirecting = false;
 
@@ -108,20 +65,12 @@ function redirectToLogin(): void {
 }
 
 /**
- * 统一请求封装，自动携带 JWT
- * 令牌过期时先静默续期并自动重试一次，续期失败才跳登录页
+ * 统一请求封装，自动携带登录令牌
+ * 令牌失效时清理登录态并跳转登录页（企业身份以真实登录令牌为准）
  */
 export async function request<T>(options: RequestOptions): Promise<T> {
-  return send<T>(options, false);
-}
-
-async function send<T>(options: RequestOptions, retried: boolean): Promise<T> {
   const { url, method = 'GET', data, form } = options;
-  let token = getToken();
-  // 没有令牌时先静默登录，避免首个请求必然 401
-  if (!token && !retried) {
-    token = (await fetchServerToken()) || '';
-  }
+  const token = getToken();
   const header: Record<string, string> = {
     'Content-Type': form ? 'application/x-www-form-urlencoded' : 'application/json'
   };
@@ -142,13 +91,6 @@ async function send<T>(options: RequestOptions, retried: boolean): Promise<T> {
 
     const body = res.data;
     if (res.statusCode === 401 || body?.code === 401) {
-      if (!retried) {
-        const fresh = await fetchServerToken();
-        if (fresh) {
-          console.info('[Api] 令牌已续期，重试请求', url);
-          return send<T>(options, true);
-        }
-      }
       console.warn('[Api] 登录态失效', url);
       clearToken();
       redirectToLogin();

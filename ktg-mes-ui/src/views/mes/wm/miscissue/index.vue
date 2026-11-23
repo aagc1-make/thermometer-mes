@@ -182,16 +182,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="出库单编号" prop="issueCode">
-              <el-input v-model="form.issueCode" placeholder="请输入杂项出库单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.issueCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -273,7 +264,7 @@
 
 <script>
 import { listMiscissue, getMiscissue, delMiscissue, addMiscissue, updateMiscissue, execute } from "@/api/mes/wm/miscissue";
-import {genCode} from "@/api/system/autocode/rule"
+import { nextBizCode } from "@/api/mes/code";
 import MiscIssueLine from "./line.vue"
 export default {
   name: "Miscissue",
@@ -281,7 +272,6 @@ export default {
   components: {MiscIssueLine},
   data() {
     return {
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -359,6 +349,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('ZCL').then(res => {
+        this.form.issueCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加杂项出库单";
       this.optType = 'add';
@@ -449,15 +442,6 @@ export default {
         this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
     },
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('MISC_ISSUE_CODE').then(response =>{
-          this.form.issueCode = response;
-        });
-      }else{
-        this.form.issueCode = null;
-      }
-    }
   }
 };
 </script>

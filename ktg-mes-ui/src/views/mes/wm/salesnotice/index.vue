@@ -164,16 +164,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="通知单编号" prop="noticeCode">
-              <el-input v-model="form.noticeCode" placeholder="请输入退货单编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view' && form.status =='PREPARE'">
-              </el-switch>
+              <el-input v-model="form.noticeCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -241,7 +232,7 @@
       </el-form>
       <el-divider v-if="form.noticeId !=null" content-position="center">物料信息</el-divider>
       <el-card shadow="always" v-if="form.noticeId !=null" class="box-card">
-        <NoticeLine :noticeId="form.noticeId" :optType="optType"></NoticeLine>
+        <NoticeLine :noticeId="form.noticeId" :optType="optType" :soCode="form.soCode"></NoticeLine>
       </el-card>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="saveForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
@@ -254,17 +245,15 @@
 
 <script>
 import { listSalesnotice, getSalesnotice, delSalesnotice, addSalesnotice, updateSalesnotice } from "@/api/mes/wm/salesnotice";
+import { nextBizCode } from "@/api/mes/code";
 import ClientSelect from "@/components/clientSelect/single.vue";
 import NoticeLine from './line.vue'
-import {genCode} from "@/api/system/autocode/rule"
 export default {
   name: "Salesnotice",
   dicts: ['mes_sales_notice_status'],
   components: {  NoticeLine, ClientSelect },
   data() {
     return {
-      //自动生成编码
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -324,7 +313,6 @@ export default {
     reset() {
       this.form = {
       noticeId: null,        noticeCode: null,        noticeName: null,        soCode: null,        clientId: null,        clientCode: null,        clientName: null,        clientNick: null,        salesDate: null,        recipient: null,        tel: null,        address: null,        status: "PREPARE",        remark: null,        attr1: null,        attr2: null,        attr3: null,        attr4: null,        createBy: null,        createTime: null,        updateBy: null,        updateTime: null      };
-      this.autoGenFlag = false;
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -357,6 +345,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('FHTZ').then(res => {
+        this.form.noticeCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加发货通知单";
       this.optType = "add";
@@ -436,16 +427,6 @@ export default {
         this.form.clientNick = obj.clientNick;
       }
     },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('WM_SALES_NOTICE_CODE').then(response =>{
-          this.form.noticeCode = response;
-        });
-      }else{
-        this.form.noticeCode = null;
-      }
-    }
   }
 };
 </script>

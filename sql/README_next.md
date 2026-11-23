@@ -19,6 +19,8 @@
 | 10 | `sql/patch_20261121_chain_code_alignment.sql` | 链号对齐：`fn_doc_code_valid` 放开 `-NN` 子序号；工单产出批次规则 `PCGD` 前缀改为 `pc` | 是 |
 | 11 | `sql/patch_20261121_batch_workorder_binding.sql` | 成品批次按工单绑定：打开 `md_item_batch_config.workorder_flag`，避免同日多工单共用一个成品批次 | 是 |
 | 12 | `sql/patch_20261122_sales_line_workorder_binding.sql` | 销售出库行回填工单/成品批次绑定 + 出库完成后回写发货通知状态，修正流水线销售完成统计 | 是 |
+| 13 | `sql/patch_20261123_miniapp_alignment.sql` | 小程序与 MES 对齐：新增 `miniapp_product` 订货参数 + 三家客户/账号/地址/联系人/FAQ 演示数据（账号 c-tg-001~003，密码 123456） | 是 |
+| 14 | `sql/patch_20261123_worker_roles.sql` | 工人端角色：补车间主任/采购员角色与账号（workshop/purchaser），对齐操作工/质检/仓管权限，并补流水线只读权限 | 是 |
 
 > 后续阶段（应用代码改造、双写切换、旧表只读）的脚本尚未产出，届时按 `patch_<日期>_<主题>.sql` 命名追加。
 

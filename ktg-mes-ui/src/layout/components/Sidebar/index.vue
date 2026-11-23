@@ -31,7 +31,7 @@ import { mapGetters, mapState } from "vuex";
 import Logo from "./Logo";
 import SidebarItem from "./SidebarItem";
 import variables from "@/assets/styles/variables.scss";
-import { findDomainByPath } from "../../rail-config";
+import { findDomainByPath, isMenuHidden } from "../../rail-config";
 
 export default {
     components: { SidebarItem, Logo },
@@ -79,7 +79,7 @@ export default {
                     const full = join(base, r.path);
                     if (r.children && r.children.length) {
                         collect(r.children, full);
-                    } else if (r.meta && r.meta.title) {
+                    } else if (r.meta && r.meta.title && !isMenuHidden(full)) {
                         leaves.push({ full, route: r });
                     }
                 });
@@ -108,7 +108,7 @@ export default {
                     children: rest.map(m => ({ ...m.route, path: m.full }))
                 });
             }
-            return groups.length ? groups : this.visibleRouters;
+            return groups;
         },
         variables() {
             return variables;

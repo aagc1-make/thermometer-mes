@@ -8,7 +8,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['qc:qcresult:add']"
+          v-hasPermi="['mes:qc:qcresult:add']"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -19,7 +19,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['qc:qcresult:edit']"
+          v-hasPermi="['mes:qc:qcresult:edit']"
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -30,7 +30,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['qc:qcresult:remove']"
+          v-hasPermi="['mes:qc:qcresult:remove']"
         >删除</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
@@ -47,14 +47,14 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['qc:qcresult:edit']"
+            v-hasPermi="['mes:qc:qcresult:edit']"
           >修改</el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['qc:qcresult:remove']"
+            v-hasPermi="['mes:qc:qcresult:remove']"
           >删除</el-button>
         </template>
       </el-table-column>
@@ -74,16 +74,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="样品编号" prop="resultCode">
-              <el-input v-model="form.resultCode" placeholder="请输入记录编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view'" >               
-              </el-switch>
+              <el-input v-model="form.resultCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -139,11 +130,10 @@
 
 <script>
 import { listQcresult, getQcresult, delQcresult, addQcresult, updateQcresult } from "@/api/mes/qc/qcresult";
+import { nextBizCode } from "@/api/mes/code";
 import { listQcresultdetail, listDetails ,getQcresultdetail, delQcresultdetail, addQcresultdetail, updateQcresultdetail } from "@/api/mes/qc/qcresultdetail";
 import DictDataSelect from "@/components/DictSelect/dictOptionSelect.vue"
-import {genCode} from "@/api/system/autocode/rule"
 export default {
-  autoGenFlag : false,
   name: "Qcresult",
   props:{
     qcId: null,
@@ -155,7 +145,6 @@ export default {
   data() {
     return {
       optType2: this.optType,
-      autoGenFlag : false,
       // 遮罩层
       loading: true,
       // 选中数组
@@ -235,7 +224,6 @@ export default {
         resultId: null,        resultCode: null,        sourceDocId: this.qcId,        sourceDocCode: null,        sourceDocName: null,        sourceDocType: this.qcType,        itemId: null,        itemCode: null,        itemName: null,        specification: null,        unitOfMeasure: null,        snCode: null,        remark: null,        attr1: null,        attr2: null,        attr3: null,        attr4: null,        createBy: null,        createTime: null,        updateBy: null,        updateTime: null,      
         items: [],
       };
-      this.autoGenFlag = false;
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -257,6 +245,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('JYYP').then(res => {
+        this.form.resultCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加检测结果记录";
       this.optType2 = "add";
@@ -319,16 +310,6 @@ export default {
     /** 移除上传文件 */
     handleRemoved(url,index){
       this.form.items[index].qcValFile = null;
-    },
-    //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('QC_RESULT_CODE').then(response =>{
-          this.form.resultCode = response;
-        });
-      }else{
-        this.form.resultCode = null;
-      }
     },
   }
 };

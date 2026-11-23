@@ -114,7 +114,7 @@
             <el-row>
               <el-col :span="12">
                 <el-form-item label="流转卡编号" prop="cardCode">
-                  <el-input v-model="form.cardCode" placeholder="请输入流转卡编号" />
+                  <el-input v-model="form.cardCode" disabled placeholder="保存后由系统自动生成" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -189,6 +189,7 @@
 
 <script>
 import { listProcard, getProcard, delProcard, addProcard, updateProcard } from "@/api/mes/pro/procard";
+import { nextBizCode } from "@/api/mes/code";
 import { printBarcodeLabel } from "@/api/print/print";
 import printLabel from "@/components/printerLabel/index.vue"
 import BarcodeImg from "@/components/barcodeImg/index.vue"
@@ -289,6 +290,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('SCK').then(res => {
+        this.form.cardCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加工序流转卡";
       this.optType = 'add';

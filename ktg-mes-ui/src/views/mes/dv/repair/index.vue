@@ -163,16 +163,7 @@
         <el-row>
           <el-col :span="8">
             <el-form-item label="维修单编号" prop="repairCode">
-              <el-input v-model="form.repairCode" placeholder="请输入维修单编号" />
-            </el-form-item>
-          </el-col>
-           <el-col :span="4">
-            <el-form-item  label-width="80">
-              <el-switch v-model="autoGenFlag"
-                  active-color="#13ce66"
-                  active-text="自动生成"
-                  @change="handleAutoGenChange(autoGenFlag)" v-if="optType != 'view'">
-              </el-switch>
+              <el-input v-model="form.repairCode" disabled placeholder="保存后由系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -285,16 +276,15 @@
 
 <script>
 import { listRepair, getRepair, delRepair, addRepair, updateRepair } from "@/api/mes/dv/repair";
+import { nextBizCode } from "@/api/mes/code";
 import MachinerySelectSingle from "@/components/machinerySelect/single.vue";
 import Repairline from './line.vue'
-import {genCode} from "@/api/system/autocode/rule"
 export default {
   name: "Repair",
   dicts: ['mes_repair_result', 'mes_order_status'],
   components: {Repairline,MachinerySelectSingle},
   data() {
     return {
-      autoGenFlag:false,
       optType: undefined,
       // 遮罩层
       loading: true,
@@ -410,7 +400,6 @@ export default {
         updateBy: null,
         updateTime: null
       };
-      this.autoGenFlag= false;
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
@@ -432,6 +421,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      nextBizCode('WXD').then(res => {
+        this.form.repairCode = (res && res.data) || '';
+      });
       this.open = true;
       this.title = "添加设备维修单";
     },
@@ -493,16 +485,6 @@ export default {
       this.form.machineryName = row.machineryName;
       this.form.machineryBrand = row.machineryBrand;
     },
-        //自动生成编码
-    handleAutoGenChange(autoGenFlag){
-      if(autoGenFlag){
-        genCode('DV_REPAIR_CODE').then(response =>{
-          this.form.repairCode = response;
-        });
-      }else{
-        this.form.repairCode = null;
-      }
-    }
   }
 };
 </script>

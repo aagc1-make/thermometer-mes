@@ -1,0 +1,180 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-md $page-padding calc(#{$spacing-xl} + env(safe-area-inset-bottom));
+  background: $color-bg-page;
+}
+
+.tip {
+  margin-bottom: $spacing-md;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+}
+
+.card {
+  padding: $spacing-md;
+  margin-bottom: $spacing-sm;
+  border-radius: $radius-lg;
+  background: #fff;
+  box-shadow: $shadow-card;
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.code {
+  font-size: $font-size-sm;
+  font-weight: 700;
+}
+
+.qty {
+  color: $color-warning;
+  font-size: $font-size-xs;
+}
+
+.item {
+  display: block;
+  margin-top: $spacing-xs;
+  font-size: $font-size-sm;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4rpx;
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+}
+
+.action {
+  margin-top: $spacing-sm;
+  height: 68rpx;
+  line-height: 68rpx;
+  border-radius: $radius-button;
+  background: $color-primary;
+  color: #fff;
+  font-size: $font-size-sm;
+
+  &::after {
+    border: none;
+  }
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: $spacing-lg $page-padding calc(#{$spacing-lg} + env(safe-area-inset-bottom));
+  border-top-left-radius: 32rpx;
+  border-top-right-radius: 32rpx;
+  background: #fff;
+  box-shadow: 0 -8rpx 32rpx rgba(0, 0, 0, 0.12);
+}
+
+.sheetHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sheetTitle {
+  font-size: $font-size-md;
+  font-weight: 700;
+}
+
+.sheetClose {
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}
+
+.resultRow {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+}
+
+.resultBtn {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  border-radius: $radius-md;
+  background: $color-bg-soft;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  border: 2rpx solid transparent;
+}
+
+.resultPass {
+  background: rgba(18, 183, 106, 0.12);
+  color: $color-success;
+  border-color: $color-success;
+}
+
+.resultFail {
+  background: rgba(240, 68, 56, 0.1);
+  color: $color-error;
+  border-color: $color-error;
+}
+
+.defects {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+}
+
+.defect {
+  flex: 1;
+
+  .label {
+    display: block;
+    margin-bottom: 6rpx;
+    color: $color-text-secondary;
+    font-size: $font-size-xs;
+  }
+
+  .smallInput {
+    height: 72rpx;
+    padding: 0 $spacing-sm;
+    border-radius: $radius-sm;
+    background: $color-bg-soft;
+    font-size: $font-size-sm;
+  }
+}
+
+.textarea {
+  width: 100%;
+  min-height: 120rpx;
+  margin-top: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-md;
+  background: $color-bg-soft;
+  font-size: $font-size-sm;
+}
+
+.submit {
+  margin-top: $spacing-md;
+  height: 84rpx;
+  line-height: 84rpx;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-primary-light, $color-primary);
+  color: #fff;
+  font-size: $font-size-md;
+  font-weight: 600;
+
+  &::after {
+    border: none;
+  }
+}
+
+.empty {
+  padding: 120rpx 0;
+  text-align: center;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}

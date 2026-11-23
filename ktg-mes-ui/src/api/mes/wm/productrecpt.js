@@ -62,3 +62,29 @@ export function execute(recptId) {
     method: 'put'
   })
 }
+
+// 上架-库区候选（含余量/推荐/混放拦截）
+export function locationOptions(params) {
+  return request({
+    url: '/mes/wm/productrecpt/locationOptions',
+    method: 'get',
+    params: params
+  })
+}
+
+// 上架-库位候选（含余量/推荐/混放拦截）
+export function areaOptions(params) {
+  return request({
+    url: '/mes/wm/productrecpt/areaOptions',
+    method: 'get',
+    params: params
+  })
+}
+
+// 确认上架（待上架 -> 已上架）
+export function confirmStocking(recptId) {
+  return request({
+    url: '/mes/wm/productrecpt/confirmStocking/' + recptId,
+    method: 'post'
+  })
+}

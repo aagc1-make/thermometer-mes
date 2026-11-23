@@ -337,6 +337,13 @@
       <el-table-column label="生产批号" align="center" prop="productCode" />
       <el-table-column label="质量状态" align="center" prop="qualityStatus" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+        <el-button
+          size="mini"
+          type="text"
+          icon="el-icon-connection"
+          @click="handleTrace(scope.row)"
+          v-hasPermi="['mes:wm:batch:query']"
+        >追溯</el-button>
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -368,7 +375,7 @@
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="批次编号" prop="batchCode">
-          <el-input v-model="form.batchCode" placeholder="请输入批次编号" />
+          <el-input v-model="form.batchCode" readonly placeholder="保存后由系统自动生成" />
         </el-form-item>
         <el-form-item label="产品物料ID" prop="itemId">
           <el-input v-model="form.itemId" placeholder="请输入产品物料ID" />
@@ -483,7 +490,8 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
-  </div>
+  
+</div>
 </template>
 
 <script>
@@ -521,7 +529,7 @@ export default {
       // 表单校验
       rules: {
         batchCode: [
-          { required: true, message: "批次编号不能为空", trigger: "blur" }
+          { max: 64, message: "字段过长", trigger: "blur" }
         ],        itemId: [
           { required: true, message: "产品物料ID不能为空", trigger: "blur" }
         ],      }
