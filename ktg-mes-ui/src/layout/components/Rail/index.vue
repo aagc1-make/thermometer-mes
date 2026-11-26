@@ -1,22 +1,21 @@
 <template>
-  <div class="rail">
-    <div
+  <nav class="rail" aria-label="业务模块">
+    <button
       v-for="d in domains"
       :key="d.key"
       class="rail-item"
       :class="{ active: d.key === activeKey }"
       :title="d.title"
-      role="button"
-      tabindex="0"
+      type="button"
+      :aria-current="d.key === activeKey ? 'location' : null"
       :aria-label="hasUnread(d) ? d.title + '（有新任务）' : d.title"
       @click="go(d)"
-      @keyup.enter="go(d)"
     >
       <svg-icon :icon-class="d.icon" class-name="rail-item__icon" />
       <span class="rail-item__text">{{ d.title }}</span>
       <span v-if="hasUnread(d)" class="rail-item__dot" aria-hidden="true"></span>
-    </div>
-  </div>
+    </button>
+  </nav>
 </template>
 
 <script>

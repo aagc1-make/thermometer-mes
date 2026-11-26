@@ -1,11 +1,10 @@
 <template>
-  <main class="mes-status-page" aria-labelledby="not-found-title">
-    <section class="mes-status-page__content">
-      <p class="mes-status-page__code">404</p>
-      <h1 id="not-found-title" class="mes-page-heading">找不到页面</h1>
-      <p class="mes-status-page__detail">请检查页面地址，或返回首页重新选择菜单。</p>
-      <router-link to="/" class="mes-button mes-button--primary">返回首页</router-link>
-    </section>
+  <main class="mes-status">
+    <h1>找不到这个页面</h1>
+    <p>页面可能已移动，或链接地址有误。可以从工作台重新打开业务模块。</p>
+    <div class="mes-status__actions">
+      <router-link to="/index">返回工作台 <i class="el-icon-right" aria-hidden="true" /></router-link>
+    </div>
   </main>
 </template>
 

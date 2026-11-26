@@ -2,6 +2,8 @@
   <div class="ai">
     <business-chain ref="businessChain" />
     <knowledge-base ref="knowledgeBase" :user-id="knowledgeUserId" />
+    <personal-knowledge-base ref="personalKnowledgeBase" :user-id="knowledgeUserId" />
+    <personal-knowledge-graph ref="personalKnowledgeGraph" :user-id="knowledgeUserId" />
     <div v-if="isMobile && sidebarVisible" class="ai__backdrop" @click="toggleSidebar" />
     <aside v-show="sidebarVisible" id="assistant-navigation" class="ai__sidebar" aria-labelledby="assistant-title"
       @keydown.esc.stop="toggleSidebar">
@@ -75,6 +77,8 @@
           </details>
           <!-- 文本 -->
           <div v-if="m.type === 'text'" class="msg__text">{{ m.text }}</div>
+          <personal-knowledge-answer v-else-if="m.type === 'personalKnowledge'" :message="m"
+            @source="$refs.personalKnowledgeBase.showSource($event)" @graph-path="openPersonalKnowledgePath" />
           <knowledge-answer v-else-if="m.type === 'knowledge' || m.type === 'rag'" :message="m"
             @source="openInspector(m, 'sources', $event)" @follow-up="askFollowUp($event, m)" />
           <business-tool-answer v-else-if="m.type === 'toolAnswer'" :answer="m.answer"
@@ -242,11 +246,15 @@
           <assistant-composer ref="composer" v-model="input" :mode="queryMode" :scope="scopeLabel" :busy="loading" :streaming="!!ragAbort"
             :roomy="!hasConversation"
             @mode="queryMode = $event" @send="send()" @stop="stopGeneration" />
-          <div v-if="hasConversation || queryMode === 'knowledge'" class="ai__composer-links">
+          <div v-if="hasConversation || queryMode === 'knowledge' || personalMode" class="ai__composer-links">
             <el-button v-if="hasConversation" type="text" size="mini" icon="el-icon-connection"
               @click="$refs.businessChain.open()">全流程贯通</el-button>
             <el-button v-if="queryMode === 'knowledge'" type="text" size="mini"
               @click="$refs.knowledgeBase.open()">管理浏览器资料</el-button>
+            <template v-if="personalMode">
+              <el-button type="text" size="mini" icon="el-icon-lock" @click="$refs.personalKnowledgeBase.open()">管理个人知识库</el-button>
+              <el-button type="text" size="mini" icon="el-icon-share" @click="$refs.personalKnowledgeGraph.open()">我的知识图谱</el-button>
+            </template>
           </div>
         </footer>
       </section>
@@ -286,7 +294,10 @@ export default {
     AssistantComposer: () => import('./AssistantComposer'),
     AssistantInspector: () => import('./AssistantInspector'),
     BusinessToolAnswer: () => import('./BusinessToolAnswer'),
-    BusinessChain: () => import('./BusinessChain'), KnowledgeBase: () => import('./KnowledgeBase'), KnowledgeAnswer: () => import('./KnowledgeAnswer')
+    BusinessChain: () => import('./BusinessChain'), KnowledgeBase: () => import('./KnowledgeBase'), KnowledgeAnswer: () => import('./KnowledgeAnswer'),
+    PersonalKnowledgeBase: () => import('./PersonalKnowledgeBase'),
+    PersonalKnowledgeGraph: () => import('./PersonalKnowledgeGraph'),
+    PersonalKnowledgeAnswer: () => import('./PersonalKnowledgeAnswer')
   },
   data() {
     return {
@@ -339,7 +350,9 @@ export default {
       if (this.hasConversation) entries.unshift({ id: this.activeChatId, title: this.chatTitle(this.messages), current: true })
       return entries
     },
+    personalMode() { return ['personal_rag', 'personal_graph'].includes(this.queryMode) },
     scopeLabel() {
+      if (this.personalMode) return '当前账号 · 个人知识库'
       if (this.queryMode === 'knowledge') return '浏览器资料'
       if (!this.departmentLibrary) return '暂无部门库'
       return this.departmentLibrary.name + (this.indexedDocuments
@@ -772,11 +785,14 @@ export default {
       const run = ++this.chatRun
       const started = Date.now()
       const responseStart = this.messages.length
+      const personalQuery = this.personalMode
+      const account = this.knowledgeUserId
       this.loading = true
       this._businessTrace = []
       try {
         await this.route(q, receiptFollowUp)
       } catch (e) {
+        if (personalQuery && (account !== this.knowledgeUserId || run !== this.chatRun)) return
         const reason = e && e.message ? e.message : typeof e === 'string' ? e : ''
         const message = /timeout|超时/i.test(reason) ? '查询超时，请稍后重试。' : /network|连接/i.test(reason) ? '无法连接业务服务，请检查服务是否启动。' : `查询未完成：${reason || '服务暂时不可用'}。`
         this.push({ role: 'bot', type: 'text', text: message })
@@ -793,7 +809,7 @@ export default {
             ...trace, { label: '业务数据回答', detail: '使用 MES 已有查询规则', elapsedMs: Date.now() - started }
           ])
         }
-        if (replies.length && !['rag', 'toolAnswer'].includes(replies[replies.length - 1].type)) {
+        if (!personalQuery && replies.length && !['rag', 'toolAnswer'].includes(replies[replies.length - 1].type)) {
           const facts = replies.map(m => {
             const keys = m.type === 'stock' ? ['itemCode', 'itemName', 'batchCode', 'warehouseName', 'inQty', 'outQty', 'endQty'] : (m.columns || []).map(c => c.prop)
             const rows = m.rows || m.lines || []
@@ -814,7 +830,7 @@ export default {
     },
 
     async requestAnalysis(m) {
-      if (m.analysisBusy || !m.analysisContext) return
+      if (m.type === 'personalKnowledge' || m.analysisBusy || !m.analysisContext) return
       try {
         await this.$confirm(m.type === 'knowledge' ? '将当前问题与已引用的文档片段发送给已配置的外部模型服务。未引用的正文不会发送，请确认内容适合发送。' : '将当前问题及部分回答、表格数据发送给已配置的外部模型服务进行分析。请确认内容适合发送。', '确认发送', { confirmButtonText: '确认发送', cancelButtonText: '取消', type: 'warning' })
       } catch (e) { return }
@@ -834,6 +850,48 @@ export default {
     },
 
     /* ---------- 意图解析（规则引擎；LLM 只做兜底，故意不参与算数） ---------- */
+    async queryPersonalKnowledge(question, mode) {
+      const run = this.chatRun
+      const account = this.knowledgeUserId
+      const { data } = await request({
+        url: '/mes/knowledge/ask',
+        method: 'post',
+        data: { question, mode },
+        timeout: 130000
+      })
+      if (!account || account !== this.knowledgeUserId || run !== this.chatRun) return
+      if (!data || typeof data.answer !== 'string' || !data.answer.trim()) {
+        throw new Error('个人知识库未返回答案')
+      }
+
+      const sources = Array.isArray(data.sources) ? data.sources : []
+      this.push({
+        role: 'bot',
+        type: 'personalKnowledge',
+        text: data.answer,
+        rag: true,
+        mode,
+        graphStatus: data.graphStatus,
+        paths: Array.isArray(data.paths) ? data.paths : [],
+        sources: sources.map((source, index) => ({
+          documentId: 'personal-' + index,
+          number: source.number,
+          sectionIndex: source.chunkNo,
+          title: source.fileName,
+          filename: source.fileName,
+          version: '版本 ' + source.version,
+          sectionLabel: source.location || '片段 ' + source.chunkNo,
+          excerpt: source.text
+        }))
+      })
+    },
+    openPersonalKnowledgePath(paths) {
+      const facts = new Set()
+      paths.forEach(path => path.forEach(step => {
+        if (step.factId) facts.add(step.factId)
+      }))
+      if (facts.size) this.$refs.personalKnowledgeGraph.open(Array.from(facts))
+    },
     async queryKnowledge(question) {
       const knowledgeBase = this.$refs.knowledgeBase
       if (!knowledgeBase) { this.push({ role: 'bot', type: 'text', text: '知识库正在加载，请稍后重试。' }); return }
@@ -1002,6 +1060,8 @@ export default {
     async route(q, receiptFollowUp) {
       if (receiptFollowUp) return this.askReceiptRecords(q, receiptFollowUp)
       if (this.queryMode === 'knowledge') return this.queryKnowledge(q)
+      if (this.queryMode === 'personal_rag') return this.queryPersonalKnowledge(q, 'rag')
+      if (this.queryMode === 'personal_graph') return this.queryPersonalKnowledge(q, 'graph_rag')
       if (this.queryMode === 'graph') return this.queryDepartment(q, true)
       if (this.queryMode === 'rag') return this.queryDepartment(q)
       if (this.queryMode === 'auto' && this.departmentLibrary && !WRITE_QUESTION.test(q)) {
@@ -2284,25 +2344,11 @@ export default {
     flex-direction: column;
     flex: 1;
     min-width: 0;
-    background: linear-gradient(164deg, $mes-primary-bg 0, $mes-primary-soft 235px, $mes-bg 70%);
+    background: var(--mes-canvas);
   }
   &__conversation.is-empty {
     position: relative;
-    isolation: isolate;
     overflow: hidden;
-
-    &::before {
-      content: '';
-      position: absolute;
-      z-index: -1;
-      inset: -10% -10% 12%;
-      pointer-events: none;
-      background: radial-gradient(ellipse 60% 62% at 43% 34%, rgba(#9bbdf0, .68), transparent);
-      opacity: .72;
-      animation: assistant-welcome-drift 4s ease-in-out infinite alternate;
-    }
-
-    &:focus-within::before { animation-play-state: paused; }
   }
   &__toolbar {
     display: flex;
@@ -2341,6 +2387,7 @@ export default {
   &__conversation.is-empty &__body { padding-top: clamp(34px, 12vh, 132px); }
 
   &__welcome {
+    h2 { font-family: var(--mes-display); }
     max-width: var(--assistant-content-width);
     margin: 0 auto;
     padding: 0 10px;
@@ -2379,16 +2426,7 @@ export default {
   &__backdrop { position: absolute; inset: 0; z-index: 7; background: rgba($mes-text, .28); }
 }
 
-@keyframes assistant-welcome-drift {
-  from {
-    opacity: .45;
-    transform: translate3d(-5%, -2%, 0);
-  }
-  to {
-    opacity: .95;
-    transform: translate3d(5%, 6%, 0);
-  }
-}
+
 
 @media (prefers-reduced-motion: reduce) {
   .ai__conversation.is-empty::before { animation: none; }

@@ -1,10 +1,11 @@
 <template>
-  <div :class="classObj" class="app-wrapper" :style="{'--current-color': theme}">
+  <div :class="classObj" class="app-wrapper mes-workspace" :style="{'--current-color': theme}"
+    @keydown.esc="device === 'mobile' && sidebar.opened && handleClickOutside()">
     <div v-if="device==='mobile'&&sidebar.opened" class="drawer-bg" @click="handleClickOutside"/>
     <!-- 可访问性：键盘用户可跳过导航直达主内容（WCAG 2.4.1） -->
     <a class="skip-to-content" href="#main-content" @click.prevent="skipToContent">跳到主内容</a>
-    <rail />
-    <sidebar v-if="!sidebar.hide && !isHomePage" v-show="!isAssistantWorkspace" class="sidebar-container" />
+    <rail v-show="device !== 'mobile' || sidebar.opened" />
+    <sidebar v-if="!sidebar.hide && !isHomePage" v-show="!isAssistantWorkspace && (device !== 'mobile' || sidebar.opened)" class="sidebar-container" />
     <div class="fixed-header">
       <navbar />
     </div>
@@ -100,7 +101,10 @@ export default {
       if (el) el.focus()
     },
     handleClickOutside() {
-      this.$store.dispatch('app/closeSideBar', { withoutAnimation: false })
+      this.$store.dispatch('app/closeSideBar', { withoutAnimation: false }).then(() => {
+        const toggle = this.$el.querySelector('#hamburger-container')
+        if (toggle) toggle.focus()
+      })
     }
   }
 }

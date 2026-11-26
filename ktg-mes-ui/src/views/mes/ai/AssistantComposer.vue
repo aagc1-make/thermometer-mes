@@ -38,6 +38,8 @@ const modes = [
   { key: 'rag', label: '仅文档 RAG', icon: 'el-icon-document', description: '检索部门资料并附上原文引用' },
   { key: 'graph', label: '图谱 GraphRAG', icon: 'el-icon-share', description: '查询实体关系和文档依据' },
   { key: 'business', label: '数据问答', icon: 'el-icon-data-analysis', description: '查询库存、工单、质检等实时数据' },
+  { key: 'personal_rag', label: '个人库 RAG', icon: 'el-icon-lock', description: '检索当前账号的私有文档', divided: true },
+  { key: 'personal_graph', label: '个人库 GraphRAG', icon: 'el-icon-share', description: '检索当前账号的私有图谱' },
   { key: 'knowledge', label: '浏览器资料', icon: 'el-icon-monitor', description: '查询当前浏览器已启用的文档', divided: true }
 ]
 
@@ -60,7 +62,8 @@ export default {
     submitLabel() { return this.selected ? '发送' : '请先选择查询模式' },
     placeholder() {
       return { rag: '输入与本部门文档有关的问题…', business: '问库存、工单进度或检验数据…',
-        graph: '输入想了解的实体关系…', knowledge: '输入与浏览器资料有关的问题…' }[this.mode] || '有什么需要查的？'
+        graph: '输入想了解的实体关系…', personal_rag: '提问当前账号的私有文档…',
+        personal_graph: '提问当前账号的私有图谱…', knowledge: '输入与浏览器资料有关的问题…' }[this.mode] || '有什么需要查的？'
     }
   },
   methods: {

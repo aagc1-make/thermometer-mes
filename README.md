@@ -73,6 +73,7 @@ mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -p j2eedb -e "so
 
 | 模块 | 初始化或增量脚本（`sql/`） |
 | --- | --- |
+| 个人知识库（可保留已有账号文档） | `mes_knowledge_base.sql` |
 | 部门知识库、图谱与问答评测 | `patch_20261114_ai_kb_schema.sql` → `patch_20261119_ai_kb_menu.sql` → `patch_20261119_ai_graph_menu.sql` → `patch_20261120_ai_evaluation_menu.sql` |
 | 人脸录入与管理 | `face_login.sql` → `patch_20261121_face_hardening.sql` → `patch_20261121_face_login_policy.sql` |
 
@@ -129,6 +130,14 @@ npm run dev
 - **文档与图谱问答**按部门知识库授权检索，回答可查看引用和关系依据。管理员可在知识库管理中导入资料、管理文档版本和构建图谱。
 - **模型和检索服务**按需配置。Ollama 用于本地生成和嵌入，Qdrant 用于向量检索，Neo4j 用于图谱。外部模型由现有授权设置控制。
 - **演示数据**提供检验规范、工艺说明和物料资料，可导入测试部门库。准备方法见 [演示知识库](docs/demo-kb/README.md)，操作顺序见 [智能助手演示脚本](docs/智能助手演示脚本.md)。
+
+### 同一助手中的不同资料范围
+
+- **仅文档 RAG / 图谱 GraphRAG**查询部门知识库，沿用部门权限、Dify 编排和评测。
+- **个人库 RAG / 个人库 GraphRAG**查询当前账号的私有文档。选中其中一种模式后，可管理个人文档、追加版本、重建图谱或查看原文片段。
+- **浏览器资料**继续查询保存在当前浏览器中的资料。
+
+已有个人库使用原来的 `mes_kb_document`、`mes_kb_version` 和文档目录，继续使用原数据库、相同账号、原 Qdrant 集合 `mes_knowledge` 与原 Neo4j 数据库即可访问。部署整合版时用 `--mes.knowledge.storage-directory=/原项目/runtime/mes-knowledge` 指向已有原文目录，或创建独立目录用于演示。个人库使用本机 Ollama（11434，`bge-m3` 和 `qwen2.5:3b`）、Qdrant（6333）和通过 `MES_NEO4J_URL`、`MES_NEO4J_DATABASE`、`MES_NEO4J_USER`、`MES_NEO4J_PASSWORD` 配置的 Neo4j。部门库继续使用上文的配置和独立索引。两种资料范围各自管理原文件和权限。
 
 ## Dify 工作流编排
 
