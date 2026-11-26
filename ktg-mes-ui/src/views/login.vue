@@ -1,256 +1,116 @@
 <template>
-  <div class="login-root" :class="{ 'theme-green': loginTheme === 'green' }">
-    <!-- Theme Switcher (top-right corner) -->
-    <div class="fixed top-6 right-6 z-50 flex items-center gap-2">
-      <div id="theme-switcher-mount" class="flex items-center gap-1"><button type="button" class="theme-switcher-btn" aria-label="切换主题" title="切换主题" @click="loginTheme = loginTheme === 'light' ? 'green' : 'light'"><span class="material-symbols-outlined text-xl">{{ loginTheme === 'light' ? 'light_mode' : 'eco' }}</span></button></div>
-    </div>
-
-    <!-- Left Part — decorative showcase -->
-    <div class="leftPart">
-      <!-- 图片轮播 -->
-      <div v-if="isDrilling" class="imgDiv">
-        <img id="drillIntroImg" :src="introImages[slideIndex]" alt="红外测温枪智能制造宣传图">
+  <div class="entry" :class="{ 'entry--dark': loginTheme === 'dark' }">
+    <header class="entry__top">
+      <div class="entry__brand">
+        <span class="entry__mark"><i class="el-icon-cpu" aria-hidden="true" /></span>
+        <span>温衡智造 <small>MES</small></span>
       </div>
-      <div v-else class="imgDiv">
-        <img id="introImg" :src="introImages[slideIndex]" alt="宣传图">
-      </div>
-    </div>
+      <button type="button" class="entry__theme" :aria-pressed="loginTheme === 'dark'"
+        @click="loginTheme = loginTheme === 'light' ? 'dark' : 'light'">
+        <i :class="loginTheme === 'light' ? 'el-icon-moon' : 'el-icon-sunny'" aria-hidden="true" />
+        {{ loginTheme === 'light' ? '深色模式' : '浅色模式' }}
+      </button>
+    </header>
 
-    <!-- 右侧登录区域 -->
-    <div class="login-center-wrapper">
-      <div class="login-card anim-fade-right">
-        <div class="space-y-5">
-          <!-- Logo -->
-          <div class="flex justify-center mb-4">
-            <img :src="logo" alt="温衡智造" class="w-[90px] h-[90px]">
-          </div>
-          <h2 class="text-center text-4xl font-extrabold leading-tight tracking-tight text-on-surface dingtalk-font">
-            {{ business.brand }}<br>
-            <span style="color:var(--color-primary);-webkit-background-clip:text;background-clip:text;">红外测温枪智能制造平台</span>
-          </h2>
-          <p class="text-on-surface-variant text-base leading-relaxed font-light text-center">
-            贯通物料、生产、质量与设备管理，让红外测温枪制造过程清晰可控、全程可追溯。
-          </p>
+    <figure class="entry__showcase">
+      <div class="entry__photo" role="img" aria-label="质检人员在工作台上检查红外测温枪"></div>
+      <figcaption>红外测温枪质检场景示意</figcaption>
+    </figure>
+
+    <main class="entry__access">
+      <div class="entry__card">
+        <h1>登录生产工作台</h1>
+        <p class="entry__intro">登录后可查看工单、生产进度和质检记录。</p>
+
+        <div class="entry__modes" role="group" aria-label="登录方式">
+          <button v-for="mode in loginModes" :key="mode.id" type="button"
+            :aria-pressed="loginTab === mode.id" :disabled="loading" @click="loginTab = mode.id">
+            <i :class="mode.icon" aria-hidden="true" />{{ mode.label }}
+          </button>
         </div>
 
-        <!-- 登录模式 Tab -->
-        <div class="mb-6 anim-fade-up anim-delay-1">
-          <div class="mt-4 flex items-center justify-center gap-0">
-            <div class="login-tab-line login-tab-line-left"></div>
-            <button class="login-tab-btn" :class="{ active: loginTab === 'password' }" @click="loginTab = 'password'" data-tab="password" type="button">密码登录</button>
-            <div class="login-tab-divider"></div>
-            <button class="login-tab-btn" :class="{ active: loginTab === 'sms' }" @click="loginTab = 'sms'" data-tab="sms" type="button">验证码登录</button>
-            <div class="login-tab-divider"></div>
-            <button class="login-tab-btn" :class="{ active: loginTab === 'face' }" @click="loginTab = 'face'" data-tab="face" type="button">人脸登录</button>
-            <div class="login-tab-line login-tab-line-right"></div>
+        <form v-if="loginTab === 'password'" id="login-form-password" class="entry__form" @submit.prevent="handleLogin">
+          <div class="entry__field">
+            <label for="login-username">账号</label>
+            <input id="login-username" v-model="loginForm.username" autocomplete="username"
+              placeholder="请输入账号" aria-describedby="login-error-password">
           </div>
-        </div>
-
-        <!-- 密码登录表单 -->
-        <form class="space-y-4" id="login-form-password" v-show="loginTab === 'password'" @submit.prevent="handleLogin">
-          <div class="space-y-1 form-field anim-fade-up anim-delay-2">
-            <label class="font-label text-[0.6875rem] uppercase tracking-widest text-primary/80 ml-1 font-semibold">用户名 / 识别码</label>
-            <div class="relative group">
-              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-all duration-300 text-xl">account_circle</span>
-              <input
-                id="login-username" v-model="loginForm.username" aria-label="用户名 / 识别码"
-                class="w-full bg-surface-container-lowest border border-outline-variant/60 focus:ring-primary/50 focus:border-primary/50 input-border py-3.5 pl-12 pr-4 text-on-surface placeholder:text-on-surface-variant/40 transition-all duration-300 login-input"
-                placeholder="请输入登录账号"
-                type="text"
-                autocomplete="username"
-              >
-              <div class="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300">
-                <span class="material-symbols-outlined text-primary text-sm">edit</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="space-y-1 form-field anim-fade-up anim-delay-3">
-            <label class="font-label text-[0.6875rem] text-primary/80 ml-1 font-semibold">密码</label>
-            <div class="relative group">
-              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-all duration-300 text-xl">key</span>
-              <input
-                id="login-password" v-model="loginForm.password" :type="showPassword ? 'text' : 'password'" aria-label="安全密钥 / 密码"
-                class="w-full bg-surface-container-lowest border border-outline-variant/60 ring-1 ring-transparent focus:ring-primary/50 focus:border-primary/50 input-border py-3.5 pl-12 pr-12 text-on-surface placeholder:text-on-surface-variant/40 transition-all duration-300 login-input"
-                placeholder="请输入密码"
-                autocomplete="current-password"
-              >
-              <button type="button" id="toggle-password" @click="showPassword = !showPassword" :aria-label="showPassword ? '隐藏密码' : '显示密码'" class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors duration-200">
-                <span class="material-symbols-outlined text-xl" id="eye-icon">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+          <div class="entry__field">
+            <label for="login-password">密码</label>
+            <div class="entry__password">
+              <input id="login-password" v-model="loginForm.password" :type="showPassword ? 'text' : 'password'"
+                autocomplete="current-password" placeholder="请输入密码" aria-describedby="login-error-password">
+              <button id="toggle-password" type="button" @click="showPassword = !showPassword">
+                {{ showPassword ? '隐藏' : '显示' }}<span class="entry__sr">密码</span>
               </button>
             </div>
           </div>
-
-          <div class="flex items-center justify-between py-0.5 anim-fade-up anim-delay-4">
-            <label class="flex items-center space-x-2.5 cursor-pointer group">
-              <input class="rounded border-outline-variant/40 text-primary focus:ring-2 focus:ring-primary/40 focus:ring-offset-0 transition-all duration-200 w-4 h-4 accent-[var(--color-primary)]" type="checkbox" id="remember-me" v-model="loginForm.rememberMe">
-              <span class="text-xs text-on-surface-variant group-hover:text-on-surface transition-colors duration-200">保持登录状态</span>
-            </label>
-            <a class="text-xs text-primary/80 hover:text-primary transition-all duration-200 underline-offset-4 hover:underline" href="#" @click.prevent="forgotPassword">忘记密码？</a>
+          <div class="entry__options">
+            <label for="remember-me"><input id="remember-me" v-model="loginForm.rememberMe" type="checkbox"> 记住账号和密码</label>
+            <button type="button" class="entry__link" @click="forgotPassword">忘记密码</button>
           </div>
-
-          <button
-            id="login-button-password" :disabled="loading"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2 group btn-press relative overflow-hidden anim-fade-up anim-delay-5"
-            type="submit"
-          >
-            <span class="relative z-10 flex items-center gap-2">
-              <span id="btn-text-password">{{ loading ? '登录中…' : '登录' }}</span>
-              <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform duration-300" style="font-variation-settings:'FILL'1">arrow_forward</span>
-            </span>
-            <span id="btn-spinner-password" class="hidden absolute inset-0 items-center justify-center">
-              <span class="flex gap-1">
-                <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:0ms;"></span>
-                <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:150ms;"></span>
-                <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:300ms;"></span>
-              </span>
-            </span>
+          <p id="login-error-password" class="entry__error" aria-live="polite">{{ loginError }}</p>
+          <button id="login-button-password" type="submit" class="entry__submit" :disabled="loading">
+            {{ loading ? '登录中…' : '登录' }} <i class="el-icon-right" aria-hidden="true" />
           </button>
-
-          <p class="text-sm text-error mt-0.5 min-h-5 text-center" id="login-error-password" aria-live="polite">{{ loginError }}</p>
         </form>
 
-        <!-- 验证码登录表单 -->
-        <form class="space-y-4" id="login-form-sms" v-show="loginTab === 'sms'" @submit.prevent="smsUnavailable">
-          <div class="space-y-1 form-field anim-fade-up anim-delay-2">
-            <label class="font-label text-[0.6875rem] uppercase tracking-widest text-primary/80 ml-1 font-semibold">手机号码</label>
-            <div class="relative group">
-              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-all duration-300 text-xl">smartphone</span>
-              <input
-                id="login-phone"
-                class="w-full bg-surface-container-lowest border border-outline-variant/60 ring-1 ring-transparent focus:ring-primary/50 focus:border-primary/50 input-border py-3.5 pl-12 pr-4 text-on-surface placeholder:text-on-surface-variant/40 transition-all duration-300 login-input"
-                placeholder="请输入手机号"
-                type="tel"
-                maxlength="11"
-                autocomplete="tel"
-              >
-            </div>
+        <form v-else-if="loginTab === 'face'" id="login-form-face" class="entry__form" @submit.prevent="startFaceLogin">
+          <div class="entry__field">
+            <label for="login-face-username">账号</label>
+            <input id="login-face-username" v-model="loginForm.username" autocomplete="username"
+              placeholder="请输入已录入人脸的账号" aria-describedby="face-login-hint login-error-face">
           </div>
-
-          <div class="space-y-1 form-field anim-fade-up anim-delay-3">
-            <label class="font-label text-[0.6875rem] uppercase tracking-widest text-primary/80 ml-1 font-semibold">短信验证码</label>
-            <div class="relative group">
-              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-all duration-300 text-xl">mark_email_unread</span>
-              <input
-                id="login-sms-code"
-                class="w-full bg-surface-container-lowest border border-outline-variant/60 ring-1 ring-transparent focus:ring-primary/50 focus:border-primary/50 input-border py-3.5 pl-12 pr-28 text-on-surface placeholder:text-on-surface-variant/40 transition-all duration-300 login-input"
-                placeholder="请输入验证码"
-                type="text"
-                maxlength="8"
-                autocomplete="one-time-code"
-              >
-              <button type="button" id="send-code-btn" @click="smsUnavailable" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold border border-blue-600 hover:bg-blue-700 hover:border-blue-700 transition-all duration-200">
-                获取验证码
-              </button>
-            </div>
-          </div>
-
-          <button
-            id="login-button-sms"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2 group btn-press relative overflow-hidden anim-fade-up anim-delay-5"
-            type="submit"
-          >
-            <span class="relative z-10 flex items-center gap-2">
-              <span id="btn-text-sms">登录</span>
-              <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform duration-300" style="font-variation-settings:'FILL'1">arrow_forward</span>
-            </span>
-            <span id="btn-spinner-sms" class="hidden absolute inset-0 items-center justify-center">
-              <span class="flex gap-1">
-                <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:0ms;"></span>
-                <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:150ms;"></span>
-                <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:300ms;"></span>
-              </span>
-            </span>
+          <p id="face-login-hint" class="entry__notice">首次使用，请先用密码登录并在个人中心录入人脸。系统仅保存特征向量。</p>
+          <p id="login-error-face" class="entry__error" aria-live="polite">{{ faceError }}</p>
+          <button id="login-button-face" type="submit" class="entry__submit" :disabled="loading">
+            <i class="el-icon-camera" aria-hidden="true" /> {{ loading ? '正在验证…' : '开始人脸识别' }}
           </button>
-
-          <p class="text-sm text-error mt-0.5 min-h-5 text-center" id="login-error-sms"></p>
         </form>
 
-        <!-- 人脸登录表单 -->
-        <form class="space-y-4" id="login-form-face" v-show="loginTab === 'face'" @submit.prevent="startFaceLogin">
-          <div class="space-y-1 form-field anim-fade-up anim-delay-2">
-            <label class="font-label text-[0.6875rem] uppercase tracking-widest text-primary/80 ml-1 font-semibold">用户账号</label>
-            <div class="relative group">
-              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-all duration-300 text-xl">account_circle</span>
-              <input
-                id="login-face-username" v-model="loginForm.username" aria-label="用户账号"
-                class="w-full bg-surface-container-lowest border border-outline-variant/60 focus:ring-primary/50 focus:border-primary/50 input-border py-3.5 pl-12 pr-4 text-on-surface placeholder:text-on-surface-variant/40 transition-all duration-300 login-input"
-                placeholder="请输入登录账号"
-                type="text"
-                autocomplete="username"
-              >
-            </div>
-          </div>
-
-          <div style="font-size:12px;line-height:1.7;color:#64748b;background:rgba(37,99,235,.06);border-radius:8px;padding:10px 12px">
-            首次使用请先用密码登录，在「个人中心 → 人脸登录」录入。
-          </div>
-
-          <button
-            id="login-button-face" :disabled="loading"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2 group btn-press relative overflow-hidden anim-fade-up anim-delay-5"
-            type="submit"
-          >
-            <span class="relative z-10 flex items-center gap-2">
-              <i class="el-icon-camera" style="font-size:18px"></i>
-              <span>{{ loading ? '正在验证…' : '开始人脸识别' }}</span>
-            </span>
-          </button>
-
-          <p class="text-sm text-error mt-0.5 min-h-5 text-center" id="login-error-face" aria-live="polite">{{ faceError }}</p>
-        </form>
-
-        <!-- 第三方认证 & 注册链接 -->
-        <div class="mt-6 pt-5 border-t border-outline-variant/30 flex flex-col items-center space-y-4 anim-fade-up anim-delay-6">
-          <div class="flex items-center space-x-3">
-            <button class="w-10 h-10 rounded-xl border border-outline-variant/40 flex items-center justify-center hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-all duration-300 group" title="人脸登录" type="button" @click="loginTab = 'face'">
-              <i class="el-icon-camera text-lg group-hover:scale-110 transition-transform"></i>
-            </button>
-            <button class="w-10 h-10 rounded-xl border border-outline-variant/40 flex items-center justify-center hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-all duration-300 group" title="扫码登录" type="button" @click="alternativeLogin">
-              <span class="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">qr_code_scanner</span>
-            </button>
-            <button class="w-10 h-10 rounded-xl border border-outline-variant/40 flex items-center justify-center hover:bg-tertiary/10 hover:border-tertiary/40 hover:text-tertiary transition-all duration-300 group" title="安全问题" type="button" @click="openLoginHelp">
-              <span class="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">quiz</span>
-            </button>
-          </div>
-          <div class="w-full flex justify-center gap-4 flex-wrap">
-          <p class="text-sm text-on-surface-variant">
-              账户未注册？<a class="text-blue-600 font-bold hover:text-blue-700 transition-colors duration-200 underline-offset-4 hover:underline cursor-pointer" @click="goToRegister">立即注册</a>
-            </p>
-            <a class="text-sm text-primary font-bold hover:text-tertiary transition-colors duration-200 underline-offset-4 hover:underline cursor-pointer" href="#" @click.prevent="productVisible = true">
-              了解产品
-            </a>
-          </div>
+        <div v-else id="login-form-sms" class="entry__form">
+          <p class="entry__notice">短信验证码登录暂未开通，请使用密码或人脸登录。</p>
+          <button type="button" class="entry__submit" @click="loginTab = 'password'">返回密码登录</button>
         </div>
 
-        <div class="mt-5 text-center">
-          <a class="mes-font-credit" href="/fonts/oppo/LICENSE.txt" target="_blank" rel="noopener">按钮字体：OPPO Sans 4.0</a>
+        <div class="entry__support">
+          <button type="button" class="entry__link" @click="openLoginHelp">登录帮助</button>
+          <button type="button" class="entry__link" @click="goToRegister">开通账号</button>
+          <button type="button" class="entry__link" @click="productVisible = true">了解产品</button>
         </div>
       </div>
-    </div>
+    </main>
 
-    <el-dialog title="登录验证" :visible.sync="captchaVisible" width="380px" :close-on-click-modal="false" class="login-verification">
-      <form @submit.prevent="handleLogin">
-        <p class="verification-hint">请输入图形验证码完成登录</p>
-        <div class="verification-row">
-          <input ref="captchaInput" v-model="loginForm.code" class="login-input" aria-label="图形验证码" autocomplete="off" placeholder="请输入验证码">
-          <button type="button" class="verification-image" aria-label="刷新验证码" @click="getCode"><img v-if="codeUrl" :src="codeUrl" alt="验证码"><span v-else>刷新验证码</span></button>
+    <el-dialog title="登录验证" :visible.sync="captchaVisible" width="min(400px, calc(100vw - 32px))"
+      :close-on-click-modal="false" custom-class="entry-dialog" @opened="focusCaptchaInput">
+      <form class="entry__form" @submit.prevent="handleLogin">
+        <div class="entry__field">
+          <label for="login-captcha">请输入图形验证码</label>
+          <div class="entry__verification">
+            <input id="login-captcha" ref="captchaInput" v-model="loginForm.code" autocomplete="off"
+              aria-describedby="login-captcha-error" placeholder="验证码">
+            <button type="button" class="entry__captcha" aria-label="刷新验证码" @click="getCode">
+              <img v-if="codeUrl" :src="codeUrl" alt="图形验证码"><span v-else>刷新验证码</span>
+            </button>
+          </div>
         </div>
-        <p class="verification-error" role="alert">{{ captchaError }}</p>
-        <button type="submit" class="verification-submit mes-button mes-button--primary" :disabled="loading || !captchaReady">{{ loading ? '登录中…' : '验证并登录' }}</button>
+        <p id="login-captcha-error" class="entry__error" role="alert">{{ captchaError }}</p>
+        <button type="submit" class="entry__submit" :disabled="loading || !captchaReady">{{ loading ? '登录中…' : '验证并登录' }}</button>
       </form>
     </el-dialog>
-    <el-dialog title="登录帮助" :visible.sync="helpVisible" width="420px" class="login-verification">
-      <p class="verification-hint">如需重置密码，请联系系统管理员。</p>
-      <label class="printer-label">打印机客户端（可选）</label>
-      <el-select v-model="clientId" clearable @change="clientChanged = true" placeholder="请选择打印机客户端" style="width:100%"><el-option v-for="client in clientList" :key="client.clientId" :label="client.clientName" :value="client.clientId" /></el-select>
+    <el-dialog title="登录帮助" :visible.sync="helpVisible" width="min(440px, calc(100vw - 32px))" custom-class="entry-dialog">
+      <p class="entry__intro">如需重置密码，请联系系统管理员。</p>
+      <div class="entry__field">
+        <label for="login-printer">打印机客户端（可选）</label>
+        <el-select id="login-printer" v-model="clientId" clearable @change="clientChanged = true" placeholder="请选择打印机客户端">
+          <el-option v-for="client in clientList" :key="client.clientId" :label="client.clientName" :value="client.clientId" />
+        </el-select>
+      </div>
     </el-dialog>
-    <el-dialog title="温衡智造" :visible.sync="productVisible" width="520px" class="login-verification">
-      <p class="verification-hint">红外测温枪智能制造平台</p>
-      <p>贯通物料、生产、质量与设备管理，让红外测温枪制造过程清晰可控、全程可追溯。</p>
+    <el-dialog title="温衡智造" :visible.sync="productVisible" width="min(480px, calc(100vw - 32px))" custom-class="entry-dialog">
+      <p class="entry__intro">红外测温枪智能制造平台，覆盖主数据、仓储、生产、质量、设备和班组管理。</p>
     </el-dialog>
-
-    <face-capture :visible.sync="faceVisible" title="人脸登录" @captured="handleFaceCaptured" />
+    <face-capture :visible.sync="faceVisible" title="人脸登录" tip="人脸特征只用于本次身份核验，不会上传照片" @captured="handleFaceCaptured" />
   </div>
 </template>
 
@@ -261,15 +121,16 @@ import FaceCapture from '@/components/FaceCapture'
 import Cookies from 'js-cookie'
 import { encrypt, decrypt } from '@/utils/jsencrypt'
 
-const introImages = [1, 2, 3, 4, 5, 6].map(n => require('@/assets/images/p' + n + '.png'))
-
 export default {
   name: 'Login',
   components: { FaceCapture },
   data() {
     return {
-      business: { brand: '温衡智造' }, isDrilling: true,
-      logo: require('@/assets/logo/75638C1949384F71E4BBB1A939C126A3.png'), introImages, slideIndex: 0,
+      loginModes: [
+        { id: 'password', label: '密码', icon: 'el-icon-lock' },
+        { id: 'face', label: '人脸', icon: 'el-icon-camera' },
+        { id: 'sms', label: '短信未开通', icon: 'el-icon-message' }
+      ],
       loginTab: 'password', showPassword: false, loginTheme: 'light',
       loginForm: { username: '', password: '', rememberMe: false, code: '', uuid: '' },
       loading: false, loginError: '', captchaOnOff: true, captchaReady: false,
@@ -283,9 +144,10 @@ export default {
     $route: { immediate: true, handler(route) { this.redirect = route.query && route.query.redirect } }
   },
   created() { this.getCookie(); this.getCode() },
-  mounted() { this.introTimer = setInterval(() => { this.slideIndex = (this.slideIndex + 1) % this.introImages.length }, 4000) },
-  beforeDestroy() { clearInterval(this.introTimer) },
   methods: {
+    focusCaptchaInput() {
+      if (this.$refs.captchaInput) this.$refs.captchaInput.focus()
+    },
     getCookie() {
       const username = Cookies.get('username')
       const password = Cookies.get('password')
@@ -315,7 +177,7 @@ export default {
       if (!this.captchaReady || (this.captchaOnOff && (!this.captchaVisible || !this.loginForm.code.trim()))) {
         if (this.captchaVisible && this.captchaReady) this.captchaError = '请输入验证码'
         this.captchaVisible = true
-        this.$nextTick(() => { if (this.$refs.captchaInput) this.$refs.captchaInput.focus() })
+        this.$nextTick(this.focusCaptchaInput)
         return
       }
       this.loading = true
@@ -341,7 +203,6 @@ export default {
         if (this.captchaOnOff) { await this.getCode(); this.captchaError = this.loginError }
       } finally { this.loading = false }
     },
-    smsUnavailable() { this.$message.info('短信登录暂未开通，请使用密码登录。') },
     startFaceLogin() {
       this.faceError = ''
       if (this.loading) return
@@ -368,7 +229,6 @@ export default {
         this.loading = false
       }
     },
-    alternativeLogin() { this.$message.info('该认证方式暂未开通，请使用密码登录。') },
     forgotPassword() { this.$alert('请联系系统管理员核验身份并重置密码。', '忘记密钥', { confirmButtonText: '知道了' }) },
     goToRegister() {
       if (this.register) this.$router.push('/register')
@@ -388,4 +248,4 @@ export default {
 
 </script>
 
-<style scoped src="@/assets/styles/user-login-reference.css"></style>
+<style lang="scss" scoped src="@/assets/styles/mes-entry.scss"></style>

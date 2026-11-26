@@ -3,12 +3,18 @@
     <header class="home-heading">
       <p class="home-heading__system">红外测温枪 MES 系统</p>
       <h1>生产工作台</h1>
+      <div class="home-heading__links">
+        <a href="#home-workorder-pipeline" @click.prevent="focusSection('pipeline')">查看工单流水线</a>
+        <a href="#home-confirmed-workorders" @click.prevent="focusSection('confirmed')">查看工单列表</a>
+      </div>
     </header>
 
     <panel-group />
-    <workorder-pipeline />
+    <section id="home-workorder-pipeline" ref="pipeline" tabindex="-1" aria-label="工单流水线">
+      <workorder-pipeline />
+    </section>
 
-    <section class="home-section" aria-labelledby="home-production-title">
+    <section id="home-confirmed-workorders" ref="confirmed" class="home-section" tabindex="-1" aria-labelledby="home-production-title">
       <el-card class="production-card" shadow="never" :body-style="{ padding: '0' }">
         <div slot="header" class="production-card__header">
           <div>
@@ -139,6 +145,11 @@ export default {
     this.getCharts()
   },
   methods: {
+    focusSection(key) {
+      const section = this.$refs[key]
+      section.focus({ preventScroll: true })
+      section.scrollIntoView({ block: 'start' })
+    },
     getList() {
       this.loading = true
       this.loadError = false
@@ -370,4 +381,8 @@ export default {
     padding: 12px;
   }
 }
+
+.home-heading__links { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; }
+.home-heading__links a { color: var(--mes-accent); text-decoration: underline; }
+#home-workorder-pipeline, #home-confirmed-workorders { scroll-margin-top: calc(var(--mes-header-height) + 50px); }
 </style>

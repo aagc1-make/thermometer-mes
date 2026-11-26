@@ -1,10 +1,10 @@
 <template>
   <div class="navbar">
-    <hamburger v-if="device==='mobile'" id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container" role="button" tabindex="0" aria-label="菜单" :aria-expanded="sidebar.opened" @keyup.enter.native="toggleSideBar" @keyup.space.native.prevent="toggleSideBar" @toggleClick="toggleSideBar" />
+    <hamburger v-if="device==='mobile'" id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
 
     <brand v-if="$store.state.settings.sidebarLogo" />
     <div v-if="!topNav" class="nav-divider" aria-hidden="true"></div>
-    <breadcrumb id="breadcrumb-container" class="breadcrumb-container" v-if="!topNav"/>
+    <breadcrumb id="breadcrumb-container" class="breadcrumb-container" v-if="!topNav && device !== 'mobile'"/>
     <top-nav id="topmenu-container" class="topmenu-container" v-if="topNav"/>
 
     <div class="right-menu">
@@ -21,10 +21,10 @@
       </template>
 
       <el-dropdown class="avatar-container" trigger="click">
-        <div class="avatar-wrapper" role="button" tabindex="0" aria-label="用户菜单" aria-haspopup="true">
+        <button type="button" class="avatar-wrapper" aria-label="用户菜单" aria-haspopup="true">
           <img :src="avatar" class="user-avatar" alt="用户头像" width="40" height="40" loading="lazy" decoding="async" @error="handleAvatarError">
           <i class="el-icon-caret-bottom" aria-hidden="true" />
-        </div>
+        </button>
         <el-dropdown-menu slot="dropdown">
           <router-link to="/user/profile">
             <el-dropdown-item>个人中心</el-dropdown-item>

@@ -13,17 +13,24 @@ function answerRules() {
   return box.exports
 }
 
-function chat(result) {
+function chat(result, personalRequest) {
   let requests = 0
   const source = fs.readFileSync('ktg-mes-ui/src/views/mes/ai/index.vue', 'utf8')
   const script = source.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/^import .*$/mg, '').replace('export default', 'component =')
   const box = { ...answerRules(), component: null, console, Date, setTimeout: () => 1, clearTimeout() {}, sessionStorage: { setItem() {}, getItem() {}, removeItem() {} },
     askBusinessQuestion: async () => ({ data: { mode: 'legacy' } }),
-    request: async () => { requests++; throw new Error('知识问答不能请求业务或模型接口') } }
+    request: async options => {
+      requests++
+      if (personalRequest) return personalRequest(options)
+      throw new Error('知识问答不能请求业务或模型接口')
+    } }
   vm.createContext(box); vm.runInContext(script, box)
   const ctx = { ...box.component.data(), ...box.component.methods, queryMode: 'knowledge',
     $refs: { knowledgeBase: { search: async () => result } }, $store: { state: { user: { id: 7 } } },
     $auth: { hasPermi: () => true }, $set: (obj, key, value) => { obj[key] = value } }
+  for (const key of ['personalMode', 'knowledgeUserId']) {
+    Object.defineProperty(ctx, key, { get: () => box.component.computed[key].call(ctx) })
+  }
   ctx.$nextTick = callback => { if (callback) callback.call(ctx) }
   return { ctx, requests: () => requests }
 }
@@ -67,4 +74,37 @@ test('知识回答的待分析上下文包含所引原文，但发送问题不�
   assert.equal(ctx.messages.at(-1).type, 'knowledge')
   assert.ok(JSON.stringify(ctx.messages.at(-1).analysisContext.facts).includes('检查传感器引脚与外观。'))
   assert.equal(requests(), 0)
+})
+
+
+test('个人库 GraphRAG 仅访问个人接口，保留引用和路径，并禁用外部分析', async () => {
+  const question = '红外传感器需要做哪些检验？'
+  const { ctx, requests } = chat(null, async options => {
+    assert.equal(options.url, '/mes/knowledge/ask')
+    assert.equal(options.data.question, question)
+    assert.equal(options.data.mode, 'graph_rag')
+    return { data: { answer: '需要检验响应时间。[1]', graphStatus: 'matched',
+      sources: [{ number: 1, fileName: 'iqc.md', version: 2, chunkNo: 1, text: '来料时检验响应时间。' }],
+      paths: [[{ factId: 'one', sourceNumber: 1 }]] } }
+  })
+  ctx.queryMode = 'personal_graph'
+  await ctx.send(question)
+  const reply = ctx.messages.at(-1)
+  assert.equal(reply.type, 'personalKnowledge')
+  assert.equal(reply.sources[0].excerpt, '来料时检验响应时间。')
+  assert.equal(reply.paths[0][0].factId, 'one')
+  assert.equal(reply.analysisContext, undefined)
+  await ctx.requestAnalysis({ ...reply, analysisContext: { question, facts: [] } })
+  assert.equal(requests(), 1)
+})
+
+test('请求期间切换账号不会接收上一账号的知识片段', async () => {
+  let resolveRequest
+  const { ctx } = chat(null, () => new Promise(resolve => { resolveRequest = resolve }))
+  ctx.queryMode = 'personal_rag'
+  const pending = ctx.route('什么是私有规范？')
+  ctx.$store.state.user.id = 8
+  resolveRequest({ data: { answer: '上一账号的专用检验规范' } })
+  await pending
+  assert.equal(ctx.messages.some(message => message.text.includes('上一账号')), false)
 })

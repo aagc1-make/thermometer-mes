@@ -1,13 +1,14 @@
 <template>
-  <div class="register">
-    <el-form ref="registerForm" :model="registerForm" :rules="registerRules" class="register-form">
-      <h3 class="title">红外测温枪MES系统</h3>
-      <el-form-item prop="username">
+  <main class="register">
+    <el-form ref="registerForm" :model="registerForm" :rules="registerRules" class="register-form" label-position="top">
+      <h1>开通 MES 账号</h1>
+      <p class="register-intro">填写账号和密码，注册后可返回登录页。</p>
+      <el-form-item label="账号" prop="username">
         <el-input v-model="registerForm.username" type="text" auto-complete="off" placeholder="账号">
           <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
         </el-input>
       </el-form-item>
-      <el-form-item prop="password">
+      <el-form-item label="密码" prop="password">
         <el-input
           v-model="registerForm.password"
           type="password"
@@ -18,7 +19,7 @@
           <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
         </el-input>
       </el-form-item>
-      <el-form-item prop="confirmPassword">
+      <el-form-item label="确认密码" prop="confirmPassword">
         <el-input
           v-model="registerForm.confirmPassword"
           type="password"
@@ -29,7 +30,7 @@
           <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
         </el-input>
       </el-form-item>
-      <el-form-item prop="code" v-if="captchaOnOff">
+      <el-form-item label="验证码" prop="code" v-if="captchaOnOff">
         <el-input
           v-model="registerForm.code"
           auto-complete="off"
@@ -39,9 +40,9 @@
         >
           <svg-icon slot="prefix" icon-class="validCode" class="el-input__icon input-icon" />
         </el-input>
-        <div class="register-code">
-          <img :src="codeUrl" @click="getCode" class="register-code-img"/>
-        </div>
+        <button type="button" class="register-code" aria-label="刷新验证码" @click="getCode">
+          <img :src="codeUrl" alt="图形验证码">
+        </button>
       </el-form-item>
       <el-form-item style="width:100%;">
         <el-button
@@ -51,19 +52,15 @@
           style="width:100%;"
           @click.native.prevent="handleRegister"
         >
-          <span v-if="!loading">注 册</span>
-          <span v-else>注 册 中...</span>
+          <span v-if="!loading">注册</span>
+          <span v-else>注册中…</span>
         </el-button>
-        <div style="float: right;">
+        <div class="register-back">
           <router-link class="link-type" :to="'/login'">使用已有账户登录</router-link>
         </div>
       </el-form-item>
     </el-form>
-    <!--  底部  -->
-    <div class="el-register-footer">
-      <span>Copyright © 2026 红外测温枪MES系统 All Rights Reserved.</span>
-    </div>
-  </div>
+  </main>
 </template>
 
 <script>
@@ -145,68 +142,25 @@ export default {
 };
 </script>
 
-<style rel="stylesheet/scss" lang="scss">
+<style lang="scss" scoped>
 .register {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding: 24px 16px 48px;
-  background: var(--color-rail);
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px 16px;
+  background: var(--mes-canvas);
 }
-.register-form .title {
-  margin: 0px auto 30px auto;
-  text-align: center;
-  color: var(--color-text);
-  font-size: 24px;
-  font-weight: 650;
-  line-height: 1.35;
-}
-
 .register-form {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  background: var(--color-bg);
-  width: 400px;
-  max-width: 100%;
-  padding: 24px 24px 12px;
-  .el-input {
-    height: 38px;
-    input {
-      height: 38px;
-    }
-  }
-  .input-icon {
-    height: 39px;
-    width: 14px;
-    margin-left: 2px;
-  }
+  width: min(100%, 450px);
+  padding: clamp(20px, 5vw, 36px);
+  border: 1px solid var(--mes-line);
+  border-radius: var(--mes-radius);
+  background: var(--mes-surface);
 }
-.register-tip {
-  font-size: 13px;
-  text-align: center;
-  color: var(--color-text-secondary);
-}
-.register-code {
-  width: 33%;
-  height: 38px;
-  float: right;
-  img {
-    cursor: pointer;
-    vertical-align: middle;
-  }
-}
-.el-register-footer {
-  height: 40px;
-  line-height: 40px;
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  text-align: center;
-  color: var(--color-text-secondary);
-  font-size: 12px;
-}
-.register-code-img {
-  height: 38px;
-}
+.register h1 { margin: 0 0 8px; color: var(--mes-ink); font: 650 clamp(30px, 5vw, 43px)/1.2 var(--mes-display); }
+.register-intro { margin: 0 0 16px; color: var(--mes-muted); line-height: 1.6; }
+.register-back { margin-top: 10px; text-align: center; }
+.register-code { float: right; width: 33%; height: 40px; border: 1px solid var(--mes-line); border-radius: 6px; background: var(--mes-subtle); cursor: pointer; }
+.register-code img { width: 100%; max-height: 36px; object-fit: contain; vertical-align: middle; }
 </style>

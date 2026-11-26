@@ -1,0 +1,352 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-25T11:52:55.222Z",
+  "title": "Design System: 温衡智造 MES",
+  "extensions": {
+    "colorMeta": {
+      "clay": {
+        "role": "primary",
+        "displayName": "陶土色",
+        "tonalRamp": [
+          "oklch(15% 0.056 35.7)",
+          "oklch(25% 0.083 35.7)",
+          "oklch(35% 0.110 35.7)",
+          "oklch(47% 0.125 35.7)",
+          "oklch(59% 0.128 35.7)",
+          "oklch(71% 0.100 35.7)",
+          "oklch(83% 0.060 35.7)",
+          "oklch(95% 0.019 35.7)"
+        ]
+      },
+      "clay-hover": {
+        "role": "primary",
+        "displayName": "深陶土",
+        "tonalRamp": [
+          "oklch(15% 0.047 37.4)",
+          "oklch(25% 0.069 37.4)",
+          "oklch(35% 0.092 37.4)",
+          "oklch(47% 0.105 37.4)",
+          "oklch(59% 0.107 37.4)",
+          "oklch(71% 0.083 37.4)",
+          "oklch(83% 0.050 37.4)",
+          "oklch(95% 0.016 37.4)"
+        ]
+      },
+      "clay-tint": {
+        "role": "primary",
+        "displayName": "浅陶底",
+        "tonalRamp": [
+          "oklch(15% 0.010 58.8)",
+          "oklch(25% 0.014 58.8)",
+          "oklch(35% 0.019 58.8)",
+          "oklch(47% 0.022 58.8)",
+          "oklch(59% 0.022 58.8)",
+          "oklch(71% 0.017 58.8)",
+          "oklch(83% 0.010 58.8)",
+          "oklch(95% 0.003 58.8)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "暖纸",
+        "tonalRamp": [
+          "oklch(15% 0.004 91.5)",
+          "oklch(25% 0.005 91.5)",
+          "oklch(35% 0.007 91.5)",
+          "oklch(47% 0.008 91.5)",
+          "oklch(59% 0.008 91.5)",
+          "oklch(71% 0.006 91.5)",
+          "oklch(83% 0.004 91.5)",
+          "oklch(95% 0.001 91.5)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "暖白",
+        "tonalRamp": [
+          "oklch(15% 0.003 88.6)",
+          "oklch(25% 0.005 88.6)",
+          "oklch(35% 0.006 88.6)",
+          "oklch(47% 0.007 88.6)",
+          "oklch(59% 0.007 88.6)",
+          "oklch(71% 0.005 88.6)",
+          "oklch(83% 0.003 88.6)",
+          "oklch(95% 0.001 88.6)"
+        ]
+      },
+      "subtle": {
+        "role": "neutral",
+        "displayName": "浅砂",
+        "tonalRamp": [
+          "oklch(15% 0.005 84.6)",
+          "oklch(25% 0.007 84.6)",
+          "oklch(35% 0.010 84.6)",
+          "oklch(47% 0.011 84.6)",
+          "oklch(59% 0.011 84.6)",
+          "oklch(71% 0.009 84.6)",
+          "oklch(83% 0.005 84.6)",
+          "oklch(95% 0.002 84.6)"
+        ]
+      },
+      "rail": {
+        "role": "neutral",
+        "displayName": "砂色",
+        "tonalRamp": [
+          "oklch(15% 0.008 84.6)",
+          "oklch(25% 0.011 84.6)",
+          "oklch(35% 0.015 84.6)",
+          "oklch(47% 0.017 84.6)",
+          "oklch(59% 0.017 84.6)",
+          "oklch(71% 0.013 84.6)",
+          "oklch(83% 0.008 84.6)",
+          "oklch(95% 0.003 84.6)"
+        ]
+      },
+      "rail-hover": {
+        "role": "neutral",
+        "displayName": "深砂",
+        "tonalRamp": [
+          "oklch(15% 0.010 78.2)",
+          "oklch(25% 0.015 78.2)",
+          "oklch(35% 0.020 78.2)",
+          "oklch(47% 0.022 78.2)",
+          "oklch(59% 0.023 78.2)",
+          "oklch(71% 0.018 78.2)",
+          "oklch(83% 0.011 78.2)",
+          "oklch(95% 0.003 78.2)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "暖灰细线",
+        "tonalRamp": [
+          "oklch(15% 0.008 84.6)",
+          "oklch(25% 0.011 84.6)",
+          "oklch(35% 0.015 84.6)",
+          "oklch(47% 0.017 84.6)",
+          "oklch(59% 0.018 84.6)",
+          "oklch(71% 0.014 84.6)",
+          "oklch(83% 0.008 84.6)",
+          "oklch(95% 0.003 84.6)"
+        ]
+      },
+      "control-line": {
+        "role": "neutral",
+        "displayName": "输入描边",
+        "tonalRamp": [
+          "oklch(15% 0.011 71.6)",
+          "oklch(25% 0.016 71.6)",
+          "oklch(35% 0.022 71.6)",
+          "oklch(47% 0.025 71.6)",
+          "oklch(59% 0.025 71.6)",
+          "oklch(71% 0.020 71.6)",
+          "oklch(83% 0.012 71.6)",
+          "oklch(95% 0.004 71.6)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "墨色",
+        "tonalRamp": [
+          "oklch(15% 0.005 84.6)",
+          "oklch(25% 0.008 84.6)",
+          "oklch(35% 0.010 84.6)",
+          "oklch(47% 0.011 84.6)",
+          "oklch(59% 0.012 84.6)",
+          "oklch(71% 0.009 84.6)",
+          "oklch(83% 0.005 84.6)",
+          "oklch(95% 0.002 84.6)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "灰褐",
+        "tonalRamp": [
+          "oklch(15% 0.009 72.8)",
+          "oklch(25% 0.014 72.8)",
+          "oklch(35% 0.018 72.8)",
+          "oklch(47% 0.020 72.8)",
+          "oklch(59% 0.021 72.8)",
+          "oklch(71% 0.016 72.8)",
+          "oklch(83% 0.010 72.8)",
+          "oklch(95% 0.003 72.8)"
+        ]
+      },
+      "button": {
+        "role": "neutral",
+        "displayName": "深墨",
+        "tonalRamp": [
+          "oklch(15% 0.006 72.3)",
+          "oklch(25% 0.008 72.3)",
+          "oklch(35% 0.011 72.3)",
+          "oklch(47% 0.013 72.3)",
+          "oklch(59% 0.013 72.3)",
+          "oklch(71% 0.010 72.3)",
+          "oklch(83% 0.006 72.3)",
+          "oklch(95% 0.002 72.3)"
+        ]
+      },
+      "button-hover": {
+        "role": "neutral",
+        "displayName": "悬停深褐",
+        "tonalRamp": [
+          "oklch(15% 0.009 67.1)",
+          "oklch(25% 0.014 67.1)",
+          "oklch(35% 0.019 67.1)",
+          "oklch(47% 0.021 67.1)",
+          "oklch(59% 0.022 67.1)",
+          "oklch(71% 0.017 67.1)",
+          "oklch(83% 0.010 67.1)",
+          "oklch(95% 0.003 67.1)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "展示标题",
+        "purpose": "登录和工作台等主要页面标题。"
+      },
+      "title": {
+        "displayName": "区块标题",
+        "purpose": "驾驶舱区块和图表标题。"
+      },
+      "body": {
+        "displayName": "正文",
+        "purpose": "业务数据、说明和常规界面。"
+      },
+      "label": {
+        "displayName": "控件标签",
+        "purpose": "登录字段和关键操作文字。"
+      }
+    },
+    "shadows": [
+      {
+        "name": "field-focus",
+        "value": "0 0 0 2px var(--mes-tint)",
+        "purpose": "业务输入框的浅陶色焦点环。"
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-state",
+        "value": "0.16s",
+        "purpose": "模块导航与登录方式的颜色反馈。"
+      },
+      {
+        "name": "reduced-motion",
+        "value": "none",
+        "purpose": "登录和主要工作区减少动画的用户偏好。"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "module-drawer",
+        "value": "992px"
+      },
+      {
+        "name": "entry-single-column",
+        "value": "820px"
+      },
+      {
+        "name": "cockpit-single-column",
+        "value": "760px"
+      },
+      {
+        "name": "workbench-intro-stack",
+        "value": "620px"
+      },
+      {
+        "name": "assistant-touch-controls",
+        "value": "540px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "主按钮",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "深墨实底指向当前首要操作。",
+      "html": "<button type=\"button\" class=\"ds-primary\">保存工单</button>",
+      "css": ".ds-primary { background: var(--mes-button, #2e2923); color: var(--mes-on-button, #fffdf8); border: 1px solid var(--mes-button, #2e2923); font: 500 14px/1 var(--mes-font, sans-serif); padding: 12px 20px; border-radius: 8px; cursor: pointer; } .ds-primary:hover, .ds-primary:focus { background: var(--mes-button-hover, #4a4036); border-color: var(--mes-button-hover, #4a4036); } .ds-primary:focus-visible { outline: 2px solid var(--mes-accent, #a2462e); outline-offset: 3px; } .ds-primary:disabled { background: var(--mes-tint, #f3e4d9); border-color: var(--mes-line, #ded8cc); color: var(--mes-muted, #62594e); cursor: not-allowed; }"
+    },
+    {
+      "name": "次按钮",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "用于与主要操作并列的辅助操作。",
+      "html": "<button type=\"button\" class=\"ds-secondary\">重置</button>",
+      "css": ".ds-secondary { background: var(--mes-surface, #fffdf8); color: var(--mes-ink, #28251f); border: 1px solid var(--mes-line, #ded8cc); font: 500 14px/1 var(--mes-font, sans-serif); padding: 12px 20px; border-radius: 8px; cursor: pointer; } .ds-secondary:hover, .ds-secondary:focus { border-color: var(--mes-input-line, #918577); background: var(--mes-subtle, #f3efe7); } .ds-secondary:focus-visible { outline: 2px solid var(--mes-accent, #a2462e); outline-offset: 3px; }"
+    },
+    {
+      "name": "文本按钮",
+      "kind": "button",
+      "refersTo": "button-text",
+      "description": "用于查看详情、证据与相关内容。",
+      "html": "<button type=\"button\" class=\"ds-text\">查看详情</button>",
+      "css": ".ds-text { background: transparent; border: 0; color: var(--mes-accent, #a2462e); font: 500 14px/1 var(--mes-font, sans-serif); padding: 12px 0; cursor: pointer; } .ds-text:hover, .ds-text:focus { text-decoration: underline; } .ds-text:focus-visible { outline: 2px solid var(--mes-accent, #a2462e); outline-offset: 3px; }"
+    },
+    {
+      "name": "输入框",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "深暖灰边框标示可编辑范围，聚焦时显示陶土色。",
+      "html": "<label class=\"ds-label\">工单编号<input class=\"ds-input\" placeholder=\"请输入工单编号\"></label>",
+      "css": ".ds-label { display: grid; gap: 7px; max-width: 280px; font: 650 14px/1.4 var(--mes-font, sans-serif); color: var(--mes-ink, #28251f); } .ds-input { min-width: 0; height: 40px; border: 1px solid var(--mes-input-line, #918577); border-radius: 8px; background: var(--mes-surface, #fffdf8); color: var(--mes-ink, #28251f); font: 400 14px var(--mes-font, sans-serif); padding: 0 15px; } .ds-input::placeholder { color: var(--mes-muted, #62594e); opacity: 1; } .ds-input:focus { border-color: var(--mes-accent, #a2462e); box-shadow: 0 0 0 2px var(--mes-tint, #f3e4d9); } .ds-input:focus-visible { outline: 2px solid var(--mes-accent, #a2462e); outline-offset: 3px; }"
+    },
+    {
+      "name": "业务模块导航",
+      "kind": "nav",
+      "refersTo": "module-navigation",
+      "description": "砂色栏中的当前模块以陶土色标识。",
+      "html": "<nav class=\"ds-rail\" aria-label=\"业务模块\"><button type=\"button\" class=\"ds-rail-item\" aria-current=\"page\">生产</button><button type=\"button\" class=\"ds-rail-item\">质量</button></nav>",
+      "css": ".ds-rail { display: grid; gap: 3px; width: 76px; padding: 14px 8px; box-sizing: border-box; background: var(--mes-rail, #ede7db); border-right: 1px solid var(--mes-line, #ded8cc); } .ds-rail-item { min-height: 48px; padding: 7px 2px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #53493e; font: 400 12px var(--mes-font, sans-serif); cursor: pointer; transition: background-color .16s, color .16s; } .ds-rail-item:hover { background: var(--mes-rail-hover, #e7ddce); color: var(--mes-ink, #28251f); } .ds-rail-item[aria-current] { background: var(--mes-rail-hover, #e7ddce); border-color: #dfcbbd; color: var(--mes-accent, #a2462e); } .ds-rail-item:focus-visible { outline: 2px solid var(--mes-accent, #a2462e); outline-offset: 3px; outline-offset: -3px; }"
+    },
+    {
+      "name": "业务状态",
+      "kind": "chip",
+      "refersTo": "status-tag",
+      "description": "保留文字状态，并将颜色用于补充反馈。",
+      "html": "<span class=\"ds-tag ds-success\">检验通过</span> <span class=\"ds-tag ds-warning\">待检验</span>",
+      "css": ".ds-tag { display: inline-block; height: 24px; padding: 0 10px; border-radius: 999px; font: 500 12px/24px var(--mes-font, sans-serif); } .ds-success { background: #e7f8ef; color: #0f7a3d; } .ds-warning { background: #fff4e5; color: #b45309; }"
+    },
+    {
+      "name": "业务内容面",
+      "kind": "card",
+      "refersTo": "business-panel",
+      "description": "细边框包围同类内容，标题与描述使用对应文本层级。",
+      "html": "<section class=\"ds-panel\"><h3 class=\"ds-panel-title\">在制工单</h3><p class=\"ds-panel-body\">查看工单进度和所属工序。</p></section>",
+      "css": ".ds-panel { border: 1px solid var(--mes-line, #ded8cc); border-radius: var(--mes-radius, 12px); background: var(--mes-surface, #fffdf8); padding: var(--mes-gap, 20px); max-width: 360px; } .ds-panel-title { margin: 0; color: var(--mes-ink, #28251f); font: 650 21px/1.3 var(--mes-display, serif); } .ds-panel-body { margin: 8px 0 0; color: var(--mes-muted, #62594e); font: 400 14px/1.5 var(--mes-font, sans-serif); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "暖纸工作台",
+    "overview": "温衡智造的工作区用暖纸底、墨色文字和清楚的细线组织导航、表格与操作。登录和重点页面用中文衬线标题建立阅读顺序，工单和质检数据保持紧凑，方便操作员扫读和比对。\n\n入口的红外测温枪质检照片提供制造场景，工作区把主要空间留给实际数据。深墨按钮指向主操作，陶土色标示链接、焦点和选中状态。",
+    "keyCharacteristics": [
+      "暖白内容面与砂色业务导航",
+      "衬线标题与便于扫读的无衬线控件",
+      "细线分区、有限的阴影与清楚的数值对齐"
+    ],
+    "rules": [
+      {
+        "name": "The Action and Status Rule",
+        "body": "陶土色标记交互状态，业务结果沿用带文字的成功、警告和异常语义配色。",
+        "section": "colors"
+      },
+      {
+        "name": "The Numeric Alignment Rule",
+        "body": "同列数值用等宽数字特性，保留可阅读的状态名称和计量单位。",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do 用深墨实底按钮标出当前主操作。",
+      "Do 在表格、指标和图谱节点中保留能直接读懂的名称、单位和状态。",
+      "Do 在密集业务页面以细线和底色分组，保持键盘焦点清楚可见。"
+    ],
+    "donts": [
+      "Don't 将陶土强调色用作所有业务状态的统一底色。",
+      "Don't 将展示型衬线字号套用到表格、录入字段或菜单项。"
+    ]
+  }
+}

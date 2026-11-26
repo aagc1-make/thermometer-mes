@@ -1,12 +1,9 @@
 <template>
   <div ref="cockpit" class="app-container cockpit" :class="{ 'is-fullscreen': isFullscreen }">
-    <!-- 顶部标题区：沿用模板的居中标题 + 箭头装饰 -->
     <header class="pc-hero">
       <div class="pc-hero__center">
-        <h1 class="pc-hero__title">
-          <span class="pc-hero__text">生产驾驶舱</span>
-        </h1>
-        <p class="pc-hero__sub">工单进度 · 库存水位 · 设备状态 · 产量趋势（每 30 秒自动刷新）</p>
+        <h1 class="pc-hero__title">生产驾驶舱</h1>
+        <p class="pc-hero__sub">工单进度、库存、设备和产量每 30 秒刷新。</p>
       </div>
       <div class="pc-hero__meta">
         <span class="pc-hero__time"><i class="el-icon-time"></i>数据更新时间：{{ updatedAt }}</span>
@@ -26,7 +23,8 @@
 
     <!-- 指标总览：仿模板“数额总览”的斜切标题条 -->
     <div class="pc-sec">
-      <h3 class="pc-sec__title"><span>指标总览</span></h3>
+      <h2 class="pc-sec__title">指标总览</h2>
+      <span class="pc-sec__rule"></span>
     </div>
 
     <div class="pc-kpis">
@@ -87,24 +85,30 @@
     <div class="pc-grid">
       <section class="pc-panel pc-panel--half">
         <header class="pc-panel__head">
-          <h3 class="pc-panel__title"><span>工单进度</span></h3>
+          <h2 class="pc-panel__title">工单进度</h2>
+          <span class="pc-panel__rule"></span>
         </header>
         <div ref="chartWorkorder" class="pc-panel__chart"></div>
       </section>
 
       <section class="pc-panel pc-panel--half">
         <header class="pc-panel__head">
-          <h3 class="pc-panel__title"><span>产量趋势（近 14 天报工合格数）</span></h3>
+          <h2 class="pc-panel__title">产量趋势（近 14 天报工合格数）</h2>
+          <span class="pc-panel__rule"></span>
         </header>
         <div ref="chartTrend" class="pc-panel__chart"></div>
       </section>
 
       <section class="pc-panel pc-panel--wide">
         <header class="pc-panel__head">
-          <h3 class="pc-panel__title"><span>库存水位（按仓库与单位）</span></h3>
+          <h2 class="pc-panel__title">库存水位（按仓库与单位）</h2>
+          <span class="pc-panel__rule"></span>
         </header>
         <div ref="chartStock" class="pc-panel__chart pc-panel__chart--bars"></div>
-        <div class="pc-warn" v-if="stockWarnings.length">
+        <div v-if="stockStatus !== 'ready'" class="pc-tip" role="status">
+          {{ stockStatus === 'loading' ? '正在读取库存记录…' : '库存记录加载失败，请刷新重试。' }}
+        </div>
+        <div v-else-if="stockWarnings.length" class="pc-warn">
           <i class="el-icon-warning-outline"></i>
           <span>结存为 0 的物料：{{ stockWarnings.join('、') }}<span v-if="stockWarnings.length > 8"> 等</span></span>
         </div>
@@ -115,7 +119,8 @@
 
       <section class="pc-panel pc-panel--narrow">
         <header class="pc-panel__head">
-          <h3 class="pc-panel__title"><span>设备状态</span></h3>
+          <h2 class="pc-panel__title">设备状态</h2>
+          <span class="pc-panel__rule"></span>
         </header>
         <div ref="chartMachinery" class="pc-panel__chart"></div>
       </section>
@@ -124,26 +129,30 @@
     <!-- 安全库存预警 -->
     <section class="pc-panel pc-panel--full">
       <header class="pc-panel__head">
-        <h3 class="pc-panel__title"><span>安全库存预警与补货建议</span></h3>
-        <span class="pc-badge pc-badge--warn" v-if="stockAlerts.length">
+        <h2 class="pc-panel__title">安全库存预警与补货建议</h2>
+        <span class="pc-panel__rule"></span>
+        <span v-if="stockAlertStatus !== 'ready'" class="pc-tip" role="status">
+          {{ stockAlertStatus === 'loading' ? '正在检查安全库存…' : '暂时无法检查安全库存。' }}
+        </span>
+        <span v-else-if="stockAlerts.length" class="pc-badge pc-badge--warn">
           <i class="el-icon-warning"></i> {{ stockAlerts.length }} 种物料低于安全库存
         </span>
         <span class="pc-badge pc-badge--ok" v-else>
-          <i class="el-icon-circle-check"></i> 全部物料库存充足
+          <i class="el-icon-circle-check"></i> 未发现低于安全库存的物料
         </span>
       </header>
-      <el-table :data="stockAlerts" size="mini" max-height="264" :row-class-name="stockRowClass">
+      <el-table v-if="stockAlertStatus === 'ready'" :data="stockAlerts" size="mini" max-height="264" :row-class-name="stockRowClass">
         <el-table-column prop="itemCode" label="物料编码" width="140" />
         <el-table-column prop="itemName" label="物料名称" show-overflow-tooltip />
         <el-table-column label="当前结存" width="106" align="right">
           <template slot-scope="s">
-            <span :style="{ color: s.row.level === 'CRITICAL' ? '#ff9b84' : '#ffc07a', fontWeight: 600 }">{{ s.row.current }}</span>
+            <span :style="{ color: s.row.level === 'CRITICAL' ? '#a13d32' : '#88562a', fontWeight: 600 }">{{ s.row.current }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="min" label="安全库存" width="100" align="right" />
         <el-table-column label="缺口" width="96" align="right">
           <template slot-scope="s">
-            <span style="color:#ff9b84">{{ s.row.gap }}</span>
+            <span style="color:#a13d32">{{ s.row.gap }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="suggest" label="建议补货" width="100" align="right" />
@@ -165,7 +174,8 @@
     <!-- 工单进度明细 -->
     <section class="pc-panel pc-panel--full">
       <header class="pc-panel__head">
-        <h3 class="pc-panel__title"><span>工单进度明细</span></h3>
+        <h2 class="pc-panel__title">工单进度明细</h2>
+        <span class="pc-panel__rule"></span>
         <span class="pc-badge pc-badge--warn" v-if="overdue > 0">
           <i class="el-icon-warning"></i> {{ overdue }} 个工单已超交期
         </span>
@@ -180,7 +190,7 @@
         <el-table-column prop="quantityProduced" label="已生产" width="86" align="right" />
         <el-table-column label="进度" width="180">
           <template slot-scope="s">
-            <el-progress :percentage="s.row.percent" :stroke-width="8" :show-text="true" :color="s.row.percent >= 100 ? '#4d7b64' : '#4272c7'" />
+            <el-progress :percentage="s.row.percent" :stroke-width="8" :show-text="true" :color="s.row.percent >= 100 ? '#4d7358' : '#a2462e'" />
           </template>
         </el-table-column>
         <el-table-column prop="requestDate" label="交期" width="110" />
@@ -200,24 +210,23 @@ import screenfull from 'screenfull'
 import request from '@/utils/request'
 import { getMdItem } from '@/api/mes/md/mdItem'
 
-// 生产驾驶舱图表沿用工作区的蓝灰配色
+// 生产统计图表使用适合纸色背景的墨色与状态色
 const PC_TOOLTIP = {
-  backgroundColor: '#ffffff',
-  borderColor: '#cbd4df',
+  backgroundColor: '#fffdf8',
+  borderColor: '#ded8cc',
   borderWidth: 1,
   padding: [8, 12],
-  textStyle: { color: '#252c35', fontSize: 12 },
-  extraCssText: 'box-shadow:0 4px 12px rgba(37,44,53,.12);border-radius:8px;'
+  textStyle: { color: '#28251f', fontSize: 12 },
+  extraCssText: 'box-shadow:0 10px 26px rgba(0,0,0,.45);border-radius:8px;'
 }
-const PC_AXIS_LABEL = { color: '#55616f', fontSize: 11 }
-const PC_AXIS_LINE = { lineStyle: { color: '#cbd4df' }}
-const PC_SPLIT_LINE = { lineStyle: { color: '#e1e6ed', type: 'dashed' }}
+const PC_AXIS_LABEL = { color: '#62594e', fontSize: 11 }
+const PC_AXIS_LINE = { lineStyle: { color: '#c8bbad' }}
+const PC_SPLIT_LINE = { lineStyle: { color: '#e8e0d4', type: 'dashed' }}
 const vGrad = (from, to) => new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: from }, { offset: 1, color: to }])
-const hGrad = (from, to) => new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: from }, { offset: 1, color: to }])
 const STOCK_GRADIENTS = [
-  hGrad('#a4b8cc', '#547aa3'),
-  hGrad('#b3c9be', '#4272c7'),
-  hGrad('#e5d3b1', '#b18344')
+  '#746b57',
+  '#a2462e',
+  '#b38048'
 ]
 
 // 长名称折行显示，避免坐标轴标签互相压字
@@ -241,6 +250,8 @@ export default {
       timer: null,
       updatedAt: '-',
       charts: {},
+      stockStatus: 'loading',
+      stockAlertStatus: 'loading',
       stockWarnings: [],
       stockAlerts: [],
       woList: [],
@@ -351,7 +362,7 @@ export default {
       this.loading = true
       try {
         await Promise.all([this.loadWorkorder(), this.loadStock(), this.loadMachinery(), this.loadTrend(), this.loadKpi()])
-        this.updatedAt = this.now()
+        this.updatedAt = this.now() + (this.stockAlertStatus === 'error' ? '（安全库存未更新）' : '')
       } catch (e) {
         this.updatedAt = this.now() + '（部分数据加载失败）'
       } finally {
@@ -463,7 +474,7 @@ export default {
         legend: {
           data: ['计划数量', '已生产'], top: 0, right: 2, icon: 'roundRect',
           itemWidth: 12, itemHeight: 8, itemGap: 18,
-          textStyle: { color: '#55616f', fontSize: 11 }
+          textStyle: { color: '#62594e', fontSize: 11 }
         },
         grid: { left: 2, right: 8, top: 40, bottom: 2, containLabel: true },
         xAxis: {
@@ -480,12 +491,12 @@ export default {
         series: [
           {
             name: '计划数量', type: 'bar', barWidth: 15, barGap: '50%',
-            itemStyle: { color: vGrad('#7190af', '#dbe6ef'), borderRadius: [5, 5, 0, 0], barBorderRadius: [5, 5, 0, 0] },
+            itemStyle: { color: '#67766a', borderRadius: [5, 5, 0, 0], barBorderRadius: [5, 5, 0, 0] },
             data: names.map(n => byProduct[n].plan)
           },
           {
             name: '已生产', type: 'bar', barWidth: 15,
-            itemStyle: { color: vGrad('#4d7b64', '#d8e6de'), borderRadius: [5, 5, 0, 0], barBorderRadius: [5, 5, 0, 0] },
+            itemStyle: { color: '#b05f44', borderRadius: [5, 5, 0, 0], barBorderRadius: [5, 5, 0, 0] },
             data: names.map(n => byProduct[n].done)
           }
         ]
@@ -493,8 +504,16 @@ export default {
     },
     // ② 库存水位：固定展示 原料仓 / 线边库 / 成品仓（排除虚拟过账仓），无数据也显示 0
     async loadStock() {
-      const res = await this.get('/mes/wm/wmstock/list')
-      const rows = await this.normalizeStockUnits(res.rows || [])
+      let rows
+      try {
+        const res = await this.get('/mes/wm/wmstock/list')
+        rows = await this.normalizeStockUnits(res.rows)
+      } catch (e) {
+        this.stockStatus = 'error'
+        this.stockAlertStatus = 'error'
+        this.charts.stock.clear()
+        return
+      }
       const byWh = {}
       const zero = []
       rows.forEach(r => {
@@ -506,6 +525,7 @@ export default {
       })
       const targets = Object.keys(byWh)
       this.stockWarnings = zero
+      this.stockStatus = 'ready'
 
       // 安全库存预警：结存 < min_stock 即预警，并给出建议补货量（安全线 × 2 - 当前结存）
       try {
@@ -534,8 +554,9 @@ export default {
           })
           .filter(a => a.level !== 'OK')
           .sort((a, b) => a.gap - b.gap)
+        this.stockAlertStatus = 'ready'
       } catch (e) {
-        this.stockAlerts = []
+        this.stockAlertStatus = 'error'
       }
 
       // 横向条形：仓库×单位的条目较多，横向排列可避免坐标轴标签互相压字
@@ -560,7 +581,7 @@ export default {
             barBorderRadius: [0, 6, 6, 0],
             color: p => STOCK_GRADIENTS[p.dataIndex % STOCK_GRADIENTS.length]
           },
-          label: { show: true, position: 'right', distance: 6, color: '#252c35', fontSize: 11 },
+          label: { show: true, position: 'right', distance: 6, color: '#493e34', fontSize: 11 },
           data: targets.map(n => Math.round(byWh[n] * 100) / 100)
         }]
       }, true)
@@ -577,15 +598,15 @@ export default {
         tooltip: Object.assign({ trigger: 'item', formatter: '{b}：{c} 台（{d}%）' }, PC_TOOLTIP),
         legend: {
           bottom: 0, icon: 'circle', itemWidth: 8, itemHeight: 8, itemGap: 14,
-          textStyle: { color: '#55616f', fontSize: 11 }
+          textStyle: { color: '#62594e', fontSize: 11 }
         },
-        color: ['#4272c7', '#b18344', '#6f8b98', '#4d7b64', '#7aa7d9'],
+        color: ['#a2462e', '#b38048', '#82776b', '#4d7358', '#637785'],
         series: [{
           type: 'pie', radius: ['46%', '66%'], center: ['50%', '44%'],
           avoidLabelOverlap: true,
-          itemStyle: { borderColor: '#ffffff', borderWidth: 3 },
-          label: { formatter: '{b}\n{c} 台', color: '#252c35', fontSize: 11, lineHeight: 15 },
-          labelLine: { length: 6, length2: 8, lineStyle: { color: '#a7b4c3' }},
+          itemStyle: { borderColor: '#fffdf8', borderWidth: 3 },
+          label: { formatter: '{b}\n{c} 台', color: '#493e34', fontSize: 11, lineHeight: 15 },
+          labelLine: { length: 6, length2: 8, lineStyle: { color: '#a09180' }},
           data
         }]
       }, true)
@@ -617,7 +638,7 @@ export default {
           type: 'category', data: days.map(d => d.slice(5)), boundaryGap: false,
           axisTick: { show: false },
           axisLine: PC_AXIS_LINE,
-          axisLabel: Object.assign({}, PC_AXIS_LABEL, { interval: 0, fontSize: 9, color: '#55616f' })
+          axisLabel: Object.assign({}, PC_AXIS_LABEL, { interval: 0, fontSize: 9, color: '#62594e' })
         },
         yAxis: {
           type: 'value', minInterval: 1, splitNumber: 4,
@@ -626,10 +647,10 @@ export default {
         },
         series: [{
           type: 'line', smooth: true, symbol: 'circle', symbolSize: 7, showSymbol: true,
-          lineStyle: { width: 2.4, color: '#34577d', shadowColor: 'transparent', shadowBlur: 12, shadowOffsetY: 2 },
-          itemStyle: { color: '#ffffff', borderColor: '#34577d', borderWidth: 2 },
-          label: { show: true, distance: 9, color: '#252c35', fontSize: 11, formatter: p2 => (p2.value ? p2.value : '') },
-          areaStyle: { color: vGrad('rgba(84,122,163,.22)', 'rgba(84,122,163,0)') },
+          lineStyle: { width: 2.4, color: '#a2462e', shadowColor: 'rgba(162,70,46,.13)', shadowBlur: 4, shadowOffsetY: 2 },
+          itemStyle: { color: '#fffdf8', borderColor: '#a2462e', borderWidth: 2 },
+          label: { show: true, distance: 9, color: '#28251f', fontSize: 11, formatter: p2 => (p2.value ? p2.value : '') },
+          areaStyle: { color: vGrad('rgba(162,70,46,.17)', 'rgba(162,70,46,0)') },
           data: days.map(d => Math.round((sum[d] || 0) * 100) / 100)
         }]
       }, true)
@@ -640,217 +661,88 @@ export default {
 
 <style lang="scss" scoped>
 .cockpit {
-  color: var(--color-text);
-  background: var(--color-bg);
+  min-width: 0;
+  padding: clamp(14px, 2.5vw, 32px) !important;
+  background: var(--mes-canvas);
+  border: 0;
+  box-shadow: none;
+  color: var(--mes-ink);
 
   &.is-fullscreen {
     width: 100%;
     height: 100%;
+    margin: 0 !important;
+    border-radius: 0;
     overflow: auto;
-
-    .pc-hero {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: var(--color-bg);
-    }
   }
 }
 
 .pc-hero {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  align-items: end;
   justify-content: space-between;
-  gap: 14px 20px;
-  padding: 4px 0 20px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.pc-hero__title {
-  margin: 0 0 6px;
-  font-size: clamp(24px, 2.2vw, 32px);
-  font-weight: 700;
-  line-height: 1.25;
-}
-
-.pc-hero__sub, .pc-hero__time, .pc-kpi__desc, .pc-tip {
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  line-height: 1.55;
-}
-
-.pc-hero__sub {
-  margin: 0;
-}
-
-.pc-hero__meta, .pc-panel__head, .pc-kpi__top, .pc-kpi__foot {
-  display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 14px 24px;
+  padding: 0 0 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--mes-line);
 }
+.pc-hero__title { margin: 0; font: 650 clamp(32px, 4vw, 56px)/1.12 var(--mes-display); }
+.pc-hero__sub { margin: 9px 0 0; color: var(--mes-muted); font-size: 14px; line-height: 1.5; }
+.pc-hero__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pc-hero__meta .el-button + .el-button { margin-left: 0; }
+.pc-hero__time { color: var(--mes-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.pc-hero__time i { margin-right: 4px; }
+.pc-sec, .pc-panel__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; }
+.pc-sec__title, .pc-panel__title { margin: 0; font: 650 21px/1.3 var(--mes-display); }
+.pc-sec__rule, .pc-panel__rule { flex: 1; min-width: 10px; height: 1px; background: var(--mes-line); }
 
-.pc-hero__time i {
-  margin-right: 4px;
-}
+.pc-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+.pc-kpi { min-width: 0; padding: 15px; border-top: 1px solid var(--mes-line); background: var(--mes-subtle); }
+.pc-kpi__top { display: flex; align-items: center; gap: 8px; }
+.pc-kpi__icon { color: var(--mes-accent); }
+.pc-kpi__label, .pc-kpi__desc { color: var(--mes-muted); font-size: 13px; }
+.pc-kpi__value { margin: 10px 0; font: 400 clamp(26px, 3vw, 40px)/1.08 var(--mes-display); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pc-kpi__value--long { font-size: 22px; }
+.pc-kpi__unit { margin-left: 3px; font-size: .6em; }
+.pc-kpi__foot { display: flex; flex-wrap: wrap; gap: 5px 10px; align-items: center; }
+.pc-kpi__delta { font-size: 12px; }
+.pc-kpi__delta.is-up { color: #375e48; }
+.pc-kpi__delta.is-down { color: #88562a; }
 
-.pc-hero__btn.el-button {
-  margin: 0;
-}
-
-.pc-sec {
-  margin: 20px 0 12px;
-}
-
-.pc-sec__title, .pc-panel__title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.pc-kpis, .pc-grid {
-  display: grid;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.pc-kpis {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.pc-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-}
-
-.pc-kpi, .pc-panel {
+.pc-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+.pc-panel {
   min-width: 0;
-  padding: 14px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  background: var(--color-bg);
-}
+  padding: 16px;
+  background: var(--mes-surface);
+  border: 1px solid var(--mes-line);
+  border-radius: var(--mes-radius);
 
-.pc-kpi__icon {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
+  &--half { grid-column: span 3; }
+  &--wide { grid-column: span 4; }
+  &--narrow { grid-column: span 2; }
+  &--full { margin-bottom: 14px; }
+  ::v-deep .el-table { min-height: 0; }
+  ::v-deep .pc-row--critical td { background: #faeddc; }
 }
-
-.pc-kpi__label {
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.pc-kpi__value {
-  margin: 9px 0;
-  font-size: clamp(24px, 2.3vw, 32px);
-  font-variant-numeric: tabular-nums;
-  line-height: 1.15;
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-
-.pc-kpi__value--long {
-  font-size: 20px;
-}
-
-.pc-kpi__unit {
-  margin-left: 3px;
-  font-size: 15px;
-}
-
-.pc-kpi__delta, .pc-badge {
-  padding: 3px 7px;
-  border-radius: 4px;
-  background: #edf5ef;
-  color: #36664f;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.pc-kpi__delta.is-down, .pc-badge--warn, .pc-warn {
-  background: #fbf3e2;
-  color: #785316;
-}
-
-.pc-panel--half {
-  grid-column: span 3;
-}
-
-.pc-panel--wide {
-  grid-column: span 4;
-}
-
-.pc-panel--narrow {
-  grid-column: span 2;
-}
-
-.pc-panel--full {
-  margin-bottom: 14px;
-}
-
-.pc-panel__head {
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.pc-panel__chart {
-  width: 100%;
-  height: 260px;
-}
-
-.pc-panel__chart--bars {
-  height: 284px;
-}
-
-.pc-warn {
-  padding: 8px 10px;
-  border-radius: 6px;
+.pc-panel__chart { width: 100%; height: 238px; }
+.pc-panel__chart--bars { height: 272px; }
+.pc-badge, .pc-warn {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  background: #f8ebd8;
+  color: #88562a;
   font-size: 12px;
 }
+.pc-warn { margin-top: 8px; line-height: 1.6; }
+.pc-badge--ok, .pc-warn--ok { color: #375e48; background: #e8efe5; }
+.pc-tip { color: var(--mes-muted); font-size: 12px; line-height: 1.6; }
 
-.pc-warn--ok {
-  background: #edf5ef;
-  color: #36664f;
-}
-
-.pc-tip {
-  margin: 8px 0 0;
-}
-
-.pc-panel ::v-deep .el-table {
-  .pc-row--critical td {
-    background-color: #fcf3f1;
-  }
-
-  .pc-row--done td {
-    background-color: #f4f8f5;
-  }
-}
-
-@media (max-width: 1280px) {
-  .pc-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .pc-panel--half, .pc-panel--wide, .pc-panel--narrow {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 550px) {
-  .pc-kpis, .pc-grid {
-    gap: 8px;
-  }
-
-  .pc-kpi, .pc-panel {
-    padding: 10px;
-  }
-}
+@media (max-width: 1320px) { .pc-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .pc-panel--half, .pc-panel--wide, .pc-panel--narrow { grid-column: 1 / -1; } }
+@media (max-width: 460px) { .pc-hero__meta .el-button { min-height: 44px; } }
 </style>
