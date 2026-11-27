@@ -34,6 +34,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="transactionDate"    column="transaction_date"    />
         <result property="relatedTransactionId"    column="related_transaction_id"    />
         <result property="recptDate" column="recpt_date"></result>
+        <result property="txnCode"    column="txn_code"    />
+        <result property="bizKey"    column="biz_key"    />
+        <result property="qtyBefore"    column="qty_before"    />
+        <result property="qtyAfter"    column="qty_after"    />
+        <result property="workorderId"    column="workorder_id"    />
+        <result property="inspectionId"    column="inspection_id"    />
+        <result property="recptId"    column="recpt_id"    />
         <result property="erpDate"    column="erp_date"    />
         <result property="attr1"    column="attr1"    />
         <result property="attr2"    column="attr2"    />
@@ -46,7 +53,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectWmTransactionVo">
-        select transaction_id, transaction_type, item_id, item_code, item_name, specification, unit_of_measure, unit_name, batch_id, batch_code, warehouse_id, warehouse_code, warehouse_name, location_id, location_code, location_name, area_id, area_code, area_name, source_doc_type, source_doc_id, source_doc_code, source_doc_line_id, material_stock_id, transaction_flag, transaction_quantity, transaction_date, related_transaction_id, erp_date,recpt_date, attr1, attr2, attr3, attr4, create_by, create_time, update_by, update_time from wm_transaction
+        select transaction_id, transaction_type, item_id, item_code, item_name, specification, unit_of_measure, unit_name, batch_id, batch_code, warehouse_id, warehouse_code, warehouse_name, location_id, location_code, location_name, area_id, area_code, area_name, source_doc_type, source_doc_id, source_doc_code, source_doc_line_id, material_stock_id, transaction_flag, transaction_quantity, transaction_date, related_transaction_id, erp_date,recpt_date, txn_code, biz_key, qty_before, qty_after, workorder_id, inspection_id, recpt_id, attr1, attr2, attr3, attr4, create_by, create_time, update_by, update_time from wm_transaction
     </sql>
 
     <select id="selectWmTransactionList" parameterType="WmTransaction" resultMap="WmTransactionResult">
@@ -96,6 +103,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectWmTransactionVo"/>
         where transaction_id = #{transactionId}
     </select>
+
+    <!-- 幂等检查使用加锁读（current read），避免外层事务的快照读看不到并发事务刚提交的同键记录 -->
+    <select id="selectWmTransactionByBizKey" resultMap="WmTransactionResult">
+        <include refid="selectWmTransactionVo"/>
+        where biz_key = #{bizKey}
+        for update
+        limit 1
+        for update
+    </select>
         
     <insert id="insertWmTransaction" parameterType="WmTransaction" useGeneratedKeys="true" keyProperty="transactionId">
         insert into wm_transaction
@@ -130,6 +146,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="relatedTransactionId != null">related_transaction_id,</if>
             <if test="erpDate != null">erp_date,</if>
             <if test="recptDate != null">recpt_date,</if>
+            <if test="txnCode != null and txnCode != ''">txn_code,</if>
+            <if test="bizKey != null and bizKey != ''">biz_key,</if>
+            <if test="qtyBefore != null">qty_before,</if>
+            <if test="qtyAfter != null">qty_after,</if>
+            <if test="workorderId != null">workorder_id,</if>
+            <if test="inspectionId != null">inspection_id,</if>
+            <if test="recptId != null">recpt_id,</if>
             <if test="attr1 != null">attr1,</if>
             <if test="attr2 != null">attr2,</if>
             <if test="attr3 != null">attr3,</if>
@@ -170,6 +193,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="relatedTransactionId != null">#{relatedTransactionId},</if>
             <if test="erpDate != null">#{erpDate},</if>
             <if test="recptDate != null">#{recptDate},</if>
+            <if test="txnCode != null and txnCode != ''">#{txnCode},</if>
+            <if test="bizKey != null and bizKey != ''">#{bizKey},</if>
+            <if test="qtyBefore != null">#{qtyBefore},</if>
+            <if test="qtyAfter != null">#{qtyAfter},</if>
+            <if test="workorderId != null">#{workorderId},</if>
+            <if test="inspectionId != null">#{inspectionId},</if>
+            <if test="recptId != null">#{recptId},</if>
             <if test="attr1 != null">#{attr1},</if>
             <if test="attr2 != null">#{attr2},</if>
             <if test="attr3 != null">#{attr3},</if>
@@ -214,6 +244,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="relatedTransactionId != null">related_transaction_id = #{relatedTransactionId},</if>
             <if test="erpDate != null">erp_date = #{erpDate},</if>
             <if test="recptDate != null">recp_date = #{recptDate},</if>
+            <if test="txnCode != null and txnCode != ''">txn_code = #{txnCode},</if>
+            <if test="bizKey != null and bizKey != ''">biz_key = #{bizKey},</if>
+            <if test="qtyBefore != null">qty_before = #{qtyBefore},</if>
+            <if test="qtyAfter != null">qty_after = #{qtyAfter},</if>
+            <if test="workorderId != null">workorder_id = #{workorderId},</if>
+            <if test="inspectionId != null">inspection_id = #{inspectionId},</if>
+            <if test="recptId != null">recpt_id = #{recptId},</if>
             <if test="attr1 != null">attr1 = #{attr1},</if>
             <if test="attr2 != null">attr2 = #{attr2},</if>
             <if test="attr3 != null">attr3 = #{attr3},</if>

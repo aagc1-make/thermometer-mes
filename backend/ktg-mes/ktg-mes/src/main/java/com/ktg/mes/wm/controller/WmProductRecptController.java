@@ -1,6 +1,7 @@
 package com.ktg.mes.wm.controller;
 
 import com.ktg.mes.wm.mapper.PostingLockMapper;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import cn.hutool.core.collection.CollUtil;
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ProductRecptTxBean;
 import com.ktg.mes.wm.service.*;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ktg.common.annotation.Log;
 import com.ktg.common.core.controller.BaseController;
@@ -49,6 +52,9 @@ public class WmProductRecptController extends BaseController
     private IWmProductRecptService wmProductRecptService;
 
     @Autowired
+    private CodeSequenceService codeSequenceService;
+
+    @Autowired
     private IWmProductRecptLineService wmProductRecptLineService;
 
     @Autowired
@@ -62,6 +68,9 @@ public class WmProductRecptController extends BaseController
 
     @Autowired
     private com.ktg.mes.wm.service.impl.ProductReceiptGuardService productReceiptGuardService;
+
+    @Autowired
+    private IWmProductStockingService wmProductStockingService;
 
     /**
      * 查询产品入库录列表
@@ -117,6 +126,65 @@ public class WmProductRecptController extends BaseController
     }
 
     /**
+     * 上架-库区候选：返回容量、已占用、预占、余量、推荐与混放拦截信息。
+     */
+    @PreAuthorize("@ss.hasPermi('mes:wm:productrecpt:list')")
+    @GetMapping("/locationOptions")
+    public AjaxResult locationOptions(@RequestParam("warehouseId") Long warehouseId,
+                                      @RequestParam("lineId") Long lineId,
+                                      @RequestParam(value = "quantity", required = false) BigDecimal quantity) {
+        WmProductRecptLine line = wmProductRecptLineService.selectWmProductRecptLineByLineId(lineId);
+        if (line == null) {
+            return AjaxResult.error("产品入库行不存在");
+        }
+        BigDecimal required = quantity != null ? quantity : wmProductStockingService.remainingQty(line);
+        return AjaxResult.success(wmProductStockingService.locationOptions(
+                warehouseId, line, required == null ? BigDecimal.ZERO : required));
+    }
+
+    /**
+     * 上架-库位候选：返回容量、余量、推荐与混放拦截信息。
+     */
+    @PreAuthorize("@ss.hasPermi('mes:wm:productrecpt:list')")
+    @GetMapping("/areaOptions")
+    public AjaxResult areaOptions(@RequestParam("locationId") Long locationId,
+                                  @RequestParam("lineId") Long lineId,
+                                  @RequestParam(value = "quantity", required = false) BigDecimal quantity) {
+        WmProductRecptLine line = wmProductRecptLineService.selectWmProductRecptLineByLineId(lineId);
+        if (line == null) {
+            return AjaxResult.error("产品入库行不存在");
+        }
+        BigDecimal required = quantity != null ? quantity : wmProductStockingService.remainingQty(line);
+        return AjaxResult.success(wmProductStockingService.areaOptions(
+                locationId, line, required == null ? BigDecimal.ZERO : required));
+    }
+
+    /**
+     * 确认上架：待上架 → 已上架。上架数量必须等于入库行数量，且余量/混放复校验通过。
+     */
+    @PreAuthorize("@ss.hasPermi('mes:wm:productrecpt:edit')")
+    @Log(title = "产品入库记录", businessType = BusinessType.UPDATE)
+    @Transactional
+    @PostMapping("/confirmStocking/{recptId}")
+    public AjaxResult confirmStocking(@PathVariable Long recptId) {
+        String previousStatus = postingLockMapper.productRecpt(recptId);
+        if (UserConstants.ORDER_STATUS_APPROVED.equals(previousStatus)) {
+            return AjaxResult.success();
+        }
+        if (!UserConstants.ORDER_STATUS_APPROVING.equals(previousStatus)) {
+            return AjaxResult.error("当前单据不在“待上架”状态，无法确认上架");
+        }
+        WmProductRecpt recpt = wmProductRecptService.selectWmProductRecptByRecptId(recptId);
+        if (recpt == null) {
+            return AjaxResult.error("入库单不存在");
+        }
+        wmProductStockingService.assertReadyToStock(recptId);
+        recpt.setStatus(UserConstants.ORDER_STATUS_APPROVED);
+        wmProductRecptService.updateWmProductRecpt(recpt);
+        return AjaxResult.success();
+    }
+
+    /**
      * 新增产品入库录
      */
     @PreAuthorize("@ss.hasPermi('mes:wm:productrecpt:add')")
@@ -129,6 +197,11 @@ public class WmProductRecptController extends BaseController
         if (wmProductRecpt.getWorkorderId() == null || wmProductRecpt.getWorkorderId() == 0L) {
             return AjaxResult.error("产品入库必须关联生产工单来源；无来源的成品入库请走杂项入库或盘点调整");
         }
+        // 入库单号由服务端统一取号：有来源工单时沿用该工单链号（gd...0002 -> cr...0002），
+        // 不受工单创建日期与今天不同的影响，保证同一业务链单号严格对应。
+        wmProductRecpt.setRecptCode(StringUtils.isNotEmpty(wmProductRecpt.getWorkorderCode())
+                ? codeSequenceService.generateChainCode(UserConstants.CODE_RULE_PRODUCT_RECPT, wmProductRecpt.getWorkorderCode())
+                : codeSequenceService.ensureCode(UserConstants.CODE_RULE_PRODUCT_RECPT, wmProductRecpt.getRecptCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmProductRecptService.checkUnique(wmProductRecpt))){
             return AjaxResult.error("入库单编号已存在！");
         }
@@ -183,6 +256,12 @@ public class WmProductRecptController extends BaseController
             if(CollectionUtils.isEmpty(lines)){
                 return AjaxResult.error("请添加产品入库单行!");
             }
+        }
+
+        // 待上架 → 已上架 必须齐套，且余量/混放复校验通过，禁止前端直接改状态绕过上架
+        if (UserConstants.ORDER_STATUS_APPROVED.equals(wmProductRecpt.getStatus())
+                && !UserConstants.ORDER_STATUS_APPROVED.equals(previousStatus)) {
+            wmProductStockingService.assertReadyToStock(wmProductRecpt.getRecptId());
         }
 
         return toAjax(wmProductRecptService.updateWmProductRecpt(wmProductRecpt));

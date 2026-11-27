@@ -290,7 +290,8 @@ async function purchaseReceipt(ctx) {
 }
 async function workorders(ctx) {
   const api = createChainApi(ctx); const c = ctx.state.context; const item = c.items['TG-FG-001']; const code = `${ctx.state.runId}-MO`
-  const parent = await api.ensure('/mes/pro/workorder', { workorderCode: code }, w => w.workorderCode === code, { workorderCode: code, workorderName: item.itemName + ' 首批生产', productId: item.itemId, productCode: item.itemCode, productName: item.itemName, productSpc: item.specification, unitOfMeasure: item.unitOfMeasure, unitName: item.unitName, quantity: 10, workorderType: 'SELF', parentId: 0, ancestors: '0', orderSource: 'ORDER', sourceCode: ctx.state.runId, requestDate: dateTime(7), ...partnerFields(c.client, 'client'), remark: CHAIN_MARK }, '整机工单')
+  const parent = await api.ensure('/mes/pro/workorder', { sourceCode: ctx.state.runId, productId: item.itemId },
+    w => w.workorderCode === code || (w.sourceCode === ctx.state.runId && same(w.productId, item.itemId) && !number(w.parentId)), { workorderCode: code, workorderName: item.itemName + ' 首批生产', productId: item.itemId, productCode: item.itemCode, productName: item.itemName, productSpc: item.specification, unitOfMeasure: item.unitOfMeasure, unitName: item.unitName, quantity: 10, workorderType: 'SELF', parentId: 0, ancestors: '0', orderSource: 'ORDER', sourceCode: ctx.state.runId, requestDate: dateTime(7), ...partnerFields(c.client, 'client'), remark: CHAIN_MARK }, '整机工单')
   c.workorders['TG-FG-001'] = parent
   const boms = await api.list('/mes/pro/workorderbom', { workorderId: parent.workorderId })
   const childLines = PRODUCT_CODES.slice(0, 2).map(child => requireValue(boms.find(b => b.itemCode === child), '工单 BOM 未展开半成品：' + child))
@@ -405,7 +406,10 @@ async function productReceipt(ctx) {
 }
 async function sales(ctx) {
   const api = createChainApi(ctx); const c = ctx.state.context; const item = c.items['TG-FG-001']; const code = `${ctx.state.runId}-SN`
-  let notice = await api.ensure('/mes/wm/salesnotice', { noticeCode: code }, n => n.noticeCode === code, { noticeCode: code, noticeName: '首批发货-测温枪 6 台', ...partnerFields(c.client, 'client'), salesDate: dateTime(), status: 'PREPARE', remark: CHAIN_MARK }, '发货通知')
+  const notices = await api.list('/mes/wm/salesnotice', { noticeCode: code })
+  let notice = notices.find(n => n.noticeCode === code)
+  if (!notice) notice = await api.ensure('/mes/wm/salesnotice', { soCode: ctx.state.runId }, n => n.soCode === ctx.state.runId, { noticeCode: code, soCode: ctx.state.runId, noticeName: '首批发货-测温枪 6 台', ...partnerFields(c.client, 'client'), salesDate: dateTime(), status: 'PREPARE', remark: CHAIN_MARK }, '发货通知')
+  if (ctx.confirmWrite) ctx.confirmWrite('/mes/wm/salesnotice', data => data.noticeCode === code || data.soCode === ctx.state.runId)
   if (notice.status === 'PREPARE') {
     requireValue(c.finishedBatches.length === 1, '销售发货需要唯一成品来源批次')
     const stocks = await api.list('/mes/wm/wmstock', { itemId: item.itemId, warehouseCode: 'WH-FG' })

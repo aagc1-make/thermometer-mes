@@ -137,6 +137,15 @@ java -Dfile.encoding=UTF-8 `
   -jar ktg-admin/target/ktg-admin.jar
 ```
 
+### 6.1 一键启动已经内置注入
+
+根目录 `start-backend.bat` 会读取 `ai-keys.txt`（已被 `.gitignore` 的 `*ai-key*.txt` 忽略），把其中的
+`MES_AI_DIFY_URL` / `MES_AI_DIFY_KEY` 以 `-Dmes.ai.dify.*` 注入 java 命令行，并在启动时打印
+`[ai] Dify workflow: http://127.0.0.1:8082/v1`。没有这个文件时助手只走原生链路，徽标显示“未配置”。
+
+注意：本机实测**环境变量对当前这个 jar 不生效**，只有 `-D` 系统属性能覆盖 `mes.ai.dify.*`，
+所以脚本走的是 `-D` 而不是 `export MES_AI_DIFY_URL`。
+
 `status` 返回：
 
 | 字段 | 含义 |

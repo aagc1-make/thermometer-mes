@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 import cn.hutool.core.collection.CollUtil;
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.IssueTxBean;
 import com.ktg.mes.wm.service.*;
@@ -50,6 +51,9 @@ public class WmIssueHeaderController extends BaseController
 
     @Autowired
     private IssueAutoPickService issueAutoPickService;
+
+    @Autowired
+    private CodeSequenceService codeSequenceService;
 
     @PreAuthorize("@ss.hasPermi('mes:wm:issueheader:edit')")
     @Log(title = "生产领料一键拣货", businessType = BusinessType.UPDATE)
@@ -122,6 +126,10 @@ public class WmIssueHeaderController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmIssueHeader wmIssueHeader)
     {
+        // 领料单号由服务端统一取号，忽略前端传入值
+        wmIssueHeader.setIssueCode(org.apache.commons.lang3.StringUtils.isNotBlank(wmIssueHeader.getWorkorderCode())
+                ? codeSequenceService.generateChainCode(UserConstants.CODE_RULE_ISSUE, wmIssueHeader.getWorkorderCode())
+                : codeSequenceService.ensureCode(UserConstants.CODE_RULE_ISSUE, wmIssueHeader.getIssueCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmIssueHeaderService.checkIssueCodeUnique(wmIssueHeader))){
             return AjaxResult.error("领料单编号已存在");
         }

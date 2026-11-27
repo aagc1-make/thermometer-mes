@@ -7,8 +7,6 @@
       <button class="sources-button" type="button" @click="$emit('source', 0)">
         <i class="el-icon-reading" aria-hidden="true" /> {{ sources.length }} 处文档引用
       </button>
-      <button v-for="(source, index) in sources" :key="index" class="file-pill" type="button"
-        :title="source.filename" @click="$emit('source', index)">{{ source.filename || source.title }}</button>
     </div>
     <div v-if="sources.length && !message.streaming && message.channel" class="answer-follow-ups">
       <button v-for="question in followUps" :key="question" type="button" @click="$emit('follow-up', question)">
@@ -43,7 +41,7 @@ export default {
 <style lang="scss" scoped>
 @import "~@/assets/styles/mes-palette";
 .knowledge-answer__text { white-space: pre-wrap; overflow-wrap: anywhere; }
-.citation, .sources-button, .file-pill, .answer-follow-ups button {
+.citation, .sources-button, .answer-follow-ups button {
   border: 1px solid $mes-border;
   border-radius: 7px;
   background: $mes-primary-soft;
@@ -54,8 +52,7 @@ export default {
 }
 .citation { padding: 0 5px; margin: 0 2px; line-height: 1.5; vertical-align: 1px; }
 .answer-sources, .answer-follow-ups { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
-.sources-button, .file-pill, .answer-follow-ups button { padding: 3px 8px; }
-.file-pill { background: $mes-card; color: $mes-text-sub; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sources-button, .answer-follow-ups button { padding: 3px 8px; }
 .answer-follow-ups button { background: $mes-card; text-align: left; }
-.citation:hover, .sources-button:hover, .file-pill:hover, .answer-follow-ups button:hover { border-color: $mes-marker; }
+.citation:hover, .sources-button:hover, .answer-follow-ups button:hover { border-color: $mes-marker; }
 </style>

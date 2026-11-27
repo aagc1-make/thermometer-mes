@@ -6,11 +6,15 @@ const state = {
     withoutAnimation: false,
     hide: false
   },
+  assistantAvatarOpen: false,
   device: 'desktop',
   size: Cookies.get('size') || 'medium'
 }
 
 const mutations = {
+  SET_ASSISTANT_AVATAR_OPEN: (state, open) => {
+    state.assistantAvatarOpen = open
+  },
   TOGGLE_SIDEBAR: state => {
     // 桌面固定展开；移动端需要抽屉开关。
     state.sidebar.opened = state.device === 'mobile' ? !state.sidebar.opened : true

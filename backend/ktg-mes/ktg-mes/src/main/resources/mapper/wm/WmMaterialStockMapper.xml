@@ -152,12 +152,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="itemId != null "> and item_id = #{itemId}</if>
             <if test="unitOfMeasure != null  and unitOfMeasure != ''"> and unit_of_measure = #{unitOfMeasure}</if>
             <choose>
-                <when test="batchCode != null and batchCode != ''">
-                    and batch_code = #{batchCode}
-                </when>
-                <otherwise>
-                    and batch_code is null
-                </otherwise>
+                <!-- 优先按 batch_id 精确匹配；老数据只有 batch_code 时兜底 -->
+                <when test="batchId != null"> and batch_id = #{batchId}</when>
+                <when test="batchCode != null and batchCode != ''"> and batch_code = #{batchCode}</when>
+                <otherwise> and batch_id is null and batch_code is null</otherwise>
             </choose>
             <if test="warehouseId != null "> and warehouse_id = #{warehouseId}</if>
             <if test="locationId != null "> and location_id = #{locationId}</if>
@@ -172,12 +170,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="itemId != null "> and item_id = #{itemId}</if>
             <if test="unitOfMeasure != null  and unitOfMeasure != ''"> and unit_of_measure = #{unitOfMeasure}</if>
             <choose>
-                <when test="batchCode != null and batchCode != ''">
-                    and batch_code = #{batchCode}
-                </when>
-                <otherwise>
-                    and batch_code is null
-                </otherwise>
+                <!-- 优先按 batch_id 精确匹配；老数据只有 batch_code 时兜底 -->
+                <when test="batchId != null"> and batch_id = #{batchId}</when>
+                <when test="batchCode != null and batchCode != ''"> and batch_code = #{batchCode}</when>
+                <otherwise> and batch_id is null and batch_code is null</otherwise>
             </choose>
             <if test="warehouseId != null "> and warehouse_id = #{warehouseId}</if>
             <if test="locationId != null "> and location_id = #{locationId}</if>
@@ -290,6 +286,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             update_time = NOW()
         </trim>
         where material_stock_id = #{materialStockId}
+    </update>
+
+    <!-- 按库存行增减数量，避免并发下用内存值覆盖数据库当前结存 -->
+    <update id="addQuantityOnhand">
+        update wm_material_stock
+        set quantity_onhand = quantity_onhand + #{delta},
+            update_time = NOW()
+        where material_stock_id = #{materialStockId}
+    </update>
+
+    <!-- 条件扣减：扣减后不得为负，0 行表示库存不足 -->
+    <update id="deductQuantityOnhandIfEnough">
+        update wm_material_stock
+        set quantity_onhand = quantity_onhand + #{delta},
+            update_time = NOW()
+        where material_stock_id = #{materialStockId}
+          and quantity_onhand + #{delta} &gt;= 0
     </update>
 
     <delete id="deleteWmMaterialStockByMaterialStockId" parameterType="Long">

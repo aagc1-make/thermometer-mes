@@ -63,6 +63,26 @@ public interface WmMaterialStockMapper
     public int updateWmMaterialStock(WmMaterialStock wmMaterialStock);
 
     /**
+     * 按库存行增减数量（不校验结果是否为负）。
+     *
+     * @param materialStockId 库存记录主键
+     * @param delta           变动数量（正数增加、负数减少）
+     * @return 影响行数
+     */
+    public int addQuantityOnhand(@Param("materialStockId") Long materialStockId,
+                                 @Param("delta") java.math.BigDecimal delta);
+
+    /**
+     * 条件扣减：仅当扣减后结存不出现负数时才更新，用于防超卖。
+     *
+     * @param materialStockId 库存记录主键
+     * @param delta           变动数量（负数表示扣减）
+     * @return 影响行数，0 表示库存不足
+     */
+    public int deductQuantityOnhandIfEnough(@Param("materialStockId") Long materialStockId,
+                                            @Param("delta") java.math.BigDecimal delta);
+
+    /**
      * 删除库存记录
      * 
      * @param materialStockId 库存记录主键

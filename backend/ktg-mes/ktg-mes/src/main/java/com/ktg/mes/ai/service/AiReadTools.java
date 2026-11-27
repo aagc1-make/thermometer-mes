@@ -55,9 +55,14 @@ public class AiReadTools {
         register("movements", "出入库流水", "按物料汇总指定区间库存流水，方向可为入库、出库或全部。",
             MOVEMENTS, "wm_transaction", mapper::movements, "query,from,to,direction,limit", "from,to",
             "itemCode:物料编码,itemName:物料名称,unit:单位,incoming:入库,outgoing:出库,net:净变动,transactionCount:流水数");
-        register("workorders", "工单查询与进度", "查生产工单交期、状态、计划量、已生产量及进度，支持筛逾期。",
-            "mes:pro:workorder:list", "pro_workorder", mapper::workorders, "query,status,from,to,overdue,limit", "",
-            "workorderCode:工单号,workorderName:工单名称,productName:产品,planned:计划量,produced:已生产,progress:进度（%）,status:状态,dueDate:交期");
+        register("workorders", "工单查询与进度", "按工单号或来源销售订单号查生产进度，并按权限查看排产、质检、入库、已出库数量。",
+            "mes:pro:workorder:list", "pro_workorder", mapper::workorders, "query,workorderCode,status,from,to,overdue,limit", "",
+            ("workorderCode:工单号,workorderName:工单名称,sourceOrderCode:来源单号,productName:产品,planned:计划量,produced:已生产,progress:进度（%）,status:状态,dueDate:交期,"
+                + "taskCount:已排任务,pendingIpqc:待完成过程检验,received:已入库,shipped:已出库"));
+        register("products", "产品目录", "列出本厂自制的整机成品与自制半成品（产品档案）。"
+                + "问“我们生产什么”“成品是什么”“有哪些产品”“主要做什么产品”时用它；外购物料不在其中。",
+            MATERIAL, "md_item", mapper::products, "query,limit", "",
+            "itemCode:产品编码,itemName:产品名称,productType:产品类型,specification:规格型号,unit:单位,status:状态");
         register("bom", "BOM 展开", "按成品或半成品编码或名称，最多展开六级 BOM，并汇总单件产品的组件用量。",
             MATERIAL, "md_product_bom、md_item", this::readBom, "query,limit", "query",
             "itemCode:组件编码,itemName:组件名称,depth:层级,unit:单位,quantity:单件累计用量");
@@ -67,8 +72,9 @@ public class AiReadTools {
         register("alerts", "安全库存预警", "列出低于安全库存阈值或缺货的物料和缺口。",
             STOCK, "v_stock_alert", mapper::alerts, "query,limit", "",
             "itemCode:物料编码,itemName:物料名称,unit:单位,balance:现存量,minStock:安全库存,shortage:缺口,alert:等级");
-        register("materials", "物料信息", "查询物料编码、名称、类别、规格和单位。",
-            MATERIAL, "md_item", mapper::materials, "query,limit", "",
+        register("materials", "物料检索", "按名称或编码片段检索物料，返回编码、名称、规格、单位和类别。"
+                + "口语化、简称或拼写不完全一致时，先用它找到准确物料，再查库存、工单或 BOM。",
+            MATERIAL, "md_item", this::readMaterials, "query,limit", "",
             "itemCode:物料编码,itemName:物料名称,specification:规格,unit:单位,category:类别,status:状态");
     }
 
@@ -120,7 +126,8 @@ public class AiReadTools {
         receiptColumn(columns, "warehouseName", "仓库");
         if (includeVendor) receiptColumn(columns, "vendorName", "供应商");
         Result result = new Result("purchaseReceipts", "采购入库流水明细", "库存流水", scope, columns,
-            mapper.purchaseReceiptRows(params), total, System.currentTimeMillis() - started, Instant.now().toString());
+            mapper.purchaseReceiptRows(params), total, System.currentTimeMillis() - started, Instant.now().toString(),
+            Collections.emptyList());
         return object("total", total, "results", Collections.singletonList(result),
             "page", page, "lastPage", lastPage, "offset", offset);
     }
@@ -142,6 +149,53 @@ public class AiReadTools {
     }
 
     @Transactional(readOnly = true, timeout = 4)
+    /** 物料检索：把“主控PBCA”拆成 主控 + PBCA，按任一片段命中，由模型判断哪个是目标物料。 */
+    private List<Map<String, Object>> readMaterials(Map<String, Object> args) {
+        Object query = args.get("query");
+        if (query instanceof String) {
+            List<String> tokens = tokens(((String) query).trim());
+            if (!tokens.isEmpty()) {
+                Map<String, Object> params = new LinkedHashMap<String, Object>(args);
+                params.put("tokens", tokens);
+                return mapper.searchItems(params);
+            }
+        }
+        return mapper.materials(args);
+    }
+
+    private static List<String> tokens(String text) {
+        List<String> tokens = new ArrayList<String>();
+        String separated = text.replaceAll(
+            "(?<=\\p{IsHan})(?=[A-Za-z0-9])|(?<=[A-Za-z0-9])(?=\\p{IsHan})", " ");
+        for (String part : separated.split("[^\\p{IsHan}A-Za-z0-9]+")) {
+            if (part.length() >= 2 && !tokens.contains(part)) {
+                tokens.add(part);
+            }
+        }
+        if (tokens.isEmpty() && text.length() >= 2) {
+            tokens.add(text);
+        }
+        return tokens.size() > 4 ? new ArrayList<String>(tokens.subList(0, 4)) : tokens;
+    }
+
+    /** 查询为零时按名称前缀找相近物料，交给模型修正名称后重试（例如把 PBCA 纠正成 PCBA）。 */
+    private List<Map<String, Object>> similarItems(Map<String, Object> args) {
+        Object query = args.get("query");
+        if (!(query instanceof String) || ((String) query).trim().length() < 2) {
+            return Collections.emptyList();
+        }
+        String text = ((String) query).trim();
+        try {
+            List<Map<String, Object>> items = mapper.similarItems(
+                Collections.singletonMap("fragment", text.substring(0, 2)));
+            return items.stream()
+                .filter(item -> !text.equals(item.get("itemName")) && !text.equals(item.get("itemCode")))
+                .collect(Collectors.toList());
+        } catch (RuntimeException e) {
+            return Collections.emptyList();
+        }
+    }
+
     public Result execute(String code, JsonNode input) {
         Tool tool = tools.get(code);
         if (tool == null) {
@@ -163,16 +217,27 @@ public class AiReadTools {
                 checkPermission(MOVEMENTS, "指定期间库存");
                 source += "、wm_transaction";
             }
-            List<Map<String, Object>> rows = tool.reader.apply(args);
+            Map<String, Object> readArgs = new LinkedHashMap<>(args);
+            Map<String, String> flowPermissions = new LinkedHashMap<>();
+            if ("workorders".equals(code)) {
+                flowPermissions.put("taskCount", "mes:pro:protask:list");
+                flowPermissions.put("pendingIpqc", "mes:qc:ipqc:list");
+                flowPermissions.put("received", "mes:wm:productrecpt:list");
+                flowPermissions.put("shipped", "mes:wm:productsales:list");
+                flowPermissions.forEach((field, perm) -> readArgs.put(field, permissions.hasPermi(perm)));
+            }
+            List<Map<String, Object>> rows = tool.reader.apply(readArgs);
             int total = rows.isEmpty() ? 0 : ((Number) rows.get(0).get("matchedCount")).intValue();
             rows.forEach(row -> row.remove("matchedCount"));
             List<Map<String, String>> displayed = tool.columns.stream()
                 .filter(column -> !("stock".equals(code) && !input.has("from")
                     && Arrays.asList("opening", "incoming", "outgoing").contains(column.get("prop"))))
+                .filter(column -> !Boolean.FALSE.equals(readArgs.get(column.get("prop"))))
                 .collect(Collectors.toList());
             long duration = System.currentTimeMillis() - started;
             audit(tool, args, rows.size(), duration, null);
-            return new Result(tool.code, tool.label, source, args, displayed, rows, total, duration, Instant.now().toString());
+            return new Result(tool.code, tool.label, source, args, displayed, rows, total, duration,
+                Instant.now().toString(), total == 0 ? similarItems(args) : Collections.emptyList());
         } catch (RuntimeException e) {
             audit(tool, args, 0, System.currentTimeMillis() - started,
                 e instanceof ServiceException ? e.getMessage() : "查询未完成");
@@ -208,7 +273,7 @@ public class AiReadTools {
                 throw invalid("查询日期区间最长为 366 天。");
             }
         }
-        if (args.containsKey("workorderCode") && !"IPQC".equals(args.get("kind"))) {
+        if ("inspections".equals(tool.code) && args.containsKey("workorderCode") && !"IPQC".equals(args.get("kind"))) {
             throw invalid("按工单查询时请选择过程检验。");
         }
         args.putIfAbsent("limit", 12);
@@ -315,13 +380,13 @@ public class AiReadTools {
     }
 
     private enum Parameter {
-        query(object("type", "string", "minLength", 1, "maxLength", 80, "description", "只传物料、产品或工单的名称或编码")),
+        query(object("type", "string", "minLength", 1, "maxLength", 80, "description", "物料、产品、工单名称或编码，或来源销售订单号")),
         from(object("type", "string", "format", "date", "description", "YYYY-MM-DD，含起日")),
         to(object("type", "string", "format", "date", "description", "YYYY-MM-DD，含止日")),
         direction(object("type", "string", "enum", Arrays.asList("IN", "OUT", "ALL"))),
         kind(object("type", "string", "enum", Arrays.asList("IQC", "IPQC", "OQC"))),
         status(object("type", "string", "enum", Arrays.asList("PREPARE", "CONFIRMED", "FINISHED", "CANCELED"))),
-        workorderCode(object("type", "string", "minLength", 1, "maxLength", 64, "description", "过程检验关联的确切工单编号")),
+        workorderCode(object("type", "string", "minLength", 1, "maxLength", 64, "description", "确切工单编号，支持新编号及其子序号")),
         overdue(object("type", "boolean")),
         limit(object("type", "integer", "minimum", 1, "maximum", 200));
 
@@ -375,5 +440,6 @@ public class AiReadTools {
         int total;
         long elapsedMs;
         String queriedAt;
+        List<Map<String, Object>> suggestions;
     }
 }

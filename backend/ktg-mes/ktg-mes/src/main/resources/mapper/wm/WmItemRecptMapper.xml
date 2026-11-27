@@ -146,6 +146,7 @@
         <result property="sourceDocId" column="source_doc_id"></result>
         <result property="sourceDocCode" column="source_doc_code"></result>
         <result property="sourceDocLineId" column="source_doc_line_id"></result>
+        <result property="sourceDocDetailId" column="source_doc_detail_id"></result>
         <result property="transactionQuantity" column="transaction_quantity"></result>
         <result property="recptDate" column="recpt_date"></result>
         <result property="createBy"    column="create_by"    />
@@ -222,6 +223,7 @@
             ir.`recpt_id` AS source_doc_id,
             ir.`recpt_code` AS source_doc_code,
             irl.`line_id` AS source_doc_line_id,
+            ird.`detail_id` AS source_doc_detail_id,
             ird.`quantity` AS transaction_quantity,
             ir.recpt_date,
             ir.`create_by`,

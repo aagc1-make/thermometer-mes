@@ -3,9 +3,9 @@
     <div v-if="device==='mobile'&&sidebar.opened" class="drawer-bg" @click="handleClickOutside"/>
     <!-- 可访问性：键盘用户可跳过导航直达主内容（WCAG 2.4.1） -->
     <a class="skip-to-content" href="#main-content" @click.prevent="skipToContent">跳到主内容</a>
-    <rail />
+    <rail v-show="!isAssistantAvatarMode" />
     <sidebar v-if="!sidebar.hide && !isHomePage" v-show="!isAssistantWorkspace" class="sidebar-container" />
-    <div class="fixed-header">
+    <div v-show="!isAssistantAvatarMode" class="fixed-header">
       <navbar />
     </div>
     <div :class="{ hasTagsView: needTagsView && !isAssistantWorkspace }" class="main-container">
@@ -51,6 +51,7 @@ export default {
       theme: state => state.settings.theme,
       sidebar: state => state.app.sidebar,
       device: state => state.app.device,
+      assistantAvatarOpen: state => state.app.assistantAvatarOpen,
       needTagsView: state => state.settings.tagsView
     }),
     // 首页（驾驶舱）隐藏左侧菜单栏，把横向空间让给流水线与表格；rail 图标导航保留
@@ -61,11 +62,15 @@ export default {
     isAssistantWorkspace() {
       return /^\/mes\/ai\/chat\/?$/.test(this.$route.path)
     },
+    isAssistantAvatarMode() {
+      return this.isAssistantWorkspace && this.assistantAvatarOpen
+    },
     classObj() {
       return {
         hideSidebar: this.device === 'mobile' ? !this.sidebar.opened : this.isHomePage,
         sidebarHidden: this.sidebar.hide,
         assistantWorkspace: this.isAssistantWorkspace,
+        assistantAvatarMode: this.isAssistantAvatarMode,
         openSidebar: this.device !== 'mobile' || this.sidebar.opened,
         withoutAnimation: this.sidebar.withoutAnimation,
         mobile: this.device === 'mobile'
@@ -114,6 +119,10 @@ export default {
     position: relative;
     height: 100%;
     width: 100%;
+
+    &.assistantAvatarMode {
+      --mes-header-height: 0px;
+    }
 
     &.mobile.openSidebar {
       position: fixed;

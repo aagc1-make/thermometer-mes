@@ -5,6 +5,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ktg.common.utils.StringUtils;
+import com.ktg.mes.wm.domain.WmProductRecptLine;
 import com.ktg.mes.wm.domain.WmStorageArea;
 import com.ktg.mes.wm.domain.WmStorageLocation;
 import com.ktg.mes.wm.domain.WmWarehouse;
@@ -54,6 +55,12 @@ public class WmProductRecptDetailController extends BaseController
 
     @Autowired
     private IWmStorageAreaService wmStorageAreaService;
+
+    @Autowired
+    private com.ktg.mes.wm.service.IWmProductRecptLineService wmProductRecptLineService;
+
+    @Autowired
+    private com.ktg.mes.wm.service.IWmProductStockingService wmProductStockingService;
 
     /**
      * 查询产品入库记录明细列表
@@ -127,6 +134,21 @@ public class WmProductRecptDetailController extends BaseController
             return AjaxResult.error("入库数量必须大于0!");
         }
 
+        // 上架：物料/批次继承入库行，服务端校验数量、库位余量与混放
+        WmProductRecptLine line = wmProductRecptLineService.selectWmProductRecptLineByLineId(wmProductRecptDetail.getLineId());
+        if (line == null) {
+            return AjaxResult.error("产品入库行不存在，无法上架");
+        }
+        if (wmProductRecptDetail.getItemId() == null) {
+            wmProductRecptDetail.setItemId(line.getItemId());
+        }
+        if (wmProductRecptDetail.getBatchId() == null) {
+            wmProductRecptDetail.setBatchId(line.getBatchId());
+        }
+        if (StringUtils.isEmpty(wmProductRecptDetail.getBatchCode())) {
+            wmProductRecptDetail.setBatchCode(line.getBatchCode());
+        }
+        wmProductStockingService.assertDetailAllowed(wmProductRecptDetail);
 
         return toAjax(wmProductRecptDetailService.insertWmProductRecptDetail(wmProductRecptDetail));
     }
@@ -161,6 +183,8 @@ public class WmProductRecptDetailController extends BaseController
             wmProductRecptDetail.setAreaCode(area.getAreaCode());
             wmProductRecptDetail.setAreaName(area.getAreaName());
         }
+
+        wmProductStockingService.assertDetailAllowed(wmProductRecptDetail);
         return toAjax(wmProductRecptDetailService.updateWmProductRecptDetail(wmProductRecptDetail));
     }
 

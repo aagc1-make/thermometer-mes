@@ -32,7 +32,7 @@ public class ChainCleanupService {
 
     /** 需要按 workorder_id 直接删除的表（无子表或子表已单独处理）。 */
     private static final List<String> WORKORDER_TABLES = Arrays.asList(
-            "pro_feedback", "pro_task", "pro_workorder_bom",
+            "pro_feedback", "pro_task", "pro_workorder_bom", "pro_workorder_line",
             "pro_card", "pro_andon_record", "pro_task_issue",
             "pro_trans_order", "pro_trans_consume",
             "wm_package_line", "wm_materialrequest_notice", "wm_pback_header",
@@ -56,7 +56,7 @@ public class ChainCleanupService {
                         + "(select count(*) from qc_ipqc q where q.workorder_id = w.workorder_id) as ipqc_count, "
                         + "(select count(*) from wm_issue_header i where i.workorder_id = w.workorder_id) as issue_count, "
                         + "(select count(*) from wm_product_recpt r where r.workorder_id = w.workorder_id) as recpt_count "
-                        + "from pro_workorder w where 1 = 1");
+                        + "from pro_workorder w where coalesce(w.source_doc_type,'') != 'SALES_ORDER'");
         List<Object> args = new ArrayList<Object>();
         if (onlyChain) {
             sql.append(" and ").append(CHAIN_MATCH);
@@ -107,6 +107,10 @@ public class ChainCleanupService {
         if (ids.isEmpty()) {
             throw new IllegalArgumentException("没有可删除的工单");
         }
+        if (jdbc.queryForObject("select count(*) from pro_workorder where source_doc_type='SALES_ORDER' and workorder_id in ("
+                + marks(ids) + ")", Integer.class, ids.toArray()) > 0) {
+            throw new IllegalArgumentException("销售订单关联工单请从销售订单链路处理");
+        }
         Docs docs = collect(ids);
         Map<String, Object> summary = new LinkedHashMap<String, Object>();
 
@@ -150,6 +154,8 @@ public class ChainCleanupService {
         for (String table : WORKORDER_TABLES) {
             summary.put(table, deleteByWorkorder("`" + table + "`", ids));
         }
+        jdbc.update("update wm_batch set workorder_line_id=null,workorder_id=null "
+                + "where workorder_id in (" + marks(ids) + ")", ids.toArray());
         int removedWorkorders = deleteByWorkorder("pro_workorder", ids);
         summary.put("pro_workorder", removedWorkorders);
         summary.put("workorderIds", new ArrayList<Long>(ids));

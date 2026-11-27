@@ -129,8 +129,8 @@ export default {
       workorderList: [],
       chartList: [],
       colors: [
-        { color: '#4272c7', percentage: 99 },
-        { color: '#4d7b64', percentage: 100 }
+        { color: 'var(--color-progress)', percentage: 99 },
+        { color: 'var(--color-success)', percentage: 100 }
       ]
     }
   },

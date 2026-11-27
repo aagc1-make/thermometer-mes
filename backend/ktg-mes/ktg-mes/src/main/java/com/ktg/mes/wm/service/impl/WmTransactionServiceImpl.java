@@ -24,6 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ktg.mes.wm.mapper.WmTransactionMapper;
 import com.ktg.mes.wm.service.IWmTransactionService;
+import com.ktg.system.service.CodeSequenceService;
+import org.springframework.dao.DuplicateKeyException;
 
 /**
  * 库存事务Service业务层处理
@@ -58,13 +60,28 @@ public class WmTransactionServiceImpl implements IWmTransactionService
     @Autowired
     private MdItemMapper mdItemMapper;
 
+    @Autowired
+    private CodeSequenceService codeSequenceService;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public WmTransaction processTransaction(WmTransaction wmTransaction) {
         WmMaterialStock stock = new WmMaterialStock();
 
         validate(wmTransaction); //先效验业务传递的库存事务参数是否完整
+        // 所有写过账入口都必须经过这里生成幂等键，禁止各业务方自行拼字符串。
+        wmTransaction.setBizKey(buildBizKey(wmTransaction));
+        fillTraceFields(wmTransaction);
         postingLockMapper.inventory(); //跨实例串行化过账，锁随外层业务事务释放
+        // 锁内做幂等检查：同一业务重复提交（退避重试、双击、消息重投）直接返回既有事务，
+        // 不再走库存增减，从根上避免重复记账。
+        WmTransaction existingTxn = wmTransaction.getBizKey() == null ? null
+                : wmTransactionMapper.selectWmTransactionByBizKey(wmTransaction.getBizKey());
+        if (existingTxn != null) {
+            return existingTxn;
+        }
+        // 幂等检查后再在本次过账事务内占用事务号。
+        wmTransaction.setTxnCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_TXN));
         initStock(wmTransaction,stock); //用库存事务来初始化一个MSD对象
         batchCheck(wmTransaction); //针对入库事务，根据物资批次管理属性，检查批次号参数是否传递
         checkAreaMixingRule(wmTransaction); //针对入库事务，检查库位混放规则
@@ -76,7 +93,7 @@ public class WmTransactionServiceImpl implements IWmTransactionService
                 && Integer.valueOf(-1).equals(wmTransaction.getTransactionFlag());
         WmMaterialStock ms;
         if ((issueOut || vendorOut) && wmTransaction.getMaterialStockId() != null) {
-            // 领料只能扣减拣货明细引用的库存行，不能按维度重新选择另一条重复库存。
+            // 领料/退供只能扣减拣货明细引用的库存行，不能按维度重新选择另一条重复库存。
             ms = wmMaterialStockMapper.lockMaterialStockById(wmTransaction.getMaterialStockId());
             if (ms == null) throw new BussinessException("来源库存不存在，请刷新后重试");
         } else {
@@ -84,35 +101,126 @@ public class WmTransactionServiceImpl implements IWmTransactionService
         }
         checkFrozen(ms,stock); //冻结检测
 
+        // 在同一事务内先读当前结存（已加行锁），再按增量更新，保证并发下前后数量一致。
+        BigDecimal delta = wmTransaction.getTransactionQuantity().multiply(new BigDecimal(wmTransaction.getTransactionFlag()));
+        BigDecimal qtyBefore = ms != null && ms.getQuantityOnhand() != null ? ms.getQuantityOnhand() : BigDecimal.ZERO;
+        BigDecimal qtyAfter = qtyBefore.add(delta);
+        boolean mustNotBeNegative = issueOut || vendorOut || wmTransaction.isStorageCheckFlag();
+        if (mustNotBeNegative && qtyAfter.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BussinessException("库存数量不足！");
+        }
 
-        BigDecimal quantity = wmTransaction.getTransactionQuantity().multiply(new BigDecimal(wmTransaction.getTransactionFlag()));
-        if(StringUtils.isNotNull(ms)){
-            //MS已存在
-            BigDecimal resultQuantity =ms.getQuantityOnhand().add(quantity);
-            if((issueOut || vendorOut || wmTransaction.isStorageCheckFlag()) && resultQuantity.compareTo(new BigDecimal(0))<0){
-                throw new BussinessException("库存数量不足！");
-            }
-            stock.setQuantityOnhand(resultQuantity);
+        if(ms != null){
+            //MS已存在：按库存行增减，扣减时走条件更新防超卖
             stock.setMaterialStockId(ms.getMaterialStockId());
-            stock.setUpdateTime(new Date());
-            wmMaterialStockMapper.updateWmMaterialStock(stock);
+            applyDelta(stock.getMaterialStockId(), delta, mustNotBeNegative);
         }else {
             //MS不存在
-
             //TODO:需要为库存增加一个效验逻辑：同一个库位上不能放不同批次和属性的物资
-
-            if ((issueOut || vendorOut || wmTransaction.isStorageCheckFlag()) && quantity.signum() < 0) {
-                throw new BussinessException("库存数量不足！");
-            }
-            stock.setQuantityOnhand(quantity);
+            stock.setQuantityOnhand(qtyAfter);
             stock.setCreateTime(new Date());
             stock.setUpdateTime(new Date());
-            wmMaterialStockMapper.insertWmMaterialStock(stock);
+            try {
+                wmMaterialStockMapper.insertWmMaterialStock(stock);
+            } catch (DuplicateKeyException duplicate) {
+                // stock_key 唯一冲突：并发下同维度库存行已被其他事务创建，重查后改为更新
+                WmMaterialStock existing = wmMaterialStockMapper.loadMaterialStockForUpdate(stock);
+                if (existing == null) {
+                    throw duplicate;
+                }
+                stock.setMaterialStockId(existing.getMaterialStockId());
+                qtyBefore = existing.getQuantityOnhand() != null ? existing.getQuantityOnhand() : BigDecimal.ZERO;
+                qtyAfter = qtyBefore.add(delta);
+                if (mustNotBeNegative && qtyAfter.compareTo(BigDecimal.ZERO) < 0) {
+                    throw new BussinessException("库存数量不足！");
+                }
+                applyDelta(stock.getMaterialStockId(), delta, mustNotBeNegative);
+            }
         }
         wmTransaction.setMaterialStockId(stock.getMaterialStockId());
-        wmTransaction.setTransactionQuantity(quantity);
+        wmTransaction.setTransactionQuantity(delta);
+        wmTransaction.setQtyBefore(qtyBefore);
+        wmTransaction.setQtyAfter(qtyAfter);
         wmTransactionMapper.insertWmTransaction(wmTransaction);
         return wmTransaction;
+    }
+
+    /**
+     * 按库存行增减数量；需要防止负库存时，扣减走条件更新（WHERE quantity_onhand + delta >= 0）。
+     */
+    private void applyDelta(Long materialStockId, BigDecimal delta, boolean mustNotBeNegative) {
+        if (delta.signum() < 0 && mustNotBeNegative) {
+            int rows = wmMaterialStockMapper.deductQuantityOnhandIfEnough(materialStockId, delta);
+            if (rows == 0) {
+                throw new BussinessException("库存数量不足！");
+            }
+        } else {
+            wmMaterialStockMapper.addQuantityOnhand(materialStockId, delta);
+        }
+    }
+
+    /**
+     * 补全库存事务的追溯字段：来源入库单可反推 recpt_id；
+     * workorder_id / inspection_id 由新主链调用方显式传入，老链路暂无值保持 NULL。
+     */
+    private void fillTraceFields(WmTransaction transaction) {
+        if (transaction.getRecptId() == null
+                && UserConstants.SOURCE_DOC_TYPE_ITEM_RECPT.equals(transaction.getSourceDocType())) {
+            transaction.setRecptId(transaction.getSourceDocId());
+        }
+        // TODO 主链：生产入库/质检放行链路改造后，由 TxBean 直接携带 workorderId、inspectionId。
+    }
+
+    /**
+     * 生成库存事务业务幂等键（唯一、可复现、不含时间戳）。
+     *
+     * <p>规范：{@code <事务类型>:<单据类型>:<单据ID>:<单据行ID>:<判别段>}</p>
+     * <ul>
+     *   <li>事务类型（transaction_type）区分出入方向与业务种类，如 ITEM_RECPT / ITEM_ISSUE_IN；</li>
+     *   <li>单据类型 + 单据ID + 单据行ID 定位到唯一业务行；</li>
+     *   <li>判别段：TrxBean 带明细ID时直接用它（入库单/产出单的一行可拆多条明细）；
+     *       没有明细ID时用“物料|批次|仓库|库区|库位|数量”指纹，
+     *       保证领料/调拨等一行拆多条明细时 key 不冲突。</li>
+     * </ul>
+     *
+     * <p><b>例外</b>：当前 {@code transaction_type} 取值域全部是业务过账（入库/出库/调拨/领料/产出/销售/退料），
+     * 没有“纯查询/纯调整”类型，因此不做任何豁免，全部参与幂等去重。
+     * 若未来新增纯查询或允许重复调整的类型，必须先在此显式排除，不能默认放开。</p>
+     *
+     * @return 幂等键；手工补录等缺少来源单据行的场景返回 null（不参与去重）
+     */
+    private String buildBizKey(WmTransaction tx) {
+        if (tx.getTransactionType() == null || tx.getSourceDocLineId() == null) {
+            return null;
+        }
+        StringBuilder key = new StringBuilder();
+        key.append(tx.getTransactionType())
+           .append(':').append(nullSafe(tx.getSourceDocType()))
+           .append(':').append(nullSafe(tx.getSourceDocId()))
+           .append(':').append(tx.getSourceDocLineId());
+        if (tx.getSourceDocDetailId() != null) {
+            key.append(':').append(tx.getSourceDocDetailId());
+        } else {
+            key.append(":D")
+               .append(nullSafe(tx.getItemId())).append('|')
+               .append(nullSafe(tx.getBatchId())).append('|')
+               .append(nullSafe(tx.getWarehouseId())).append('|')
+               .append(nullSafe(tx.getLocationId())).append('|')
+               .append(nullSafe(tx.getAreaId())).append('|')
+               .append(normalizeQty(tx.getTransactionQuantity()));
+        }
+        return key.toString();
+    }
+
+    private String nullSafe(Object value) {
+        return value == null ? "-" : value.toString();
+    }
+
+    /**
+     * 数量归一化：去掉无意义的尾零，保证同一数值在重试时得到相同的字符串。
+     */
+    private String normalizeQty(BigDecimal qty) {
+        return qty == null ? "-" : qty.stripTrailingZeros().toPlainString();
     }
 
 
@@ -300,6 +408,14 @@ public class WmTransactionServiceImpl implements IWmTransactionService
     @Override
     public int insertWmTransaction(WmTransaction wmTransaction)
     {
+        // 后台手工补录入口同样生成幂等键；已有同键记录时不重复插入。
+        if (wmTransaction.getBizKey() == null) {
+            wmTransaction.setBizKey(buildBizKey(wmTransaction));
+        }
+        if (wmTransaction.getBizKey() != null
+                && wmTransactionMapper.selectWmTransactionByBizKey(wmTransaction.getBizKey()) != null) {
+            return 0;
+        }
         wmTransaction.setCreateTime(DateUtils.getNowDate());
         return wmTransactionMapper.insertWmTransaction(wmTransaction);
     }

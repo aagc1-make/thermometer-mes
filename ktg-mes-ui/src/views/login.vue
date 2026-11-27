@@ -182,7 +182,7 @@
             </div>
           </div>
 
-          <div style="font-size:12px;line-height:1.7;color:#64748b;background:rgba(37,99,235,.06);border-radius:8px;padding:10px 12px">
+          <div style="font-size:12px;line-height:1.7;color:var(--color-text-secondary);background:var(--color-page);border-radius:8px;padding:10px 12px">
             首次使用请先用密码登录，在「个人中心 → 人脸登录」录入。
           </div>
 
@@ -215,7 +215,7 @@
           </div>
           <div class="w-full flex justify-center gap-4 flex-wrap">
           <p class="text-sm text-on-surface-variant">
-              账户未注册？<a class="text-blue-600 font-bold hover:text-blue-700 transition-colors duration-200 underline-offset-4 hover:underline cursor-pointer" @click="goToRegister">立即注册</a>
+              账户未注册？<a class="text-primary font-bold transition-colors duration-200 underline-offset-4 hover:underline cursor-pointer" @click="goToRegister">立即注册</a>
             </p>
             <a class="text-sm text-primary font-bold hover:text-tertiary transition-colors duration-200 underline-offset-4 hover:underline cursor-pointer" href="#" @click.prevent="productVisible = true">
               了解产品

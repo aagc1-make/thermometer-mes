@@ -1,5 +1,7 @@
 @echo off
 chcp 65001 >nul
+rem 数字人语音服务（Azure 晓伊），已在跑就跳过
+call "%~dp0scripts\mes-avatar-speech\start-voice-background.bat"
 cd /d "%~dp0ktg-mes-ui"
 
 echo ============================================

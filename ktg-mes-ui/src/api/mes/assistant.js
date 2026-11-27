@@ -9,6 +9,16 @@ export function askBusinessQuestion(data) {
   return request({ url: '/mes/ai/business/answer', method: 'post', data, timeout: 75000 })
 }
 
+// 规则都匹配不上时的兜底：模型先尝试工具，再自然语言作答
+export function askAssistantChat(data) {
+  return request({ url: '/mes/ai/business/chat', method: 'post', data, timeout: 45000 })
+}
+
+// 把规则命中的表格/清单改写成自然语言说明
+export function narrateAnswer(data) {
+  return request({ url: '/mes/ai/business/narrate', method: 'post', data, timeout: 20000 })
+}
+
 export function queryPurchaseReceipts(data) {
   return request({ url: '/mes/ai/business/purchase-receipts', method: 'post', data })
 }

@@ -1,5 +1,6 @@
 @import './mes-palette';
 
+$--color-white: $mes-card;
 $--color-primary: $mes-primary;
 $--color-success: $mes-success;
 $--color-warning: $mes-warning;
@@ -8,7 +9,7 @@ $--color-info: $mes-text-sub;
 $--color-text-primary: $mes-text;
 $--color-text-regular: $mes-text;
 $--color-text-secondary: $mes-text-sub;
-$--color-text-placeholder: #657180;
+$--color-text-placeholder: $mes-text-sub;
 $--font-family: $mes-font;
 $--border-radius-base: 6px;
 $--button-font-weight: 500;

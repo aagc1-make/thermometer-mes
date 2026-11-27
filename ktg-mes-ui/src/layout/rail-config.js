@@ -54,7 +54,7 @@ export const railDomains = [
     groups: [
       ['库存管理', ['wmstock', 'transaction', 'batch']],
       ['入库管理', ['itemrecpt', 'arrivalnotice', 'productrecpt', 'miscrecpt']],
-      ['出库管理', ['issue', 'productsales', 'salesnotice', 'miscissue', 'transfer']],
+      ['出库管理', ['issue', 'salesorder', 'productsales', 'salesnotice', 'miscissue', 'transfer']],
       ['退料退货', ['rtissue', 'rtvendor', 'rtsales']],
       ['其他业务', ['stocktaking', 'package', 'barcode', 'sn', 'outsourceissue', 'outsourcerecpt']]
     ]

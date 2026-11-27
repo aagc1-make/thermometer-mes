@@ -23,6 +23,8 @@ function component(stubs = {}) {
     component: null, pipelineWorkorderContext: {}, WorkorderSelect: {}, WorkstationSelect: {},
     Ipqcline: {}, QCResutl: {}, ...feedbackUtils(), ...ipqcUtils(),
     genCode: async () => 'IPQC-TEST-0001',
+    // 组件改用 /mes/code/next 预览编号，接口同样返回 { data: 编号 }。
+    previewMesCode: async () => ({ data: 'IPQC-TEST-0001' }),
     getUserProfile: async () => ({ data: { userName: 'admin', nickName: '若依' } }),
     ...stubs
   }

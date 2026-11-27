@@ -431,7 +431,7 @@ import { listProductproduceline } from "@/api/mes/wm/productproduceline";
 import { listProductprocess } from "@/api/mes/pro/routeprocess";
 import { pendingTasks } from "@/utils/feedbackDefaults";
 import { findOpenIpqc, inspectionDefaults, pickInspectionFeedback, pickProduceLine, qualifiedFromCheck } from "@/utils/ipqcDefaults";
-import {genCode} from "@/api/system/autocode/rule"
+import { previewMesCode } from '@/api/mes/code'
 import WorkorderSelect from "@/components/workorderSelect/single.vue"
 import WorkstationSelect from "@/components/workstationSelect/simpletableSingle.vue"
 import Ipqcline from "./line.vue"
@@ -952,8 +952,8 @@ export default {
     //自动生成编码
     handleAutoGenChange(autoGenFlag){
       if(autoGenFlag){
-        genCode('QC_PQC_CODE').then(response =>{
-          this.form.ipqcCode = response;
+        previewMesCode('ZJ', this.form.workorderCode).then(response =>{
+          this.form.ipqcCode = response.data;
         });
       }else{
         this.form.ipqcCode = null;

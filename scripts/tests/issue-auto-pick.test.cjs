@@ -17,7 +17,11 @@ function load(name, api = {}) {
 }
 
 test('新建领料单默认自动生成编号，工单已知名称日期客户直接带入', async () => {
-  const { c } = load('index', { genCode: async () => 'LL-20261031-01' })
+  const { c } = load('index', {
+    genCode: async () => 'LL-20261031-01',
+    // 组件改用 /mes/code/next 预览编号，接口同样返回 { data: 编号 }。
+    previewMesCode: async () => ({ data: 'LL-20261031-01' })
+  })
   await c.handleAdd()
   assert.equal(c.autoGenFlag, true)
   assert.equal(c.form.issueCode, 'LL-20261031-01')

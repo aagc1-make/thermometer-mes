@@ -11,6 +11,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="locationId"    column="location_id"    />
         <result property="area"    column="area"    />
         <result property="maxLoa"    column="max_loa"    />
+        <result property="maxQty"    column="max_qty"    />
         <result property="positionX"    column="position_x"    />
         <result property="positionY"    column="position_y"    />
         <result property="positionZ"    column="position_z"    />
@@ -50,7 +51,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectWmStorageAreaVo">
-        select area_id, area_code, area_name, location_id, area, max_loa, position_x, position_y, position_z, product_mixing, batch_mixing, enable_flag, frozen_flag, remark, attr1, attr2, attr3, attr4, create_by, create_time, update_by, update_time from wm_storage_area
+        select area_id, area_code, area_name, location_id, area, max_loa, max_qty, position_x, position_y, position_z, product_mixing, batch_mixing, enable_flag, frozen_flag, remark, attr1, attr2, attr3, attr4, create_by, create_time, update_by, update_time from wm_storage_area
     </sql>
 
     <select id="selectWmStorageAreaList" parameterType="WmStorageArea" resultMap="WmStorageAreaResult">
@@ -107,6 +108,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="locationId != null">location_id,</if>
             <if test="area != null">area,</if>
             <if test="maxLoa != null">max_loa,</if>
+            <if test="maxQty != null">max_qty,</if>
             <if test="positionX != null">position_x,</if>
             <if test="positionY != null">position_y,</if>
             <if test="positionZ != null">position_z,</if>
@@ -130,6 +132,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="locationId != null">#{locationId},</if>
             <if test="area != null">#{area},</if>
             <if test="maxLoa != null">#{maxLoa},</if>
+            <if test="maxQty != null">#{maxQty},</if>
             <if test="positionX != null">#{positionX},</if>
             <if test="positionY != null">#{positionY},</if>
             <if test="positionZ != null">#{positionZ},</if>
@@ -157,6 +160,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="locationId != null">location_id = #{locationId},</if>
             <if test="area != null">area = #{area},</if>
             <if test="maxLoa != null">max_loa = #{maxLoa},</if>
+            <if test="maxQty != null">max_qty = #{maxQty},</if>
             <if test="positionX != null">position_x = #{positionX},</if>
             <if test="positionY != null">position_y = #{positionY},</if>
             <if test="positionZ != null">position_z = #{positionZ},</if>

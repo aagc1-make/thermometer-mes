@@ -14,16 +14,22 @@ import com.ktg.mes.md.domain.MdItemBatchConfig;
 import com.ktg.mes.md.domain.MdProductBom;
 import com.ktg.mes.md.service.IMdItemBatchConfigService;
 import com.ktg.mes.md.service.IMdProductBomService;
+import com.ktg.mes.linkage.IssueDraftLinkageService;
 import com.ktg.mes.linkage.ProductionNextStepLinkageService;
 import com.ktg.mes.linkage.ProductReceiptLinkageService;
 import com.ktg.mes.pro.controller.vo.SubWorkorderBatchRequest;
 import com.ktg.mes.wm.mapper.ReceiptGuardMapper;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.mes.wm.mapper.PostingLockMapper;
+import com.ktg.system.service.CodeSequenceService;
+import com.ktg.mes.pro.domain.ProFeedback;
 import com.ktg.mes.pro.domain.ProTask;
 import com.ktg.mes.pro.domain.ProWorkorder;
 import com.ktg.mes.pro.domain.ProWorkorderBom;
+import com.ktg.mes.pro.service.IProAutoSchedulingService;
+import com.ktg.mes.pro.service.IProFeedbackService;
 import com.ktg.mes.pro.service.IProTaskService;
 import com.ktg.mes.pro.service.IProWorkorderBomService;
+import com.ktg.mes.pro.service.IProWorkorderLineService;
 import com.ktg.mes.pro.service.IProWorkorderService;
 import com.ktg.mes.wm.utils.WmBarCodeUtil;
 import io.swagger.annotations.ApiOperation;
@@ -55,6 +61,9 @@ public class ProWorkorderController extends BaseController
     private IProWorkorderBomService proWorkorderBomService;
 
     @Autowired
+    private IProWorkorderLineService proWorkorderLineService;
+
+    @Autowired
     private IMdProductBomService mdProductBomService;
 
     @Autowired
@@ -64,7 +73,16 @@ public class ProWorkorderController extends BaseController
     private IProTaskService proTaskService;
 
     @Autowired
+    private IProAutoSchedulingService proAutoSchedulingService;
+
+    @Autowired
+    private IProFeedbackService proFeedbackService;
+
+    @Autowired
     private ProductionNextStepLinkageService productionNextStepLinkageService;
+
+    @Autowired
+    private IssueDraftLinkageService issueDraftLinkageService;
 
     @Autowired
     private ProductReceiptLinkageService productReceiptLinkageService;
@@ -73,10 +91,13 @@ public class ProWorkorderController extends BaseController
     private WmBarCodeUtil wmBarCodeUtil;
 
     @Autowired
-    private AutoCodeUtil autoCodeUtil;
+    private CodeSequenceService codeSequenceService;
 
     @Autowired
     private ReceiptGuardMapper receiptGuardMapper;
+
+    @Autowired
+    private PostingLockMapper postingLockMapper;
 
     /**
      * 查询生产工单列表
@@ -84,7 +105,13 @@ public class ProWorkorderController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(ProWorkorder proWorkorder)
     {
-        startPage();
+        if (!com.ktg.common.utils.SecurityUtils.isAdmin(getUserId())) {
+            proWorkorder.setShowDeleted(null);
+        }
+        // 下拉远程搜索：带关键字时由 Mapper 直接检索并限制 50 条，不走分页；不带关键字保持原有分页列表
+        if (StringUtils.isEmpty(proWorkorder.getKeyword())) {
+            startPage();
+        }
         List<ProWorkorder> list = proWorkorderService.selectProWorkorderList(proWorkorder);
         return getDataTable(list);
     }
@@ -129,9 +156,12 @@ public class ProWorkorderController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('mes:pro:workorder:add')")
     @Log(title = "生产工单", businessType = BusinessType.INSERT)
+    @Transactional(rollbackFor = Exception.class)
     @PostMapping
     public AjaxResult add(@RequestBody ProWorkorder proWorkorder)
     {
+        // 工单号由服务端统一取号；弹窗预取的合法单号原样沿用，避免展示号与入库号不一致
+        proWorkorder.setWorkorderCode(codeSequenceService.ensureCode(UserConstants.CODE_RULE_WORKORDER, proWorkorder.getWorkorderCode()));
         if(UserConstants.NOT_UNIQUE.equals(proWorkorderService.checkWorkorderCodeUnique(proWorkorder))){
             return AjaxResult.error("生产工单编号已存在！");
         }
@@ -214,7 +244,7 @@ public class ProWorkorderController extends BaseController
                 continue;
             }
             ProWorkorder child = new ProWorkorder();
-            child.setWorkorderCode(autoCodeUtil.genSerialCode(UserConstants.WORKORDER_CODE, ""));
+            child.setWorkorderCode(codeSequenceService.generateCode(UserConstants.CODE_RULE_WORKORDER));
             child.setWorkorderName(bom.getItemName() + "【" + bom.getQuantity() + "】"
                     + (bom.getUnitName() != null ? bom.getUnitName() : ""));
             child.setProductId(bom.getItemId());
@@ -269,17 +299,32 @@ public class ProWorkorderController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody ProWorkorder proWorkorder)
     {
-        if(UserConstants.NOT_UNIQUE.equals(proWorkorderService.checkWorkorderCodeUnique(proWorkorder))){
-            return AjaxResult.error("生产工单编号已存在！");
+        postingLockMapper.workorder(proWorkorder.getWorkorderId());
+        ProWorkorder workorder = proWorkorderService.selectProWorkorderByWorkorderId(proWorkorder.getWorkorderId());
+        if (workorder == null) {
+            return AjaxResult.error("工单不存在");
         }
-
-        //效验产品的批次属性是否有客户，有则客户必选
+        proWorkorder.setWorkorderCode(workorder.getWorkorderCode());
+        proWorkorder.setSourceDocType(workorder.getSourceDocType());
+        proWorkorder.setSourceDocId(workorder.getSourceDocId());
+        proWorkorder.setSourceDocCode(workorder.getSourceDocCode());
+        if ("SALES_ORDER".equals(workorder.getSourceDocType())) {
+            if (proWorkorder.getProductId() != null && !proWorkorder.getProductId().equals(workorder.getProductId())) {
+                return AjaxResult.error("销售订单关联工单的产品须与订单行一致");
+            }
+            proWorkorder.setSourceCode(workorder.getSourceCode());
+        }
+        if (proWorkorder.getProductId() == null) {
+            proWorkorder.setProductId(workorder.getProductId());
+        }
+        if (proWorkorder.getQuantity() == null) {
+            proWorkorder.setQuantity(workorder.getQuantity());
+        }
         MdItemBatchConfig batchConfig = mdItemBatchConfigService.getMdItemBatchConfigByItemId(proWorkorder.getProductId());
-        if(StringUtils.isNotNull(batchConfig) && UserConstants.YES.equals(batchConfig.getClientFlag()) && StringUtils.isNull(proWorkorder.getClientId())){
+        if (batchConfig != null && UserConstants.YES.equals(batchConfig.getClientFlag())
+                && proWorkorder.getClientId() == null && workorder.getClientId() == null) {
             return AjaxResult.error("当前生产工单的产品批次属性包含客户信息，客户必选！");
         }
-
-        ProWorkorder workorder = proWorkorderService.selectProWorkorderByWorkorderId(proWorkorder.getWorkorderId());
 
         int ret =proWorkorderService.updateProWorkorder(proWorkorder);
         //如果是产品和数量发生变化则需要重新生成BOM组成
@@ -288,6 +333,27 @@ public class ProWorkorderController extends BaseController
                     workorder.getQuantity().compareTo(proWorkorder.getQuantity())!=0){
                 removeBomLine(proWorkorder.getWorkorderId());
                 generateBomLine(proWorkorder.getWorkorderId());
+            }
+        }
+
+        // 工单确认：按工艺路线一次性生成全部工序任务；任一步失败抛异常，工单确认整体回滚
+        boolean confirmTransition = ret > 0
+                && !UserConstants.ORDER_STATUS_CONFIRMED.equals(workorder.getStatus())
+                && UserConstants.ORDER_STATUS_CONFIRMED.equals(proWorkorder.getStatus());
+        if (confirmTransition) {
+            ProWorkorder confirmed = proWorkorderService.selectProWorkorderByWorkorderId(proWorkorder.getWorkorderId());
+            proAutoSchedulingService.scheduleOnConfirm(confirmed.getWorkorderId(), getUsername());
+            // 自动排产等价于手工排产：同步准备领料草稿、清理「生产排产」提醒，失败不影响确认结果
+            try {
+                issueDraftLinkageService.createDraftIfNeeded(confirmed.getWorkorderId(), getUsername());
+            } catch (Exception e) {
+                logger.warn("自动排产后生成领料草稿失败：workorderId={}, 原因={}",
+                        confirmed.getWorkorderId(), e.getMessage());
+            }
+            try {
+                productionNextStepLinkageService.clearScheduleIfAllScheduled();
+            } catch (Exception ignore) {
+                // 提醒清理失败不影响工单确认
             }
         }
 
@@ -309,14 +375,20 @@ public class ProWorkorderController extends BaseController
     @PreAuthorize("@ss.hasPermi('mes:pro:workorder:remove')")
     @Log(title = "生产工单", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{workorderIds}")
+    @Transactional
     public AjaxResult remove(@PathVariable Long[] workorderIds)
     {
-        for (Long id:workorderIds
-             ) {
+        for (Long id : workorderIds) {
+            postingLockMapper.workorder(id);
             ProWorkorder workorder = proWorkorderService.selectProWorkorderByWorkorderId(id);
-            if(!UserConstants.ORDER_STATUS_PREPARE.equals(workorder.getStatus())){
+            if (workorder == null || !UserConstants.ORDER_STATUS_PREPARE.equals(workorder.getStatus())) {
                 return AjaxResult.error("只能删除草稿状态单据！");
             }
+            if ("SALES_ORDER".equals(workorder.getSourceDocType())) {
+                return AjaxResult.error("此工单关联销售订单，不能单独删除");
+            }
+        }
+        for (Long id : workorderIds) {
             removeBomLine(id);
         }
         return toAjax(proWorkorderService.deleteProWorkorderByWorkorderIds(workorderIds));
@@ -330,6 +402,9 @@ public class ProWorkorderController extends BaseController
         //先根据ID找到对应的产品
         ProWorkorder workorder = proWorkorderService.selectProWorkorderByWorkorderId(workorderId);
 
+        //BOM 行归属到工单的默认成品行（一工单一行项目）
+        Long defaultLineId = proWorkorderLineService.getDefaultLineId(workorderId);
+
         //根据产品找到BOM组成
         MdProductBom param = new MdProductBom();
         param.setItemId(workorder.getProductId());
@@ -342,6 +417,7 @@ public class ProWorkorderController extends BaseController
                  ) {
                 ProWorkorderBom workorderBom = new ProWorkorderBom();
                 workorderBom.setWorkorderId(workorderId);
+                workorderBom.setWorkorderLineId(defaultLineId);
                 workorderBom.setItemId(bom.getBomItemId());
                 workorderBom.setItemCode(bom.getBomItemCode());
                 workorderBom.setItemName(bom.getBomItemName());
@@ -449,6 +525,16 @@ public class ProWorkorderController extends BaseController
         if (workorder == null) {
             return AjaxResult.error("工单不存在");
         }
+        if (UserConstants.ORDER_STATUS_FINISHED.equals(workorder.getStatus())) {
+            return AjaxResult.success();
+        }
+
+        // 完工前必须有真实报工依据：已排产工序未报满时不允许完工，避免出现“已完工但报工 0/5”的流水线死结
+        List<String> unfinishedProcesses = findUnfinishedProcesses(workorderId);
+        if (!unfinishedProcesses.isEmpty()) {
+            return AjaxResult.error("工单还有 " + unfinishedProcesses.size() + " 道工序未完成报工："
+                    + String.join("、", unfinishedProcesses) + "，请先完成报工再完工");
+        }
 
         // 修复：不再把所有任务直接置 FINISHED（那会伪造工序/报工完成）。
         // 手工完工只关闭工单本身；产品入库草稿由 ProductReceiptLinkageService
@@ -459,6 +545,44 @@ public class ProWorkorderController extends BaseController
         //手工完工同样触发产品入库草稿（与报工/IPQC 完工口径一致，幂等）
         productReceiptLinkageService.ensureDraftForFinishedWorkorder(workorderId, getUsername());
         return AjaxResult.success();
+    }
+
+    /**
+     * 未完成报工的工序：按任务排产量与已执行报工累计量比对。
+     * 已取消任务、无排产量的任务不计；只有真实报工达量才算该工序完成。
+     */
+    private List<String> findUnfinishedProcesses(Long workorderId) {
+        ProTask taskQuery = new ProTask();
+        taskQuery.setWorkorderId(workorderId);
+        List<ProTask> tasks = proTaskService.selectProTaskList(taskQuery);
+        if (CollectionUtils.isEmpty(tasks)) {
+            return Collections.emptyList();
+        }
+        ProFeedback feedbackQuery = new ProFeedback();
+        feedbackQuery.setWorkorderId(workorderId);
+        List<ProFeedback> feedbacks = proFeedbackService.selectProFeedbackList(feedbackQuery);
+        Map<Long, BigDecimal> reportedByTask = new HashMap<>();
+        if (feedbacks != null) {
+            for (ProFeedback feedback : feedbacks) {
+                if (feedback.getTaskId() == null || !UserConstants.FEEDBACK_STATUS_FINISHED.equals(feedback.getStatus())) {
+                    continue;
+                }
+                BigDecimal quantity = feedback.getQuantityFeedback() == null ? BigDecimal.ZERO : feedback.getQuantityFeedback();
+                reportedByTask.merge(feedback.getTaskId(), quantity, BigDecimal::add);
+            }
+        }
+        List<String> unfinished = new ArrayList<>();
+        for (ProTask task : tasks) {
+            if (UserConstants.ORDER_STATUS_CANCELED.equals(task.getStatus())
+                    || task.getQuantity() == null || task.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            BigDecimal reported = reportedByTask.getOrDefault(task.getTaskId(), BigDecimal.ZERO);
+            if (reported.compareTo(task.getQuantity()) < 0) {
+                unfinished.add(StringUtils.isNotEmpty(task.getProcessName()) ? task.getProcessName() : task.getTaskCode());
+            }
+        }
+        return unfinished;
     }
 
     /**

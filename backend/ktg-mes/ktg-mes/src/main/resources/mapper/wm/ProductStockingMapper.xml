@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ktg.mes.wm.mapper.ProductStockingMapper">
+
+    <!-- 同一物料同一批次判定（batch_id 优先，其次 batch_code，空批次按空批次匹配） -->
+    <sql id="sameBatchCond">
+        and (
+            (#{batchId} is not null and s.batch_id = #{batchId})
+            or (#{batchId} is null and #{batchCode} is not null and s.batch_code = #{batchCode})
+            or (#{batchId} is null and #{batchCode} is null and s.batch_code is null)
+        )
+    </sql>
+
+    <select id="selectLocationRows" resultType="com.ktg.mes.wm.domain.vo.StorageLocationOptionVo">
+        select l.location_id as locationId,
+               l.location_code as locationCode,
+               l.location_name as locationName,
+               l.warehouse_id as warehouseId,
+               w.warehouse_code as warehouseCode,
+               w.warehouse_name as warehouseName,
+               w.warehouse_type as warehouseType,
+               l.max_qty as capacity,
+               (select ifnull(sum(case when s.quantity_onhand > 0 then s.quantity_onhand else 0 end), 0)
+                  from wm_material_stock s where s.location_id = l.location_id) as occupied,
+               (select ifnull(sum(d.quantity), 0)
+                  from wm_product_recpt_detail d
+                  join wm_product_recpt r on r.recpt_id = d.recpt_id
+                 where d.location_id = l.location_id
+                   and r.status in ('APPROVING', 'APPROVED')
+                   <if test="excludeDetailId != null">and d.detail_id &lt;&gt; #{excludeDetailId}</if>
+               ) as reserved,
+               (select ifnull(sum(s.quantity_onhand), 0)
+                  from wm_material_stock s
+                 where s.location_id = l.location_id
+                   and s.item_id = #{itemId}
+                   and s.quantity_onhand > 0
+                   <include refid="sameBatchCond"/>
+               ) as sameItemBatchQty
+          from wm_storage_location l
+          join wm_warehouse w on w.warehouse_id = l.warehouse_id
+         where l.warehouse_id = #{warehouseId}
+           and ifnull(l.frozen_flag, 'N') &lt;&gt; 'Y'
+         order by l.location_id
+    </select>
+
+    <select id="selectAreaRows" resultType="com.ktg.mes.wm.domain.vo.StorageAreaOptionVo">
+        select a.area_id as areaId,
+               a.area_code as areaCode,
+               a.area_name as areaName,
+               a.location_id as locationId,
+               a.max_qty as capacity,
+               a.product_mixing as productMixing,
+               a.batch_mixing as batchMixing,
+               (select ifnull(sum(case when s.quantity_onhand > 0 then s.quantity_onhand else 0 end), 0)
+                  from wm_material_stock s where s.area_id = a.area_id) as occupied,
+               (select ifnull(sum(d.quantity), 0)
+                  from wm_product_recpt_detail d
+                  join wm_product_recpt r on r.recpt_id = d.recpt_id
+                 where d.area_id = a.area_id
+                   and r.status in ('APPROVING', 'APPROVED')
+                   <if test="excludeDetailId != null">and d.detail_id &lt;&gt; #{excludeDetailId}</if>
+               ) as reserved,
+               (select ifnull(sum(s.quantity_onhand), 0)
+                  from wm_material_stock s
+                 where s.area_id = a.area_id
+                   and s.item_id = #{itemId}
+                   and s.quantity_onhand > 0
+                   <include refid="sameBatchCond"/>
+               ) as sameQty,
+               (select ifnull(sum(case when s.quantity_onhand > 0 then s.quantity_onhand else 0 end), 0)
+                  from wm_material_stock s
+                 where s.area_id = a.area_id
+                   and s.item_id &lt;&gt; #{itemId}
+               ) as otherItemQty,
+               (select ifnull(sum(case when s.quantity_onhand > 0 then s.quantity_onhand else 0 end), 0)
+                  from wm_material_stock s
+                 where s.area_id = a.area_id
+                   and s.item_id = #{itemId}
+                   and not (
+                       (#{batchId} is not null and s.batch_id = #{batchId})
+                       or (#{batchId} is null and #{batchCode} is not null and s.batch_code = #{batchCode})
+                       or (#{batchId} is null and #{batchCode} is null and s.batch_code is null)
+                   )
+               ) as otherBatchQty
+          from wm_storage_area a
+         where a.location_id = #{locationId}
+           and ifnull(a.enable_flag, 'Y') = 'Y'
+           and ifnull(a.frozen_flag, 'N') &lt;&gt; 'Y'
+         order by a.area_id
+    </select>
+
+    <select id="selectPendingOtherItemQty" resultType="java.math.BigDecimal">
+        select ifnull(sum(d.quantity), 0)
+          from wm_product_recpt_detail d
+          join wm_product_recpt r on r.recpt_id = d.recpt_id
+         where d.area_id = #{areaId}
+           and r.status in ('APPROVING', 'APPROVED')
+           and d.item_id &lt;&gt; #{itemId}
+           <if test="excludeDetailId != null">and d.detail_id &lt;&gt; #{excludeDetailId}</if>
+    </select>
+
+    <select id="selectPendingOtherBatchQty" resultType="java.math.BigDecimal">
+        select ifnull(sum(d.quantity), 0)
+          from wm_product_recpt_detail d
+          join wm_product_recpt r on r.recpt_id = d.recpt_id
+         where d.area_id = #{areaId}
+           and r.status in ('APPROVING', 'APPROVED')
+           and d.item_id = #{itemId}
+           and ifnull(d.batch_code, '') &lt;&gt; ifnull(#{batchCode}, '')
+           <if test="excludeDetailId != null">and d.detail_id &lt;&gt; #{excludeDetailId}</if>
+    </select>
+
+    <select id="selectOtherItemNames" resultType="java.lang.String">
+        select group_concat(distinct s.item_name separator '、')
+          from wm_material_stock s
+         where s.area_id = #{areaId}
+           and s.item_id &lt;&gt; #{itemId}
+           and s.quantity_onhand &gt; 0
+    </select>
+
+    <select id="selectOtherBatchCodes" resultType="java.lang.String">
+        select group_concat(distinct ifnull(s.batch_code, '(无批次)') separator '、')
+          from wm_material_stock s
+         where s.area_id = #{areaId}
+           and s.item_id = #{itemId}
+           and s.quantity_onhand &gt; 0
+           and ifnull(s.batch_code, '') &lt;&gt; ifnull(#{batchCode}, '')
+    </select>
+
+    <select id="selectStockedQtyByLine" resultType="java.math.BigDecimal">
+        select ifnull(sum(d.quantity), 0)
+          from wm_product_recpt_detail d
+         where d.line_id = #{lineId}
+           <if test="excludeDetailId != null">and d.detail_id &lt;&gt; #{excludeDetailId}</if>
+    </select>
+
+</mapper>

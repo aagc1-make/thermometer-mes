@@ -75,13 +75,14 @@ public class MesAiController extends BaseController {
 
     private static final String SYSTEM_PROMPT =
             "你是 MES 系统的意图解析器。把用户的中文问题解析成 JSON，只输出 JSON，不要解释。\n"
-          + "字段：metric（stock 库存盘点 / inbound 入库 / outbound 出库 / workorder 工单 / inspection 检验 / alert 安全库存预警 / action 新增或修改单据 / unknown）\n"
+          + "字段：metric（stock 库存盘点 / inbound 入库 / outbound 出库 / workorder 工单 / product 产品与成品目录 / inspection 检验 / alert 安全库存预警 / action 新增或修改单据 / unknown）\n"
           + "timeText（原文中的时间词，如 10月份/本月/上月/近7天，没有则为空字符串）\n"
           + "category（物料名称或编码关键词，没有则为空字符串）\n"
           + "warehouse（仓库名关键词，没有则为空字符串）\n"
           + "docType（metric 为 action 时的单据类型，如 到货通知/生产工单/入库单/出库单，没有则为空字符串）\n"
           + "confidence（0~1 的小数，表示你的把握）\n"
           + "只要用户要求新增、添加、新建、创建、录入、登记、修改或删除单据，metric 必须是 action，绝不能填 inbound、stock 等查询指标，即使句中出现“采购、到货、入库”等词。\n"
+          + "只要用户在问系统里有哪些产品、本厂生产什么、成品是什么、我们做什么产品，metric 必须是 product，不能填 workorder、stock 或 unknown；product 是产品档案问题，不是工单进度问题。\n"
           + "如果问题与 MES 业务数据无关（如天气、闲聊、或系统中不存在的物料），metric 填 unknown。\n"
           + "示例输入：盘点一下10月份测温显示电控预装件的库存\n"
           + "示例输出：{\"metric\":\"stock\",\"timeText\":\"10月份\",\"category\":\"测温显示电控预装件\",\"warehouse\":\"\",\"docType\":\"\",\"confidence\":0.95}\n"

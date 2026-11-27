@@ -1,41 +1,5 @@
 /* Visual source: codex/user-login-ui login-ui-reference at 7cbdc95. Scoped to the login component. */
 @font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 300;
-  font-display: swap;
-  src: url(../fonts/user-login/inter-1.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url(../fonts/user-login/inter-2.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url(../fonts/user-login/inter-3.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url(../fonts/user-login/inter-4.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url(../fonts/user-login/inter-5.ttf) format('truetype');
-}
-
-@font-face {
   font-family: 'Material Symbols Outlined';
   font-style: normal;
   font-weight: 400;
@@ -60,7 +24,6 @@
 .login-root {
 
   /* ---- Primary ---- */
-  --color-primary: #5cbfff;
   --color-primary-container: #0cb3ff;
   --color-on-primary: #003854;
   --color-on-primary-container: #002d45;
@@ -162,18 +125,17 @@
   --rgb-title: 92, 191, 255;
 
 
-    --color-primary: #34577d;
-    --color-primary-container: #e8eff6;
-    --color-on-primary: #ffffff;
-    --color-title: #1a252c;
-    --color-on-primary-container: #001d33;
-    --color-primary-fixed: #0077b6;
-    --color-primary-fixed-dim: #0096c7;
-    --color-primary-dim: #00a8d4;
+    --color-primary-container: var(--color-primary-bg);
+    --color-on-primary: var(--color-card);
+    --color-title: var(--color-text);
+    --color-on-primary-container: var(--color-text);
+    --color-primary-fixed: var(--color-primary);
+    --color-primary-fixed-dim: var(--color-primary-hover);
+    --color-primary-dim: var(--color-primary-hover);
     --color-on-primary-fixed: #ffffff;
     --color-on-primary-fixed-variant: #00334e;
     --color-inverse-primary: #80d8ff;
-    --color-surface-tint: #0077b6;
+    --color-surface-tint: var(--color-primary);
 
     --color-secondary: #3a4750;
     --color-secondary-container: #d6e0e8;
@@ -185,7 +147,7 @@
     --color-on-secondary-fixed-variant: #2a3a44;
     --color-secondary-dim: #a8b8c4;
 
-    --color-tertiary: #00796b;
+    --color-tertiary: var(--color-primary);
     --color-tertiary-container: #80cbc4;
     --color-on-tertiary: #ffffff;
     --color-on-tertiary-container: #002020;
@@ -201,52 +163,52 @@
     --color-on-error-container: #410002;
     --color-error-dim: #d32f2f;
 
-    --color-surface: #f8f9fa;
-    --color-surface-bright: #ffffff;
-    --color-surface-container: #eaeef2;
-    --color-surface-container-low: #f0f3f6;
-    --color-surface-container-lowest: #ffffff;
-    --color-surface-container-high: #dce0e6;
-    --color-surface-container-highest: #d0d5db;
-    --color-surface-dim: #e8ebee;
-    --color-surface-variant: #dce1e8;
-    --color-on-surface: #1a252c;
-    --color-on-surface-variant: #4a5568;
+    --color-surface: var(--color-bg);
+    --color-surface-bright: var(--color-card);
+    --color-surface-container: var(--color-rail);
+    --color-surface-container-low: var(--color-page);
+    --color-surface-container-lowest: var(--color-card);
+    --color-surface-container-high: var(--color-rail-hover);
+    --color-surface-container-highest: var(--color-border);
+    --color-surface-dim: var(--color-rail);
+    --color-surface-variant: var(--color-page);
+    --color-on-surface: var(--color-text);
+    --color-on-surface-variant: var(--color-text-secondary);
 
-    --color-background: #f8f9fa;
-    --color-on-background: #1a252c;
+    --color-background: var(--color-bg);
+    --color-on-background: var(--color-text);
 
-    --color-outline: #6b7280;
-    --color-outline-variant: #c8d0d8;
+    --color-outline: var(--color-border-strong);
+    --color-outline-variant: var(--color-border);
 
     --color-inverse-surface: #2a3a44;
     --color-inverse-on-surface: #e8ecef;
 
-    --color-scrollbar-thumb: #c8d0d8;
-    --color-scrollbar-thumb-hover: #a8b4c0;
+    --color-scrollbar-thumb: var(--color-border);
+    --color-scrollbar-thumb-hover: var(--color-border-strong);
     --color-glass-bg: rgba(255, 255, 255, 0.75);
     --color-glass-border: rgba(200, 208, 216, 0.35);
-    --color-active-nav-bg: #e0e8f0;
-    --color-nav-link-inactive: #6b7280;
-    --color-nav-link-hover: #00947e;
-    --color-primary-gradient-start: #34577d;
-    --color-primary-gradient-end: #34577d;
-    --color-text-link: #6b7280;
-    --color-text-muted: #4a5568;
-    --color-border-default: rgba(100, 116, 139, 0.2);
-    --color-border-strong: rgba(100, 116, 139, 0.4);
+    --color-active-nav-bg: var(--color-primary-bg);
+    --color-nav-link-inactive: var(--color-text-secondary);
+    --color-nav-link-hover: var(--color-primary);
+    --color-primary-gradient-start: var(--color-primary);
+    --color-primary-gradient-end: var(--color-primary-hover);
+    --color-text-link: var(--color-primary);
+    --color-text-muted: var(--color-text-secondary);
+    --color-border-default: var(--color-border);
+    --color-border-strong: #918577;
 
-    --rgb-primary: 52, 87, 125;
-    --rgb-primary-container: 232, 239, 246;
-    --rgb-tertiary: 0, 121, 107;
+    --rgb-primary: var(--color-primary-rgb);
+    --rgb-primary-container: 243, 228, 217;
+    --rgb-tertiary: var(--color-primary-rgb);
     --rgb-tertiary-container: 128, 203, 196;
     --rgb-error: 183, 28, 28;
     --rgb-error-container: 255, 205, 210;
     --rgb-secondary: 58, 71, 80;
     --rgb-secondary-container: 214, 224, 232;
-    --rgb-outline-variant: 200, 208, 216;
-    --rgb-on-surface: 26, 37, 44;
-    --rgb-title: 26, 37, 44;
+    --rgb-outline-variant: 222, 216, 204;
+    --rgb-on-surface: 40, 37, 31;
+    --rgb-title: 40, 37, 31;
 
 }
 .login-root.theme-green {
@@ -1545,7 +1507,7 @@ select {
 input::selection,
 textarea::selection {
   color: #ffffff;
-  background: #2563eb;
+  background: var(--color-primary);
 }
 
 input:focus,
@@ -1573,7 +1535,7 @@ textarea:focus {
 }
 
 .glass-panel {
-  background: white;
+  background: var(--color-card);
 }
 
 .theme-switcher-btn {
@@ -1859,7 +1821,7 @@ input:-webkit-autofill:active {
 .leftPart-ring {
   position: absolute;
   border-radius: 50%;
-  border: 1.5px solid rgba(0,200,83,0.18);
+  border: 1.5px solid rgba(var(--rgb-primary),0.18);
   pointer-events: none;
   z-index: 2;
 }
@@ -1878,8 +1840,8 @@ input:-webkit-autofill:active {
   width: 2px;
   background: linear-gradient(to bottom,
     transparent 0%,
-    rgba(0,200,83,0.45) 15%,
-    rgba(0,200,83,0.45) 85%,
+    rgba(var(--rgb-primary),0.45) 15%,
+    rgba(var(--rgb-primary),0.45) 85%,
     transparent 100%
   );
   pointer-events: none;
@@ -1890,7 +1852,7 @@ input:-webkit-autofill:active {
   position: absolute;
   left: 8%; right: 8%;
   height: 1px;
-  background: linear-gradient(to right, transparent, rgba(0,200,83,0.3), transparent);
+  background: linear-gradient(to right, transparent, rgba(var(--rgb-primary),0.3), transparent);
   pointer-events: none;
   z-index: 3;
 }
@@ -1918,7 +1880,7 @@ input:-webkit-autofill:active {
 /* 钻井模式宣传图为竖版完整构图，使用 contain 避免标题被裁切 */
 #drillIntroImg {
   object-fit: contain;
-  background: #F0F4F9;
+  background: var(--color-page);
 }
 .imgDiv video {
   width: 100%;
@@ -1932,13 +1894,13 @@ input:-webkit-autofill:active {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #ffffff;
+  background-color: var(--color-bg);
 }
 
 .login-card {
   width: 100%;
   max-width: 520px;
-  background-color: #ffffff;
+  background-color: var(--color-bg);
   border-radius: var(--radius-card);
   padding: 44px 40px;
   position: relative;
@@ -2040,19 +2002,19 @@ input:-webkit-autofill:active {
 /* 按钮默认：透明背景 */
 .login-tab-btn {
     background: transparent !important;
-    color: rgba(180, 180, 180, 0.7);
+    color: var(--color-text-secondary);
 }
 
 /* 按钮激活态 */
 .login-tab-btn.active {
     background: transparent !important;
-    color: var(--color-primary, #6366f1);
+    color: var(--color-primary);
 }
 
 
 .login-root { font-family: var(--font-ui); font-size: 14px; line-height: 1.5; color: var(--color-text); background: var(--color-bg); }
 .login-card h2 { font-size: clamp(22px, 2.1vw, 30px); letter-spacing: 0; line-height: 1.35; font-weight: 700; }
-.login-card .dingtalk-font { font-family: var(--font-ui) !important; }
+.login-card .dingtalk-font { font-family: var(--font-display) !important; }
 .login-card .login-tab-btn { font: 500 13px/20px var(--font-button); }
 .login-card .login-tab-btn.active { font-weight: 600; }
 .login-card button[id^="login-button-"] {
@@ -2069,19 +2031,19 @@ input:-webkit-autofill:active {
 }
 .login-card button[id^="login-button-"]:hover:not(:disabled) { background: var(--button-primary-hover); }
 .login-card button[id^="login-button-"]:disabled {
-  background: #eef1f4;
-  border-color: #b0bac5;
-  color: #586574;
+  background: var(--color-page);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
 }
-.login-card .login-input { border-color: #cbd4df; }
+.login-card .login-input { border-color: var(--color-border-strong); }
 .login-card .login-input:focus { border-color: var(--color-primary) !important; }
 .login-card .login-input:focus-visible { outline: 2px solid var(--color-primary) !important; outline-offset: 2px; }
 .login-root label:not(.font-semibold) { font-weight: 400; }
 .login-verification ::v-deep .el-dialog { max-width: calc(100vw - 32px); }
 .verification-hint { margin-bottom: 18px; }
 .verification-row { display:flex; gap:12px; }
-.verification-row input { width:100%; min-width:0; padding:12px; border:1px solid #c8d0d8; }
-.verification-image { flex:0 0 110px; background:#f0f4f9; border-radius:4px; overflow:hidden; }
+.verification-row input { width:100%; min-width:0; padding:12px; border:1px solid var(--color-border-strong); }
+.verification-image { flex:0 0 110px; background:var(--color-page); border-radius:4px; overflow:hidden; }
 .verification-image img { width:100%; height:44px; object-fit:contain; }
 .verification-error { min-height:24px; color:#b71c1c; margin:8px 0; font-size:13px; }
 .verification-submit { width:100%; }

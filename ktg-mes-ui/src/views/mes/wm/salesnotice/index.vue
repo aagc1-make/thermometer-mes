@@ -263,7 +263,7 @@
 import { listSalesnotice, getSalesnotice, delSalesnotice, addSalesnotice, updateSalesnotice } from "@/api/mes/wm/salesnotice";
 import ClientSelect from "@/components/clientSelect/single.vue";
 import NoticeLine from './line.vue'
-import {genCode} from "@/api/system/autocode/rule"
+import { previewMesCode } from '@/api/mes/code'
 export default {
   name: "Salesnotice",
   dicts: ['mes_sales_notice_status'],
@@ -446,8 +446,8 @@ export default {
     //自动生成编码
     handleAutoGenChange(autoGenFlag){
       if(autoGenFlag){
-        genCode('WM_SALES_NOTICE_CODE').then(response =>{
-          this.form.noticeCode = response;
+        previewMesCode('FHTZ').then(response =>{
+          this.form.noticeCode = response.data;
         });
       }else{
         this.form.noticeCode = null;

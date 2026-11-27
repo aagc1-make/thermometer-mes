@@ -37,6 +37,10 @@ public class WmStorageLocation extends BaseEntity
     @Excel(name = "面积")
     private BigDecimal area;
 
+    /** 库区最大存放数量，NULL=不限 */
+    @Excel(name = "最大存放数量")
+    private BigDecimal maxQty;
+
     /** 是否开启库位管理 */
     @Excel(name = "是否开启库位管理")
     private String areaFlag;
@@ -101,6 +105,15 @@ public class WmStorageLocation extends BaseEntity
     public BigDecimal getArea() 
     {
         return area;
+    }
+    public void setMaxQty(BigDecimal maxQty)
+    {
+        this.maxQty = maxQty;
+    }
+
+    public BigDecimal getMaxQty()
+    {
+        return maxQty;
     }
     public void setAreaFlag(String areaFlag) 
     {
@@ -173,6 +186,7 @@ public class WmStorageLocation extends BaseEntity
                 ", locationName='" + locationName + '\'' +
                 ", warehouseId=" + warehouseId +
                 ", area=" + area +
+                ", maxQty=" + maxQty +
                 ", areaFlag='" + areaFlag + '\'' +
                 ", attr1='" + attr1 + '\'' +
                 ", attr2='" + attr2 + '\'' +

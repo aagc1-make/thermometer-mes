@@ -23,6 +23,9 @@ public class ProWorkorderBom extends BaseEntity
     @Excel(name = "生产工单ID")
     private Long workorderId;
 
+    /** 所属工单行ID（成品产出维度），对应 pro_workorder_line.line_id */
+    private Long workorderLineId;
+
     /** BOM物料ID */
     @Excel(name = "BOM物料ID")
     private Long itemId;
@@ -91,6 +94,15 @@ public class ProWorkorderBom extends BaseEntity
     public Long getWorkorderId() 
     {
         return workorderId;
+    }
+    public void setWorkorderLineId(Long workorderLineId)
+    {
+        this.workorderLineId = workorderLineId;
+    }
+
+    public Long getWorkorderLineId()
+    {
+        return workorderLineId;
     }
     public void setItemId(Long itemId) 
     {

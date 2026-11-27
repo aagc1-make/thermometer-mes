@@ -37,6 +37,45 @@
           <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </select>
 
+    <!-- 影响路径的文档佐证：只取未删除文档、当前生效版本，并尊重「纳入知识图谱」设置 -->
+    <sql id="impactChunks">
+        from kb_document_chunk c
+        join kb_document_version v on v.version_id = c.version_id and v.active = 1 and v.deleted_at is null
+        join kb_document d on d.doc_id = c.doc_id and d.deleted_at is null and d.graph_enabled = 1
+    </sql>
+
+    <select id="impactChunks" resultType="com.ktg.mes.ai.domain.KbCitation" timeout="3">
+        select <include refid="columns"/>
+        <include refid="impactChunks"/>
+        where c.dept_id = #{scope.deptId} and c.library_id = #{scope.libraryId}
+          and c.content like concat('%', #{code}, '%')
+        order by c.version_id, c.chunk_index
+        limit #{limit}
+    </select>
+
+    <select id="impactVersionChunks" resultType="com.ktg.mes.ai.domain.KbCitation" timeout="3">
+        select <include refid="columns"/>
+        <include refid="impactChunks"/>
+        where c.dept_id = #{scope.deptId} and c.library_id = #{scope.libraryId}
+          and c.version_id = #{versionId} and c.chunk_index &gt;= #{from} and c.chunk_index &lt;= #{to}
+        order by c.chunk_index
+    </select>
+
+    <select id="impactFinishedCodes" resultType="string" timeout="2">
+        select i.item_code from md_item i
+        where i.item_type_code = #{typeCode} and i.enable_flag = 'Y'
+          and exists (
+            select 1
+            from kb_document_chunk c
+            join kb_document_version v on v.version_id = c.version_id and v.active = 1 and v.deleted_at is null
+            join kb_document d on d.doc_id = c.doc_id and d.deleted_at is null and d.graph_enabled = 1
+            where c.version_id = #{versionId} and c.dept_id = #{scope.deptId}
+              and c.library_id = #{scope.libraryId}
+              and c.content like concat('%', i.item_code, '%')
+          )
+        order by i.item_id limit #{limit}
+    </select>
+
     <sql id="indexVersion">
         select d.doc_id as docId, d.dept_id as deptId, d.library_id as libraryId, v.version_id as versionId,
                task.task_id as taskId

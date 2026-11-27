@@ -28,7 +28,6 @@ import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ItemConsumeTxBean;
 import com.ktg.mes.wm.domain.tx.ProductProductTxBean;
 import com.ktg.mes.wm.service.*;
-import com.ktg.system.strategy.AutoCodeUtil;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -112,9 +111,6 @@ public class ProFeedbackController extends BaseController
     @Autowired
     private IStorageCoreService storageCoreService;
 
-    @Autowired
-    private AutoCodeUtil autoCodeUtil;
-
     /**
      * 查询生产报工记录列表
      */
@@ -197,10 +193,9 @@ public class ProFeedbackController extends BaseController
                 return AjaxResult.error("请输入合格品和不良品数量！");
             }
         }
-        String feedbackCode = autoCodeUtil.genSerialCode(UserConstants.FEEDBACK_CODE,"");
-        proFeedback.setFeedbackCode(feedbackCode);
+        // 报工单号由服务端生成：父工单号-bg三位序号（如 gd2026112100003-bg012），工单号已含日期，不再重复
         proFeedback.setCreateBy(getUsername());
-        return toAjax(proFeedbackService.insertProFeedback(proFeedback));
+        return toAjax(proFeedbackService.insertProFeedbackWithCode(proFeedback, workorder.getWorkorderCode()));
     }
 
     /**
@@ -413,6 +408,10 @@ public class ProFeedbackController extends BaseController
                 //工单完工后：为整机工单幂等生成产品入库草稿（半成品子工单不建）
                 productReceiptLinkageService.ensureDraftForFinishedWorkorder(feedback.getWorkorderId(), getUsername());
             }
+        }else{
+            // 非关键工序不生成产品产出单，但报工数量同样要推进任务/工单进度；
+            // 否则任务已报满仍显示“剩余可报”，报工页会重复带出该工序。
+            proFeedbackService.updateProTaskAndWorkorderByFeedback(feedback);
         }
 
         //更新报工单的状态

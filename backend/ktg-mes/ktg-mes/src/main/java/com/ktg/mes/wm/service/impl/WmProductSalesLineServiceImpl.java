@@ -3,6 +3,7 @@ package com.ktg.mes.wm.service.impl;
 import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.exception.ServiceException;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ktg.mes.wm.domain.WmProductSales;
 import com.ktg.mes.wm.domain.WmProductSalesDetail;
+import com.ktg.mes.wm.mapper.ProductReceiptGuardMapper;
 import com.ktg.mes.wm.mapper.WmProductSalesDetailMapper;
 import com.ktg.mes.wm.mapper.WmProductSalesLineMapper;
 import com.ktg.mes.wm.mapper.WmProductSalesMapper;
@@ -36,6 +38,9 @@ public class WmProductSalesLineServiceImpl implements IWmProductSalesLineService
 
     @Autowired
     private WmProductSalesDetailMapper wmProductSalesDetailMapper;
+
+    @Autowired
+    private ProductReceiptGuardMapper productReceiptGuardMapper;
 
     /* ==================== 保护规则（Service 层统一） ==================== */
 
@@ -92,7 +97,22 @@ public class WmProductSalesLineServiceImpl implements IWmProductSalesLineService
      *       保持手工销售出库的原有行为，不阻断开单。</li>
      * </ul>
      */
-    private void linkWorkorder(WmProductSalesLine line) {
+    private void linkWorkorder(WmProductSalesLine line, WmProductSales parent) {
+        if (line.getAttr3() != null && line.getAttr1() != null
+                && line.getAttr1().startsWith("AUTO:SALES_LINE:NOTICE:")) {
+            List<Map<String, Object>> bindings = productReceiptGuardMapper.finishedRecptBindings(
+                    parent.getSoCode(), line.getItemId(), line.getBatchId(), line.getBatchCode(), line.getAttr3());
+            if (bindings.size() == 1) {
+                Map<String, Object> binding = bindings.get(0);
+                line.setWorkorderId(((Number) binding.get("workorderId")).longValue());
+                line.setWorkorderCode((String) binding.get("workorderCode"));
+                line.setBatchId(((Number) binding.get("batchId")).longValue());
+                line.setBatchCode((String) binding.get("batchCode"));
+            } else if (line.getBatchId() != null || StringUtils.isNotEmpty(line.getBatchCode())) {
+                throw new ServiceException("所选成品批次不能唯一匹配订单行的已入库工单");
+            }
+            return;
+        }
         if (line.getItemId() == null) {
             return;
         }
@@ -121,13 +141,21 @@ public class WmProductSalesLineServiceImpl implements IWmProductSalesLineService
         }
         String batchCode = line.getBatchCode();
         if (StringUtils.isNotEmpty(batchCode)) {
+            WmProductSalesLine match = null;
             for (WmProductSalesLine source : sources) {
-                if (batchCode.equals(source.getBatchCode())) {
-                    line.setWorkorderId(source.getWorkorderId());
-                    line.setWorkorderCode(source.getWorkorderCode());
+                if (!batchCode.equals(source.getBatchCode())) {
+                    continue;
+                }
+                if (match != null && !match.getWorkorderId().equals(source.getWorkorderId())) {
                     return;
                 }
+                match = source;
             }
+            if (match != null) {
+                line.setWorkorderId(match.getWorkorderId());
+                line.setWorkorderCode(match.getWorkorderCode());
+            }
+            return;
         }
         // 批次也定不下来时，仅当该产品全部入库记录都来自同一张工单才自动关联
         Set<Long> workorderIds = new LinkedHashSet<>();
@@ -189,7 +217,7 @@ public class WmProductSalesLineServiceImpl implements IWmProductSalesLineService
     @Transactional(rollbackFor = Exception.class)
     public int insertWmProductSalesLine(WmProductSalesLine wmProductSalesLine)
     {
-        requireEditableParent(wmProductSalesLine.getSalesId());
+        WmProductSales parent = requireEditableParent(wmProductSalesLine.getSalesId());
         if (wmProductSalesLine.getQuantitySales() != null
                 && wmProductSalesLine.getQuantitySales().signum() <= 0) {
             throw new ServiceException("出库数量必须大于零");
@@ -200,7 +228,7 @@ public class WmProductSalesLineServiceImpl implements IWmProductSalesLineService
         wmProductSalesLine.setOqcCode(null);
         wmProductSalesLine.setQualityStatus(null);
         // 成品来源工单：显式选择则校验，未选择则按批次/唯一工单回溯
-        linkWorkorder(wmProductSalesLine);
+        linkWorkorder(wmProductSalesLine, parent);
         wmProductSalesLine.setCreateTime(DateUtils.getNowDate());
         return wmProductSalesLineMapper.insertWmProductSalesLine(wmProductSalesLine);
     }
@@ -223,13 +251,15 @@ public class WmProductSalesLineServiceImpl implements IWmProductSalesLineService
         if (old == null) {
             throw new ServiceException("出库行不存在，不能修改");
         }
-        requireEditableParent(old.getSalesId());
+        WmProductSales parent = requireEditableParent(old.getSalesId());
         assertInspectedLineFrozen(wmProductSalesLine, old);
         if (wmProductSalesLine.getQuantitySales() != null
                 && wmProductSalesLine.getQuantitySales().signum() <= 0) {
             throw new ServiceException("出库数量必须大于零");
         }
         // 字段白名单：父单、质量字段一律以库中值为准，客户端提交值丢弃
+        wmProductSalesLine.setAttr1(old.getAttr1());
+        wmProductSalesLine.setAttr3(old.getAttr3());
         wmProductSalesLine.setSalesId(old.getSalesId());
         wmProductSalesLine.setOqcId(old.getOqcId());
         wmProductSalesLine.setOqcCode(old.getOqcCode());
@@ -239,13 +269,13 @@ public class WmProductSalesLineServiceImpl implements IWmProductSalesLineService
         // 避免"改了货却仍挂在原工单"的错链；已检行在上面已被冻结，走不到这里改货。
         boolean goodsChanged = objChanged(wmProductSalesLine.getItemId(), old.getItemId())
                 || objChanged(wmProductSalesLine.getBatchCode(), old.getBatchCode());
-        if (goodsChanged) {
+        if (goodsChanged || old.getWorkorderId() == null && old.getAttr3() != null) {
             // 客户端若重新选了工单成品则保留（linkWorkorder 会校验与该产品的入库记录是否对得上），
             // 否则清掉旧工单，按新批次/唯一工单重新回溯
             if (wmProductSalesLine.getWorkorderId() == null) {
                 wmProductSalesLine.setWorkorderCode(null);
             }
-            linkWorkorder(wmProductSalesLine);
+            linkWorkorder(wmProductSalesLine, parent);
         } else {
             wmProductSalesLine.setWorkorderId(old.getWorkorderId());
             wmProductSalesLine.setWorkorderCode(old.getWorkorderCode());

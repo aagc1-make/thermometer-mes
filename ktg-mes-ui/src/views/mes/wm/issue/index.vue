@@ -311,7 +311,7 @@ import { listIssueheader, getIssueheader, checkQuantity, delIssueheader, addIssu
 import WorkstationSelect from "@/components/workstationSelect/simpletableSingle.vue"
 import WorkorderSelect from "@/components/workorderSelect/single.vue"
 import {getTreeList} from "@/api/mes/wm/warehouse"
-import {genCode} from "@/api/system/autocode/rule"
+import { previewMesCode } from '@/api/mes/code'
 import Issueline from "./line.vue";
 import IssueDetail from "./detail.vue";
 export default {
@@ -764,8 +764,8 @@ export default {
     handleAutoGenChange(autoGenFlag){
       if(autoGenFlag){
         const target = this.form;
-        return genCode('ISSUE_CODE').then(response =>{
-          if (target === this.form && this.autoGenFlag) this.form.issueCode = response;
+        return previewMesCode('LL', this.form.workorderCode).then(response =>{
+          if (target === this.form && this.autoGenFlag) this.form.issueCode = response.data;
         });
       }else{
         this.form.issueCode = null;

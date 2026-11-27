@@ -21,6 +21,20 @@ import java.util.function.BooleanSupplier;
 
 @Component
 public class KbRagEngines {
+    /** 检索或工具都拿不到内容时的助手人设：允许自然对话，也说明能力边界。 */
+    public static final String ASSISTANT_SYSTEM = "你是温衡智造 MES 智能助手，服务对象是车间、计划、仓库与质检人员。"
+        + "用简洁自然的中文回答，可以问候、闲聊、解释 MES 概念并给出使用建议。"
+        + "业务数据只能来自只读工具或授权文档；本轮没有取得这些内容时，直接说明暂未查到，并给出更具体的提问建议（如物料编码、工单号、检验类型）。"
+        + "不得编造库存、工单、检验等业务数据，不得声称已修改系统。不要输出思考过程。"
+        + "系统模块：主数据（物料、客户、供应商、车间、工作站、多级 BOM）；"
+        + "仓储（到货通知、采购入库、生产领料退料、产品入库、销售出库、库存流水）；"
+        + "生产（工单、排产、报工、工序流转、工艺路线、安灯）；"
+        + "质量（来料/过程/出货/退料检验、不良记录、批次追溯）；"
+        + "设备（台账、点检保养、维修、工装夹具）；班组排班（班组、排班计划、班次、节假日）；"
+        + "系统管理（用户、角色、菜单、部门、岗位、字典、参数、日志、定时任务）。"
+        + "能直接执行的写操作只有：新增到货通知、创建生产工单草稿；其余写操作需到对应菜单完成。"
+        + "回答用纯文本自然段落，不要使用 Markdown 标记（不要 **、#、- 列表、代码块），可以用中文分句和换行。";
+
     private final ObjectMapper json;
 
     @Value("${mes.ai.rag.ollama-url:http://127.0.0.1:11434}")
@@ -76,7 +90,45 @@ public class KbRagEngines {
     }
 
     boolean externalAvailable() {
-        return externalEnabled && (present(deepseekKey) || present(glmKey));
+        return externalEnabled && (present(deepseekKey()) || present(glmKey()));
+    }
+
+    /** 主模型密钥：配置 → 系统属性 → 环境变量 → 本地 ai-keys.txt（与 MesAiController 一致）。 */
+    String deepseekKey() {
+        return resolveKey(deepseekKey, "MES_AI_KEY");
+    }
+
+    /** 兜底模型密钥。 */
+    String glmKey() {
+        return resolveKey(glmKey, "MES_AI_FB_KEY");
+    }
+
+    private static String resolveKey(String configured, String name) {
+        if (present(configured)) return configured.trim();
+        String value = System.getProperty(name);
+        if (present(value)) return value.trim();
+        value = System.getenv(name);
+        if (present(value)) return value.trim();
+        for (String path : new String[]{"ai-keys.txt", "E:/JavaCode/ai-keys.txt"}) {
+            try {
+                java.io.File file = new java.io.File(path);
+                if (!file.isFile()) continue;
+                try (BufferedReader reader = new BufferedReader(
+                        new java.io.InputStreamReader(new java.io.FileInputStream(file), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        int index = line.indexOf('=');
+                        if (index > 0 && line.substring(0, index).trim().equals(name)) {
+                            String value2 = line.substring(index + 1).trim();
+                            if (!value2.isEmpty()) return value2;
+                        }
+                    }
+                }
+            } catch (IOException ignored) {
+                // 读取失败时继续尝试下一个来源
+            }
+        }
+        return "";
     }
 
     List<ToolChannel> toolChannels(boolean allowExternal, boolean skipLocal) {
@@ -85,8 +137,8 @@ public class KbRagEngines {
             choices.add(new ToolChannel(address(ollama, "/v1/chat/completions"), localModel, null));
         }
         if (allowExternal && externalEnabled) {
-            if (present(deepseekKey)) choices.add(new ToolChannel(deepseekUrl, deepseekModel, deepseekKey));
-            if (present(glmKey)) choices.add(new ToolChannel(glmUrl, glmModel, glmKey));
+            if (present(deepseekKey())) choices.add(new ToolChannel(deepseekUrl, deepseekModel, deepseekKey()));
+            if (present(glmKey())) choices.add(new ToolChannel(glmUrl, glmModel, glmKey()));
         }
         return choices;
     }
@@ -162,7 +214,7 @@ public class KbRagEngines {
 
     String generateExternal(String system, String prompt, TextSink sink, BooleanSupplier cancelled) throws IOException {
         IOException failure = new IOException("External model unavailable");
-        for (String[] channel : new String[][]{{deepseekUrl, deepseekKey, deepseekModel}, {glmUrl, glmKey, glmModel}}) {
+        for (String[] channel : new String[][]{{deepseekUrl, deepseekKey(), deepseekModel}, {glmUrl, glmKey(), glmModel}}) {
             if (!externalEnabled || !present(channel[1]) || cancelled.getAsBoolean()) {
                 continue;
             }
@@ -178,6 +230,55 @@ public class KbRagEngines {
             }
         }
         throw failure;
+    }
+
+    /** 自然语言回答：外部模型优先，其次本地模型；两者都不可用时抛错，由调用方保留兜底话术。 */
+    String generateNatural(String system, String prompt, TextSink sink, BooleanSupplier cancelled) throws IOException {
+        IOException failure = new IOException("Model unavailable");
+        if (externalAvailable()) {
+            try {
+                return generateExternal(system, prompt, sink, cancelled);
+            } catch (PartialOutputException e) {
+                throw e;
+            } catch (IOException e) {
+                failure = e;
+            }
+        }
+        if (localAvailable()) {
+            try {
+                return generateLocal(system, prompt, sink, cancelled);
+            } catch (IOException e) {
+                failure = e;
+            }
+        }
+        throw failure;
+    }
+
+    /** 按本轮授权选择渠道：允许外部时外部优先，否则只走本地模型。 */
+    String generateFor(boolean allowExternal, String system, String prompt, TextSink sink,
+                       BooleanSupplier cancelled) throws IOException {
+        if (allowExternal && externalAvailable()) {
+            return generateExternal(system, prompt, sink, cancelled);
+        }
+        if (localAvailable()) {
+            return generateLocal(system, prompt, sink, cancelled);
+        }
+        throw new IOException("Model unavailable");
+    }
+
+    /** 一次性取得完整回答文本；模型不可用时返回空串。 */
+    public String naturalText(boolean allowExternal, String system, String prompt) {
+        StringBuilder text = new StringBuilder();
+        try {
+            generateFor(allowExternal, system, prompt, part -> text.append(part), () -> false);
+        } catch (IOException e) {
+            return "";
+        }
+        return text.toString().trim();
+    }
+
+    public String naturalText(String system, String prompt) {
+        return naturalText(true, system, prompt);
     }
 
     private void generate(String url, Object body, String apiKey, boolean local,

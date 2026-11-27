@@ -62,3 +62,12 @@ export function execute(recptId) {
     method: 'put'
   })
 }
+
+export function confirmProductStocking(recptId) {
+  return request({ url: '/mes/wm/productrecpt/confirmStocking/' + recptId, method: 'post' })
+}
+
+export function listProductStockingOptions(level, params) {
+  const path = level === 'location' ? 'locationOptions' : 'areaOptions'
+  return request({ url: '/mes/wm/productrecpt/' + path, method: 'get', params })
+}

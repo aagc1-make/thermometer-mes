@@ -388,7 +388,7 @@ import Productsalesline from "./line.vue"
 import ProductsalesDetail from "./detail.vue"
 import NoticeSelect from "@/components/noticeSelect/salesNoticeSingle.vue"
 import ClientSelect from "@/components/clientSelect/single.vue";
-import {genCode} from "@/api/system/autocode/rule"
+import { previewMesCode } from '@/api/mes/code'
 export default {
   name: "Productsales",
   dicts: ['mes_product_sales_status'],
@@ -731,8 +731,8 @@ export default {
     //自动生成编码
     handleAutoGenChange(autoGenFlag){
       if(autoGenFlag){
-        genCode('PRODUCTSALSE_CODE').then(response =>{
-          this.form.salesCode = response;
+        previewMesCode('XSCK', this.form.soCode).then(response =>{
+          this.form.salesCode = response.data;
         });
       }else{
         this.form.salesCode = null;

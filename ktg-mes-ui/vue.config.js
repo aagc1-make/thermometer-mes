@@ -42,6 +42,11 @@ module.exports = {
           ['^' + process.env.VUE_APP_BASE_API]: ''
         }
       },
+      '/mes-avatar/speech': {
+        target: process.env.MES_AVATAR_SERVICE_URL || 'http://127.0.0.1:12394',
+        changeOrigin: true,
+        proxyTimeout: 28000
+      },
       '/ureport': {
         target: 'http://localhost:8080',
         ws:false,

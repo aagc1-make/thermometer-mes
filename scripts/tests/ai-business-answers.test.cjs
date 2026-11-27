@@ -48,12 +48,16 @@ function chat({ denied = [], indexes = INDEXES, iqc = IQC } = {}) {
   const source = fs.readFileSync('ktg-mes-ui/src/views/mes/ai/index.vue', 'utf8')
   const code = source.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/^import .*$/mg, '').replace('export default', 'component =')
   const box = { ...answerRules(), component: null, request, Date, console, setTimeout: () => 1, clearTimeout() {},
+    // 数字人素材常量由被剥掉的 import 提供，沙箱补上空值，避免 data() 直接报错。
+    AVATAR_ASSETS: '', avatarAnswerText: () => '', AvatarSpeech: class { stop() {} },
     askBusinessQuestion: async () => ({ data: { mode: 'legacy' } }),
     sessionStorage: { setItem() {}, getItem() { return null }, removeItem() {} } }
   vm.createContext(box)
   vm.runInContext(code, box)
   const ctx = { ...box.component.data(), ...box.component.methods, answers: [],
     lastStock: null, lastWorkorder: null, waitingWeatherCity: false,
+    // created() 才会实例化语音对象，这里直接给一个空实现，重置/新会话流程才能跑到断言。
+    _avatarSpeech: { stop() {}, dispose() {}, unlock: async () => {}, warm() {}, mouthLevel: () => 0, play() {} },
     $auth: { hasPermi: permission => !denied.includes(permission) }, $store: { state: { user: { id: 7 } } }, $refs: {},
     push(message) { this.answers.push(message) } }
   return { ctx, calls }

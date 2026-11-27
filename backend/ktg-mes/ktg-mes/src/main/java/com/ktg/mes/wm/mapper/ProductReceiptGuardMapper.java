@@ -111,4 +111,21 @@ public interface ProductReceiptGuardMapper {
             + "join wm_product_recpt r on r.recpt_id=l.recpt_id "
             + "where r.workorder_id=#{workorderId} and r.status='FINISHED'")
     BigDecimal finishedProductRecptTotal(@Param("workorderId") Long workorderId);
+
+    /** 同一订单、物料和批次只在唯一来源时自动关联。 */
+    @Select("<script>select distinct r.workorder_id as workorderId, r.workorder_code as workorderCode, "
+            + "l.batch_id as batchId, l.batch_code as batchCode "
+            + "from wm_product_recpt_line l join wm_product_recpt r on r.recpt_id=l.recpt_id "
+            + "join pro_workorder w on w.workorder_id=r.workorder_id "
+            + "where r.status='FINISHED' and l.item_id=#{itemId} and w.source_doc_code=#{soCode} "
+            + "and l.batch_id is not null "
+            + "<if test='batchId != null'> and l.batch_id=#{batchId}</if>"
+            + "<if test='batchCode != null and batchCode.length() > 0'> and l.batch_code=#{batchCode}</if>"
+            + "<if test='orderLineId != null'> and exists (select 1 from wm_sales_order_line ol "
+            + "join wm_sales_order o on o.order_id=ol.order_id where ol.line_id=#{orderLineId} "
+            + "and o.order_code=#{soCode} and ol.workorder_id=r.workorder_id)</if>"
+            + "limit 2</script>")
+    java.util.List<Map<String, Object>> finishedRecptBindings(@Param("soCode") String soCode,
+            @Param("itemId") Long itemId, @Param("batchId") Long batchId,
+            @Param("batchCode") String batchCode, @Param("orderLineId") Long orderLineId);
 }

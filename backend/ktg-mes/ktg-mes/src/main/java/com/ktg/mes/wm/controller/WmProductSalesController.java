@@ -1,6 +1,10 @@
 package com.ktg.mes.wm.controller;
 
 import com.ktg.mes.wm.mapper.PostingLockMapper;
+import com.ktg.mes.wm.mapper.WmSalesNoticeMapper;
+import com.ktg.mes.wm.mapper.WmSalesOrderLineMapper;
+import com.ktg.mes.wm.mapper.WmSalesOrderMapper;
+import com.ktg.mes.wm.mapper.ProductReceiptGuardMapper;
 import java.math.BigDecimal;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -8,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import cn.hutool.core.collection.CollectionUtil;
 import com.ktg.common.constant.UserConstants;
 import com.ktg.common.utils.StringUtils;
+import com.ktg.system.service.CodeSequenceService;
 import com.ktg.mes.wm.domain.*;
 import com.ktg.mes.wm.domain.tx.ProductSalesTxBean;
 import com.ktg.mes.wm.domain.vo.WorkorderProductSaleVO;
@@ -51,6 +56,9 @@ public class WmProductSalesController extends BaseController
     private IWmProductSalesService wmProductSalesService;
 
     @Autowired
+    private CodeSequenceService codeSequenceService;
+
+    @Autowired
     private IWmProductSalesLineService wmProductSalesLineService;
 
     @Autowired
@@ -64,6 +72,18 @@ public class WmProductSalesController extends BaseController
 
     @Autowired
     private FormLinkagePolicy formLinkagePolicy;
+
+    @Autowired
+    private WmSalesNoticeMapper wmSalesNoticeMapper;
+
+    @Autowired
+    private WmSalesOrderLineMapper wmSalesOrderLineMapper;
+
+    @Autowired
+    private WmSalesOrderMapper wmSalesOrderMapper;
+
+    @Autowired
+    private ProductReceiptGuardMapper productReceiptGuardMapper;
 
     /**
      * 查询销售出库单列表
@@ -126,6 +146,10 @@ public class WmProductSalesController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody WmProductSales wmProductSales)
     {
+        // 出库单号由服务端统一取号：有来源订单时沿用订单链号（dd...0002 -> xc...0002），忽略前端传入值
+        wmProductSales.setSalesCode(StringUtils.isNotEmpty(wmProductSales.getSoCode())
+                ? codeSequenceService.generateChainCode(UserConstants.CODE_RULE_PRODUCT_SALES, wmProductSales.getSoCode())
+                : codeSequenceService.ensureCode(UserConstants.CODE_RULE_PRODUCT_SALES, wmProductSales.getSalesCode()));
         if(UserConstants.NOT_UNIQUE.equals(wmProductSalesService.checkUnique(wmProductSales))){
             return AjaxResult.error("出库单编号已存在！");
         }
@@ -217,6 +241,10 @@ public class WmProductSalesController extends BaseController
     @Transactional
     @PutMapping("/{salesId}")
     public AjaxResult execute(@PathVariable Long salesId){
+        WmProductSales source = wmProductSalesService.selectWmProductSalesBySalesId(salesId);
+        if (source != null && source.getNoticeId() != null) {
+            wmSalesNoticeMapper.lockShipmentNotice(source.getNoticeId());
+        }
         String previousStatus = postingLockMapper.productSales(salesId);
         if (!"UNEXECUTE".equals(previousStatus)) {
             return AjaxResult.error("单据不存在、已执行或尚未到可执行状态，请刷新后重试");
@@ -234,6 +262,14 @@ public class WmProductSalesController extends BaseController
         // 合并决议：两套校验都保留——队友的状态/质量放行策略 + 我方的数量一致性校验
         formLinkagePolicy.assertSalesExecutable(sales, lines);
         for (WmProductSalesLine line : lines) {
+            if (line.getAttr3() != null && line.getAttr1() != null
+                    && line.getAttr1().startsWith("AUTO:SALES_LINE:NOTICE:")) {
+                if (line.getWorkorderId() == null || line.getBatchId() == null
+                        || productReceiptGuardMapper.finishedRecptBindings(sales.getSoCode(), line.getItemId(),
+                                line.getBatchId(), line.getBatchCode(), line.getAttr3()).size() != 1) {
+                    return AjaxResult.error("请为销售订单行选择已入库的工单成品批次：" + line.getItemCode());
+                }
+            }
             if (line.getQuantitySales() == null || line.getQuantitySales().signum() <= 0
                     || !UserConstants.EQUAL_TO.equals(wmProductSalesDetailService.checkQuantity(line.getLineId()))) {
                 return AjaxResult.error("出库数量必须大于零且与拣货明细一致");
@@ -248,6 +284,11 @@ public class WmProductSalesController extends BaseController
 
         sales.setStatus(UserConstants.ORDER_STATUS_FINISHED);
         wmProductSalesService.updateWmProductSales(sales);
+        if (sales.getNoticeId() != null) {
+            wmSalesNoticeMapper.finishWhenShipped(sales.getNoticeId());
+            wmSalesOrderLineMapper.refreshShippedForNotice(sales.getNoticeId());
+            wmSalesOrderMapper.finishWhenShipped(sales.getNoticeId());
+        }
         return AjaxResult.success();
     }
 

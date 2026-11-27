@@ -73,6 +73,7 @@ mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -p j2eedb -e "so
 
 | 模块 | 初始化或增量脚本（`sql/`） |
 | --- | --- |
+| 个人知识库 | `mes_knowledge_base.sql` |
 | 部门知识库、图谱与问答评测 | `patch_20261114_ai_kb_schema.sql` → `patch_20261119_ai_kb_menu.sql` → `patch_20261119_ai_graph_menu.sql` → `patch_20261120_ai_evaluation_menu.sql` |
 | 人脸录入与管理 | `face_login.sql` → `patch_20261121_face_hardening.sql` → `patch_20261121_face_login_policy.sql` |
 
@@ -125,10 +126,25 @@ npm run dev
 
 ## MES 智能助手与部门知识库
 
-- **业务问答**可按账号权限查询库存、工单进度、BOM、检验记录和安全库存预警，回答附数据来源。
+- **业务问答**可按账号权限查询库存、工单进度、BOM、检验记录、安全库存预警和产品目录（我们生产哪些成品），回答附数据来源。
 - **文档与图谱问答**按部门知识库授权检索，回答可查看引用和关系依据。管理员可在知识库管理中导入资料、管理文档版本和构建图谱。
 - **模型和检索服务**按需配置。Ollama 用于本地生成和嵌入，Qdrant 用于向量检索，Neo4j 用于图谱。外部模型由现有授权设置控制。
 - **演示数据**提供检验规范、工艺说明和物料资料，可导入测试部门库。准备方法见 [演示知识库](docs/demo-kb/README.md)，操作顺序见 [智能助手演示脚本](docs/智能助手演示脚本.md)。
+
+### 个人知识库
+
+在智能助手的查询模式中选择「个人库 RAG」或「个人库 GraphRAG」，再打开「管理个人知识库」或「我的知识图谱」。资料按登录账号保存。支持上传、追加版本、下载当前版本、重建图谱以及查看回答引用的原文片段。「浏览器资料」仍可查询当前浏览器保存的文档。
+
+执行 `sql/mes_knowledge_base.sql` 后，启动 Ollama（`127.0.0.1:11434`）、Qdrant（`127.0.0.1:6333`）和 Neo4j。个人库用 `bge-m3` 生成向量，问答及关系抽取默认使用 `MES_AI_LOCAL_MODEL` 指定的 Ollama 模型，可通过 `--mes.knowledge.model=qwen2.5:3b` 单独指定。Neo4j 默认使用 `MES_AI_NEO4J_*` 配置，也支持个人库原有的 `MES_NEO4J_URL`、`MES_NEO4J_DATABASE`、`MES_NEO4J_USER` 和 `MES_NEO4J_PASSWORD`。
+
+首次使用时，如果 Qdrant 里还没有 `mes_knowledge` 集合，创建一个 1024 维的 Cosine 集合：
+
+```powershell
+Invoke-RestMethod -Method Put -Uri http://127.0.0.1:6333/collections/mes_knowledge `
+  -ContentType application/json -Body '{"vectors":{"size":1024,"distance":"Cosine"}}'
+```
+
+已有个人资料可以沿用原数据库、账号、Qdrant 集合和 Neo4j 数据库。原文默认保存在 `./runtime/mes-knowledge`，可通过 `--mes.knowledge.storage-directory=<原文目录>` 指向已有文件。
 
 ## Dify 工作流编排
 
@@ -140,6 +156,10 @@ Dify 按 PRD 作为必须项：一轮问答在 Dify 里依次经过问题改写�
 - 配置：`MES_AI_DIFY_URL`（带 `/v1`）、`MES_AI_DIFY_KEY`、`MES_AI_DIFY_TIMEOUT_MS`（默认 12000）。
 
 部署及演示步骤见 [Dify 编排部署手册](docs/dify/dify-workflow-deployment.md)，可直接导入 [mes-ai-workflow.yml](docs/dify/mes-ai-workflow.yml)。项目 [验收记录](docs/dify/acceptance-record.md) 记录了 Dify 1.9.0 的文档、图谱、业务和混合问答，以及停机退化与恢复的真机验证。部门隔离、流式取消和部分业务回归仍待补测。
+
+## 智能助手数字人
+
+智能助手页头的 Mao 头像用于呼出或结束数字人。呼出后左侧显示模型与夜景，右侧问答保留当前会话，并可朗读业务数据和部门文档回答。启动步骤见 [数字人本机接入说明](docs/mes-digital-human.md)。
 
 ## 人脸登录（浏览器采集，服务端比对）
 

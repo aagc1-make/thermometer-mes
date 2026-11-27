@@ -137,13 +137,13 @@
         <el-table-column prop="itemName" label="物料名称" show-overflow-tooltip />
         <el-table-column label="当前结存" width="106" align="right">
           <template slot-scope="s">
-            <span :style="{ color: s.row.level === 'CRITICAL' ? '#ff9b84' : '#ffc07a', fontWeight: 600 }">{{ s.row.current }}</span>
+            <span :style="{ color: s.row.level === 'CRITICAL' ? 'var(--color-danger)' : 'var(--color-warning)', fontWeight: 600 }">{{ s.row.current }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="min" label="安全库存" width="100" align="right" />
         <el-table-column label="缺口" width="96" align="right">
           <template slot-scope="s">
-            <span style="color:#ff9b84">{{ s.row.gap }}</span>
+            <span style="color:var(--color-danger)">{{ s.row.gap }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="suggest" label="建议补货" width="100" align="right" />
@@ -180,7 +180,7 @@
         <el-table-column prop="quantityProduced" label="已生产" width="86" align="right" />
         <el-table-column label="进度" width="180">
           <template slot-scope="s">
-            <el-progress :percentage="s.row.percent" :stroke-width="8" :show-text="true" :color="s.row.percent >= 100 ? '#4d7b64' : '#4272c7'" />
+            <el-progress :percentage="s.row.percent" :stroke-width="8" :show-text="true" :color="s.row.percent >= 100 ? 'var(--color-success)' : 'var(--color-progress)'" />
           </template>
         </el-table-column>
         <el-table-column prop="requestDate" label="交期" width="110" />
@@ -202,21 +202,21 @@ import { getMdItem } from '@/api/mes/md/mdItem'
 
 // 生产驾驶舱图表沿用工作区的蓝灰配色
 const PC_TOOLTIP = {
-  backgroundColor: '#ffffff',
-  borderColor: '#cbd4df',
+  backgroundColor: '#fffdf8',
+  borderColor: '#c8bbad',
   borderWidth: 1,
   padding: [8, 12],
-  textStyle: { color: '#252c35', fontSize: 12 },
+  textStyle: { color: '#28251f', fontSize: 12 },
   extraCssText: 'box-shadow:0 4px 12px rgba(37,44,53,.12);border-radius:8px;'
 }
-const PC_AXIS_LABEL = { color: '#55616f', fontSize: 11 }
-const PC_AXIS_LINE = { lineStyle: { color: '#cbd4df' }}
-const PC_SPLIT_LINE = { lineStyle: { color: '#e1e6ed', type: 'dashed' }}
+const PC_AXIS_LABEL = { color: '#62594e', fontSize: 11 }
+const PC_AXIS_LINE = { lineStyle: { color: '#c8bbad' }}
+const PC_SPLIT_LINE = { lineStyle: { color: '#ded8cc', type: 'dashed' }}
 const vGrad = (from, to) => new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: from }, { offset: 1, color: to }])
 const hGrad = (from, to) => new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: from }, { offset: 1, color: to }])
 const STOCK_GRADIENTS = [
-  hGrad('#a4b8cc', '#547aa3'),
-  hGrad('#b3c9be', '#4272c7'),
+  hGrad('#e5bba8', '#a2462e'),
+  hGrad('#d8e6de', '#4d7358'),
   hGrad('#e5d3b1', '#b18344')
 ]
 
@@ -463,7 +463,7 @@ export default {
         legend: {
           data: ['计划数量', '已生产'], top: 0, right: 2, icon: 'roundRect',
           itemWidth: 12, itemHeight: 8, itemGap: 18,
-          textStyle: { color: '#55616f', fontSize: 11 }
+          textStyle: { color: '#62594e', fontSize: 11 }
         },
         grid: { left: 2, right: 8, top: 40, bottom: 2, containLabel: true },
         xAxis: {
@@ -480,7 +480,7 @@ export default {
         series: [
           {
             name: '计划数量', type: 'bar', barWidth: 15, barGap: '50%',
-            itemStyle: { color: vGrad('#7190af', '#dbe6ef'), borderRadius: [5, 5, 0, 0], barBorderRadius: [5, 5, 0, 0] },
+            itemStyle: { color: vGrad('#a2462e', '#ead2c6'), borderRadius: [5, 5, 0, 0], barBorderRadius: [5, 5, 0, 0] },
             data: names.map(n => byProduct[n].plan)
           },
           {
@@ -560,7 +560,7 @@ export default {
             barBorderRadius: [0, 6, 6, 0],
             color: p => STOCK_GRADIENTS[p.dataIndex % STOCK_GRADIENTS.length]
           },
-          label: { show: true, position: 'right', distance: 6, color: '#252c35', fontSize: 11 },
+          label: { show: true, position: 'right', distance: 6, color: '#28251f', fontSize: 11 },
           data: targets.map(n => Math.round(byWh[n] * 100) / 100)
         }]
       }, true)
@@ -577,15 +577,15 @@ export default {
         tooltip: Object.assign({ trigger: 'item', formatter: '{b}：{c} 台（{d}%）' }, PC_TOOLTIP),
         legend: {
           bottom: 0, icon: 'circle', itemWidth: 8, itemHeight: 8, itemGap: 14,
-          textStyle: { color: '#55616f', fontSize: 11 }
+          textStyle: { color: '#62594e', fontSize: 11 }
         },
-        color: ['#4272c7', '#b18344', '#6f8b98', '#4d7b64', '#7aa7d9'],
+        color: ['#a2462e', '#b38048', '#82776b', '#4d7358', '#637785'],
         series: [{
           type: 'pie', radius: ['46%', '66%'], center: ['50%', '44%'],
           avoidLabelOverlap: true,
-          itemStyle: { borderColor: '#ffffff', borderWidth: 3 },
-          label: { formatter: '{b}\n{c} 台', color: '#252c35', fontSize: 11, lineHeight: 15 },
-          labelLine: { length: 6, length2: 8, lineStyle: { color: '#a7b4c3' }},
+          itemStyle: { borderColor: '#fffdf8', borderWidth: 3 },
+          label: { formatter: '{b}\n{c} 台', color: '#28251f', fontSize: 11, lineHeight: 15 },
+          labelLine: { length: 6, length2: 8, lineStyle: { color: '#918577' }},
           data
         }]
       }, true)
@@ -617,7 +617,7 @@ export default {
           type: 'category', data: days.map(d => d.slice(5)), boundaryGap: false,
           axisTick: { show: false },
           axisLine: PC_AXIS_LINE,
-          axisLabel: Object.assign({}, PC_AXIS_LABEL, { interval: 0, fontSize: 9, color: '#55616f' })
+          axisLabel: Object.assign({}, PC_AXIS_LABEL, { interval: 0, fontSize: 9, color: '#62594e' })
         },
         yAxis: {
           type: 'value', minInterval: 1, splitNumber: 4,
@@ -626,10 +626,10 @@ export default {
         },
         series: [{
           type: 'line', smooth: true, symbol: 'circle', symbolSize: 7, showSymbol: true,
-          lineStyle: { width: 2.4, color: '#34577d', shadowColor: 'transparent', shadowBlur: 12, shadowOffsetY: 2 },
-          itemStyle: { color: '#ffffff', borderColor: '#34577d', borderWidth: 2 },
-          label: { show: true, distance: 9, color: '#252c35', fontSize: 11, formatter: p2 => (p2.value ? p2.value : '') },
-          areaStyle: { color: vGrad('rgba(84,122,163,.22)', 'rgba(84,122,163,0)') },
+          lineStyle: { width: 2.4, color: '#a2462e', shadowColor: 'transparent', shadowBlur: 12, shadowOffsetY: 2 },
+          itemStyle: { color: '#fffdf8', borderColor: '#a2462e', borderWidth: 2 },
+          label: { show: true, distance: 9, color: '#28251f', fontSize: 11, formatter: p2 => (p2.value ? p2.value : '') },
+          areaStyle: { color: vGrad('rgba(162,70,46,.17)', 'rgba(162,70,46,0)') },
           data: days.map(d => Math.round((sum[d] || 0) * 100) / 100)
         }]
       }, true)

@@ -27,7 +27,11 @@ Thumbs.db
 # ===== 本地备份/临时 =====
 .git-nested-backup/
 .tmp-*/
+.venv-avatar/
 .playwright-mcp/
+/mes-ui/
+__pycache__/
+*.pyc
 /交付备份-*/
 /答辩证据/
 /evidence/
@@ -42,6 +46,9 @@ ktg-mes-市场调研.md
 # ===== 密钥/本地配置（防止误传）=====
 **/application-local.yml
 *ai-key*.txt
+scripts/mes-avatar-speech/azure-key.txt
+/azure-test.mp3
+/scripts/mes-avatar-speech/azure-test.mp3
 .env
 .env.local
 .env.*.local

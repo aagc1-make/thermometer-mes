@@ -107,6 +107,13 @@ public class WmTransaction extends BaseEntity
     @Excel(name = "单据行ID")
     private Long sourceDocLineId;
 
+    /**
+     * 单据行下的明细ID（非数据库列，仅用于生成 biz_key）。
+     * 入库单/产出单的一行可以拆成多条明细，同一 lineId 下会有多条库存事务，
+     * 因此幂等键必须带上明细ID才能既区分明细、又保证重试可复现。
+     */
+    private Long sourceDocDetailId;
+
     /** 库存记录ID */
     @Excel(name = "库存记录ID")
     private Long materialStockId;
@@ -137,6 +144,34 @@ public class WmTransaction extends BaseEntity
     @JsonFormat(pattern = "yyyy-MM-dd hh:mm:ss")
     @Excel(name = "入库日期", width = 30, dateFormat = "yyyy-MM-dd hh:mm:ss")
     private Date recptDate;
+
+    /** 库存事务号（由编码规则 TXN 生成） */
+    @Excel(name = "库存事务号")
+    private String txnCode;
+
+    /** 业务幂等键（同一业务重复过账时用于唯一约束兜底） */
+    @Excel(name = "业务幂等键")
+    private String bizKey;
+
+    /** 事务前结存数量 */
+    @Excel(name = "事务前数量")
+    private BigDecimal qtyBefore;
+
+    /** 事务后结存数量 */
+    @Excel(name = "事务后数量")
+    private BigDecimal qtyAfter;
+
+    /** 关联生产工单ID */
+    @Excel(name = "生产工单ID")
+    private Long workorderId;
+
+    /** 关联入库质检ID */
+    @Excel(name = "入库质检ID")
+    private Long inspectionId;
+
+    /** 关联入库单ID */
+    @Excel(name = "入库单ID")
+    private Long recptId;
 
     /**
      * 是否检查库存量
@@ -367,6 +402,15 @@ public class WmTransaction extends BaseEntity
     {
         return sourceDocLineId;
     }
+    public void setSourceDocDetailId(Long sourceDocDetailId)
+    {
+        this.sourceDocDetailId = sourceDocDetailId;
+    }
+
+    public Long getSourceDocDetailId()
+    {
+        return sourceDocDetailId;
+    }
     public void setMaterialStockId(Long materialStockId) 
     {
         this.materialStockId = materialStockId;
@@ -428,6 +472,62 @@ public class WmTransaction extends BaseEntity
 
     public void setRecptDate(Date recptDate) {
         this.recptDate = recptDate;
+    }
+
+    public String getTxnCode() {
+        return txnCode;
+    }
+
+    public void setTxnCode(String txnCode) {
+        this.txnCode = txnCode;
+    }
+
+    public String getBizKey() {
+        return bizKey;
+    }
+
+    public void setBizKey(String bizKey) {
+        this.bizKey = bizKey;
+    }
+
+    public BigDecimal getQtyBefore() {
+        return qtyBefore;
+    }
+
+    public void setQtyBefore(BigDecimal qtyBefore) {
+        this.qtyBefore = qtyBefore;
+    }
+
+    public BigDecimal getQtyAfter() {
+        return qtyAfter;
+    }
+
+    public void setQtyAfter(BigDecimal qtyAfter) {
+        this.qtyAfter = qtyAfter;
+    }
+
+    public Long getWorkorderId() {
+        return workorderId;
+    }
+
+    public void setWorkorderId(Long workorderId) {
+        this.workorderId = workorderId;
+    }
+
+    public Long getInspectionId() {
+        return inspectionId;
+    }
+
+    public void setInspectionId(Long inspectionId) {
+        this.inspectionId = inspectionId;
+    }
+
+    public Long getRecptId() {
+        return recptId;
+    }
+
+    public void setRecptId(Long recptId) {
+        this.recptId = recptId;
     }
 
     public void setAttr1(String attr1) 

@@ -1,5 +1,6 @@
 /* Shared v9 surfaces and component defaults. */
 @import './mes-palette';
+@import './mes-fonts';
 
 :root {
   --color-primary: #{$mes-primary};
@@ -11,7 +12,9 @@
   --color-border: #{$mes-border};
   --color-border-strong: #{$mes-border-strong};
   --color-bg: #{$mes-bg};
-  --color-page: #f5f7fa;
+  --color-card: #{$mes-card};
+  --color-page: #{$mes-primary-soft};
+  --color-primary-rgb: #{red($mes-primary)}, #{green($mes-primary)}, #{blue($mes-primary)};
   --color-rail: #{$mes-sidebar};
   --color-rail-hover: #{$mes-sidebar-hover};
   --color-rail-marker: #{$mes-marker};
@@ -22,23 +25,35 @@
   --color-progress: #{$mes-progress};
   --color-progress-current: #{$mes-progress-current};
   --font-ui: #{$mes-font};
+  --font-display: "MES Newsreader", "MES Song", "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", SimSun, Georgia, serif;
   --radius-control: 6px;
   --radius-card: 8px;
   --radius-dialog: 10px;
-  --shadow-card: 0 1px 2px rgba(37, 44, 53, .05);
+  --shadow-card: 0 1px 2px #{rgba($mes-text, .05)};
   --transition-control: .15s ease;
   --transition-expand: .2s ease;
 }
 
 html,
 body {
-  background: $mes-bg;
   color: $mes-text;
   font-family: var(--font-ui);
 }
 
+@media screen {
+  html:root,
+  html > body {
+    background-color: var(--color-bg);
+  }
+}
+
 button, input, select, textarea {
   font-family: inherit;
+}
+
+::selection {
+  background: var(--color-primary-bg);
+  color: var(--color-text);
 }
 
 *:focus-visible {
@@ -56,8 +71,16 @@ button, input, select, textarea {
   margin: 0 0 20px;
   color: var(--color-text);
   font-size: 26px;
+  font-family: var(--font-display);
   font-weight: 650;
   line-height: 1.35;
+}
+
+.home-heading h1,
+.pc-hero__title,
+.pc-sec__title,
+.pc-panel__title {
+  font-family: var(--font-display);
 }
 
 .app-container > .el-form--inline:has(+ .el-row.mb8),
@@ -252,7 +275,7 @@ button, input, select, textarea {
 
 .el-dialog {
   border-radius: var(--radius-dialog);
-  box-shadow: 0 12px 36px rgba(37, 44, 53, .16);
+  box-shadow: 0 12px 36px rgba($mes-text, .16);
 
   &:not(.is-fullscreen) {
     max-width: calc(100vw - 24px);
@@ -317,7 +340,7 @@ button, input, select, textarea {
 }
 
 .el-loading-mask {
-  background-color: rgba(255, 255, 255, .78);
+  background-color: rgba($mes-card, .78);
 }
 
 img {
@@ -391,7 +414,7 @@ img {
       padding: 10px 14px;
       border-radius: var(--radius-control) !important;
       border: none !important;
-      background: #ffffff;
+      background: $mes-card;
       color: var(--color-text-secondary);
       font-weight: 500;
       box-shadow: none;
@@ -426,8 +449,8 @@ img {
 
     .el-calendar__button-group .el-button {
       border-radius: 999px;
-      border-color: #eceae4;
-      color: #6b7280;
+      border-color: $mes-border;
+      color: $mes-text-sub;
 
       &:hover {
         color: $mes-primary;
@@ -441,10 +464,10 @@ img {
     padding: 4px 4px 14px;
   }
 
-  /* 表头：淡蓝灰 */
+  /* 日历表头 */
   thead th {
-    background: #eef2f8;
-    color: #5b6c8f;
+    background: $mes-table-head;
+    color: $mes-text-sub;
     padding: 9px 0;
     font-weight: 600;
     border-bottom: none;
@@ -462,31 +485,31 @@ img {
       transition: background 0.2s ease, box-shadow 0.2s ease;
 
       &:hover {
-        background: #f2f6fd;
-        box-shadow: 0 3px 10px rgba(91, 127, 199, 0.08);
+        background: $mes-primary-soft;
+        box-shadow: 0 3px 10px rgba($mes-primary, .08);
       }
     }
 
     &.is-selected .el-calendar-day {
-      background: #e8f0fb;
+      background: $mes-primary-bg;
     }
   }
 
-  /* 今天：雾蓝描边圈 */
+  /* 当天日期的描边 */
   .el-calendar-table td.is-today {
     background: transparent;
 
     .el-calendar-day {
-      box-shadow: inset 0 0 0 2px #7b9bd4;
-      background: #ffffff;
+      box-shadow: inset 0 0 0 2px $mes-primary;
+      background: $mes-card;
 
       &:hover {
-        background: #ffffff;
+        background: $mes-card;
       }
     }
 
     .solar {
-      color: #3d5a91;
+      color: $mes-primary;
       font-weight: 700;
     }
   }
@@ -499,7 +522,7 @@ img {
 
   .el-calendar-table .prev, .el-calendar-table .next {
     .el-calendar-day { background: transparent; }
-    .solar, .lunar { color: #c5cdd9; }
+    .solar, .lunar { color: mix($mes-text-sub, $mes-card, 70%); }
   }
 }
 
@@ -595,25 +618,25 @@ img {
 /* ---------- 个人中心 ---------- */
 .app-container .el-card {
   .el-card__header {
-    border-bottom: 1px solid #eef2f8;
+    border-bottom: 1px solid $mes-border;
     font-weight: 600;
-    color: #2c3a55;
+    color: $mes-text;
   }
 
   .list-group-striped {
     .list-group-item {
-      border-bottom: 1px solid #f2f5fa;
+      border-bottom: 1px solid $mes-border;
       padding: 11px 0;
-      color: #6d7f9e;
+      color: $mes-text-sub;
       font-size: 13px;
 
       .svg-icon {
         margin-right: 6px;
-        color: #8fb0dd;
+        color: $mes-primary;
       }
 
       .pull-right {
-        color: #2c3a55;
+        color: $mes-text;
         font-weight: 500;
       }
 
@@ -624,8 +647,8 @@ img {
   }
 }
 
-/* 用户头像：雾蓝描边圆 */
+/* 用户头像描边 */
 .text-center .user-avatar {
-  border: 3px solid #ffffff;
-  box-shadow: 0 0 0 2px #c7d8ee, 0 6px 16px rgba(91, 127, 199, 0.18);
+  border: 3px solid $mes-card;
+  box-shadow: 0 0 0 2px $mes-primary-bg, 0 6px 16px rgba($mes-text, .18);
 }

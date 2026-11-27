@@ -12,6 +12,8 @@ function assistant(total = 56) {
   const requests = []
   const box = {
     component: null,
+    // 数字人素材常量与语音依赖由被剥掉的 import 提供，沙箱补上空实现。
+    AVATAR_ASSETS: '', avatarAnswerText: () => '', AvatarSpeech: class { stop() {} },
     Date: class extends Date {
       constructor(...args) { super(...(args.length ? args : ['2026-11-22T10:00:00'])) }
     },
@@ -31,6 +33,8 @@ function assistant(total = 56) {
   }
   vm.runInNewContext(code, box)
   const ctx = Object.assign(box.component.data(), box.component.methods, {
+    // created() 才会实例化语音对象，这里直接给一个空实现。
+    _avatarSpeech: { stop() {}, dispose() {}, unlock: async () => {}, warm() {}, mouthLevel: () => 0, play() {} },
     handleArrivalFollowup: async () => false,
     matchItem: async () => ({ items: [{ itemCode: 'TG-01', itemName: '上壳' }] }),
     push(message) { this.messages.push(message) },

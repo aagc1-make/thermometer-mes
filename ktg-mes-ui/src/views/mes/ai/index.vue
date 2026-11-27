@@ -1,9 +1,11 @@
 <template>
-  <div class="ai">
+  <div class="ai" :class="{ 'ai--avatar-open': avatarOpen, 'ai--mobile': isMobile }">
     <business-chain ref="businessChain" />
     <knowledge-base ref="knowledgeBase" :user-id="knowledgeUserId" />
-    <div v-if="isMobile && sidebarVisible" class="ai__backdrop" @click="toggleSidebar" />
-    <aside v-show="sidebarVisible" id="assistant-navigation" class="ai__sidebar" aria-labelledby="assistant-title"
+    <personal-knowledge-base ref="personalKnowledgeBase" :user-id="knowledgeUserId" />
+    <personal-knowledge-graph ref="personalKnowledgeGraph" :user-id="knowledgeUserId" />
+    <div v-if="isMobile && sidebarVisible && !avatarOpen" class="ai__backdrop" @click="toggleSidebar" />
+    <aside v-show="sidebarVisible && !avatarOpen" id="assistant-navigation" class="ai__sidebar" aria-labelledby="assistant-title"
       @keydown.esc.stop="toggleSidebar">
       <header class="ai__sidebar-header">
         <h1 id="assistant-title">MES 智能助手</h1>
@@ -33,11 +35,14 @@
         <p v-else class="ai__history-empty">暂无最近对话</p>
       </section>
     </aside>
+    <div v-if="avatarOpen" class="ai__avatar-slot">
+      <digital-human-stage :key="avatarStageVersion" :mouth-level="avatarMouthLevel" @state="avatarRenderState = $event" />
+    </div>
 
     <div class="ai__workbench">
       <section class="ai__conversation" :class="{ 'is-empty': !hasConversation }" aria-label="对话">
         <header class="ai__toolbar">
-          <button v-if="!sidebarVisible" ref="openSidebar" type="button" class="ai__icon-button"
+          <button v-if="!sidebarVisible && !avatarOpen" ref="openSidebar" type="button" class="ai__icon-button"
             aria-label="展开助手侧栏" aria-controls="assistant-navigation" aria-expanded="false" title="展开助手侧栏" @click="toggleSidebar">
             <i class="el-icon-s-unfold" aria-hidden="true" />
           </button>
@@ -48,11 +53,25 @@
               </span>
             </el-tooltip>
             <button v-if="hasConversation" type="button" class="ai__icon-button" aria-label="清空当前对话"
-              title="清空当前对话" :disabled="(loading && !ragAbort) || hasPendingAction" @click="reset">
+              title="清空当前对话" :disabled="(loading && !ragAbort) || hasPendingAction" @click="reset()">
               <i class="el-icon-delete" aria-hidden="true" />
+            </button>
+            <button type="button" class="ai__avatar-launch" :aria-expanded="avatarOpen" :aria-label="avatarAction"
+              aria-controls="assistant-avatar-stage" @click="toggleAvatar">
+              <span class="ai__avatar-label" aria-hidden="true">{{ avatarAction }}</span>
+              <span class="ai__avatar-icon" aria-hidden="true">
+                <img v-if="!avatarPortraitUnavailable" :src="avatarPortrait" alt="" draggable="false"
+                  @error="avatarPortraitUnavailable = true">
+                <i v-else class="el-icon-user" />
+              </span>
             </button>
           </div>
         </header>
+        <div v-if="avatarOpen" class="ai__avatar-controls" aria-label="米粒播报控制">
+          <button v-if="avatarSpeechActive" type="button" @click="stopAvatarSpeech">停止朗读</button>
+          <span v-if="avatarStatus" role="status">{{ avatarStatus }}</span>
+          <button v-if="avatarRenderState === 'error'" type="button" @click="avatarStageVersion++">重试画面</button>
+        </div>
         <div ref="scroller" class="ai__body">
           <div v-if="!hasConversation" class="ai__welcome">
             <h2>今天想<span>了解什么？</span></h2>
@@ -75,6 +94,8 @@
           </details>
           <!-- 文本 -->
           <div v-if="m.type === 'text'" class="msg__text">{{ m.text }}</div>
+          <personal-knowledge-answer v-else-if="m.type === 'personalKnowledge'" :message="m"
+            @source="$refs.personalKnowledgeBase.showSource($event)" @graph-path="openPersonalKnowledgePath" />
           <knowledge-answer v-else-if="m.type === 'knowledge' || m.type === 'rag'" :message="m"
             @source="openInspector(m, 'sources', $event)" @follow-up="askFollowUp($event, m)" />
           <business-tool-answer v-else-if="m.type === 'toolAnswer'" :answer="m.answer"
@@ -216,16 +237,15 @@
             <el-button v-if="!m.finished" size="mini" :disabled="m.busy" @click="cancelPosting(m)">取消</el-button>
             <el-button v-if="m.finished" type="text" @click="$router.push(m.path)">打开对应单据</el-button>
           </div>
-          <div v-if="m.analysisContext" class="msg__meta">
-            <el-button type="text" size="mini" :loading="m.analysisBusy" @click="requestAnalysis(m)">请求大模型分析</el-button>
-            <span>{{ m.type === 'knowledge' ? '需确认发送当前问题与引用的文档片段' : '需确认发送当前问题和部分回答' }}</span>
-          </div>
           <business-tool-answer v-if="m.type === 'rag' && m.toolResults && m.toolResults.length"
             :results="m.toolResults" :notice="m.notice" />
           <button v-if="m.type === 'toolAnswer' && m.trace && m.trace.length" class="msg__source-button"
             type="button" @click="openInspector(m, 'activity')">查看查询过程</button>
           <button v-if="m.graph" class="msg__source-button" type="button" @click="openInspector(m, 'graph')">
             <i class="el-icon-share" aria-hidden="true" /> 图谱子图 · {{ m.graph.nodes.length }} 个实体
+          </button>
+          <button v-if="m.impact" class="msg__source-button" type="button" @click="openInspector(m, 'graph')">
+            <i class="el-icon-share" aria-hidden="true" /> 影响路径 · {{ m.impact.edges.length }} 段装配
           </button>
           <button v-if="(m.source && m.type !== 'knowledge' && m.type !== 'rag') || (m.toolResults && m.toolResults.length)"
             class="msg__source-button" type="button" @click="openInspector(m, 'sources')">
@@ -242,11 +262,15 @@
           <assistant-composer ref="composer" v-model="input" :mode="queryMode" :scope="scopeLabel" :busy="loading" :streaming="!!ragAbort"
             :roomy="!hasConversation"
             @mode="queryMode = $event" @send="send()" @stop="stopGeneration" />
-          <div v-if="hasConversation || queryMode === 'knowledge'" class="ai__composer-links">
+          <div v-if="hasConversation || queryMode === 'knowledge' || personalMode" class="ai__composer-links">
             <el-button v-if="hasConversation" type="text" size="mini" icon="el-icon-connection"
               @click="$refs.businessChain.open()">全流程贯通</el-button>
             <el-button v-if="queryMode === 'knowledge'" type="text" size="mini"
               @click="$refs.knowledgeBase.open()">管理浏览器资料</el-button>
+            <template v-if="personalMode">
+              <el-button type="text" size="mini" icon="el-icon-lock" @click="$refs.personalKnowledgeBase.open()">管理个人知识库</el-button>
+              <el-button type="text" size="mini" icon="el-icon-share" @click="$refs.personalKnowledgeGraph.open()">我的知识图谱</el-button>
+            </template>
           </div>
         </footer>
       </section>
@@ -260,9 +284,11 @@
 
 <script>
 import request from '@/utils/request'
-import { askBusinessQuestion, getEngineStatus, queryPurchaseReceipts, streamDocumentAnswer } from '@/api/mes/assistant'
+import { askAssistantChat, askBusinessQuestion, getEngineStatus, narrateAnswer, queryPurchaseReceipts, streamDocumentAnswer } from '@/api/mes/assistant'
 import { listDepartmentLibraries, listLibraryDocuments, previewLibraryDocument } from '@/api/mes/knowledgeLibrary'
 import { detectMesTopic, buildInspectionAnswer, buildUnqualifiedAnswer, knowledgeFallback } from '@/utils/mesAnswerRules'
+import { AVATAR_ASSETS } from './avatarRuntime'
+import { avatarAnswerText, AvatarSpeech } from './avatarSpeech'
 
 const CHAT_WELCOME = '你好，我是 MES 智能助手。可以问我：\n· 盘点 10 月份测温显示电控预装件的库存\n· 这个月采购入库了多少电子件\n· 有哪些工单进度落后\n· 本月的检验合格率是多少\n也可以让我登记单据，例如“帮我添加 10 个上壳、10 个电池的到货通知”'
 const CHAT_TTL = 10 * 60 * 1000
@@ -279,14 +305,24 @@ const WRITE_QUESTION = /登记|创建|新建|执行|过账|贯通|新增|删除|
 const PURCHASE_RECEIPT = /采购\s*(?:入库|记录|明细|流水)/
 const RECEIPT_COUNT = /(?:多少|几)\s*(?:条|笔)|(?:记录|流水)(?:一共|共有|总共|一共有|有)?(?:多少|几笔|几条)(?!件|个|台|箱|千克|张|吨|公斤)/
 const RECEIPT_PERIOD = /(?:20\d{2}\s*年\s*)?\d{1,2}\s*月份?|本月|这个月|当月|上个月|上月|本周|这周|上周|上一周|今天|昨天|近\s*\d+\s*天/
+// “我们生产什么 / 成品是什么 / 有哪些产品”问的是产品档案，不能答成工单进度；
+// 带工序、库存、BOM、单据等限定时不算，交给对应的查询（与后端 AiBusinessRules 口径一致）。
+const PRODUCT_CATALOG = /成品|产品目录|产品清单|产品型号|产品种类|主营|主打|(?:生产|制造)(?:了)?(?:什么|哪些|哪几(?:个|种|款)?|多少种)|生产(?:的)?(?:产品|成品)|(?:做|造)(?:了)?(?:什么|哪些|哪几(?:个|种|款)?|多少种)?产品|(?:公司|本厂|工厂|厂里|贵司|企业)(?:都|主要|目前)?(?:生产|制造|做)?的?产品/
+const PRODUCT_SCOPE = /工序|工艺|路线|设备|用料|物料|BOM|物料清单|组件用量|库存|结存|在库|入库|出库|流水|检验|合格率|安全库存|预警|工单|进度|排期|交期|采购|销售|订单|客户|供应商|用在|用于|装到|装在|装入|安装在|配套/
+// 主数据里“整机成品”与“自制半成品”都是产品；半成品含“成品”两字，必须先排除。
+const isFinishedProduct = row => /成品/.test(row.productType || '') && !/半成品/.test(row.productType || '')
 
 export default {
   name: 'MesAi',
   components: {
+    DigitalHumanStage: () => import('./DigitalHumanStage'),
     AssistantComposer: () => import('./AssistantComposer'),
     AssistantInspector: () => import('./AssistantInspector'),
     BusinessToolAnswer: () => import('./BusinessToolAnswer'),
-    BusinessChain: () => import('./BusinessChain'), KnowledgeBase: () => import('./KnowledgeBase'), KnowledgeAnswer: () => import('./KnowledgeAnswer')
+    BusinessChain: () => import('./BusinessChain'), KnowledgeBase: () => import('./KnowledgeBase'), KnowledgeAnswer: () => import('./KnowledgeAnswer'),
+    PersonalKnowledgeBase: () => import('./PersonalKnowledgeBase'),
+    PersonalKnowledgeGraph: () => import('./PersonalKnowledgeGraph'),
+    PersonalKnowledgeAnswer: () => import('./PersonalKnowledgeAnswer')
   },
   data() {
     return {
@@ -300,8 +336,10 @@ export default {
       messages: [{ role: 'bot', type: 'text', text: CHAT_WELCOME }],
       activeChatId: '', chatExpiresAt: 0, recentChats: [],
       sidebarCollapsed: false, mobileSidebarOpen: false,
+      avatarSpeechState: 'idle', avatarRenderState: 'loading', avatarStageVersion: 0,
+      avatarPortrait: AVATAR_ASSETS + 'mao.png', avatarPortraitUnavailable: false,
       departmentLibrary: null, parsedDocuments: 0, indexedDocuments: 0, ragAbort: null, chatRun: 0,
-      engineStatus: {},
+      engineStatus: { dify: 'checking' },
       inspectedMessage: null, inspectorTab: 'sources', inspectorSelected: 0, inspectorChunks: [], inspectorBusy: false,
       inspectorError: '', inspectorPage: 1, inspectorTotal: 0, inspectorPageSize: 20, inspectorRequest: 0,
       exampleQuestions: [
@@ -314,14 +352,17 @@ export default {
   },
   computed: {
     knowledgeUserId() { return this.$store && this.$store.state.user.id || '' },
-    difyState() { return (this.engineStatus && this.engineStatus.dify) || 'not_configured' },
+    difyState() { return this.engineStatus.dify || 'unavailable' },
     difyLabel() {
-      return { online: '在线', configured: '已配置待验证', offline: '离线', not_configured: '未配置' }[this.difyState] || '未配置'
+      return { checking: '检查中', online: '在线', configured: '已配置待验证',
+        offline: '离线', not_configured: '未配置' }[this.difyState] || '状态不可用'
     },
     difyTooltip() {
-      const detail = this.engineStatus && this.engineStatus.difyDetail
-      if (!detail || !detail.configured) return 'Dify 未配置：本轮沿用 MES 既有问答与只读工具'
-      const tip = [detail.detail || '已配置，等待本轮真实回执校验']
+      if (this.difyState === 'checking') return '正在检查 Dify 编排状态'
+      if (this.difyState === 'unavailable') return '暂时无法获取 Dify 状态，请检查 MES 后端连接'
+      if (this.difyState === 'not_configured') return 'Dify 未配置：本轮沿用 MES 既有问答与只读工具'
+      const detail = this.engineStatus.difyDetail || {}
+      const tip = [detail.detail || this.difyLabel]
       if (detail.verifiedAt) tip.push('最近校验 ' + String(detail.verifiedAt).replace('T', ' ').slice(0, 19))
       tip.push('单轮等待上限 ' + Math.round((detail.timeoutMs || 12000) / 1000) + ' 秒')
       return tip.join('；')
@@ -331,6 +372,15 @@ export default {
     hasPendingAction() { return this.conversationHasPendingAction() },
     isMobile() { return this.$store.state.app.device === 'mobile' },
     sidebarVisible() { return this.isMobile ? this.mobileSidebarOpen : !this.sidebarCollapsed },
+    avatarOpen() { return this.$store.state.app.assistantAvatarOpen },
+    avatarAction() { return this.avatarOpen ? '收起米粒' : '呼出米粒' },
+    avatarSpeechActive() { return ['loading', 'playing'].includes(this.avatarSpeechState) },
+    avatarText() { return this.avatarOpen && !this.loading ? avatarAnswerText(this.conversationMessages) : '' },
+    avatarStatus() {
+      const voice = { loading: '正在生成语音', playing: '正在朗读', error: '语音暂不可用' }[this.avatarSpeechState]
+      const render = { loading: '正在加载米粒', error: '米粒的画面暂不可用' }[this.avatarRenderState]
+      return [voice || (this.loading ? '等待回答' : ''), render].filter(Boolean).join(' · ')
+    },
     workspaceLinks() {
       return WORKSPACE_LINKS.filter(link => this.$router.match(link.path).matched.some(route => route.path === link.path))
     },
@@ -339,7 +389,9 @@ export default {
       if (this.hasConversation) entries.unshift({ id: this.activeChatId, title: this.chatTitle(this.messages), current: true })
       return entries
     },
+    personalMode() { return this.queryMode === 'personal_rag' || this.queryMode === 'personal_graph' },
     scopeLabel() {
+      if (this.personalMode) return '当前账号 · 个人知识库'
       if (this.queryMode === 'knowledge') return '浏览器资料'
       if (!this.departmentLibrary) return '暂无部门库'
       return this.departmentLibrary.name + (this.indexedDocuments
@@ -347,24 +399,64 @@ export default {
     }
   },
   created() {
+    this._avatarSpeech = new AvatarSpeech()
     this.restoreChat()
     this.loadDepartmentLibrary()
     this.openGraphStock()
     this.refreshEngineStatus()
   },
   activated() { this.loadDepartmentLibrary() },
+  deactivated() { this.closeAvatar() },
   beforeDestroy() {
+    this.closeAvatar()
     this.stopGeneration()
     clearTimeout(this._chatExpiryTimer)
   },
   watch: {
     '$route.query.stockItem': 'openGraphStock',
+    knowledgeUserId() {
+      this.recentChats = []
+      this.reset(false)
+      this.restoreChat()
+    },
     messages: { deep: true, handler() { this.saveChat() } },
     lastStock: { deep: true, handler() { this.saveChat() } },
     lastWorkorder() { this.saveChat() },
     waitingWeatherCity() { this.saveChat() }
   },
   methods: {
+    toggleAvatar() {
+      const scroller = this.$refs.scroller
+      const scrollTop = scroller ? scroller.scrollTop : 0
+      if (this.avatarOpen) {
+        this.closeAvatar()
+      } else {
+        this.avatarRenderState = 'loading'
+        this.$store.commit('app/SET_ASSISTANT_AVATAR_OPEN', true)
+        this.unlockAvatarSpeech()
+      }
+      this.$nextTick(() => { if (scroller) scroller.scrollTop = scrollTop })
+    },
+    closeAvatar() {
+      this._avatarSpeech.dispose()
+      this.avatarSpeechState = 'idle'
+      if (this.avatarOpen) this.$store.commit('app/SET_ASSISTANT_AVATAR_OPEN', false)
+    },
+    unlockAvatarSpeech() {
+      this._avatarSpeech.unlock().catch(() => {})
+      this._avatarSpeech.warm()
+    },
+    avatarMouthLevel() {
+      return this._avatarSpeech.mouthLevel()
+    },
+    readAvatarAnswer() {
+      if (!this.avatarText) return
+      this._avatarSpeech.play(this.avatarText, state => { this.avatarSpeechState = state })
+    },
+    stopAvatarSpeech() {
+      this._avatarSpeech.stop()
+      this.avatarSpeechState = 'idle'
+    },
     toggleSidebar() {
       const opening = !this.sidebarVisible
       if (this.isMobile) this.mobileSidebarOpen = opening
@@ -477,22 +569,26 @@ export default {
       this.ragAbort = abort
       const started = Date.now()
       this.push({
-        role: 'bot', type: 'rag', text: '', trace: [], sources: [], streaming: true, channel: '',
-        source: library.name, graph: null, graphLibraryId: library.libraryId, toolResults: [], notice: ''
+        role: 'bot', type: 'rag', text: '', trace: [], sources: [], streaming: true, speechIncomplete: false, channel: '',
+        source: library.name, graph: null, impact: null, graphLibraryId: library.libraryId, toolResults: [], notice: ''
       })
       const message = this.messages[this.messages.length - 1]
-      // 混合问答：文档与业务两路检索由 MES 在同一个 Dify 运行编号下依次执行，业务表格随本轮流式响应返回
-      const mixed = !!businessQuestion
+      // 混合问答：文档与业务两路检索由 MES 在同一个 Dify 运行编号下依次执行，业务表格随本轮流式响应返回。
+      // 任何模式都把问题交给后端判断：命中业务规则就补一轮只读查询，不命中只返回文档证据。
+      const businessQuery = businessQuestion || question
+      const mixed = !!businessQuery
       let businessReturned = false
       try {
         await streamDocumentAnswer(library.libraryId, {
-          question, graph: useGraph, business: mixed, businessQuestion: mixed ? businessQuestion : ''
+          question, graph: useGraph, business: mixed, businessQuestion: mixed ? businessQuery : '', allowExternal: true
         }, abort.signal, (event, value) => {
           if (event === 'delta') message.text += value
           if (event === 'reset') message.text = ''
           if (event === 'trace') message.trace.push(value)
           if (event === 'citations') message.sources = value
           if (event === 'graph') message.graph = value
+          // 向上查装配：同一批 BOM 行既写进回答，也交给「图谱子图」显示路径
+          if (event === 'impact') message.impact = value
           if (event === 'business') {
             businessReturned = true
             message.toolResults = value.results || []
@@ -502,6 +598,7 @@ export default {
           this.$nextTick(this.scrollBottom)
         })
       } catch (error) {
+        message.speechIncomplete = true
         if (abort.signal.aborted) {
           message.text = message.text || '已停止生成。'
           message.trace.push({ label: '已停止生成', detail: '用户中止了本轮回答', elapsedMs: Date.now() - started })
@@ -512,16 +609,9 @@ export default {
         message.streaming = false
         if (this.ragAbort === abort) this.ragAbort = null
       }
-      if (mixed && !businessReturned && !abort.signal.aborted) {
-        message.trace.push({
-          label: '实时数据查询',
-          detail: '本轮未匹配到可用的业务查询，只返回文档证据',
-          elapsedMs: Date.now() - started
-        })
-      }
     },
     async queryBusinessTools(question) {
-      const { data } = await askBusinessQuestion({ question })
+      const { data } = await askBusinessQuestion({ question, allowExternal: true, skipLocal: false })
       if (!data || data.mode === 'legacy') return false
       const stock = data.results.find(result => result.code === 'stock' && result.total === 1)
       const order = data.results.find(result => result.code === 'workorders' && result.total === 1)
@@ -627,7 +717,7 @@ export default {
       return firstQuestion ? firstQuestion.text.replace(/\s+/g, ' ').trim() : '当前对话'
     },
     conversationHasPendingAction() {
-      return this.messages.some(message => message.busy || message.analysisBusy)
+      return this.messages.some(message => message.busy)
     },
     chatSnapshot() {
       return {
@@ -687,6 +777,7 @@ export default {
       } catch (e) { try { sessionStorage.removeItem(key) } catch (ignored) {} }
     },
     applyChat(chat) {
+      this.stopAvatarSpeech()
       this._restoringChat = true
       this.activeChatId = chat.id || Date.now().toString(36)
       this.chatExpiresAt = chat.expiresAt
@@ -694,7 +785,8 @@ export default {
         if ((m.type === 'draft' || m.type === 'arrival' || m.type === 'posting') && m.busy) {
           return { ...m, busy: false, finished: true, error: '提交结果尚未确认，请先到对应单据页面核对，避免重复创建。' }
         }
-        return { ...m, analysisBusy: false, streaming: false, text: m.streaming && !m.text ? '上一轮回答已中断。' : m.text }
+        return { ...m, streaming: false, speechIncomplete: m.speechIncomplete || !!m.streaming,
+          text: m.streaming && !m.text ? '上一轮回答已中断。' : m.text }
       })
       this.input = ''
       this.queryMode = chat.queryMode || ''
@@ -747,10 +839,12 @@ export default {
       return { rows, total }
     },
     p2(n) { const p = x => String(x).padStart(2, '0'); return `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}` },
-    reset() {
+    reset(persist = true) {
       this.chatRun++
+      this.stopAvatarSpeech()
       this.stopGeneration()
       this.closeInspector()
+      this.loading = false
       this.messages = [{ role: 'bot', type: 'text', text: CHAT_WELCOME }]
       this.activeChatId = ''
       this.chatExpiresAt = 0
@@ -759,7 +853,7 @@ export default {
       this.lastStock = null
       this.lastWorkorder = null
       this.waitingWeatherCity = false
-      this.persistChats()
+      if (persist) this.persistChats()
     },
     push(m) { this.messages.push(m); this.$nextTick(this.scrollBottom) },
     scrollBottom() { const el = this.$refs.scroller; if (el) el.scrollTop = el.scrollHeight },
@@ -767,23 +861,28 @@ export default {
     async send(text, receiptFollowUp) {
       const q = (text || this.input || '').trim()
       if (!q || this.loading || (!text && !this.queryMode)) return
+      this.stopAvatarSpeech()
       this.input = ''
       this.push({ role: 'user', type: 'text', text: q })
       const run = ++this.chatRun
       const started = Date.now()
       const responseStart = this.messages.length
+      const personalQuery = !receiptFollowUp && this.personalMode
+      const account = this.knowledgeUserId
       this.loading = true
       this._businessTrace = []
       try {
         await this.route(q, receiptFollowUp)
       } catch (e) {
+        if (run !== this.chatRun || (personalQuery && account !== this.knowledgeUserId)) return
         const reason = e && e.message ? e.message : typeof e === 'string' ? e : ''
         const message = /timeout|超时/i.test(reason) ? '查询超时，请稍后重试。' : /network|连接/i.test(reason) ? '无法连接业务服务，请检查服务是否启动。' : `查询未完成：${reason || '服务暂时不可用'}。`
-        this.push({ role: 'bot', type: 'text', text: message })
+        this.push({ role: 'bot', type: 'text', text: message, speechIncomplete: true })
       } finally {
+        if (run !== this.chatRun) return
         const trace = this._businessTrace
         this._businessTrace = null
-        if (run !== this.chatRun) {
+        if (personalQuery && account !== this.knowledgeUserId) {
           this.loading = false
           return
         }
@@ -793,47 +892,52 @@ export default {
             ...trace, { label: '业务数据回答', detail: '使用 MES 已有查询规则', elapsedMs: Date.now() - started }
           ])
         }
-        if (replies.length && !['rag', 'toolAnswer'].includes(replies[replies.length - 1].type)) {
-          const facts = replies.map(m => {
-            const keys = m.type === 'stock' ? ['itemCode', 'itemName', 'batchCode', 'warehouseName', 'inQty', 'outQty', 'endQty'] : (m.columns || []).map(c => c.prop)
-            const rows = m.rows || m.lines || []
-            return {
-              type: m.type, title: m.title, text: m.text, source: m.source,
-              begin: m.begin, inQty: m.inQty, outQty: m.outQty, end: m.end,
-              rows: rows.slice(0, 20).map(row => keys.reduce((shown, key) => { shown[key] = row[key]; return shown }, {})),
-              rowsTruncated: rows.length > 20, options: m.options, summary: m.summary,
-              citations: m.type === 'knowledge' ? m.sources : undefined
-            }
-          })
-          this.$set(replies[replies.length - 1], 'analysisContext', { question: q, facts })
+        // 规则命中的表格/清单：让模型把这些事实改写成自然语言说明
+        const lastReply = replies[replies.length - 1]
+        const structured = [...replies].reverse().find(m => m.type === 'list' || m.type === 'stock')
+        if (!personalQuery && lastReply) {
+          if (lastReply.type === 'text' && structured) this.narrateStructured(lastReply, q, structured, run)
+          else if (lastReply.type === 'text' || lastReply.type === 'knowledge') this.narratePlain(lastReply, q, run)
         }
         this.loading = false
+        // 数字人开着时，模型每生成一轮回答就直接朗读
+        if (!personalQuery && this.avatarOpen && replies.length) this.readAvatarAnswer()
         this.refreshEngineStatus()
         this.$nextTick(this.scrollBottom)
       }
     },
 
-    async requestAnalysis(m) {
-      if (m.analysisBusy || !m.analysisContext) return
-      try {
-        await this.$confirm(m.type === 'knowledge' ? '将当前问题与已引用的文档片段发送给已配置的外部模型服务。未引用的正文不会发送，请确认内容适合发送。' : '将当前问题及部分回答、表格数据发送给已配置的外部模型服务进行分析。请确认内容适合发送。', '确认发送', { confirmButtonText: '确认发送', cancelButtonText: '取消', type: 'warning' })
-      } catch (e) { return }
-      const facts = JSON.stringify(m.analysisContext.facts)
-      if (facts.length > 12000) {
-        this.$modal.msgWarning('当前结果过长，请缩小查询范围后再请求分析。')
-        return
-      }
-      this.$set(m, 'analysisBusy', true)
-      try {
-        const result = await request({ url: '/mes/ai/analysis', method: 'post', data: { question: m.analysisContext.question, facts }, timeout: 20000 })
-        if (!result || !result.data || !result.data.text) throw new Error('模型未返回分析结果')
-        this.push({ role: 'bot', type: 'text', text: `大模型分析（${result.data.model || '模型'}）：\n${result.data.text}\n\n分析可能存在误差，请以表格及原始业务数据为准。` })
-      } catch (e) {
-        this.push({ role: 'bot', type: 'text', text: '大模型分析暂不可用；原始回答和表格仍可查看。' })
-      } finally { this.$set(m, 'analysisBusy', false) }
-    },
-
     /* ---------- 意图解析（规则引擎；LLM 只做兜底，故意不参与算数） ---------- */
+    async queryPersonalKnowledge(question, mode) {
+      const run = this.chatRun
+      const account = this.knowledgeUserId
+      if (!account) throw new Error('请登录后查询个人知识库')
+      const { data } = await request({
+        url: '/mes/knowledge/ask', method: 'post', data: { question, mode }, timeout: 130000
+      })
+      if (account !== this.knowledgeUserId || run !== this.chatRun) return
+      if (!data || typeof data.answer !== 'string' || !data.answer.trim()) throw new Error('个人知识库未返回答案')
+
+      this.push({
+        role: 'bot', type: 'personalKnowledge', text: data.answer, mode, rag: true,
+        graphStatus: data.graphStatus,
+        paths: Array.isArray(data.paths) ? data.paths : [],
+        sources: (Array.isArray(data.sources) ? data.sources : []).map((source, index) => ({
+          documentId: 'personal-' + index,
+          number: source.number,
+          sectionIndex: source.chunkNo,
+          title: source.fileName,
+          filename: source.fileName,
+          version: '版本 ' + source.version,
+          sectionLabel: source.location || '片段 ' + source.chunkNo,
+          excerpt: source.text
+        }))
+      })
+    },
+    openPersonalKnowledgePath(paths) {
+      const factIds = [...new Set(paths.flat().map(step => step.factId).filter(Boolean))]
+      if (factIds.length) this.$refs.personalKnowledgeGraph.open(factIds)
+    },
     async queryKnowledge(question) {
       const knowledgeBase = this.$refs.knowledgeBase
       if (!knowledgeBase) { this.push({ role: 'bot', type: 'text', text: '知识库正在加载，请稍后重试。' }); return }
@@ -842,9 +946,11 @@ export default {
       if (!result.activeCount) { this.push({ role: 'bot', type: 'text', text: '当前没有启用的文档版本，请在知识库中启用需要检索的版本。' }); return }
       const topic = detectMesTopic(question)
       if (!result.sources.length) {
-        // 资料里确实没有该主题时，别再让用户自己换关键词：业务规则问题用系统真实流程回答。
+        // 资料里确实没有该主题时，先试业务规则与真实流程；仍答不了再交给模型自然回应。
         const fallback = knowledgeFallback(topic)
-        this.push({ role: 'bot', type: 'text', text: fallback || '在已启用的文档中未找到相关片段。请补充对应资料，或使用文档中的物料、工序、检验项目等具体关键词。' })
+        if (fallback) { this.push({ role: 'bot', type: 'text', text: fallback }); return }
+        if (await this.askNatural(question)) return
+        this.push({ role: 'bot', type: 'text', text: '在已启用的文档中未找到相关片段。请补充对应资料，或使用文档中的物料、工序、检验项目等具体关键词。' })
         return
       }
       this.push({ role: 'bot', type: 'knowledge', title: '知识库检索结果',
@@ -954,6 +1060,7 @@ export default {
 
     /** 规则引擎：命中直接走确定性查询（0 成本，覆盖常见问法） */
     matchRule(q) {
+      if (PRODUCT_CATALOG.test(q) && !PRODUCT_SCOPE.test(q)) return 'queryProducts'
       if (/低于|安全库存|预警|缺料/.test(q)) return 'queryAlert'
       if (/库存|盘点|结存|还有多少|还剩多少|剩余多少|剩多少|剩下多少/.test(q)) return 'queryStock'
       if (/入库|采购|到货|收货/.test(q)) return 'queryFlowIn'
@@ -992,6 +1099,7 @@ export default {
         case 'inbound': return () => this.queryFlow(q, 'IN')
         case 'outbound': return () => this.queryFlow(q, 'OUT')
         case 'workorder': return () => this.queryWorkorder(q)
+        case 'product': return () => this.queryProducts()
         case 'alert': return () => this.queryAlert()
         case 'inspection': return () => this.queryInspection(q)
         default: return null
@@ -1001,6 +1109,7 @@ export default {
     /** 主流程：解析单据指代 → 写操作 → 专属问答 → 规则 → 大模型 → 追问 */
     async route(q, receiptFollowUp) {
       if (receiptFollowUp) return this.askReceiptRecords(q, receiptFollowUp)
+      if (this.personalMode) return this.queryPersonalKnowledge(q, this.queryMode === 'personal_graph' ? 'graph_rag' : 'rag')
       if (this.queryMode === 'knowledge') return this.queryKnowledge(q)
       if (this.queryMode === 'graph') return this.queryDepartment(q, true)
       if (this.queryMode === 'rag') return this.queryDepartment(q)
@@ -1062,19 +1171,6 @@ export default {
         if (/班组/.test(q) && !/成员|人员|排班|日期|今天|明天/.test(q)) return this.queryBasicList('team')
         if (/设备|机器|机械/.test(q) && !/异常|不合格|点检|维修|故障|运行|停机|状态|保养/.test(q)) return this.queryBasicList('equipment')
       }
-      if (/功能|模块|能做什么|怎么用/.test(q)) {
-        const guides = [
-          { re: /主数据|基础数据/, text: '主数据可以维护物料、客户、供应商及生产基础信息。可以问我“公司有哪些客户”或“有哪些供应商”。' },
-          { re: /仓储|仓库管理/, text: '仓储包括库存、采购入库、领料和销售出库。可以问我“盘点上壳库存”或“有哪些仓库”。' },
-          { re: /生产管理|生产模块/, text: '生产模块包含工单、排产、工艺和报工。可以问我指定工单进度或“哪些工单已经超期”。' },
-          { re: /质量|质检/, text: '质量模块包括来料、过程和出货检验。可以问我“本月过程检验合格率”。' },
-          { re: /设备管理|设备模块/, text: '设备模块包括设备台账和点检记录。可以问我“有哪些设备”或“哪些设备最近点检有异常”。' },
-          { re: /排班|班组/, text: '班组排班包括班组、排班计划、日历和节假日设置。可以问我“有哪些班组”或“公司什么时候放假”。' },
-          { re: /系统管理|系统模块/, text: '系统模块包含用户、角色和权限等配置。可以问我“我的角色是什么”；可见内容以账号权限为准。' }
-        ]
-        const guide = guides.find(g => g.re.test(q))
-        if (guide) { this.push({ role: 'bot', type: 'text', text: guide.text }); return }
-      }
       if (/设备|机器|机械/.test(q)) {
         this.lastStock = null
         this.lastWorkorder = null
@@ -1119,15 +1215,15 @@ export default {
       const detailedStock = /库存|结存|出入库|流水/.test(q) && /仓库|库位|批次|近\s*\d+\s*天/.test(q)
       if (!detailedStock && /库存|结存|流水|出入库|(?:入库|出库)(?:了)?多少|工单.*(?:进度|逾期|超期|落后|列表)|(?:进度|逾期|超期|落后).*工单|合格率|检验(?:记录|报告)|BOM|物料清单|物料(?:信息|规格|编码|单位)|\bTG-[A-Z0-9-]+\b/i.test(q) &&
         await this.queryBusinessTools(q)) return
-      if (/你(能|可以|会)(做|干|帮|查|回答)|你是(谁|什么)|介绍(?:一下)?(?:你自己|自己|你)|自我介绍|有什么功能|如何使用|怎么使用/.test(q)) {
-        this.waitingWeatherCity = false
-        this.push({ role: 'bot', type: 'text', text: '你好，我是 MES 智能助手。我可以查询库存、入出库、工单进度、安全库存和过程检验；也能经你确认后新增到货通知、创建生产工单草稿、打开指定工单，以及查询指定城市的当前天气。业务数据会显示来源，天气需要联网。' })
-        return
-      }
       if (/天气|气温|温度多少|下雨/.test(q)) {
         this.lastStock = null
         this.lastWorkorder = null
-        if (/明天|后天|下周|昨天/.test(q)) { this.waitingWeatherCity = false; this.push({ role: 'bot', type: 'text', text: '目前支持查询指定城市的当前天气，例如“上海今天天气怎么样”。' }); return }
+        if (/明天|后天|下周|昨天/.test(q)) {
+          this.waitingWeatherCity = false
+          if (await this.askNatural(q)) return
+          this.push({ role: 'bot', type: 'text', text: '目前支持查询指定城市的当前天气，例如“上海今天天气怎么样”。' })
+          return
+        }
         const city = q.replace(/请问|帮我|查一下|查询|查查|查|看一下|看看|告诉我|今天|今日|现在|当前|实时|的|天气|气温|温度多少|下雨|怎么样|如何|多少|吗|呢|是否|会|[\s，。？?！!]/g, '').replace(/市$/, '')
         if (!city) { this.waitingWeatherCity = true; this.push({ role: 'bot', type: 'text', text: '请告诉我想查询哪个城市的天气，例如上海。' }); return }
         this.waitingWeatherCity = false
@@ -1208,12 +1304,68 @@ export default {
         }
       }
 
-      // ③ 都不行：追问，绝不编造
+      // ③ 都不行：交给大模型自然作答（含闲聊与能力说明），模型不可用时才追问
+      if (await this.askNatural(q)) return
       this.push({
         role: 'bot', type: 'ask',
         text: this.llmUnavailable ? '智能意图识别暂时不可用。你仍可以直接查询库存、客户、工单或节假日等已支持的内容。' : '我暂时没有识别出这个问题对应的查询方式，并不代表系统没有相关信息。请换个说法或选择下面的示例。',
         options: ['盘点某物料某月的库存', '本月采购入库情况', '工单进度落后清单', '公司什么时候放假']
       })
+    },
+
+    async askNatural(question) {
+      try {
+        const { data } = await askAssistantChat({ question, allowExternal: true, skipLocal: false })
+        const text = data && typeof data.answer === 'string' ? data.answer.trim() : ''
+        if (!text) return false
+        this.push({ role: 'bot', type: 'text', text, natural: true })
+        return true
+      } catch (e) {
+        return false
+      }
+    },
+
+    // 用真实的行数据生成自然语言说明；模型不可用时保留原有句子
+    narrateStructured(message, question, structured, run) {
+      const keys = structured.type === 'stock'
+        ? ['itemCode', 'itemName', 'batchCode', 'warehouseName', 'inQty', 'outQty', 'endQty']
+        : (structured.columns || []).map(c => c.prop)
+      const rows = (structured.rows || []).slice(0, 20).map(row => keys.reduce((shown, key) => {
+        shown[key] = row[key]
+        return shown
+      }, {}))
+      const facts = [{
+        type: structured.type, title: structured.title, source: structured.source,
+        rows, rowsTruncated: (structured.rows || []).length > 20
+      }]
+      narrateAnswer({ question, facts: JSON.stringify(facts), allowExternal: true })
+        .then(({ data }) => {
+          if (run !== this.chatRun) return
+          const text = data && typeof data.text === 'string' ? data.text.trim() : ''
+          if (text) {
+            message.text = text
+            message.natural = true
+          }
+        })
+        .catch(() => {})
+    },
+
+    // 纯文案类回答：不改变事实的前提下改写成自然说法；权限与系统提示保持原样
+    narratePlain(message, question, run) {
+      const original = (message.text || '').trim()
+      if (message.natural || original.length < 10) return
+      if (/权限|意图由|服务暂时不可用|请稍后重试|连接中断|未登录/.test(original)) return
+      const facts = [{ type: 'text', text: original }]
+      narrateAnswer({ question, facts: JSON.stringify(facts), allowExternal: true })
+        .then(({ data }) => {
+          if (run !== this.chatRun) return
+          const text = data && typeof data.text === 'string' ? data.text.trim() : ''
+          if (text && text.length >= 8) {
+            message.text = text
+            message.natural = true
+          }
+        })
+        .catch(() => {})
     },
 
     async queryAbnormalEquipment() {
@@ -1947,6 +2099,64 @@ export default {
       this.push({ role: 'bot', type: 'text', text: `${t.label}${selected.length ? '' : '（未指定物料，统计全部物料）'}共找到 ${rows.length} 条${dir === 'IN' ? '入库' : '出库'}流水，涉及 ${itemCount} 种物料、${warehouseCount} 个已标注仓库${unknownWarehouse}。各仓库数量和单位见上表，不同物料或单位不直接相加。` })
     },
 
+    /* ---------- 产品目录：本厂生产什么 / 成品是什么 ---------- */
+    async queryProducts() {
+      this.lastWorkorder = null
+      this.lastStock = null
+      this.waitingWeatherCity = false
+      if (!this.$auth.hasPermi('mes:md:mditem:list')) {
+        this.push({ role: 'bot', type: 'text', text: '当前账号没有产品物料档案的查询权限，请联系管理员。' })
+        return
+      }
+      const res = await this.get('/mes/md/mditem/list')
+      const all = res.rows || []
+      // 产品物料标识为 PRODUCT 的才是本厂自制产品；老库没维护该标识时，退化为按物料类型名称判断。
+      let products = all.filter(i => i.itemOrProduct === 'PRODUCT')
+      if (!products.length) products = all.filter(i => /成品|半成品/.test(i.itemTypeName || ''))
+      const rows = products
+        .filter(i => i.enableFlag !== 'N')
+        .map(i => ({
+          itemCode: i.itemCode || '未填写',
+          itemName: i.itemName || '未填写',
+          // 类型名称是“整机成品 / 自制半成品”，直接取主数据，不在前端重造分类。
+          productType: i.itemTypeName || '未分类',
+          specification: i.specification || '未填写',
+          unit: i.unitName || i.unitOfMeasure || '未标注'
+        }))
+        .sort((a, b) => (isFinishedProduct(a) === isFinishedProduct(b)
+          ? a.itemCode.localeCompare(b.itemCode)
+          : isFinishedProduct(a) ? -1 : 1))
+      this.push({
+        role: 'bot', type: 'list',
+        title: '本厂生产的产品（整机成品与自制半成品）',
+        columns: [
+          { prop: 'itemCode', label: '产品编码', width: 140 },
+          { prop: 'itemName', label: '产品名称' },
+          { prop: 'productType', label: '产品类型', width: 120 },
+          { prop: 'specification', label: '规格型号' },
+          { prop: 'unit', label: '单位', width: 80 }
+        ],
+        rows,
+        source: `数据来源：md_item（产品物料档案），按产品物料标识 PRODUCT 且启用筛选，共 ${rows.length} 条；外购物料（电子件、结构件、包装辅料）不在此列`
+      })
+      if (!rows.length) {
+        this.push({ role: 'bot', type: 'text', text: '当前查询范围内没有查到启用的产品档案，请到「物料产品 → 产品物料」核对产品与物料类型是否已维护。' })
+        return
+      }
+      const named = list => list.map(row => `${row.itemName}（${row.itemCode}）`).join('、')
+      // 按主数据的类型名称分组，产品类型可能不止“整机成品 / 自制半成品”两种，不写死分类。
+      const groups = []
+      rows.forEach(row => {
+        const group = groups.find(entry => entry.type === row.productType)
+        if (group) group.rows.push(row)
+        else groups.push({ type: row.productType, rows: [row] })
+      })
+      this.push({
+        role: 'bot', type: 'text',
+        text: `本厂生产的产品共 ${rows.length} 项，其中${groups.map(group => `${group.type} ${group.rows.length} 项：${named(group.rows)}`).join('；')}。外购物料（电子件、结构件、包装辅料）不算产品；要看这些产品的开工情况，可以问“工单进度落后清单”。`
+      })
+    },
+
     /* ---------- ③ 工单进度 ---------- */
     async queryWorkorder(q = '') {
       this.lastWorkorder = null
@@ -2180,12 +2390,16 @@ export default {
 .ai {
   --assistant-content-width: 740px;
   --assistant-gutter: clamp(18px, 4vw, 44px);
+  --assistant-avatar-slot: min(calc(var(--mes-sidebar-width) * 1.5 + var(--mes-nav-width) * .5), calc(45vw - var(--mes-nav-width)));
   display: flex;
   position: relative;
   height: calc(100vh - var(--mes-header-height));
   height: calc(100dvh - var(--mes-header-height));
   color: $mes-text;
   font-family: $mes-font;
+
+  &--mobile { --assistant-avatar-slot: min(30vw, 204px); }
+  &__avatar-slot { flex: 0 0 var(--assistant-avatar-slot); }
 
   &__sidebar {
     flex: 0 0 var(--mes-sidebar-width);
@@ -2284,7 +2498,7 @@ export default {
     flex-direction: column;
     flex: 1;
     min-width: 0;
-    background: linear-gradient(164deg, $mes-primary-bg 0, $mes-primary-soft 235px, $mes-bg 70%);
+    background: $mes-bg;
   }
   &__conversation.is-empty {
     position: relative;
@@ -2297,7 +2511,7 @@ export default {
       z-index: -1;
       inset: -10% -10% 12%;
       pointer-events: none;
-      background: radial-gradient(ellipse 60% 62% at 43% 34%, rgba(#9bbdf0, .68), transparent);
+      background: radial-gradient(ellipse 60% 62% at 43% 34%, rgba($mes-progress-current, .28), transparent);
       opacity: .72;
       animation: assistant-welcome-drift 4s ease-in-out infinite alternate;
     }
@@ -2313,6 +2527,80 @@ export default {
     padding: 7px 18px;
   }
   &__actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+  &__avatar-launch {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 3px;
+    overflow: hidden;
+    border: 1px solid $mes-border;
+    border-radius: 999px;
+    background: $mes-card;
+    color: $mes-primary;
+    cursor: pointer;
+    transition: width 180ms ease, border-color 180ms ease, background-color 180ms ease;
+
+    &:focus-visible { outline: 2px solid $mes-marker; outline-offset: 1px; }
+    &:hover, &:focus-visible, &[aria-expanded='true'] {
+      width: 132px;
+      padding-left: 12px;
+      border-color: $mes-border-strong;
+      background: $mes-primary-soft;
+
+      .ai__avatar-label { opacity: 1; transform: translateX(0); }
+      .ai__avatar-icon { transform: scale(.82); }
+    }
+  }
+
+  &__avatar-label {
+    margin-right: 5px;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateX(7px);
+    transition: transform 180ms ease, opacity 150ms ease;
+  }
+
+  &__avatar-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 36px;
+    height: 36px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: $mes-primary-bg;
+    font-size: 19px;
+    transition: transform 180ms ease;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+  }
+
+  &__avatar-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    padding: 4px 18px 8px;
+    color: $mes-text-sub;
+    font-size: 12px;
+
+    button {
+      padding: 4px 8px;
+      border: 1px solid $mes-border;
+      border-radius: 6px;
+      background: $mes-card;
+      color: $mes-primary;
+      font: inherit;
+      cursor: pointer;
+      &:disabled { opacity: .6; cursor: default; }
+      &:focus-visible { outline: 2px solid $mes-marker; outline-offset: 1px; }
+    }
+  }
 
   &__dify {
     display: inline-flex;
@@ -2341,6 +2629,7 @@ export default {
   &__conversation.is-empty &__body { padding-top: clamp(34px, 12vh, 132px); }
 
   &__welcome {
+    h2 { font-family: var(--font-display); }
     max-width: var(--assistant-content-width);
     margin: 0 auto;
     padding: 0 10px;
@@ -2392,6 +2681,7 @@ export default {
 
 @media (prefers-reduced-motion: reduce) {
   .ai__conversation.is-empty::before { animation: none; }
+  .ai__avatar-launch, .ai__avatar-label, .ai__avatar-icon { transition: none; }
 }
 
 @media (max-height: 740px) {
@@ -2418,6 +2708,8 @@ export default {
 @media (max-width: 650px) {
   .ai { --assistant-gutter: 14px; }
   .ai__toolbar { padding-inline: var(--assistant-gutter); }
+  .ai__avatar-controls { padding-inline: var(--assistant-gutter); }
+  .ai--avatar-open .ai__dify { display: none; }
   .ai__welcome { padding-inline: 2px; }
   .ai__composer { padding-bottom: 12px; }
 }
@@ -2460,12 +2752,12 @@ export default {
   &__card-title {
     font-weight: 600;
     margin-bottom: 10px;
-    color: #111827;
+    color: $mes-text;
   }
   &__meta {
     margin-top: 8px;
     font-size: 11px;
-    color: #9ca3af;
+    color: $mes-border-strong;
   }
   &__form {
     display: flex;
@@ -2480,7 +2772,7 @@ export default {
   }
   &__form-label {
     font-size: 12px;
-    color: #4b5563;
+    color: $mes-text-sub;
   }
   &__ok { color: #0f7a3d; }
   &__bad { color: #b91c1c; }
@@ -2498,15 +2790,15 @@ export default {
   margin-bottom: 12px;
 }
 .kpi {
-  background: #f7f9fc;
+  background: $mes-primary-soft;
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 
-  span { font-size: 11px; color: #6b7280; }
-  b { font-size: 18px; color: #111827; }
+  span { font-size: 11px; color: $mes-text-sub; }
+  b { font-size: 18px; color: $mes-text; }
   .up { color: #0f7a3d; }
   .down { color: #b45309; }
 }
@@ -2529,7 +2821,7 @@ export default {
   width: 6px; height: 6px;
   margin-right: 4px;
   border-radius: 50%;
-  background: #9ca3af;
+  background: $mes-border-strong;
   animation: blink 1.2s infinite;
 }
 .dot:nth-child(2) { animation-delay: .2s; }

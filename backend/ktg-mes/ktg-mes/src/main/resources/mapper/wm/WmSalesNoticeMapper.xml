@@ -150,4 +150,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{noticeId}
         </foreach>
     </delete>
+    <select id="lockShipmentNotice" resultType="long">
+        select notice_id from wm_sales_notice where notice_id=#{noticeId} for update
+    </select>
+
+    <update id="finishWhenShipped">
+        update wm_sales_notice n set n.status='FINISHED'
+        where n.notice_id=#{noticeId} and n.status='CONFIRMED'
+          and exists (select 1 from wm_sales_notice_line nl where nl.notice_id=#{noticeId} and nl.quantity_sales &gt; 0)
+          and not exists (
+            select 1 from wm_sales_notice_line nl
+            where nl.notice_id=#{noticeId} and nl.quantity_sales &gt; coalesce((
+              select sum(l.quantity_sales)
+              from wm_product_sales_line l join wm_product_sales h on h.sales_id=l.sales_id
+              where h.notice_id=#{noticeId} and h.status='FINISHED' and l.item_id=nl.item_id
+                and (nl.batch_id is null or l.batch_id=nl.batch_id)
+                and l.attr1=concat('AUTO:SALES_LINE:NOTICE:',nl.line_id)
+            ),0)
+          )
+    </update>
 </mapper>

@@ -53,3 +53,13 @@ export function getLibraryGraph(libraryId, params) {
 export function retryLibraryGraph(libraryId, versionId) {
   return request({ url: `/mes/ai/kb/libraries/${libraryId}/graph/versions/${versionId}/retry`, method: 'post' })
 }
+
+/** 物料影响路径：按完整编码反向查出子件被哪些上级产品使用。 */
+export function getImpactPath(libraryId, itemCode) {
+  return request({ url: `/mes/ai/kb/libraries/${libraryId}/graph/impact`, method: 'get', params: { itemCode } })
+}
+
+/** 某一段的 BOM 行与文档佐证；via 为截至该段的有序行号。 */
+export function getImpactEdge(libraryId, bomId, params) {
+  return request({ url: `/mes/ai/kb/libraries/${libraryId}/graph/impact/edges/${bomId}`, method: 'get', params })
+}

@@ -36,6 +36,17 @@ public interface IProFeedbackService
     public int insertProFeedback(ProFeedback proFeedback);
 
     /**
+     * 按「父工单号-bg三位序号」生成报工单号并保存（如 gd2026112100003-bg012）。
+     * 同一工单内序号递增，撞号时自动重新取号重试。
+     */
+    public int insertProFeedbackWithCode(ProFeedback proFeedback, String workorderCode);
+
+    /**
+     * 生成报工单号：父工单号-bg三位序号，序号取该工单已有报工的最大值 +1。
+     */
+    public String generateFeedbackCode(String workorderCode, Long workorderId);
+
+    /**
      * 修改生产报工记录
      * 
      * @param proFeedback 生产报工记录

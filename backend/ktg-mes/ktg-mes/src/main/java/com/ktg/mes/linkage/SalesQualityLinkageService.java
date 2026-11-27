@@ -13,7 +13,10 @@ import com.ktg.mes.qc.service.IQcTemplateProductService;
 import com.ktg.mes.wm.domain.WmProductSales;
 import com.ktg.mes.wm.domain.WmProductSalesLine;
 import com.ktg.mes.wm.service.IWmProductSalesService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.mes.wm.mapper.WmSalesOrderLineMapper;
+import com.ktg.mes.wm.domain.WmSalesOrderLine;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,22 +33,25 @@ public class SalesQualityLinkageService {
     private final IQcTemplateProductService templateProductService;
     private final IQcTemplateIndexService templateIndexService;
     private final IQcOqcLineService oqcLineService;
-    private final AutoCodeUtil autoCodeUtil;
+    private final CodeSequenceService codeSequenceService;
     private final MenuLinkageNoticeService menuNoticeService;
     private final IWmProductSalesService productSalesService;
+
+    @Autowired
+    private WmSalesOrderLineMapper salesOrderLineMapper;
 
     public SalesQualityLinkageService(IQcOqcService oqcService,
                                       IQcTemplateProductService templateProductService,
                                       IQcTemplateIndexService templateIndexService,
                                       IQcOqcLineService oqcLineService,
-                                      AutoCodeUtil autoCodeUtil,
+                                      CodeSequenceService codeSequenceService,
                                       MenuLinkageNoticeService menuNoticeService,
                                       IWmProductSalesService productSalesService) {
         this.oqcService = oqcService;
         this.templateProductService = templateProductService;
         this.templateIndexService = templateIndexService;
         this.oqcLineService = oqcLineService;
-        this.autoCodeUtil = autoCodeUtil;
+        this.codeSequenceService = codeSequenceService;
         this.menuNoticeService = menuNoticeService;
         this.productSalesService = productSalesService;
     }
@@ -90,6 +96,14 @@ public class SalesQualityLinkageService {
             QcOqc draft = buildDraft(sales, source, templates.get(0), operator);
             oqcService.insertQcOqc(draft);
             createInspectionLines(draft);
+            if (source.getAttr3() != null && source.getAttr1() != null
+                    && source.getAttr1().startsWith("AUTO:SALES_LINE:NOTICE:")) {
+                WmSalesOrderLine orderLine = new WmSalesOrderLine();
+                orderLine.setLineId(source.getAttr3());
+                orderLine.setOqcId(draft.getOqcId());
+                orderLine.setOqcCode(draft.getOqcCode());
+                salesOrderLineMapper.updateWmSalesOrderLine(orderLine);
+            }
             result.add(draft);
             created = true;
         }
@@ -106,7 +120,8 @@ public class SalesQualityLinkageService {
                               QcTemplateProduct template,
                               String operator) {
         QcOqc draft = new QcOqc();
-        draft.setOqcCode(autoCodeUtil.genSerialCode(UserConstants.QC_OQC_CODE, null));
+        draft.setOqcCode(codeSequenceService.generateChainCode(UserConstants.CODE_RULE_OQC,
+                source.getWorkorderCode() == null ? sales.getSoCode() : source.getWorkorderCode()));
         draft.setOqcName("销售出库" + sales.getSalesCode() + "-" + source.getItemName());
         draft.setTemplateId(template.getTemplateId());
         draft.setSourceDocId(sales.getSalesId());

@@ -71,6 +71,9 @@ public class ProductProductTxBean extends BaseEntity {
     /** 单据行ID */
     private Long sourceDocLineId;
 
+    /** 单据行下的明细ID（用于生成 biz_key，区分同一行的多条明细） */
+    private Long sourceDocDetailId;
+
     /** 事务数量 */
     private BigDecimal transactionQuantity;
 
@@ -233,6 +236,14 @@ public class ProductProductTxBean extends BaseEntity {
 
     public void setSourceDocLineId(Long sourceDocLineId) {
         this.sourceDocLineId = sourceDocLineId;
+    }
+
+    public Long getSourceDocDetailId() {
+        return sourceDocDetailId;
+    }
+
+    public void setSourceDocDetailId(Long sourceDocDetailId) {
+        this.sourceDocDetailId = sourceDocDetailId;
     }
 
     public BigDecimal getTransactionQuantity() {

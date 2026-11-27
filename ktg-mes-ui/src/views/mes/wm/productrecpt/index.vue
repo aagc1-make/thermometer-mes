@@ -229,7 +229,7 @@
         <div slot="footer" class="dialog-footer">
           <el-button type="primary" @click="saveForm" v-if="form.status =='PREPARE' && optType !='view' ">保 存</el-button>
           <el-button class="mes-action--review" type="warning" @click="submitToStock" v-if="form.status =='PREPARE' && form.recptId !=null && optType !='view' ">提 交</el-button>
-          <el-button class="mes-action--execute" type="warning" @click="submitToExecute" v-if="form.status =='APPROVING' && form.recptId !=null && optType !='view' ">提 交</el-button>
+          <el-button class="mes-action--execute" type="warning" @click="submitToExecute" v-if="form.status =='APPROVING' && form.recptId !=null && optType !='view' ">确认上架</el-button>
           <el-button class="mes-action--destructive" type="danger" @click="cancel"  v-if="form.status !='PREPARE' && form.status !='FINISHED' && optType !='view' " >取 消</el-button>
           <el-button @click="close">关 闭</el-button>
         </div>
@@ -239,13 +239,13 @@
 
 <script>
 import pipelineWorkorderContext from '@/mixins/pipelineWorkorderContext'
-import { listProductrecpt, getProductrecpt, delProductrecpt, addProductrecpt, updateProductrecpt, checkQuantity ,execute} from "@/api/mes/wm/productrecpt";
+import { listProductrecpt, getProductrecpt, delProductrecpt, addProductrecpt, updateProductrecpt, confirmProductStocking, execute} from "@/api/mes/wm/productrecpt";
 import WorkorderSelect from "@/components/workorderSelect/single.vue"
 import Productrecptline from "./line.vue"
 import ProductrecptDetail from "./detail.vue"
 import StockTransactions from "./stock-transactions.vue"
 import {getTreeList} from "@/api/mes/wm/warehouse"
-import {genCode} from "@/api/system/autocode/rule"
+import { previewMesCode } from '@/api/mes/code'
 export default {
   mixins: [pipelineWorkorderContext],
   name: "Productrecpt",
@@ -487,38 +487,13 @@ export default {
 
     },
 
-    submitToExecute(){
-      let that = this;
-      checkQuantity(this.form.recptId).then( response =>{
-        if(response.data){
-            that.form.status = 'APPROVED';
-            updateProductrecpt(that.form).then(response => {
-              that.$modal.msgSuccess("提交成功");
-              that.open = false;
-              that.getList();
-            } 
-            ).catch(() => {
-              that.form.status = 'APPROVING';
-            });    
-          }else{
-            this.$modal.confirm('入库数量与上架数量不一致，确认提交?').then(function() {
-              that.form.status = 'APPROVED';
-              updateProductrecpt(that.form).then(response => {
-                that.$modal.msgSuccess("提交成功");
-                that.open = false;
-                that.getList();
-              } 
-              ).catch(() => {
-                that.form.status = 'APPROVING';
-              });    
-            }).catch(() => {
-
-            });
-          }
-        }
-      );   
+    submitToExecute() {
+      confirmProductStocking(this.form.recptId).then(() => {
+        this.$modal.msgSuccess('上架确认成功')
+        this.open = false
+        this.getList()
+      })
     },
-
 
     //取消
     cancel(){
@@ -575,8 +550,8 @@ export default {
     //自动生成编码
     handleAutoGenChange(autoGenFlag){
       if(autoGenFlag){
-        genCode('PRODUCTRECPT_CODE').then(response =>{
-          this.form.recptCode = response;
+        previewMesCode('CPRK', this.form.workorderCode).then(response =>{
+          this.form.recptCode = response.data;
         });
       }else{
         this.form.recptCode = null;

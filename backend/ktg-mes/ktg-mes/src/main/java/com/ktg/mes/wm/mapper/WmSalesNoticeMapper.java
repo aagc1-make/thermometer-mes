@@ -11,6 +11,9 @@ import com.ktg.mes.wm.domain.WmSalesNotice;
  */
 public interface WmSalesNoticeMapper 
 {
+    Long lockShipmentNotice(Long noticeId);
+    int finishWhenShipped(Long noticeId);
+
     /**
      * 查询发货通知单
      * 

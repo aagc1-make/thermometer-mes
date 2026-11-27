@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ktg.system.mapper.SysCodeSequenceMapper">
+
+    <!-- 本项目全局未开启 mapUnderscoreToCamelCase，resultType 直接映射时需显式起别名，
+         否则 date_format 等字段为 null，取号会丢掉日期段。 -->
+    <select id="selectSysCodeRuleByCode" resultType="com.ktg.system.domain.SysCodeRule">
+        select rule_code     as ruleCode,
+               rule_name     as ruleName,
+               prefix        as prefix,
+               date_format   as dateFormat,
+               serial_length as serialLength,
+               serial_start  as serialStart,
+               serial_step   as serialStep,
+               reset_cycle   as resetCycle,
+               enable_flag   as enableFlag
+        from sys_code_rule
+        where rule_code = #{ruleCode}
+        limit 1
+    </select>
+
+    <insert id="reserveCode">
+        insert ignore into sys_code_reservation (document_code) values (#{code})
+    </insert>
+
+    <select id="countReservedCode" resultType="int">
+        select count(*) from sys_code_reservation where document_code = #{code}
+    </select>
+
+    <!--
+        原子取号。LAST_INSERT_ID(expr) 既返回 expr，也把 expr 暂存到当前连接，
+        随后同连接 SELECT LAST_INSERT_ID() 即可拿到本次流水号。
+        新周期（行不存在）时从 serial_start 开始。
+    -->
+    <insert id="takeSequence">
+        insert into sys_code_sequence (rule_code, period_key, current_no)
+        values (#{ruleCode}, #{periodKey}, last_insert_id(#{startNo}))
+        on duplicate key update current_no = last_insert_id(current_no + #{step})
+    </insert>
+
+    <select id="selectLastInsertId" resultType="java.lang.Long">
+        select last_insert_id()
+    </select>
+
+    <!--
+        已使用流水号：表名/列名来自服务内固定映射，禁止外部传入。
+        单号可能内嵌父工单号（如 gd2026112100003-bg2026112100006），
+        取流水前先剥离到最后一个 '-' 之后，否则内嵌单号不会被识别为已占用，导致重复取号。
+    -->
+    <select id="selectUsedSerials" resultType="java.lang.Integer">
+        select distinct cast(substring(t.code, #{serialPos}) as unsigned) as seq
+        from (
+            select case
+                     -- 链号子序号（如 zj2026112100004-01）：去掉尾部 -NN 后按链号取流水
+                     when instr(${columnName}, '-') > 0
+                          and substring_index(${columnName}, '-', -1) regexp '^[0-9]{2}$'
+                       then substring_index(${columnName}, '-', 1)
+                     -- 报工号（如 gd2026112100004-bg009）：取最后一段
+                     when instr(${columnName}, '-') > 0
+                       then substring_index(${columnName}, '-', -1)
+                     else ${columnName}
+                   end as code
+            from ${tableName}
+        ) t
+        where t.code like concat(#{codePrefix}, '%')
+    </select>
+
+    <!-- 占用校验同时匹配原始单号、内嵌父单号后的同号，以及链号派生的子序号 -->
+    <select id="countCode" resultType="int">
+        select count(1) from ${tableName}
+        where ${columnName} = #{code}
+           or ${columnName} like concat('%-', #{code})
+           or ${columnName} like concat(#{code}, '-%')
+    </select>
+
+</mapper>

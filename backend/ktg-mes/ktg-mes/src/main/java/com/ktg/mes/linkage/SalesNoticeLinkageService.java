@@ -5,14 +5,16 @@ import com.ktg.mes.wm.domain.WmProductSales;
 import com.ktg.mes.wm.domain.WmProductSalesLine;
 import com.ktg.mes.wm.domain.WmSalesNotice;
 import com.ktg.mes.wm.domain.WmSalesNoticeLine;
+import com.ktg.mes.wm.mapper.ProductReceiptGuardMapper;
 import com.ktg.mes.wm.service.IWmProductSalesLineService;
 import com.ktg.mes.wm.service.IWmProductSalesService;
 import com.ktg.mes.wm.service.IWmSalesNoticeService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 /** 发货通知单确认后，幂等生成销售出库草稿。 */
 @Service
@@ -20,20 +22,23 @@ public class SalesNoticeLinkageService {
 
     private final IWmProductSalesService salesService;
     private final IWmProductSalesLineService salesLineService;
-    private final AutoCodeUtil autoCodeUtil;
+    private final CodeSequenceService codeSequenceService;
     private final MenuLinkageNoticeService menuNoticeService;
     private final IWmSalesNoticeService salesNoticeService;
+    private final ProductReceiptGuardMapper receiptGuardMapper;
 
     public SalesNoticeLinkageService(IWmProductSalesService salesService,
                                      IWmProductSalesLineService salesLineService,
-                                     AutoCodeUtil autoCodeUtil,
+                                     CodeSequenceService codeSequenceService,
                                      MenuLinkageNoticeService menuNoticeService,
-                                     IWmSalesNoticeService salesNoticeService) {
+                                     IWmSalesNoticeService salesNoticeService,
+                                     ProductReceiptGuardMapper receiptGuardMapper) {
         this.salesService = salesService;
         this.salesLineService = salesLineService;
-        this.autoCodeUtil = autoCodeUtil;
+        this.codeSequenceService = codeSequenceService;
         this.menuNoticeService = menuNoticeService;
         this.salesNoticeService = salesNoticeService;
+        this.receiptGuardMapper = receiptGuardMapper;
     }
 
     @Transactional
@@ -52,11 +57,13 @@ public class SalesNoticeLinkageService {
         query.setNoticeId(notice.getNoticeId());
         List<WmProductSales> existing = salesService.selectWmProductSalesList(query);
         if (existing != null && !existing.isEmpty()) {
+            // 草稿在订单确认时已预建；发货通知补填批次后，把批次同步到出库草稿行
+            syncLineBatches(existing.get(0), sourceLines);
             return existing.get(0);
         }
 
         WmProductSales sales = new WmProductSales();
-        sales.setSalesCode(autoCodeUtil.genSerialCode(UserConstants.PRODUCTSALSE_CODE, ""));
+        sales.setSalesCode(codeSequenceService.generateChainCode(UserConstants.CODE_RULE_PRODUCT_SALES, notice.getSoCode()));
         sales.setSalesName("发货通知" + notice.getNoticeCode() + "销售出库");
         sales.setNoticeId(notice.getNoticeId());
         sales.setNoticeCode(notice.getNoticeCode());
@@ -87,11 +94,63 @@ public class SalesNoticeLinkageService {
             line.setBatchId(source.getBatchId());
             line.setBatchCode(source.getBatchCode());
             line.setOqcCheck(source.getOqcCheck());
+            // 出库行必须与工单、成品批次严格对应：按订单已入库记录反查并绑定
+            bindWorkorderAndBatch(line, notice.getSoCode(), source);
             line.setAttr1("AUTO:SALES_LINE:NOTICE:" + source.getLineId());
+            line.setAttr3(source.getAttr3());
             line.setCreateBy(operator);
             salesLineService.insertWmProductSalesLine(line);
         }
         menuNoticeService.markUnread(MenuLinkageNoticePaths.PRODUCT_SALES);
         return sales;
+    }
+
+    /** 把发货通知行上的批次同步到尚未执行的销售出库草稿行，保证出库单批次自动绑定。 */
+    private void syncLineBatches(WmProductSales draft, List<WmSalesNoticeLine> sourceLines) {
+        if (draft == null || sourceLines == null || sourceLines.isEmpty()
+                || !UserConstants.PRODUCT_SALES_STATUS_PREPARE.equals(draft.getStatus())) {
+            return;
+        }
+        WmProductSalesLine query = new WmProductSalesLine();
+        query.setSalesId(draft.getSalesId());
+        List<WmProductSalesLine> draftLines = salesLineService.selectWmProductSalesLineList(query);
+        if (draftLines == null || draftLines.isEmpty()) {
+            return;
+        }
+        for (WmSalesNoticeLine source : sourceLines) {
+            String sourceKey = "AUTO:SALES_LINE:NOTICE:" + source.getLineId();
+            for (WmProductSalesLine line : draftLines) {
+                if (!sourceKey.equals(line.getAttr1()) || line.getOqcId() != null) {
+                    continue;
+                }
+                if (source.getBatchId() != null || source.getBatchCode() != null) {
+                    line.setBatchId(source.getBatchId());
+                    line.setBatchCode(source.getBatchCode());
+                }
+                bindWorkorderAndBatch(line, draft.getSoCode(), source);
+                if (line.getBatchId() != null) {
+                    salesLineService.updateWmProductSalesLine(line);
+                }
+            }
+        }
+    }
+
+    private void bindWorkorderAndBatch(WmProductSalesLine line, String soCode, WmSalesNoticeLine source) {
+        if (soCode == null || soCode.isEmpty() || line.getItemId() == null) {
+            return;
+        }
+        List<Map<String, Object>> bindings = receiptGuardMapper.finishedRecptBindings(soCode,
+                line.getItemId(), line.getBatchId(), line.getBatchCode(), source.getAttr3());
+        if (bindings.size() != 1) {
+            if (source.getAttr3() != null && line.getBatchId() != null) {
+                throw new com.ktg.common.exception.ServiceException("所选成品批次不属于该订单行的已入库工单");
+            }
+            return;
+        }
+        Map<String, Object> binding = bindings.get(0);
+        line.setWorkorderId(((Number) binding.get("workorderId")).longValue());
+        line.setWorkorderCode((String) binding.get("workorderCode"));
+        line.setBatchId(((Number) binding.get("batchId")).longValue());
+        line.setBatchCode((String) binding.get("batchCode"));
     }
 }

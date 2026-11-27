@@ -86,7 +86,7 @@ export function buildWorkorderPipeline(wo, data = {}) {
   const received = sum((data.fgLines || []).filter(line => finishedReceipts.some(h => same(h.recptId, line.recptId)) &&
     (line.itemId != null ? same(line.itemId, wo.productId) : line.itemCode === wo.productCode)), 'quantityRecived')
   // 与 ProductReceiptLinkageService 一致：合格产出与末工序有效放行量共同限定入库目标。
-  // 工单 quantityProduced 累加各工序报工，既非成品数量，也非合格数量。
+  // 入库进度使用已过账的成品数量和放行记录，兼容旧工单的累计报工口径。
   const productLines = (data.produceLines || []).filter(line => line.qualityStatus === 'OK' && same(line.itemId, wo.productId) &&
     produces.some(p => same(p.recordId, line.recordId)))
   const outputProcesses = new Set(produces.filter(p => productLines.some(line => same(line.recordId, p.recordId))).map(p => String(p.processId)))
@@ -116,7 +116,7 @@ export function buildWorkorderPipeline(wo, data = {}) {
   }
   const skipped = { issue: validBom && !requirements.size, ipqc: scheduleDone && !checkApplicable, fgIn: child, sale: child }
   const docs = {
-    confirm: wo.workorderCode,
+    confirm: [wo.workorderCode, wo.sourceDocCode || wo.sourceCode].filter(Boolean).join(' · '),
     schedule: `${scheduled.length}/${processes.length} 道工序已排足`,
     ready: validBom ? `${requirements.size - missing.length}/${requirements.size} 项外购料可用` : '用料未配置',
     issue: codes(issues, 'issueCode') || `${issuedItems}/${requirements.size} 项已领足`,
@@ -127,7 +127,7 @@ export function buildWorkorderPipeline(wo, data = {}) {
     sale: child ? '随整机销售' : (codes(shippedLines, 'salesCode') || (saleTarget > 0 ? `已发货 ${shipped}/${saleTarget}` : '待产品入库'))
   }
   const texts = {
-    confirm: states.confirm ? '工单已下达，按工艺路线安排生产' : '工单保存后还需确认下达，再进行生产排产',
+    confirm: states.confirm ? '工单已下达，系统按工艺路线生成任务' : '工单保存后确认下达，核对自动生成的排产任务',
     schedule: !processes.length ? '产品未配置可用工艺路线，请先维护工艺路线再排产' : `已排足 ${scheduled.length}/${processes.length} 道工序；各工序排产数量需覆盖工单计划量 ${plan}，保存任务后自动生成领料草稿`,
     ready: !validBom ? '工单用料未配置，请先核对并补齐工单 BOM' : (missing.length ? `缺料 ${missing.length} 项：${missing.join('；')}。外购料通过到货、IQC、采购入库补齐` : '原料仓未冻结库存与本工单已领数量满足外购料需求；现存量仅供备料参考，拣货时仍需核对批次。自制半成品由对应工序在线边库投料'),
     issue: skipped.issue ? '本工单仅使用自制半成品，由对应工序投料，无须重复领料' : `已领足 ${issuedItems}/${requirements.size} 项外购料；排产后打开自动生成的领料草稿，拣货并执行领出`,

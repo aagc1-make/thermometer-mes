@@ -36,11 +36,15 @@ function chat({ history = [created()], notice = NOTICE, lines = [LINE], inspecti
     throw new Error('Unexpected API: ' + config.url)
   }
   const box = { ...answerRules(), component: null, request, Date, console, setTimeout: () => 1, clearTimeout() {},
+    // 数字人素材常量由被剥掉的 import 提供，沙箱补上空值，避免 data() 直接报错。
+    AVATAR_ASSETS: '', avatarAnswerText: () => '', AvatarSpeech: class { stop() {} },
     askBusinessQuestion: async () => ({ data: { mode: 'legacy' } }),
     sessionStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) } }
   vm.createContext(box)
   vm.runInContext(code, box)
   const ctx = { ...box.component.data(), ...box.component.methods,
+    // created() 才会实例化语音对象，这里直接给一个空实现，重置/新会话流程才能跑到断言。
+    _avatarSpeech: { stop() {}, dispose() {}, unlock: async () => {}, warm() {}, mouthLevel: () => 0, play() {} },
     $auth: { hasPermi: permission => !denied.includes(permission) },
     $store: { state: { user: { id: 7 } } }, $refs: {},
     $nextTick: fn => fn.call(ctx), $set: (obj, key, value) => { obj[key] = value },

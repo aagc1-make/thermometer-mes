@@ -15,7 +15,7 @@ import com.ktg.mes.wm.domain.WmIssueHeader;
 import com.ktg.mes.wm.domain.WmIssueLine;
 import com.ktg.mes.wm.service.IWmIssueHeaderService;
 import com.ktg.mes.wm.service.IWmIssueLineService;
-import com.ktg.system.strategy.AutoCodeUtil;
+import com.ktg.system.service.CodeSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +40,7 @@ public class IssueDraftLinkageService {
     private final IProWorkorderBomService workorderBomService;
     private final IMdProductBomService productBomService;
     private final IMdItemService mdItemService;
-    private final AutoCodeUtil autoCodeUtil;
+    private final CodeSequenceService codeSequenceService;
     private final MenuLinkageNoticeService menuNoticeService;
 
     public IssueDraftLinkageService(IWmIssueHeaderService issueHeaderService,
@@ -49,7 +49,7 @@ public class IssueDraftLinkageService {
                                     IProWorkorderBomService workorderBomService,
                                     IMdProductBomService productBomService,
                                     IMdItemService mdItemService,
-                                    AutoCodeUtil autoCodeUtil,
+                                    CodeSequenceService codeSequenceService,
                                     MenuLinkageNoticeService menuNoticeService) {
         this.issueHeaderService = issueHeaderService;
         this.issueLineService = issueLineService;
@@ -57,7 +57,7 @@ public class IssueDraftLinkageService {
         this.workorderBomService = workorderBomService;
         this.productBomService = productBomService;
         this.mdItemService = mdItemService;
-        this.autoCodeUtil = autoCodeUtil;
+        this.codeSequenceService = codeSequenceService;
         this.menuNoticeService = menuNoticeService;
     }
 
@@ -103,7 +103,7 @@ public class IssueDraftLinkageService {
 
         // ③ 建单头
         WmIssueHeader header = new WmIssueHeader();
-        header.setIssueCode(autoCodeUtil.genSerialCode(UserConstants.ISSUE_CODE, ""));
+        header.setIssueCode(codeSequenceService.generateChainCode(UserConstants.CODE_RULE_ISSUE, workorder.getWorkorderCode()));
         header.setIssueName(workorder.getWorkorderName() + "生产领料");
         header.setWorkorderId(workorder.getWorkorderId());
         header.setWorkorderCode(workorder.getWorkorderCode());

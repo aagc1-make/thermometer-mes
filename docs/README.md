@@ -26,6 +26,10 @@
 - [界面定义表](红外测温枪MES_界面定义表.docx)、[内部接口定义表](红外测温枪MES_内部接口定义表.docx)
 - [人脸登录说明](face-login.md)：浏览器本地特征比对、活体、限流与隐私边界。
 - [本地知识库说明](local-knowledge-base.md)：智能助手文档导入、检索与引用。
+- [数字人本机接入](mes-digital-human.md)：Live2D 素材准备，Edge TTS、Azure 语音和 Windows 本机语音服务。
+- [Dify 工作流部署与联调](dify/dify-workflow-deployment.md)：Docker Compose 部署 Dify 1.9.0、导入工作流画布、回调联调与降级。
+- [Dify 工作流 YAML](dify/mes-ai-workflow.yml)：可直接导入 Dify 的 14 节点编排画布。
+- [BOM 影响路径 PRD](bom-impact-path/PRD.md)：从子件向上追溯装配路径、画布选段与原文佐证。
 - `superpowers/specs/`、`superpowers/plans/`：功能设计与实施记录。
 
 ## 测试和演示

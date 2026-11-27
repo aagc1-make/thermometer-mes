@@ -39,6 +39,10 @@ public class WmStorageArea extends BaseEntity
     @Excel(name = "最大载重量")
     private BigDecimal maxLoa;
 
+    /** 库位最大存放数量，NULL=不限 */
+    @Excel(name = "最大存放数量")
+    private BigDecimal maxQty;
+
     /** 库位位置X */
     @Excel(name = "库位位置X")
     private Long positionX;
@@ -132,6 +136,15 @@ public class WmStorageArea extends BaseEntity
     public BigDecimal getMaxLoa() 
     {
         return maxLoa;
+    }
+    public void setMaxQty(BigDecimal maxQty)
+    {
+        this.maxQty = maxQty;
+    }
+
+    public BigDecimal getMaxQty()
+    {
+        return maxQty;
     }
     public void setPositionX(Long positionX) 
     {
@@ -240,6 +253,7 @@ public class WmStorageArea extends BaseEntity
             .append("locationId", getLocationId())
             .append("area", getArea())
             .append("maxLoa", getMaxLoa())
+            .append("maxQty", getMaxQty())
             .append("positionX", getPositionX())
             .append("positionY", getPositionY())
             .append("positionZ", getPositionZ())

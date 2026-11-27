@@ -73,4 +73,37 @@ public interface ProWorkorderMapper
      * @return 结果
      */
     public int deleteProWorkorderByWorkorderIds(Long[] workorderIds);
+
+    /**
+     * 批量软删除生产工单：status 置为 DELETED，记录保留供审计。
+     *
+     * @param workorderIds 需要软删除的数据主键集合
+     * @return 结果
+     */
+    int softDeleteProWorkorderByWorkorderIds(Long[] workorderIds);
+
+    /**
+     * 解除返修工单对目标工单的引用，避免自引用外键阻止删除。
+     */
+    int clearReworkReference(Long[] workorderIds);
+
+    /**
+     * 解除入库检验单对工单的引用（工单删除后检验记录保留）。
+     */
+    int clearQcInboundReference(Long[] workorderIds);
+
+    /**
+     * 解除批次对工单/工单行的引用（批次记录保留）。
+     */
+    int clearBatchReference(Long[] workorderIds);
+
+    /**
+     * 删除工单行下的 BOM 行。
+     */
+    int deleteBomByWorkorderIds(Long[] workorderIds);
+
+    /**
+     * 删除工单行下的工序记录。
+     */
+    int deleteOperationByWorkorderIds(Long[] workorderIds);
 }

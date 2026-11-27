@@ -60,23 +60,59 @@
     </select>
 
     <select id="workorders" resultType="map" timeout="2">
-        select workorder_code as workorderCode, workorder_name as workorderName, product_name as productName,
-               quantity as planned, coalesce(quantity_produced, 0) as produced,
-               round(100 * coalesce(quantity_produced, 0) / nullif(quantity, 0), 1) as progress,
-               case status when 'PREPARE' then '草稿' when 'CONFIRMED' then '已确认'
-                   when 'FINISHED' then '已完工' when 'CANCELED' then '已取消' else status end as status,
-               date_format(request_date, '%Y-%m-%d') as dueDate,
+        select w.workorder_code as workorderCode, w.workorder_name as workorderName, w.product_name as productName,
+               coalesce(w.source_doc_code,w.source_code,'') as sourceOrderCode,
+               w.quantity as planned, coalesce(w.quantity_produced, 0) as produced,
+               round(100 * coalesce(w.quantity_produced, 0) / nullif(w.quantity, 0), 1) as progress,
+               case w.status when 'PREPARE' then '草稿' when 'CONFIRMED' then '已确认'
+                   when 'FINISHED' then '已完工' when 'CANCELED' then '已取消' else w.status end as status,
+               date_format(w.request_date, '%Y-%m-%d') as dueDate,
+               <if test="taskCount == true">
+                   (select count(*) from pro_task t where t.workorder_id=w.workorder_id and coalesce(t.status,'') != 'CANCELED') as taskCount,
+               </if>
+               <if test="pendingIpqc == true">
+                   (select count(*) from qc_ipqc q where q.workorder_id=w.workorder_id and coalesce(q.status,'') not in ('CANCELED','FINISHED')) as pendingIpqc,
+               </if>
+               <if test="received == true">
+                   (select coalesce(sum(l.quantity_recived),0) from wm_product_recpt h join wm_product_recpt_line l on l.recpt_id=h.recpt_id
+                     where h.workorder_id=w.workorder_id and h.status='FINISHED' and l.item_id=w.product_id) as received,
+               </if>
+               <if test="shipped == true">
+                   (select coalesce(sum(l.quantity_sales),0) from wm_product_sales h join wm_product_sales_line l on l.sales_id=h.sales_id
+                     where l.workorder_id=w.workorder_id and h.status='FINISHED' and l.item_id=w.product_id) as shipped,
+               </if>
                count(*) over () as matchedCount
-        from pro_workorder
-        where 1 = 1
+        from pro_workorder w
+        where coalesce(w.status,'') != 'DELETED'
+        <if test="workorderCode != null">and lower(w.workorder_code) = lower(#{workorderCode})</if>
         <if test="query != null">
-            and (locate(#{query}, workorder_code) &gt; 0 or locate(#{query}, workorder_name) &gt; 0
-                or locate(#{query}, product_name) &gt; 0 or locate(#{query}, product_code) &gt; 0)
+            and (locate(lower(#{query}), lower(w.workorder_code)) &gt; 0 or locate(#{query}, w.workorder_name) &gt; 0
+                or locate(#{query}, w.product_name) &gt; 0 or locate(#{query}, w.product_code) &gt; 0
+                or lower(w.source_doc_code) = lower(#{query}) or lower(w.source_code) = lower(#{query}))
         </if>
-        <if test="status != null">and status = #{status}</if>
-        <if test="from != null">and request_date &gt;= #{from} and request_date &lt; date_add(#{to}, interval 1 day)</if>
-        <if test="overdue == true">and request_date &lt; current_date and status not in ('FINISHED', 'CANCELED')</if>
-        order by request_date desc, workorder_id desc limit #{limit}
+        <if test="status != null">and w.status = #{status}</if>
+        <if test="from != null">and w.request_date &gt;= #{from} and w.request_date &lt; date_add(#{to}, interval 1 day)</if>
+        <if test="overdue == true">and w.request_date &lt; current_date and w.status not in ('FINISHED', 'CANCELED')</if>
+        order by w.request_date desc, w.workorder_id desc limit #{limit}
+    </select>
+
+    <!-- 产品目录：本厂自制的整机成品与自制半成品。「我们生产什么 / 成品是什么」问的是这份档案，
+         不能落成工单进度，也不能用物料检索按名称片段猜（“成品”两个字匹配不到任何物料名）。 -->
+    <select id="products" resultType="map" timeout="2">
+        select i.item_code as itemCode, i.item_name as itemName,
+               coalesce(nullif(i.item_type_name, ''), '自制产品') as productType,
+               i.specification,
+               coalesce(nullif(i.unit_name, ''), i.unit_of_measure) as unit,
+               case i.enable_flag when 'Y' then '已启用' else '已停用' end as status,
+               count(*) over () as matchedCount
+        from md_item i
+        where i.item_or_product = 'PRODUCT'
+        <if test="query != null">
+            and (locate(#{query}, i.item_code) &gt; 0 or locate(#{query}, i.item_name) &gt; 0
+                or locate(#{query}, i.item_type_name) &gt; 0)
+        </if>
+        order by i.item_type_id, i.item_code
+        limit #{limit}
     </select>
 
     <sql id="purchaseReceiptScope">
@@ -112,6 +148,15 @@
                (item_code = #{query} or item_name = #{query}) as exactMatch
         from md_item where 1 = 1 <include refid="materialSearch"/>
         order by exactMatch desc, item_id limit 3
+    </select>
+
+    <!-- 零命中时按前缀/包含关系找相近物料，供模型修正名称后重试 -->
+    <select id="similarItems" resultType="map" timeout="2">
+        select item_code as itemCode, item_name as itemName
+        from md_item
+        where item_name like concat(#{fragment}, '%') or item_code like concat(#{fragment}, '%')
+           or item_name like concat('%', #{fragment}, '%')
+        order by item_id limit 5
     </select>
 
     <select id="bom" resultType="map" timeout="2">
@@ -153,7 +198,7 @@
         </choose>
         where status = 'FINISHED'
         <if test="from != null">and inspect_date &gt;= #{from} and inspect_date &lt; date_add(#{to}, interval 1 day)</if>
-        <if test="workorderCode != null">and workorder_code = #{workorderCode}</if>
+        <if test="workorderCode != null">and lower(workorder_code) = lower(#{workorderCode})</if>
         <include refid="materialSearch"/>
         group by item_code order by records desc, item_code limit #{limit}
     </select>
@@ -176,5 +221,89 @@
                count(*) over () as matchedCount
         from md_item where 1 = 1 <include refid="materialSearch"/>
         order by item_code limit #{limit}
+    </select>
+
+    <!-- 物料检索：按分词后的关键词做包含匹配，供模型解析口语化/拼写不一致的物料名 -->
+    <select id="searchItems" resultType="map" timeout="2">
+        select item_code as itemCode, item_name as itemName, specification,
+               coalesce(unit_name, unit_of_measure) as unit,
+               item_type_name as category,
+               case enable_flag when 'Y' then '已启用' else '已停用' end as status,
+               count(*) over () as matchedCount
+        from md_item
+        where
+        <foreach collection="tokens" item="token" separator=" or ">
+            (locate(#{token}, item_code) &gt; 0 or locate(#{token}, item_name) &gt; 0)
+        </foreach>
+        order by item_code limit #{limit}
+    </select>
+
+    <!-- ===================== 物料影响路径（子件 → 父件反向查询） ===================== -->
+    <!-- 起点：完整编码精确查询 md_item，取稳定的 item_id；类型按主数据映射 -->
+    <select id="impactItem" resultType="map" timeout="2">
+        select item_id as itemId, item_code as itemCode, item_name as itemName,
+               item_or_product as itemOrProduct, item_type_code as itemTypeCode, item_type_name as itemTypeName,
+               coalesce(nullif(unit_name, ''), unit_of_measure) as unit, enable_flag as enableFlag
+        from md_item where item_code = #{itemCode}
+        order by item_id limit 1
+    </select>
+
+    <!-- 每一跳：以当前层的一组 ID 匹配 bom_item_id，取父件；只保留启用关系 -->
+    <select id="impactParents" resultType="map" timeout="3">
+        select b.bom_id as bomId, cast(b.quantity as decimal(20, 4)) as quantity,
+               coalesce(nullif(b.unit_name, ''), nullif(b.unit_of_measure, ''),
+                        nullif(ci.unit_name, ''), ci.unit_of_measure) as childUnit,
+               b.bom_item_id as childId,
+               p.item_id as parentId, p.item_code as parentCode, p.item_name as parentName,
+               p.item_or_product as parentKind, p.item_type_code as parentTypeCode,
+               p.item_type_name as parentTypeName,
+               coalesce(nullif(p.unit_name, ''), p.unit_of_measure) as parentUnit
+        from md_product_bom b
+        join md_item p on p.item_id = b.item_id
+        left join md_item ci on ci.item_id = b.bom_item_id
+        where b.enable_flag = 'Y' and b.item_id &lt;&gt; b.bom_item_id
+          and b.bom_item_id in
+          <foreach collection="childIds" item="childId" open="(" separator="," close=")">#{childId}</foreach>
+        order by p.item_code, b.bom_id
+        limit #{limit}
+    </select>
+
+    <sql id="impactBomColumns">
+        select b.bom_id as bomId, cast(b.quantity as decimal(20, 4)) as quantity, b.enable_flag as enableFlag,
+               b.bom_item_id as childId,
+               coalesce(ci.item_code, b.bom_item_code) as childCode,
+               coalesce(ci.item_name, b.bom_item_name) as childName,
+               coalesce(nullif(b.unit_name, ''), nullif(b.unit_of_measure, ''),
+                        nullif(ci.unit_name, ''), ci.unit_of_measure) as childUnit,
+               b.item_id as parentId, p.item_code as parentCode, p.item_name as parentName,
+               p.item_or_product as parentKind, p.item_type_code as parentTypeCode,
+               p.item_type_name as parentTypeName,
+               coalesce(nullif(p.unit_name, ''), p.unit_of_measure) as parentUnit
+        from md_product_bom b
+        join md_item p on p.item_id = b.item_id
+        left join md_item ci on ci.item_id = b.bom_item_id
+    </sql>
+
+    <select id="impactPathRows" resultType="map" timeout="2">
+        <include refid="impactBomColumns"/>
+        where b.bom_id in
+          <foreach collection="bomIds" item="bomId" open="(" separator="," close=")">#{bomId}</foreach>
+        order by b.bom_id
+    </select>
+
+    <select id="impactItemsByCodes" resultType="map" timeout="2">
+        select item_id as itemId, item_code as itemCode, item_name as itemName
+        from md_item where item_code in
+        <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
+        order by item_id limit 20
+    </select>
+
+    <!-- 只按名称唯一命中才自动执行；多个候选时由问答请用户补充编码 -->
+    <select id="impactItemsByName" resultType="map" timeout="3">
+        select item_id as itemId, item_code as itemCode, item_name as itemName
+        from md_item
+        where enable_flag = 'Y' and char_length(item_name) &gt;= 2
+          and locate(item_name, #{question}) &gt; 0
+        order by char_length(item_name) desc, item_id limit #{limit}
     </select>
 </mapper>

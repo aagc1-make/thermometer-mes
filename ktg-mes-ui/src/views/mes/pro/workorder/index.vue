@@ -223,7 +223,7 @@
             <el-row>
               <el-col :span="16">
                 <el-form-item label="工单编号" prop="workorderCode">
-                  <el-input v-model="form.workorderCode" placeholder="请输入工单编号" />
+                  <el-input v-model="form.workorderCode" :readonly="!!form.workorderId" placeholder="保存时由系统生成" />
                 </el-form-item>
               </el-col>
               <el-col v-if="optType != 'view' && form.status =='PREPARE'" :span="8">
@@ -507,7 +507,7 @@ import WorkorderItemList from "./items/item.vue";
 import ItemSelect  from "@/components/itemSelect/single.vue";
 import ClientSelect from "@/components/clientSelect/single.vue";
 import VendorSelect from "@/components/vendorSelect/single.vue";
-import {genCode} from "@/api/system/autocode/rule"
+import { previewMesCode } from '@/api/mes/code'
 import Treeselect from "@riophae/vue-treeselect";
 import BarcodeImg from "@/components/barcodeImg/index.vue"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
@@ -969,8 +969,8 @@ export default {
     //自动生成编码
     handleAutoGenChange(autoGenFlag){
       if(autoGenFlag){
-        genCode('WORKORDER_CODE').then(response =>{
-          this.form.workorderCode = response;
+        previewMesCode('GD').then(response =>{
+          this.form.workorderCode = response.data;
         });
       }else{
         this.form.workorderCode = null;

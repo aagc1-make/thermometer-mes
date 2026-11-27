@@ -7,7 +7,10 @@ function component(request = () => {}, file = 'ktg-mes-ui/src/views/mes/ai/index
   const source = fs.readFileSync(file, 'utf8')
   const code = source.match(/<script>([\s\S]*?)<\/script>/)[1]
     .replace(/^import .*$/mg, '').replace('export default', 'component =')
-  const box = { component: null, request, Date, console, echarts: require('../../ktg-mes-ui/node_modules/echarts'), process: {env:{}} }
+  // 导入行被剥掉后，组件里仍会被 data()/computed 用到的常量与类要由沙箱补上（数字人素材路径等）。
+  const box = { component: null, request, Date, console, process: {env:{}},
+    echarts: require('../../ktg-mes-ui/node_modules/echarts'),
+    AVATAR_ASSETS: '', avatarAnswerText: () => '', AvatarSpeech: class { stop() {} } }
   vm.createContext(box); vm.runInContext(code, box)
   const ctx = { ...box.component.data(), ...box.component.methods, answers: [],
     $auth: { hasPermi: () => true },
@@ -74,4 +77,46 @@ test('多个品类匹配时库存查询应澄清而非悄悄取第一个', async
   ctx.get=async()=>{throw new Error('ambiguous item must not query arbitrary stock')}
   await ctx.queryStock('电子件库存')
   assert.equal(ctx.answer.type,'ask')
+})
+
+test('“成品是什么/生产什么”走产品目录而不是工单进度', () => {
+  const c = component()
+  for (const q of ['我们工业生产的成品是什么', '我们要生产什么', '本厂生产的产品有哪些', '公司产品有哪些']) {
+    assert.equal(c.matchRule(q), 'queryProducts', q)
+  }
+  assert.equal(c.matchRule('哪些产品用上壳'), null)
+  assert.equal(c.matchRule('成品库存有多少'), 'queryStock')
+  assert.equal(c.matchRule('这个月成品入库多少'), 'queryFlowIn')
+})
+test('产品目录只列自制产品且整机成品在前', async () => {
+  const c = component()
+  c.get = async () => ({ rows: [
+    { itemCode: 'TG-EL-001', itemName: '主控PCBA', itemOrProduct: 'ITEM', itemTypeName: '电子件', unitName: '个', enableFlag: 'Y' },
+    { itemCode: 'TG-SF-002', itemName: '扳机与侧键手柄预装件', itemOrProduct: 'PRODUCT', itemTypeName: '自制半成品', unitName: '套', enableFlag: 'Y' },
+    { itemCode: 'TG-SF-001', itemName: '测温显示电控预装件', itemOrProduct: 'PRODUCT', itemTypeName: '自制半成品', unitName: '套', enableFlag: 'Y' },
+    { itemCode: 'TG-FG-001', itemName: '红外测温枪整机', itemOrProduct: 'PRODUCT', itemTypeName: '整机成品', unitName: '台', enableFlag: 'Y' }
+  ] })
+  await c.queryProducts()
+  const card = c.answers.find(m => m.type === 'list')
+  assert.deepEqual(card.rows.map(r => r.itemCode), ['TG-FG-001', 'TG-SF-001', 'TG-SF-002'])
+  assert.match(card.source, /md_item/)
+  assert.match(c.answer.text, /红外测温枪整机（TG-FG-001）/)
+  assert.match(c.answer.text, /整机成品 1 项/)
+  assert.match(c.answer.text, /自制半成品 2 项/)
+})
+test('停用的产品不计入成品清单', async () => {
+  const c = component()
+  c.get = async () => ({ rows: [
+    { itemCode: 'TG-FG-001', itemName: '旧测温枪', itemOrProduct: 'PRODUCT', itemTypeName: '整机成品', enableFlag: 'N' }
+  ] })
+  await c.queryProducts()
+  assert.equal(c.answers.find(m => m.type === 'list').rows.length, 0)
+  assert.match(c.answer.text, /没有查到启用的产品档案/)
+})
+test('没有产品档案权限时不查数据并说明', async () => {
+  const c = component()
+  c.$auth = { hasPermi: () => false }
+  c.get = async () => { throw new Error('没有权限时不得查询产品档案') }
+  await c.queryProducts()
+  assert.match(c.answer.text, /权限/)
 })

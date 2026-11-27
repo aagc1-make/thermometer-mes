@@ -54,6 +54,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="sourceDocId" column="source_doc_id"></result>
         <result property="sourceDocCode" column="source_doc_code"></result>
         <result property="sourceDocLineId" column="source_doc_line_id"></result>
+        <result property="sourceDocDetailId" column="source_doc_detail_id"></result>
         <result property="transactionQuantity" column="transaction_quantity"></result>
         <result property="createBy"    column="create_by"    />
         <result property="createTime"    column="create_time"    />
@@ -96,6 +97,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         SELECT  irl.`item_id`,irl.`item_code`,irl.`item_name`,irl.`specification`,irl.`unit_of_measure`,irl.`unit_name`, irl.`batch_id`, irl.`batch_code`,
                 ird.`warehouse_id`,ird.`warehouse_code`,ird.`warehouse_name`,ird.`location_id`,ird.`location_code`,ird.`location_name`,ird.`area_id`,ird.`area_code`,ird.`area_name`,
                 'PRODUCT_PRODUCT' AS source_doc_type,ir.`record_id` AS source_doc_id,"" AS source_doc_code,irl.`line_id` AS source_doc_line_id,
+                ird.`detail_id` AS source_doc_detail_id,
                 ird.`quantity` AS transaction_quantity,
                 ir.`create_by`,ir.`create_time`,ir.`update_by`,ir.`update_time`
         FROM wm_product_produce ir

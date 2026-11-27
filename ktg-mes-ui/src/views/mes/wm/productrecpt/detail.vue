@@ -103,6 +103,7 @@
                 @change="handleWarehouseChanged"
               >
               </el-cascader>
+              <p v-if="stockingHint" class="el-form-item__error" style="position: static" role="status">{{ stockingHint }}</p>
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -200,6 +201,7 @@
   import { listProductrecptline, getProductrecptline, listWithDetail } from "@/api/mes/wm/productrecptline";
   import printLabel from "@/components/printerLabel/index.vue"
   import {getTreeList} from "@/api/mes/wm/warehouse"
+  import { listProductStockingOptions } from '@/api/mes/wm/productrecpt'
   export default {
     name: "Productrecptline",
     components:{
@@ -226,6 +228,7 @@
         // 产品入库记录行表格数据
         productrecptlineList: [],
         warehouseInfo:[],
+        stockingHint: '',
         warehouseOptions:[],
         warehouseProps:{
             multiple: false,
@@ -308,8 +311,29 @@
             });
         },
             //选择默认的仓库、库区、库位
+        async loadStockingHint([warehouseId, locationId, areaId]) {
+            const lineId = this.form.lineId;
+            try {
+                const [locations, areas] = await Promise.all([
+                    listProductStockingOptions('location', { warehouseId, lineId, quantity: this.form.quantity || undefined }),
+                    listProductStockingOptions('area', { locationId, lineId, quantity: this.form.quantity || undefined })
+                ]);
+                if (!this.open || this.form.lineId !== lineId || this.warehouseInfo[2] !== areaId) return;
+                const selected = (areas.data || []).find(area => area.areaId === areaId);
+                const best = (locations.data || []).find(location => location.recommended);
+                const remaining = selected && !selected.unlimited ? '所选库位余量 ' + selected.remaining : '';
+                this.stockingHint = selected && selected.mixingBlocked ? selected.mixingMessage
+                    : [remaining, best ? '推荐库区 ' + best.locationName : ''].filter(Boolean).join(' · ');
+            } catch (error) {
+                if (this.open && this.form.lineId === lineId) this.stockingHint = '';
+            }
+        },
         handleWarehouseChanged(obj){
             if(obj !=null){
+            this.stockingHint = '';
+            if (this.form.lineId && obj.length === 3) {
+                this.loadStockingHint(obj);
+            }
             this.form.warehouseId = obj[0];
             this.form.locationId = obj[1];
             this.form.areaId = obj[2];
@@ -332,6 +356,7 @@
             this.form = {
                 detailId: null,        lineId: null,        recptId: this.recptId,        materialStockId: null,        itemId: null,        itemCode: null,        itemName: null,        specification: null,        unitOfMeasure: null,        unitName: null,        quantity: null,        batchId: null,        batchCode: null,        warehouseId: null,        warehouseCode: null,        warehouseName: null,        locationId: null,        locationCode: null,        locationName: null,        areaId: null,        areaCode: null,        areaName: null,        remark: null,        attr1: null,        attr2: null,        attr3: null,        attr4: null,        createBy: null,        createTime: null,        updateBy: null,        updateTime: null      };
                 this.warehouseInfo = [];
+            this.stockingHint = '';
                 this.resetForm("form");
         },        
         //行表单重置

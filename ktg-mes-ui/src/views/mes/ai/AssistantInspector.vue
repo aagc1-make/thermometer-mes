@@ -33,8 +33,27 @@
         </div>
       </el-tab-pane>
       <el-tab-pane label="图谱子图" name="graph">
-        <template v-if="graph && graph.nodes.length">
-          <p class="inspector-note">{{ graph.nodes.length }} 个实体 · {{ graph.edges.length }} 条关系</p>
+        <template v-if="impact && impact.nodes.length">
+          <div class="subgraph-summary">
+            <span class="inspector-note">{{ impactSection }} · {{ impact.nodes.length }} 个实体</span>
+            <el-button size="mini" icon="el-icon-share" @click="openImpact">查看影响路径</el-button>
+          </div>
+          <div class="citation-list">
+            <button v-for="segment in impactSegments" :key="segment.edge.id" type="button" @click="openImpact">
+              <span><strong>{{ segment.child.name }} → {{ segment.parent.name }}</strong>
+                <small>{{ quantityText(segment.edge.quantity) }} {{ segment.edge.childUnit }}/{{ segment.edge.parentUnit }} · BOM #{{ segment.edge.bomId }}</small></span>
+            </button>
+          </div>
+          <p v-if="impact.limited" class="inspector-note">已达到查询上限，只显示已确认的路径。</p>
+          <p v-else-if="impact.paths && impact.paths.length > 1" class="inspector-note">
+            这里是首条已确认路径；另有 {{ impact.paths.length - 1 }} 条，可在「查看影响路径」里切换。
+          </p>
+        </template>
+        <template v-else-if="graph && graph.nodes.length">
+          <div class="subgraph-summary">
+            <span class="inspector-note">{{ graph.nodes.length }} 个实体 · {{ graph.edges.length }} 条关系</span>
+            <el-button size="mini" icon="el-icon-full-screen" @click="showSubgraph">展开图谱</el-button>
+          </div>
           <div class="citation-list">
             <button v-for="edge in graph.edges" :key="edge.source + edge.kind + edge.target" type="button"
               @click="openGraph(edge.source)">
@@ -59,15 +78,32 @@
         <p v-else class="inspector-note">这条回答没有执行记录。</p>
       </el-tab-pane>
     </el-tabs>
+    <el-dialog v-if="graph && graph.nodes.length" title="回答关联图谱" :visible.sync="subgraphVisible"
+      append-to-body width="min(1100px, 92vw)" top="8vh">
+      <div v-if="subgraphVisible" class="subgraph-canvas">
+        <knowledge-graph-canvas :nodes="graph.nodes" :edges="graph.edges" :layout="subgraphLayout"
+          :selected-id="subgraphNode" @select="subgraphNode = $event" />
+      </div>
+      <div slot="footer" class="subgraph-footer">
+        <div v-if="subgraphEntity" class="subgraph-selection">
+          <strong>{{ subgraphEntity.name }}</strong>
+          <code v-if="subgraphEntity.code">{{ subgraphEntity.code }}</code>
+        </div>
+        <el-button v-if="subgraphEntity" size="small" @click="openGraph(subgraphEntity.id)">在知识图谱中定位 <i class="el-icon-top-right" /></el-button>
+      </div>
+    </el-dialog>
   </aside>
 </template>
 
 <script>
 import { graphRelations } from '@/utils/kbGraph'
+import { arrangeGraph } from '@/utils/kbGraphLayout'
+import KnowledgeGraphCanvas from './KnowledgeGraphCanvas.vue'
 
 export default {
   name: 'AssistantInspector',
-  data() { return { graphRelations } },
+  components: { KnowledgeGraphCanvas },
+  data() { return { graphRelations, subgraphVisible: false, subgraphNode: '' } },
   props: {
     message: { type: Object, required: true },
     tab: { type: String, required: true },
@@ -85,16 +121,57 @@ export default {
     toolResults() { return this.message.toolResults || [] },
     trace() { return this.message.trace || [] },
     graph() { return this.message.graph },
+    impact() { return this.message.impact },
+    impactSection() {
+      const paths = (this.impact && this.impact.paths) || []
+      return paths.length ? paths.length + ' 条路径 · ' + this.impactSegments.length + ' 段装配' : '影响路径'
+    },
+    // 只展示首条（已到达整机且最短）路径，避免把多条路径的段混在一起
+    impactSegments() {
+      const paths = (this.impact && this.impact.paths) || []
+      if (!paths.length) return []
+      const nodes = new Map(((this.impact && this.impact.nodes) || []).map(node => [node.id, node]))
+      const edges = new Map(((this.impact && this.impact.edges) || []).map(edge => [edge.id, edge]))
+      return paths[0].edgeIds.map(id => edges.get(id)).filter(Boolean).map(edge => ({
+        edge, child: nodes.get(edge.source) || {}, parent: nodes.get(edge.target) || {}
+      }))
+    },
+    subgraphLayout() { return arrangeGraph(this.graph.nodes, this.graph.edges) },
+    subgraphEntity() {
+      if (!this.graph) return null
+      return this.graph.nodes.find(node => node.id === this.subgraphNode)
+    },
     current() { return this.sources[this.selected] },
     targetChunk() { return this.current && (this.current.chunkIndex == null ? this.current.sectionIndex : this.current.chunkIndex) }
   },
   methods: {
     queryTime(value) { return new Date(value).toLocaleString('zh-CN', { hour12: false }) },
+    quantityText(value) {
+      const text = value === null || value === undefined ? '' : String(value)
+      return text.includes('.') ? text.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '') : text
+    },
+    openImpact() {
+      const itemCode = this.impact && this.impact.itemCode
+      if (!itemCode) return
+      this.$router.push({
+        path: '/mes/ai/graph',
+        query: { libraryId: String(this.message.graphLibraryId || this.impact.libraryId), mode: 'impact', itemCode }
+      })
+    },
+    showSubgraph() {
+      this.subgraphNode = this.subgraphLayout.root
+      this.subgraphVisible = true
+    },
     openGraph(node) {
+      this.subgraphVisible = false
       this.$router.push({ path: '/mes/ai/graph', query: { libraryId: String(this.message.graphLibraryId), node } })
     }
   },
   watch: {
+    message() {
+      this.subgraphVisible = false
+      this.subgraphNode = ''
+    },
     chunks() {
       this.$nextTick(() => {
         const marker = this.$el.querySelector('.is-highlighted')
@@ -130,6 +207,12 @@ header button { width: 28px; height: 28px; border: 0; border-radius: 6px; backgr
 .citation-list button[aria-pressed='true'] { border-color: $mes-marker; background: $mes-primary-soft; }
 .citation-list strong, .citation-list small { display: block; overflow-wrap: anywhere; }
 .citation-list small, .inspector-note { color: $mes-text-sub; font-size: 12px; line-height: 1.6; }
+.subgraph-summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 12px; }
+.subgraph-summary .el-button { color: #514987; border-color: #d9d4e8; background: #f7f5fb; }
+.subgraph-canvas { position: relative; height: clamp(300px, 61vh, 640px); border: 1px solid #d9d6e4; border-radius: 12px; overflow: hidden; }
+.subgraph-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; }
+.subgraph-selection { display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px 10px; color: $mes-text; }
+.subgraph-selection code { color: $mes-text-sub; font-size: 12px; }
 .inspector-original { min-height: 36px; padding-bottom: 12px; }
 .inspector-chunk, .inspector-activity li { margin-bottom: 8px; padding: 10px; border-radius: 6px; background: $mes-primary-soft; }
 .inspector-chunk.is-highlighted { border-left: 3px solid $mes-primary; background: #edf4ff; }
