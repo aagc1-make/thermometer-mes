@@ -8,7 +8,7 @@
           <defs>
             <marker v-for="mark in ['normal', 'active']" :id="markerId + mark" :key="mark" viewBox="0 0 8 8"
               refX="8" refY="4" markerWidth="7" markerHeight="7" orient="auto" markerUnits="userSpaceOnUse">
-              <path d="M 0 0 L 8 4 L 0 8 Z" :fill="mark === 'active' ? 'var(--color-primary)' : 'var(--color-border-strong)'" />
+              <path d="M 0 0 L 8 4 L 0 8 Z" :fill="mark === 'active' ? 'var(--color-primary)' : 'var(--color-text)'" />
             </marker>
           </defs>
           <g v-for="wire in wires" :key="wire.key" class="atlas-wire" :class="{ active: wire.active, muted: wire.muted }">
@@ -259,25 +259,32 @@ export default {
 .atlas-canvas {
   background-color: var(--color-page);
   background-image:
-    url("~@/assets/images/knowledge-map-contours.png"),
     radial-gradient(circle, rgba(var(--color-primary-rgb), .18) .7px, transparent 1px),
     radial-gradient(ellipse at 99% 1%, var(--color-primary-bg) 0%, transparent 49%),
     radial-gradient(ellipse at 1% 99%, var(--color-rail) 0%, transparent 48%),
     linear-gradient(123deg, var(--color-page), var(--color-card) 46%, var(--color-bg));
-  background-size: 100% 100%, 24px 24px, cover, cover, cover;
-  background-position: center, 12px 12px, center, center, center;
-  background-repeat: no-repeat, repeat, no-repeat, no-repeat, no-repeat;
+  background-size: 24px 24px, cover, cover, cover;
+  background-position: 12px 12px, center, center, center;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+}
+.atlas-canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("~@/assets/images/knowledge-map-contours.png") center / 100% 100% no-repeat;
+  opacity: .25;
+  pointer-events: none;
 }
 .atlas-surface { overflow: hidden; touch-action: none; cursor: grab; outline-offset: -3px; }
 .atlas-surface:active { cursor: grabbing; }
 .atlas-world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
 .atlas-lines { overflow: visible; position: absolute; pointer-events: none; }
-.atlas-wire > path { stroke: var(--color-border-strong); stroke-width: 1.65; }
-.atlas-wire.active > path.wire-line { stroke: var(--color-primary); stroke-width: 2; }
+.atlas-wire > .wire-line { stroke: var(--color-text); stroke-width: 2.2; }
+.atlas-wire.active > .wire-line { stroke: var(--color-primary); stroke-width: 2.7; }
 .atlas-wire rect { fill: var(--color-card); stroke: var(--color-border); stroke-width: 0.8; }
 .atlas-wire text { font-size: 11px; fill: var(--color-text-secondary); }
 .atlas-wire.active text { fill: var(--color-primary-hover); }
-.atlas-wire.muted { opacity: 0.52; }
+.atlas-wire.muted { opacity: 0.62; }
 /* 透明的描边点击区域：命中线时由画布交给选段处理，不触发拖拽 */
 .atlas-canvas .atlas-wire > path.wire-hit { stroke: transparent; stroke-width: 20; pointer-events: stroke; cursor: pointer; }
 .atlas-canvas .atlas-wire .wire-label { pointer-events: auto; cursor: pointer; }
@@ -305,7 +312,7 @@ export default {
 .atlas-node.detail .node-word strong { font-size: 14.5px; font-weight: 650; line-height: 1.5; }
 .atlas-node.detail .node-word code { display: block; color: var(--color-text-secondary); font: 11px Consolas, "Microsoft YaHei", monospace; }
 .atlas-node.detail.endpoint { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), .2), 0 5px 13px rgba(var(--color-primary-rgb), .03); }
-.atlas-canvas.impact .atlas-wire > path.wire-line { stroke-width: 1.8; }
+.atlas-canvas.impact .atlas-wire > path.wire-line { stroke-width: 2.4; }
 .atlas-canvas.impact .atlas-wire.active > path.wire-line { stroke-width: 3; }
 .atlas-canvas.impact .atlas-wire.active rect { fill: var(--color-primary); stroke: var(--color-primary-hover); }
 .atlas-canvas.impact .atlas-wire.active text { fill: #fff; font-weight: 600; }
