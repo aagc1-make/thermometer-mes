@@ -2,6 +2,9 @@
 chcp 65001 >nul
 setlocal
 
+rem Load the current Windows user key if the launching shell predates its setup.
+if not defined MES_FACE_TEMPLATE_KEY for /f "tokens=1,2,*" %%A in ('"%SystemRoot%\System32\reg.exe" query HKCU\Environment /v MES_FACE_TEMPLATE_KEY 2^>nul') do if /i "%%A"=="MES_FACE_TEMPLATE_KEY" set "MES_FACE_TEMPLATE_KEY=%%C"
+
 rem ============================================================
 rem  Infrared thermometer MES - backend one-click start
 rem  Requires: MySQL 3307 / Redis 6379 / MinIO 9100 / JDK8

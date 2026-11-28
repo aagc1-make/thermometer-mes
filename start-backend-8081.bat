@@ -1,6 +1,9 @@
 @echo off
 setlocal
 
+rem Load the current Windows user key if the launching shell predates its setup.
+if not defined MES_FACE_TEMPLATE_KEY for /f "tokens=1,2,*" %%A in ('"%SystemRoot%\System32\reg.exe" query HKCU\Environment /v MES_FACE_TEMPLATE_KEY 2^>nul') do if /i "%%A"=="MES_FACE_TEMPLATE_KEY" set "MES_FACE_TEMPLATE_KEY=%%C"
+
 rem ============================================================
 rem  MES demo backend on port 8081 (database: j2eedb_it)
 rem
