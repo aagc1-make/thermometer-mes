@@ -36,7 +36,8 @@
       </section>
     </aside>
     <div v-if="avatarOpen" class="ai__avatar-slot">
-      <digital-human-stage :key="avatarStageVersion" :mouth-level="avatarMouthLevel" @state="avatarRenderState = $event" />
+      <digital-human-stage ref="avatarStage" :key="avatarStageVersion" :mouth-level="avatarMouthLevel"
+        @state="avatarRenderState = $event" />
     </div>
 
     <div class="ai__workbench">
@@ -67,7 +68,10 @@
             </button>
           </div>
         </header>
-        <div v-if="avatarOpen" class="ai__avatar-controls" aria-label="米粒播报控制">
+        <div v-if="avatarOpen" class="ai__avatar-controls" aria-label="与米粒互动">
+          <button v-if="avatarRenderState === 'ready'" type="button" @click="$refs.avatarStage.greet()">打招呼</button>
+          <avatar-voice-input v-if="!personalMode" ref="avatarVoiceInput" :busy="loading"
+            @listen="stopAvatarSpeech" @transcript="applyAvatarTranscript" />
           <button v-if="avatarSpeechActive" type="button" @click="stopAvatarSpeech">停止朗读</button>
           <span v-if="avatarStatus" role="status">{{ avatarStatus }}</span>
           <button v-if="avatarRenderState === 'error'" type="button" @click="avatarStageVersion++">重试画面</button>
@@ -325,6 +329,7 @@ export default {
     AssistantInspector: () => import('./AssistantInspector'),
     BusinessToolAnswer: () => import('./BusinessToolAnswer'),
     BusinessChain: () => import('./BusinessChain'), KnowledgeBase: () => import('./KnowledgeBase'), KnowledgeAnswer: () => import('./KnowledgeAnswer'),
+    AvatarVoiceInput: () => import('./AvatarVoiceInput'),
     PersonalKnowledgeBase: () => import('./PersonalKnowledgeBase'),
     PersonalKnowledgeGraph: () => import('./PersonalKnowledgeGraph'),
     PersonalKnowledgeAnswer: () => import('./PersonalKnowledgeAnswer')
@@ -419,6 +424,7 @@ export default {
   },
   watch: {
     '$route.query.stockItem': 'openGraphStock',
+    queryMode() { this.cancelAvatarVoice() },
     knowledgeUserId() {
       this.recentChats = []
       this.reset(false)
@@ -461,6 +467,15 @@ export default {
     stopAvatarSpeech() {
       this._avatarSpeech.stop()
       this.avatarSpeechState = 'idle'
+    },
+    cancelAvatarVoice() {
+      const voice = this.$refs && this.$refs.avatarVoiceInput
+      if (voice) voice.cancel()
+    },
+    applyAvatarTranscript(text) {
+      if (!this.avatarOpen || this.loading || this.personalMode) return
+      this.input = [this.input.trim(), text].filter(Boolean).join(' ').slice(0, 600)
+      this.$refs.composer.focus()
     },
     toggleSidebar() {
       const opening = !this.sidebarVisible
@@ -788,6 +803,7 @@ export default {
       } catch (e) { try { sessionStorage.removeItem(key) } catch (ignored) {} }
     },
     applyChat(chat) {
+      this.cancelAvatarVoice()
       this.stopAvatarSpeech()
       this._restoringChat = true
       this.activeChatId = chat.id || Date.now().toString(36)
@@ -853,6 +869,7 @@ export default {
     p2(n) { const p = x => String(x).padStart(2, '0'); return `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}` },
     reset(persist = true) {
       this.chatRun++
+      this.cancelAvatarVoice()
       this.stopAvatarSpeech()
       this.stopGeneration()
       this.closeInspector()
@@ -880,6 +897,7 @@ export default {
     async send(text, receiptFollowUp) {
       const q = (text || this.input || '').trim()
       if (!q || this.loading || (!text && !this.queryMode)) return
+      this.cancelAvatarVoice()
       this.stopAvatarSpeech()
       this.input = ''
       this.push({ role: 'user', type: 'text', text: q })

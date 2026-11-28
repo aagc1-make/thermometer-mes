@@ -1,11 +1,16 @@
 <template>
-  <div id="assistant-avatar-stage" class="avatar-stage" role="img" aria-label="数字人米粒与城市夜景"
+  <div id="assistant-avatar-stage" class="avatar-stage"
     :style="{ backgroundImage: 'url(' + assets + 'night.jpg)' }">
     <div v-if="failed" class="avatar-stage__fallback">
-      <img v-if="!offlinePortrait" :src="assets + 'mao.png'" alt="" @error="offlinePortrait = true">
+      <img v-if="!offlinePortrait" :src="assets + 'mao.png'" alt="数字人米粒" @error="offlinePortrait = true">
       <i v-else class="el-icon-user" aria-hidden="true" />
     </div>
-    <div ref="canvas" class="avatar-stage__canvas" @webglcontextlost.capture.prevent="handleContextLost" />
+    <div ref="canvas" class="avatar-stage__canvas" :class="{ 'is-interactive': ready }"
+      :role="ready ? 'button' : null" :tabindex="ready ? 0 : null"
+      :aria-label="ready ? '和米粒互动' : null" :title="ready ? '点击米粒的头部或身体' : null"
+      @click="tapModel" @pointermove="followPointer" @pointerleave="resetFocus" @pointercancel="resetFocus"
+      @keydown.enter.prevent="greet" @keydown.space.prevent="greet"
+      @webglcontextlost.capture.prevent="handleContextLost" />
   </div>
 </template>
 
@@ -56,6 +61,10 @@ export default {
         if (this._app !== app) return
 
         const internal = model.internalModel
+        // Mao's model lists both drawable IDs with empty names, so the default name map merges them.
+        for (const area of internal.getHitAreaDefs()) {
+          if (area.index >= 0) internal.hitAreas[area.id] = area
+        }
         internal.on('beforeModelUpdate', () => {
           internal.coreModel.setParameterValueById('ParamA', this.mouthLevel())
         })
@@ -75,6 +84,25 @@ export default {
       } finally {
         window.clearTimeout(loadingTimer)
       }
+    },
+    getPointerPosition(event) {
+      const bounds = this.$refs.canvas.getBoundingClientRect()
+      return [event.clientX - bounds.left, event.clientY - bounds.top]
+    },
+    tapModel(event) {
+      if (!this._model) return
+      const areas = this._model.hitTest(...this.getPointerPosition(event))
+      if (areas.includes('HitAreaHead')) return this.greet()
+      if (areas.includes('HitAreaBody')) return this._model.motion('', 2, 2).catch(() => {})
+    },
+    greet() {
+      if (this._model) return this._model.motion('', 1, 2, { expression: 'exp_04' }).catch(() => {})
+    },
+    followPointer(event) {
+      if (this._model) this._model.focus(...this.getPointerPosition(event))
+    },
+    resetFocus() {
+      if (this._model) this._model.internalModel.focusController.focus(0, 0)
     },
     resizeModel() {
       const width = this.$el.clientWidth
@@ -119,6 +147,8 @@ export default {
 }
 .avatar-stage__canvas, .avatar-stage__fallback { grid-area: 1 / 1; min-height: 0; min-width: 0; }
 .avatar-stage__canvas { overflow: hidden; }
+.avatar-stage__canvas.is-interactive { pointer-events: auto; cursor: pointer; }
+.avatar-stage__canvas:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -4px; }
 .avatar-stage__fallback { display: grid; place-items: center; color: #d9e6f1; font-size: 34px; }
 .avatar-stage__fallback img { width: 64%; max-width: 230px; border-radius: 18px; box-shadow: 0 16px 38px rgba(0, 0, 0, .28); }
 @keyframes avatar-appear { from { opacity: 0; } to { opacity: 1; } }
