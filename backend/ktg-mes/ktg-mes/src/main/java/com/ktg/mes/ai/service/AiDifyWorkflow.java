@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.net.URI;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -78,6 +79,8 @@ public class AiDifyWorkflow {
     private final String endpoint;
     private final String apiKey;
     private final int timeoutMs;
+    @Value("${mes.ai.dify.console-workflow-url:}")
+    private String consoleWorkflowUrl;
     private final SecureRandom random = new SecureRandom();
     private final Semaphore slots = new Semaphore(8);
     private final ConcurrentMap<String, Ticket> tickets = new ConcurrentHashMap<>();
@@ -124,21 +127,29 @@ public class AiDifyWorkflow {
     }
 
     /**
-     * 业务数据分支：规则命中时由 Dify 推进阶段，否则沿用既有问答。
+     * 业务数据分支：由 Dify 触发现有查询规则或模型的只读意图检查。
      */
     public Map<String, Object> answer(String question, boolean allowExternal, boolean skipLocal) {
         AiBusinessRules.Call rule = endpoint == null ? null : business.findRule(question);
-        if (rule == null) {
-            return business.answer(question, allowExternal, skipLocal);
-        }
         long started = System.currentTimeMillis();
         List<Map<String, Object>> trace = Collections.synchronizedList(new ArrayList<Map<String, Object>>());
         try {
+            Detail detail = rule != null ? businessDetail() : (stage, legs) -> {
+                if (BUSINESS.equals(stage)) return "检查问题是否需要查询 MES 业务数据";
+                if (GENERATE.equals(stage)) return "由 MES 根据意图检查结果准备回答";
+                return null;
+            };
             RunResult<Map<String, Object>> run = dispatch(ROUTE_BUSINESS,
-                Collections.singletonList(new Leg(BUSINESS,
-                    () -> business.answerFromRule(rule, started, trace, "MES 只读工具规划", "以提问账号的权限执行"))),
-                values -> asAnswer(values.get(0)), businessDetail(), started, trace::add);
+                Collections.singletonList(new Leg(BUSINESS, () -> rule != null
+                    ? business.answerFromRule(rule, started, trace, "MES 只读工具规划", "以提问账号的权限执行")
+                    : business.answer(question, allowExternal, skipLocal))),
+                values -> asAnswer(values.get(0)), detail, started, trace::add);
             Map<String, Object> answer = run.value;
+            if (rule == null && answer.get("trace") instanceof List) {
+                List<Map<String, Object>> businessTrace = asTrace(answer.get("trace"));
+                trace.addAll(businessTrace);
+                trace.sort(java.util.Comparator.comparingLong(event -> ((Number) event.get("elapsedMs")).longValue()));
+            }
             answer.put("trace", new ArrayList<>(trace));
             return answer;
         } catch (IOException e) {
@@ -149,6 +160,11 @@ public class AiDifyWorkflow {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> asAnswer(Object value) {
         return (Map<String, Object>) value;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> asTrace(Object value) {
+        return (List<Map<String, Object>>) value;
     }
 
     /**
@@ -212,11 +228,17 @@ public class AiDifyWorkflow {
             connectionState = "online";
             lastRunId = runId;
             lastVerifiedAt = Instant.now().toString();
-            lastDetail = "运行 " + runId + " · 分支 " + routeLabel(route);
+            String detailText = "运行 " + runId + " · 分支 " + routeLabel(route);
+            lastDetail = detailText;
             log.info("[Dify] 编排校验通过 route={} runId={} stages={} elapsedMs={}",
                 route, runId, run.stages.size(), elapsed);
-            run.emit("Dify 编排", lastDetail, elapsed);
-            return new RunResult<>(value, "Dify 编排", lastDetail, runId, route);
+            Map<String, Object> event = entry("Dify 编排", detailText, elapsed, 0L);
+            event.put("runId", runId);
+            event.put("route", routeLabel(route));
+            String runUrl = runUrl(runId);
+            if (runUrl != null) event.put("runUrl", runUrl);
+            emit(trace, event);
+            return new RunResult<>(value, "Dify 编排", detailText, runId, route);
         }
         connectionState = "offline";
         lastRunId = runId.matches(RUN_ID_PATTERN) ? runId : "";
@@ -225,6 +247,20 @@ public class AiDifyWorkflow {
             route, failure, lastRunId, run.rejection, elapsed);
         run.emit("Dify 兜底", failure + "，本轮由 MES 直接执行", elapsed);
         return new RunResult<>(value, "Dify 兜底", failure, null, route);
+    }
+
+    private String runUrl(String runId) {
+        if (consoleWorkflowUrl == null || consoleWorkflowUrl.trim().isEmpty()) return null;
+        try {
+            URI url = URI.create(consoleWorkflowUrl.trim());
+            if (!"http".equalsIgnoreCase(url.getScheme()) && !"https".equalsIgnoreCase(url.getScheme())) return null;
+            if (url.getHost() == null || url.getUserInfo() != null || url.getQuery() != null || url.getFragment() != null) {
+                return null;
+            }
+            return url.toASCIIString() + "?runId=" + runId;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private static String failureReason(String status, String runId, String receipt, String echoedRoute,
@@ -349,11 +385,15 @@ public class AiDifyWorkflow {
     }
 
     private static void emit(Trace trace, String label, String detail, long startedAt, long durationMs) {
+        emit(trace, entry(label, detail, System.currentTimeMillis() - startedAt, durationMs));
+    }
+
+    private static void emit(Trace trace, Map<String, Object> event) {
         if (trace == null) {
             return;
         }
         try {
-            trace.accept(entry(label, detail, System.currentTimeMillis() - startedAt, durationMs));
+            trace.accept(event);
         } catch (IOException | RuntimeException ignored) {
             // 轨迹只是附加信息；断线由调用方自己的停止标志处理。
         }

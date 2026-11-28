@@ -49,6 +49,7 @@ test('采购入库只问记录数时只发计数查询，并在用户确认后�
   const original = ctx.messages.at(-1)
   assert.deepEqual(requests, [{ itemCode: 'TG-01', from: '2026-11-01', to: '2026-11-30', page: null }])
   assert.match(original.answer, /本月共有 56 条上壳的采购入库记录/)
+  assert.equal(original.trace.at(-1).label, 'MES 直接返回')
   assert.equal(original.toolResults.length, 0)
   assert.equal(original.offerDetails, true)
 

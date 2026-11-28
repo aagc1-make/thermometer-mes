@@ -106,7 +106,7 @@ public class MesKbRagController {
     @Data
     public static class Question {
         private String question;
-        private boolean allowExternal;
+        private boolean allowExternal = true;
         private boolean skipLocal;
         private boolean graph;
         /** 同一轮混合问答：为 true 时文档与业务两路检索共用一个 Dify 运行编号。 */

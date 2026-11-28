@@ -58,7 +58,7 @@ public class MesAiController extends BaseController {
     @Value("${mes.ai.deepseek-url:https://api.deepseek.com/v1/chat/completions}")
     private String deepseekUrl;
 
-    @Value("${mes.ai.deepseek-model:deepseek-chat}")
+    @Value("${mes.ai.deepseek-model:deepseek-flash}")
     private String deepseekModel;
 
     @Value("${mes.ai.glm-key:}")
@@ -170,6 +170,7 @@ public class MesAiController extends BaseController {
     private Map<String, Object> analyzeResult(String url, String key, String model, String question, String facts) throws Exception {
         Map<String, Object> payload = new HashMap<String, Object>();
         payload.put("model", model);
+        if (deepseekModel.equals(model)) payload.put("thinking", java.util.Collections.singletonMap("type", "disabled"));
         payload.put("temperature", 0);
         payload.put("max_tokens", 300);
         java.util.List<Map<String, String>> messages = new java.util.ArrayList<Map<String, String>>();
@@ -212,6 +213,7 @@ public class MesAiController extends BaseController {
     private Map<String, Object> callModel(String url, String apiKey, String model, String question) throws Exception {
         Map<String, Object> payload = new HashMap<String, Object>();
         payload.put("model", model);
+        if (deepseekModel.equals(model)) payload.put("thinking", java.util.Collections.singletonMap("type", "disabled"));
         payload.put("temperature", 0);
         payload.put("max_tokens", 200);
         payload.put("response_format", java.util.Collections.singletonMap("type", "json_object"));

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ktg.mes.ai.service.AiDifyWorkflow;
+import com.ktg.mes.ai.service.KbRagEngines;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.MediaType;
@@ -22,9 +24,11 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -35,6 +39,7 @@ public class MesKnowledgeCitedAnswerTest {
     private JdbcTemplate jdbc;
     private MesKnowledgeGraphStore graphStore;
     private MesKnowledgeQuestionService service;
+    private KbRagEngines engines;
     private MockRestServiceServer server;
 
     @Before
@@ -48,7 +53,10 @@ public class MesKnowledgeCitedAnswerTest {
         when(jdbc.queryForList(anyString(), eq(1L))).thenReturn(singletonList(version));
 
         graphStore = mock(MesKnowledgeGraphStore.class);
-        service = new MesKnowledgeQuestionService(jdbc, json, graphStore, "qwen2.5:3b");
+        engines = mock(KbRagEngines.class);
+        when(engines.citedDeepSeekText(any(JsonNode.class))).thenReturn("");
+        service = new MesKnowledgeQuestionService(jdbc, json, graphStore, engines,
+            new AiDifyWorkflow(null, engines, "", "", "12000"), "qwen2.5:3b");
         RestTemplate http = (RestTemplate) ReflectionTestUtils.getField(service, "http");
         server = MockRestServiceServer.bindTo(http).build();
 
@@ -66,6 +74,37 @@ public class MesKnowledgeCitedAnswerTest {
                 .put("text", "来料检验项目包括响应时间和输出稳定性。");
         server.expect(requestTo("http://127.0.0.1:6333/collections/mes_knowledge/points/query"))
                 .andRespond(withSuccess(search.toString(), MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    public void usesDeepSeekByDefaultAndValidatesItsCitations() {
+        when(engines.citedDeepSeekText(any(JsonNode.class)))
+            .thenReturn("{\"answer\":\"应检验响应时间。\",\"sourceNumbers\":[1]}");
+
+        JsonNode response = ask();
+        assertEquals("应检验响应时间。[1]", response.path("answer").asText());
+        assertEquals("DeepSeek", response.path("trace").path(1).path("detail").asText());
+        server.verify();
+    }
+
+    @Test
+    public void fallsBackLocallyWhenDeepSeekReturnsAnInvalidCitation() {
+        when(engines.citedDeepSeekText(any(JsonNode.class)))
+            .thenReturn("{\"answer\":\"应检验响应时间。\",\"sourceNumbers\":[99]}");
+        expectAnswer("{\"answer\":\"应检验输出稳定性。\",\"sourceNumbers\":[1]}");
+
+        assertEquals("应检验输出稳定性。[1]", ask().path("answer").asText());
+        server.verify();
+    }
+
+    @Test
+    public void explicitlyLocalQuestionDoesNotCallDeepSeek() {
+        expectAnswer("{\"answer\":\"应检验响应时间。\",\"sourceNumbers\":[1]}");
+
+        assertEquals("应检验响应时间。[1]",
+            service.ask(1, "来料要检验哪些项目？", "rag", false).path("answer").asText());
+        verifyNoInteractions(engines);
+        server.verify();
     }
 
     @Test

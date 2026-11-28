@@ -1,5 +1,7 @@
 package com.ktg.mes.ai.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -21,6 +23,8 @@ import java.util.UUID;
 
 @Service
 public class MesKnowledgeGraphIndexer {
+
+    private static final Logger log = LoggerFactory.getLogger(MesKnowledgeGraphIndexer.class);
 
     private static final String FACT_EXTRACTION_PROMPT = String.join("\n",
             "只从本次提供的原文中抽取明确陈述的事实。",
@@ -78,7 +82,7 @@ public class MesKnowledgeGraphIndexer {
     private final String chatModel;
 
     public MesKnowledgeGraphIndexer(MesKnowledgeGraphStore graphStore, ObjectMapper json,
-                                   @Value("${mes.knowledge.model:${mes.ai.rag.local-model:qwen2.5:3b}}") String chatModel) {
+                                   @Value("${mes.knowledge.model}") String chatModel) {
         this.graphStore = graphStore;
         this.json = json;
         this.chatModel = chatModel;
@@ -107,8 +111,14 @@ public class MesKnowledgeGraphIndexer {
         }
 
         List<Map<String, Object>> factRows = new ArrayList<>();
+        int[] skipped = new int[2];
         for (MesKnowledgeChunks.Chunk fragment : fragments) {
-            appendFactRows(factRows, versionId, fragment);
+            appendFactRows(factRows, versionId, fragment, skipped);
+        }
+        if (skipped[0] > 0 || skipped[1] > 0) {
+            log.warn("图谱事实抽取跳过不合规内容，文档 ID {}，版本 ID {}，无法解析的片段 {} 个，"
+                            + "未通过校验的事实 {} 条",
+                    documentId, versionId, skipped[0], skipped[1]);
         }
 
         Map<String, Object> parameters = new HashMap<>();
@@ -154,8 +164,17 @@ public class MesKnowledgeGraphIndexer {
     }
 
     private void appendFactRows(List<Map<String, Object>> rows, long versionId,
-                                MesKnowledgeChunks.Chunk fragment) {
-        for (JsonNode fact : extractFacts(fragment.getText())) {
+                                MesKnowledgeChunks.Chunk fragment, int[] skipped) {
+        JsonNode facts;
+        try {
+            facts = extractFacts(fragment.getText());
+        } catch (IllegalStateException e) {
+            skipped[0]++;
+            log.debug("片段 {} 的图谱事实抽取结果不可用：{}", fragment.getChunkNo(), e.getMessage());
+            return;
+        }
+
+        for (JsonNode fact : facts) {
             String subjectType = fact.path("subjectType").asText("").trim();
             String subject = fact.path("subject").asText("").trim();
             String predicate = fact.path("predicate").asText("").trim();
@@ -169,8 +188,9 @@ public class MesKnowledgeGraphIndexer {
                     || subject.isEmpty() || object.isEmpty() || evidence.isEmpty()
                     || !fragment.getText().contains(evidence)
                     || !evidence.contains(subject) || !evidence.contains(object)) {
-                throw new IllegalStateException("片段 " + fragment.getChunkNo()
-                        + " 的图谱事实未通过校验");
+                skipped[1]++;
+                log.debug("片段 {} 的图谱事实未通过校验，已跳过：{}", fragment.getChunkNo(), fact);
+                continue;
             }
 
             String identity = json.createArrayNode()

@@ -26,12 +26,7 @@ if not errorlevel 1 (
     exit /b 1
 )
 
-rem  Neo4j connection params, same password as the local instance
-set "MES_AI_NEO4J_URL=http://127.0.0.1:7474"
-set "MES_AI_NEO4J_USER=neo4j"
-set "MES_AI_NEO4J_PASSWORD=mes12345"
-
-rem  ai-keys.txt (gitignored) holds model keys plus Dify url/key
+rem  ai-keys.txt (gitignored) holds model keys and local service configuration
 rem  Without that file the assistant stays on the native path
 if exist "%~dp0ai-keys.txt" (
     for /f "usebackq tokens=1,* delims==" %%A in ("%~dp0ai-keys.txt") do (
@@ -39,8 +34,14 @@ if exist "%~dp0ai-keys.txt" (
         if /i "%%A"=="MES_AI_FB_KEY"   set "MES_AI_FB_KEY=%%B"
         if /i "%%A"=="MES_AI_DIFY_URL" set "MES_AI_DIFY_URL=%%B"
         if /i "%%A"=="MES_AI_DIFY_KEY" set "MES_AI_DIFY_KEY=%%B"
+        if /i "%%A"=="MES_AI_DIFY_CONSOLE_WORKFLOW_URL" if not defined MES_AI_DIFY_CONSOLE_WORKFLOW_URL set "MES_AI_DIFY_CONSOLE_WORKFLOW_URL=%%B"
+        if /i "%%A"=="MES_AI_NEO4J_URL" if not defined MES_AI_NEO4J_URL set "MES_AI_NEO4J_URL=%%B"
+        if /i "%%A"=="MES_AI_NEO4J_USER" if not defined MES_AI_NEO4J_USER set "MES_AI_NEO4J_USER=%%B"
+        if /i "%%A"=="MES_AI_NEO4J_PASSWORD" if not defined MES_AI_NEO4J_PASSWORD set "MES_AI_NEO4J_PASSWORD=%%B"
     )
 )
+if not defined MES_AI_NEO4J_URL set "MES_AI_NEO4J_URL=http://127.0.0.1:7474"
+if not defined MES_AI_NEO4J_USER set "MES_AI_NEO4J_USER=neo4j"
 if defined MES_AI_DIFY_URL if defined MES_AI_DIFY_KEY (
     echo [ai] Dify workflow: %MES_AI_DIFY_URL%
 ) else (
@@ -129,12 +130,14 @@ if not exist "%MES_BACKEND_JAR%" (
 rem Pass Dify via system properties as well; this is the proven local path and
 rem takes precedence over any Spring JSON environment configuration.
 set "MES_DIFY_OPTS="
+set "MES_DIFY_CONSOLE_OPT="
+if defined MES_AI_DIFY_CONSOLE_WORKFLOW_URL set MES_DIFY_CONSOLE_OPT="-Dmes.ai.dify.console-workflow-url=%MES_AI_DIFY_CONSOLE_WORKFLOW_URL%"
 if defined MES_AI_DIFY_URL if defined MES_AI_DIFY_KEY set "MES_DIFY_OPTS=-Dmes.ai.dify.api-base-url=%MES_AI_DIFY_URL% -Dmes.ai.dify.api-key=%MES_AI_DIFY_KEY%"
 if not exist "%PROJECT%\upload" mkdir "%PROJECT%\upload"
 cd /d "%PROJECT%"
 echo     java -jar "%MES_BACKEND_JAR%"
 echo.
-"%JAVA_HOME%\bin\java.exe" -Dfile.encoding=UTF-8 %MES_DIFY_OPTS% -jar "%MES_BACKEND_JAR%"
+"%JAVA_HOME%\bin\java.exe" -Dfile.encoding=UTF-8 %MES_DIFY_OPTS% %MES_DIFY_CONSOLE_OPT% -jar "%MES_BACKEND_JAR%"
 
 echo.
 echo backend stopped. press any key to close.

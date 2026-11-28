@@ -152,7 +152,7 @@ public class MesKnowledgeController extends BaseController {
         }
 
         try {
-            return AjaxResult.success(questions.ask(getUserId(), question, mode));
+            return AjaxResult.success(questions.ask(getUserId(), question, mode, body.path("allowExternal").asBoolean(true)));
         } catch (MesKnowledgeQuestionService.GraphQueryException e) {
             logger.error("图谱问答失败", e);
             return AjaxResult.error(e.getMessage())

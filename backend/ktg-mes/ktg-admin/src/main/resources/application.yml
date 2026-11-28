@@ -147,6 +147,10 @@ minio:
 #   MES_AI_KEY     DeepSeek 主模型（意图识别，质量优先）
 #   MES_AI_FB_KEY  智谱 GLM-4-Flash 兜底（免费，主模型失败时切换）
 mes:
+  knowledge:
+    # 个人知识库的问答与图谱抽取模型，默认跟随本地模型设置
+    model: ${MES_AI_LOCAL_MODEL:qwen2.5:7b-instruct-q4_K_M}
+    storage-directory: ${MES_KNOWLEDGE_STORAGE_DIR:./runtime/mes-knowledge}
   ai:
     kb:
       storage-root: ${MES_AI_KB_STORAGE_ROOT:./kb-storage}
@@ -159,12 +163,14 @@ mes:
       collection: ${MES_AI_QDRANT_COLLECTION:mes_kb_bge_m3_v1}
       allow-external: ${MES_AI_ALLOW_EXTERNAL:true}
     graph:
-      url: ${MES_AI_NEO4J_URL:}
-      database: ${MES_AI_NEO4J_DATABASE:neo4j}
-      user: ${MES_AI_NEO4J_USER:neo4j}
-      password: ${MES_AI_NEO4J_PASSWORD:}
+      # 兼容个人知识库原有的 MES_NEO4J_* 变量，未设置时回落到 MES_AI_NEO4J_*
+      url: ${MES_NEO4J_URL:${MES_AI_NEO4J_URL:}}
+      database: ${MES_NEO4J_DATABASE:${MES_AI_NEO4J_DATABASE:neo4j}}
+      user: ${MES_NEO4J_USER:${MES_AI_NEO4J_USER:neo4j}}
+      password: ${MES_NEO4J_PASSWORD:${MES_AI_NEO4J_PASSWORD:}}
       namespace: ${MES_AI_NEO4J_NAMESPACE:mes}
     dify:
+      console-workflow-url: ${MES_AI_DIFY_CONSOLE_WORKFLOW_URL:}
       # 带 /v1 的基址，例如 http://127.0.0.1/v1；留空或缺少密钥时助手沿用 MES 既有问答
       api-base-url: ${MES_AI_DIFY_URL:}
       api-key: ${MES_AI_DIFY_KEY:}
@@ -174,7 +180,7 @@ mes:
       suite-file: ${MES_AI_EVALUATION_SUITE_FILE:}
     deepseek-key: ${MES_AI_KEY:}
     deepseek-url: https://api.deepseek.com/v1/chat/completions
-    deepseek-model: deepseek-chat
+    deepseek-model: ${MES_AI_DEEPSEEK_MODEL:deepseek-flash}
     glm-key: ${MES_AI_FB_KEY:}
     glm-url: https://open.bigmodel.cn/api/paas/v4/chat/completions
     glm-model: glm-4-flash

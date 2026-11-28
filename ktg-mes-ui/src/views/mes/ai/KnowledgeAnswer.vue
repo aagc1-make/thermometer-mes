@@ -1,6 +1,6 @@
 <template>
   <div class="knowledge-answer">
-    <div class="knowledge-answer__text"><template v-for="(part, index) in parts"><button v-if="part.source !== undefined"
+    <div v-if="parts.length" class="knowledge-answer__text"><template v-for="(part, index) in parts"><button v-if="part.source !== undefined"
       :key="index" class="citation" type="button" :aria-label="'查看引用 ' + (part.source + 1)"
       @click="$emit('source', part.source)">[{{ part.source + 1 }}]</button><span v-else :key="index">{{ part.text }}</span></template></div>
     <div v-if="sources.length && !message.streaming" class="answer-sources">
@@ -23,7 +23,7 @@ export default {
   computed: {
     sources() { return this.message.sources || [] },
     parts() {
-      const raw = this.message.text || (this.message.streaming ? '正在检索资料…' : '')
+      const raw = this.message.text || ''
       return raw.split(/(\[\d+\])/g).filter(Boolean).map(token => {
         const marker = token.match(/^\[(\d+)\]$/)
         const source = marker ? Number(marker[1]) - 1 : -1

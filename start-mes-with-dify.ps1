@@ -27,7 +27,7 @@ $docker = (Get-Command docker.exe).Source
 $keyFile = Join-Path $PSScriptRoot 'ai-keys.txt'
 if (-not (Test-Path -LiteralPath $keyFile)) { throw 'Dify requires the local ai-keys.txt file.' }
 $dify = ConvertFrom-StringData -StringData ((Get-Content -LiteralPath $keyFile |
-    Where-Object { $_ -match '^MES_AI_DIFY_(URL|KEY)=' }) -join [Environment]::NewLine)
+    Where-Object { $_ -match '^MES_AI_DIFY_(URL|KEY|CONSOLE_WORKFLOW_URL)=' }) -join [Environment]::NewLine)
 if ($dify.MES_AI_DIFY_URL -notmatch '^http://(?:localhost|127\.0\.0\.1):\d+/v1/?$' -or -not $dify.MES_AI_DIFY_KEY) {
     throw 'Set the local MES_AI_DIFY_URL and MES_AI_DIFY_KEY in ai-keys.txt.'
 }
@@ -105,10 +105,14 @@ if ($RestartBackend -and $backendListeners.Count) {
 }
 
 if (-not $backendListeners.Count) {
-    $springDify = @{
+    $springDifySettings = @{
         'mes.ai.dify.api-base-url' = $dify.MES_AI_DIFY_URL
         'mes.ai.dify.api-key' = $dify.MES_AI_DIFY_KEY
-    } | ConvertTo-Json -Compress
+    }
+    if ($dify.MES_AI_DIFY_CONSOLE_WORKFLOW_URL) {
+        $springDifySettings['mes.ai.dify.console-workflow-url'] = $dify.MES_AI_DIFY_CONSOLE_WORKFLOW_URL
+    }
+    $springDify = $springDifySettings | ConvertTo-Json -Compress
     Start-Launcher 'backend' 'start-backend.bat' @{
         MES_BACKEND_JAR = $BackendJar
         SERVER_ADDRESS = '127.0.0.1'

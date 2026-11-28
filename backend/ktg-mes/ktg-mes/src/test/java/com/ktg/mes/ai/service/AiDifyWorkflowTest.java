@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ktg.common.exception.ServiceException;
 import org.junit.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ public class AiDifyWorkflowTest {
     public void documentRouteCompletesEveryStageOnce() throws IOException {
         FakeDify dify = new FakeDify(json);
         AiDifyWorkflow workflow = dify.workflow();
+        ReflectionTestUtils.setField(workflow, "consoleWorkflowUrl", "http://dify.local/app/mes/workflow");
         AtomicInteger runs = new AtomicInteger();
         List<Map<String, Object>> trace = new ArrayList<>();
 
@@ -69,6 +71,9 @@ public class AiDifyWorkflowTest {
         assertEquals("run_abc123", workflow.statusDetail().get("lastRunId"));
         assertTrue(trace.get(0).get("label").toString().contains("问题改写"));
         assertEquals("Dify 编排", trace.get(trace.size() - 1).get("label"));
+        assertEquals("run_abc123", trace.get(trace.size() - 1).get("runId"));
+        assertEquals("http://dify.local/app/mes/workflow?runId=run_abc123",
+            trace.get(trace.size() - 1).get("runUrl"));
         assertTrue(trace.get(trace.size() - 1).get("detail").toString().contains("运行 run_abc123"));
         assertTrue("阶段耗时写进轨迹", trace.get(1).get("detail").toString().contains(" ms"));
         assertEquals("rewrite", dify.acks.get(0).stage());

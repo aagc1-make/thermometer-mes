@@ -5,7 +5,7 @@
       <button type="button" title="关闭溯源" aria-label="关闭溯源" @click="$emit('close')"><i class="el-icon-close" aria-hidden="true" /></button>
     </header>
     <el-tabs v-model="section" class="inspector-tabs">
-      <el-tab-pane label="引用原文" name="sources">
+      <el-tab-pane v-if="message.type !== 'personalKnowledge'" label="引用原文" name="sources">
         <div v-if="toolResults.length" class="citation-list">
           <section v-for="result in toolResults" :key="result.queriedAt + result.code" class="inspector-chunk">
             <h3>{{ result.label }}</h3>
@@ -32,7 +32,7 @@
             :page-size="pageSize" :current-page="page" @current-change="$emit('page', $event)" />
         </div>
       </el-tab-pane>
-      <el-tab-pane label="图谱子图" name="graph">
+      <el-tab-pane v-if="message.type !== 'personalKnowledge'" label="图谱子图" name="graph">
         <template v-if="impact && impact.nodes.length">
           <div class="subgraph-summary">
             <span class="inspector-note">{{ impactSection }} · {{ impact.nodes.length }} 个实体</span>
@@ -64,6 +64,14 @@
         <p v-else class="inspector-note">这条回答没有匹配的图谱关系。</p>
       </el-tab-pane>
       <el-tab-pane label="执行轨迹" name="activity">
+        <section v-for="run in difyRuns" :key="run.runId" class="inspector-run">
+          <strong>Dify 编排{{ run.route ? ' · ' + run.route : '' }}</strong>
+          <code>{{ run.runId }}</code>
+          <a v-if="run.runUrl" :href="run.runUrl" target="_blank" rel="noopener noreferrer">查看 Dify 编排 <i class="el-icon-top-right" aria-hidden="true" /></a>
+        </section>
+        <p v-if="!difyRuns.length && !message.streaming" class="inspector-note">
+          {{ difyFallback ? difyFallback.detail : '本条回答没有 Dify 运行记录。' }}
+        </p>
         <ol v-if="trace.length" class="inspector-activity">
           <li v-for="(event, index) in trace" :key="index">
             <strong>{{ event.label }}</strong><time>{{ (event.elapsedMs / 1000).toFixed(1) }} 秒</time>
@@ -120,6 +128,11 @@ export default {
     sources() { return this.message.sources || [] },
     toolResults() { return this.message.toolResults || [] },
     trace() { return this.message.trace || [] },
+    difyRuns() {
+      return this.trace.filter(event => event.label === 'Dify 编排' && /^[A-Za-z0-9_-]{1,64}$/.test(event.runId || ''))
+        .map(event => ({ ...event, runUrl: /^https?:\/\//i.test(event.runUrl || '') ? event.runUrl : '' }))
+    },
+    difyFallback() { return this.trace.find(event => event.label === 'Dify 兜底') },
     graph() { return this.message.graph },
     impact() { return this.message.impact },
     impactSection() {
@@ -219,6 +232,16 @@ header button { width: 28px; height: 28px; border: 0; border-radius: 6px; backgr
 .inspector-chunk h3 { margin: 0 0 6px; color: $mes-primary; font-size: 12px; }
 .inspector-chunk pre { margin: 0; font: inherit; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
 .inspector-activity { padding: 0; margin: 0; list-style: none; }
+.inspector-run {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid $mes-border;
+  border-radius: 6px;
+}
+.inspector-run code { font-size: 12px; overflow-wrap: anywhere; }
+.inspector-run a { width: fit-content; color: $mes-primary; text-decoration: underline; }
 .inspector-activity time { float: right; font-size: 12px; color: $mes-text-sub; }
 .inspector-activity p { margin: 5px 0 0; color: $mes-text-sub; }
 .inspector-activity details { margin-top: 6px; }

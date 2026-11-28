@@ -51,7 +51,7 @@ public class MesKnowledgeUploadService {
 
     public MesKnowledgeUploadService(JdbcTemplate jdbc, PlatformTransactionManager transactionManager,
                                      MesKnowledgeIndexer indexer,
-                                     @Value("${mes.knowledge.storage-directory:./runtime/mes-knowledge}")
+                                     @Value("${mes.knowledge.storage-directory}")
                                      String storageDirectory,MesKnowledgeTextExtractor extractor,
                                      MesKnowledgeGraphIndexer graphIndexer) {
         this.jdbc = jdbc;
@@ -141,7 +141,7 @@ public class MesKnowledgeUploadService {
                     activate(ownerId, documentId, versionId, previousVersionId));
         } catch (RuntimeException e) {
             log.warn("知识库索引或版本激活失败，文档 ID {}，版本 ID {}，异常类型 {}",
-                    documentId, versionId, e.getClass().getSimpleName());
+                    documentId, versionId, e.getClass().getSimpleName(), e);
             transaction.executeWithoutResult(status -> {
                 int updated = jdbc.update("UPDATE mes_kb_version SET index_status = 'FAILED' "
                                 + "WHERE version_id = ? AND document_id = ? AND index_status = 'PENDING'",

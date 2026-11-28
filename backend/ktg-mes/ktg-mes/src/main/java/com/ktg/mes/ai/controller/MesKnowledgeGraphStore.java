@@ -25,10 +25,10 @@ public class MesKnowledgeGraphStore {
 
     public MesKnowledgeGraphStore(
             ObjectMapper json,
-            @Value("${MES_NEO4J_URL:${mes.ai.graph.url:}}") String baseUrl,
-            @Value("${MES_NEO4J_DATABASE:${mes.ai.graph.database:neo4j}}") String database,
-            @Value("${MES_NEO4J_USER:${mes.ai.graph.user:neo4j}}") String username,
-            @Value("${MES_NEO4J_PASSWORD:${mes.ai.graph.password:}}") String password) {
+            @Value("${mes.ai.graph.url}") String baseUrl,
+            @Value("${mes.ai.graph.database}") String database,
+            @Value("${mes.ai.graph.user}") String username,
+            @Value("${mes.ai.graph.password}") String password) {
         this.json = json;
         String graphUrl = baseUrl.trim().isEmpty() ? "http://127.0.0.1:7474" : baseUrl.trim();
         this.endpoint = graphUrl.replaceAll("/+$", "")

@@ -87,10 +87,17 @@
           </div>
       <div v-for="(m, i) in conversationMessages" :key="i" :class="['msg', 'msg--' + m.role]">
         <div class="msg__bubble">
-          <details v-if="m.type !== 'toolAnswer' && m.trace && m.trace.length" class="msg__activity">
-            <summary><i class="el-icon-time" aria-hidden="true" /> {{ traceTitle(m) }} <i class="el-icon-arrow-down" aria-hidden="true" /></summary>
-            <ol><li v-for="(event, index) in m.trace" :key="index"><strong>{{ event.label }}</strong> · {{ event.detail }}</li></ol>
-            <button type="button" @click="openInspector(m, 'activity')">查看执行轨迹</button>
+          <details v-if="m.role === 'bot'" :open="i === conversationMessages.length - 1 && (m.streaming || !!(m.trace && m.trace.length))" class="msg__activity">
+            <summary>
+              <i class="el-icon-time" aria-hidden="true" /> <span aria-live="polite">{{ traceTitle(m) }}</span>
+              <i class="el-icon-arrow-down" aria-hidden="true" />
+            </summary>
+            <ol v-if="m.trace && m.trace.length">
+              <li v-for="(event, index) in m.trace" :key="index">
+                <strong>{{ event.label }}</strong><template v-if="event.detail"> · {{ event.detail }}</template>
+              </li>
+            </ol>
+            <button v-if="!m.streaming || (m.trace && m.trace.length)" type="button" @click="openInspector(m, 'activity')">查看执行轨迹</button>
           </details>
           <!-- 文本 -->
           <div v-if="m.type === 'text'" class="msg__text">{{ m.text }}</div>
@@ -239,8 +246,6 @@
           </div>
           <business-tool-answer v-if="m.type === 'rag' && m.toolResults && m.toolResults.length"
             :results="m.toolResults" :notice="m.notice" />
-          <button v-if="m.type === 'toolAnswer' && m.trace && m.trace.length" class="msg__source-button"
-            type="button" @click="openInspector(m, 'activity')">查看查询过程</button>
           <button v-if="m.graph" class="msg__source-button" type="button" @click="openInspector(m, 'graph')">
             <i class="el-icon-share" aria-hidden="true" /> 图谱子图 · {{ m.graph.nodes.length }} 个实体
           </button>
@@ -510,9 +515,13 @@ export default {
       if (this.ragAbort) this.ragAbort.abort()
     },
     traceTitle(message) {
-      const last = message.trace[message.trace.length - 1]
-      return message.streaming ? last.label
-        : `${last.label} · ${message.trace.length} 步 · ${(last.elapsedMs / 1000).toFixed(1)} 秒`
+      const steps = message.trace || []
+      const last = steps[steps.length - 1]
+      if (message.streaming) return last ? last.label : '正在提交问题…'
+      if (!last) return '回答过程'
+      const elapsed = message.answerElapsedMs ?? (last && last.elapsedMs)
+      const duration = Number.isFinite(elapsed) ? ` · ${(elapsed / 1000).toFixed(1)} 秒` : ''
+      return `回答过程 · ${steps.length} 步${duration}`
     },
     openInspector(message, tab, index = 0) {
       this.inspectedMessage = message
@@ -526,6 +535,7 @@ export default {
     selectCitation(index, tab = 'sources') {
       this.inspectorTab = tab
       this.inspectorSelected = index
+      if (this.inspectedMessage.type === 'personalKnowledge') return
       const source = (this.inspectedMessage.sources || [])[index]
       const page = source && source.versionId ? Math.floor(source.chunkIndex / 20) + 1 : 1
       this.loadCitationPage(page)
@@ -569,7 +579,7 @@ export default {
       this.ragAbort = abort
       const started = Date.now()
       this.push({
-        role: 'bot', type: 'rag', text: '', trace: [], sources: [], streaming: true, speechIncomplete: false, channel: '',
+        role: 'bot', type: 'rag', text: '', trace: [], sources: [], streaming: true, answerElapsedMs: null, speechIncomplete: false, channel: '',
         source: library.name, graph: null, impact: null, graphLibraryId: library.libraryId, toolResults: [], notice: ''
       })
       const message = this.messages[this.messages.length - 1]
@@ -606,6 +616,7 @@ export default {
           message.text = message.text ? message.text + '\n\n（连接中断，回答未完成。）' : error.message
         }
       } finally {
+        message.answerElapsedMs = Date.now() - started
         message.streaming = false
         if (this.ragAbort === abort) this.ragAbort = null
       }
@@ -834,7 +845,8 @@ export default {
         pageNum++
       } while (rows.length < total)
       if (this._businessTrace) this._businessTrace.push({
-        label: '查询业务数据', detail: `${url} · 返回 ${rows.length} 条`, elapsedMs: Date.now() - started
+        label: '查询业务数据', detail: `${url} · 返回 ${rows.length} 条`,
+        elapsedMs: Date.now() - this._answerStartedAt, durationMs: Date.now() - started
       })
       return { rows, total }
     },
@@ -855,7 +867,14 @@ export default {
       this.waitingWeatherCity = false
       if (persist) this.persistChats()
     },
-    push(m) { this.messages.push(m); this.$nextTick(this.scrollBottom) },
+    push(m) {
+      if (m.role === 'bot') {
+        if (!Array.isArray(m.trace)) m.trace = []
+        if (m.answerElapsedMs === undefined) m.answerElapsedMs = null
+      }
+      this.messages.push(m)
+      this.$nextTick(this.scrollBottom)
+    },
     scrollBottom() { const el = this.$refs.scroller; if (el) el.scrollTop = el.scrollHeight },
 
     async send(text, receiptFollowUp) {
@@ -871,6 +890,7 @@ export default {
       const account = this.knowledgeUserId
       this.loading = true
       this._businessTrace = []
+      this._answerStartedAt = started
       try {
         await this.route(q, receiptFollowUp)
       } catch (e) {
@@ -887,17 +907,23 @@ export default {
           return
         }
         const replies = this.messages.slice(responseStart).filter(m => m.role === 'bot')
-        if (trace && trace.length && replies.length) {
-          this.$set(replies[replies.length - 1], 'trace', [
-            ...trace, { label: '业务数据回答', detail: '使用 MES 已有查询规则', elapsedMs: Date.now() - started }
-          ])
-        }
+        const elapsed = Date.now() - started
+        const recorded = [...(trace || [])]
         // 规则命中的表格/清单：让模型把这些事实改写成自然语言说明
         const lastReply = replies[replies.length - 1]
+        replies.forEach(reply => {
+          const steps = [...recorded, ...(reply.trace || [])]
+          if (!steps.length) {
+            steps.push({ label: reply.speechIncomplete ? '回答中止' : 'MES 直接返回',
+              detail: reply.speechIncomplete ? '本轮未完成，参见回答中的提示' : '按界面或业务规则处理', elapsedMs: elapsed })
+          }
+          reply.trace = steps
+          if (reply.answerElapsedMs == null) reply.answerElapsedMs = elapsed
+        })
         const structured = [...replies].reverse().find(m => m.type === 'list' || m.type === 'stock')
         if (!personalQuery && lastReply) {
-          if (lastReply.type === 'text' && structured) this.narrateStructured(lastReply, q, structured, run)
-          else if (lastReply.type === 'text' || lastReply.type === 'knowledge') this.narratePlain(lastReply, q, run)
+          if (lastReply.type === 'text' && structured) this.narrateStructured(lastReply, q, structured, run, started)
+          else if (lastReply.type === 'text' || lastReply.type === 'knowledge') this.narratePlain(lastReply, q, run, started)
         }
         this.loading = false
         // 数字人开着时，模型每生成一轮回答就直接朗读
@@ -910,6 +936,7 @@ export default {
     /* ---------- 意图解析（规则引擎；LLM 只做兜底，故意不参与算数） ---------- */
     async queryPersonalKnowledge(question, mode) {
       const run = this.chatRun
+      const started = Date.now()
       const account = this.knowledgeUserId
       if (!account) throw new Error('请登录后查询个人知识库')
       const { data } = await request({
@@ -921,6 +948,7 @@ export default {
       this.push({
         role: 'bot', type: 'personalKnowledge', text: data.answer, mode, rag: true,
         graphStatus: data.graphStatus,
+        trace: this.offsetTrace(data.trace, started),
         paths: Array.isArray(data.paths) ? data.paths : [],
         sources: (Array.isArray(data.sources) ? data.sources : []).map((source, index) => ({
           documentId: 'personal-' + index,
@@ -1084,7 +1112,12 @@ export default {
           data: { question: q },
           timeout: 20000
         })
-        if (res && res.code === 200 && res.data) return res.data
+        if (res && res.code === 200 && res.data) {
+          if (this._businessTrace && res.data.model) this._businessTrace.push({
+            label: '识别问题意图', detail: res.data.model, elapsedMs: Date.now() - this._answerStartedAt
+          })
+          return res.data
+        }
         this.llmUnavailable = true
         return null
       } catch (e) {
@@ -1315,10 +1348,11 @@ export default {
 
     async askNatural(question) {
       try {
+        const started = Date.now()
         const { data } = await askAssistantChat({ question, allowExternal: true, skipLocal: false })
         const text = data && typeof data.answer === 'string' ? data.answer.trim() : ''
         if (!text) return false
-        this.push({ role: 'bot', type: 'text', text, natural: true })
+        this.push({ role: 'bot', type: 'text', text, natural: true, trace: this.offsetTrace(data.trace, started) })
         return true
       } catch (e) {
         return false
@@ -1326,7 +1360,20 @@ export default {
     },
 
     // 用真实的行数据生成自然语言说明；模型不可用时保留原有句子
-    narrateStructured(message, question, structured, run) {
+    offsetTrace(trace, started, answerStarted = this._answerStartedAt) {
+      const offset = Math.max(0, started - (answerStarted || started))
+      return (Array.isArray(trace) ? trace : []).map(event => ({
+        ...event, elapsedMs: offset + (Number(event.elapsedMs) || 0)
+      }))
+    },
+    mergeNarrationTrace(message, data, started, answerStarted) {
+      const trace = this.offsetTrace(data.trace, started, answerStarted)
+      if (trace.length) {
+        message.trace = [...(message.trace || []), ...trace]
+        message.answerElapsedMs = Date.now() - answerStarted
+      }
+    },
+    narrateStructured(message, question, structured, run, answerStarted) {
       const keys = structured.type === 'stock'
         ? ['itemCode', 'itemName', 'batchCode', 'warehouseName', 'inQty', 'outQty', 'endQty']
         : (structured.columns || []).map(c => c.prop)
@@ -1338,6 +1385,7 @@ export default {
         type: structured.type, title: structured.title, source: structured.source,
         rows, rowsTruncated: (structured.rows || []).length > 20
       }]
+      const started = Date.now()
       narrateAnswer({ question, facts: JSON.stringify(facts), allowExternal: true })
         .then(({ data }) => {
           if (run !== this.chatRun) return
@@ -1345,17 +1393,19 @@ export default {
           if (text) {
             message.text = text
             message.natural = true
+            this.mergeNarrationTrace(message, data, started, answerStarted)
           }
         })
         .catch(() => {})
     },
 
     // 纯文案类回答：不改变事实的前提下改写成自然说法；权限与系统提示保持原样
-    narratePlain(message, question, run) {
+    narratePlain(message, question, run, answerStarted) {
       const original = (message.text || '').trim()
       if (message.natural || original.length < 10) return
       if (/权限|意图由|服务暂时不可用|请稍后重试|连接中断|未登录/.test(original)) return
       const facts = [{ type: 'text', text: original }]
+      const started = Date.now()
       narrateAnswer({ question, facts: JSON.stringify(facts), allowExternal: true })
         .then(({ data }) => {
           if (run !== this.chatRun) return
@@ -1363,6 +1413,7 @@ export default {
           if (text && text.length >= 8) {
             message.text = text
             message.natural = true
+            this.mergeNarrationTrace(message, data, started, answerStarted)
           }
         })
         .catch(() => {})

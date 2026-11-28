@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 @Component
 public class KbRagEngines {
@@ -56,7 +57,7 @@ public class KbRagEngines {
     private String deepseekUrl;
     @Value("${mes.ai.deepseek-key:}")
     private String deepseekKey;
-    @Value("${mes.ai.deepseek-model:deepseek-chat}")
+    @Value("${mes.ai.deepseek-model:deepseek-flash}")
     private String deepseekModel;
     @Value("${mes.ai.glm-url:https://open.bigmodel.cn/api/paas/v4/chat/completions}")
     private String glmUrl;
@@ -133,11 +134,14 @@ public class KbRagEngines {
 
     List<ToolChannel> toolChannels(boolean allowExternal, boolean skipLocal) {
         List<ToolChannel> choices = new ArrayList<>();
+        if (allowExternal && externalEnabled) {
+            String key = deepseekKey();
+            if (present(key)) choices.add(new ToolChannel(deepseekUrl, deepseekModel, key));
+        }
         if (!skipLocal && localAvailable()) {
             choices.add(new ToolChannel(address(ollama, "/v1/chat/completions"), localModel, null));
         }
         if (allowExternal && externalEnabled) {
-            if (present(deepseekKey())) choices.add(new ToolChannel(deepseekUrl, deepseekModel, deepseekKey()));
             if (present(glmKey())) choices.add(new ToolChannel(glmUrl, glmModel, glmKey()));
         }
         return choices;
@@ -160,8 +164,8 @@ public class KbRagEngines {
 
         JsonNode plan(List<Map<String, Object>> conversation, List<Map<String, Object>> tools, int timeout)
                 throws IOException {
-            return request("POST", url, object("model", model, "messages", conversation, "tools", tools,
-                "tool_choice", "auto", "temperature", 0, "max_tokens", 350, "stream", false),
+            return request("POST", url, completion(model, object("model", model, "messages", conversation, "tools", tools,
+                "tool_choice", "auto", "temperature", 0, "max_tokens", 350, "stream", false)),
                 isExternal() ? "Authorization" : null, isExternal() ? "Bearer " + key : null, timeout)
                 .path("choices").path(0).path("message");
         }
@@ -171,6 +175,26 @@ public class KbRagEngines {
                 "temperature", 0, "max_tokens", 220, "stream", false),
                 isExternal() ? "Authorization" : null, isExternal() ? "Bearer " + key : null, 7000)
                 .path("choices").path(0).path("message").path("content").asText("").trim();
+        }
+    }
+
+    private Map<String, Object> completion(String model, Map<String, Object> body) {
+        if (model.equals(deepseekModel)) body.put("thinking", object("type", "disabled"));
+        return body;
+    }
+
+    /** 个人库正文由 DeepSeek 生成，引用仍由 MES 按本轮授权来源校验。 */
+    public String citedDeepSeekText(JsonNode messages) {
+        if (!externalEnabled) return "";
+        String key = deepseekKey();
+        if (!present(key)) return "";
+        Map<String, Object> body = completion(deepseekModel, object("model", deepseekModel, "messages", messages,
+            "response_format", object("type", "json_object"), "max_tokens", 768, "stream", false));
+        try {
+            return request("POST", deepseekUrl, body, "Authorization", "Bearer " + key, 30000)
+                .path("choices").path(0).path("message").path("content").asText("").trim();
+        } catch (IOException e) {
+            return "";
         }
     }
 
@@ -219,8 +243,8 @@ public class KbRagEngines {
                 continue;
             }
             try {
-                Object body = object("model", channel[2], "messages", messages(system, prompt),
-                    "stream", true, "temperature", 0.2, "max_tokens", 512);
+                Object body = completion(channel[2], object("model", channel[2], "messages", messages(system, prompt),
+                    "stream", true, "temperature", 0.2, "max_tokens", 512));
                 generate(channel[0], body, channel[1], false, sink, cancelled);
                 return channel[2];
             } catch (PartialOutputException e) {
@@ -232,10 +256,11 @@ public class KbRagEngines {
         throw failure;
     }
 
-    /** 自然语言回答：外部模型优先，其次本地模型；两者都不可用时抛错，由调用方保留兜底话术。 */
-    String generateNatural(String system, String prompt, TextSink sink, BooleanSupplier cancelled) throws IOException {
+    /** 自然语言回答优先尝试已获授权的外部模型。 */
+    String generateFor(boolean allowExternal, boolean skipLocal, String system, String prompt, TextSink sink,
+                       BooleanSupplier cancelled) throws IOException {
         IOException failure = new IOException("Model unavailable");
-        if (externalAvailable()) {
+        if (allowExternal && externalAvailable() && !cancelled.getAsBoolean()) {
             try {
                 return generateExternal(system, prompt, sink, cancelled);
             } catch (PartialOutputException e) {
@@ -244,7 +269,7 @@ public class KbRagEngines {
                 failure = e;
             }
         }
-        if (localAvailable()) {
+        if (!skipLocal && !cancelled.getAsBoolean() && localAvailable()) {
             try {
                 return generateLocal(system, prompt, sink, cancelled);
             } catch (IOException e) {
@@ -254,23 +279,17 @@ public class KbRagEngines {
         throw failure;
     }
 
-    /** 按本轮授权选择渠道：允许外部时外部优先，否则只走本地模型。 */
-    String generateFor(boolean allowExternal, String system, String prompt, TextSink sink,
-                       BooleanSupplier cancelled) throws IOException {
-        if (allowExternal && externalAvailable()) {
-            return generateExternal(system, prompt, sink, cancelled);
-        }
-        if (localAvailable()) {
-            return generateLocal(system, prompt, sink, cancelled);
-        }
-        throw new IOException("Model unavailable");
-    }
-
     /** 一次性取得完整回答文本；模型不可用时返回空串。 */
     public String naturalText(boolean allowExternal, String system, String prompt) {
+        return naturalText(allowExternal, false, system, prompt, model -> { });
+    }
+
+    public String naturalText(boolean allowExternal, boolean skipLocal, String system, String prompt,
+                              Consumer<String> usedModel) {
         StringBuilder text = new StringBuilder();
         try {
-            generateFor(allowExternal, system, prompt, part -> text.append(part), () -> false);
+            String model = generateFor(allowExternal, skipLocal, system, prompt, text::append, () -> false);
+            usedModel.accept(model);
         } catch (IOException e) {
             return "";
         }

@@ -137,42 +137,8 @@ public class KbRagService {
             prompt.append("\n本轮实时业务查询结果（来自只读工具，可直接引用）：\n").append(businessText).append("\n");
         }
 
-        if (!skipLocal && engines.localAvailable()) {
-            try {
-                trace(events, "本地模型生成", engines.localName(), start);
-                String model = engines.generateLocal(SYSTEM, prompt.toString(), part -> events.send("delta", part), stopped);
-                if (!stopped.getAsBoolean()) {
-                    trace(events, "本地模型完成", model, start);
-                    events.send("done", object("channel", "local", "model", model));
-                }
-                return;
-            } catch (IOException e) {
-                if (stopped.getAsBoolean()) {
-                    return;
-                }
-                events.send("reset", "");
-                trace(events, "本地模型不可用", "正在切换回答方式", start);
-            }
-        } else {
-            trace(events, skipLocal ? "演练本地模型离线" : "本地模型不可用", "正在切换回答方式", start);
-        }
-        if (external && engines.externalAvailable() && !stopped.getAsBoolean()) {
-            try {
-                trace(events, "外部 API 生成", "发送已命中的授权文档片段", start);
-                String model = engines.generateExternal(SYSTEM, prompt.toString(), part -> events.send("delta", part), stopped);
-                if (!stopped.getAsBoolean()) {
-                    trace(events, "外部 API 完成", model, start);
-                    events.send("done", object("channel", "external", "model", model));
-                }
-                return;
-            } catch (IOException e) {
-                if (stopped.getAsBoolean()) {
-                    return;
-                }
-                events.send("reset", "");
-                trace(events, "外部 API 不可用", "保留已命中的文档片段", start);
-            }
-        }
+        if (answerWithModel(prompt.toString(), external, skipLocal, "发送已命中的授权文档片段",
+            events, stopped, start)) return;
         trace(events, "仅检索回答", "返回文档原文片段", start);
         events.send("delta", extractiveAnswer(citations, graphContext) + businessSuffix);
         events.send("done", object("channel", "retrieval"));
@@ -186,7 +152,7 @@ public class KbRagService {
      */
     private boolean answerWithoutDocuments(String question, boolean external, boolean skipLocal,
                                            Events events, BooleanSupplier stopped, long start) throws IOException {
-        if (!external && !engines.localAvailable()) {
+        if (!external && (skipLocal || !engines.localAvailable())) {
             return false;
         }
         try {
@@ -219,13 +185,13 @@ public class KbRagService {
 
         boolean[] emitted = {false};
         try {
-            String model = engines.generateFor(external, KbRagEngines.ASSISTANT_SYSTEM, naturalPrompt(question),
+            String model = engines.generateFor(external, skipLocal, KbRagEngines.ASSISTANT_SYSTEM, naturalPrompt(question),
                 part -> {
                     emitted[0] = true;
                     events.send("delta", part);
                 }, stopped);
             if (!stopped.getAsBoolean()) {
-                events.send("done", object("channel", external ? "external" : "local", "model", model));
+                events.send("done", object("channel", model.equals(engines.localName()) ? "local" : "external", "model", model));
             }
             return true;
         } catch (KbRagEngines.PartialOutputException e) {
@@ -271,7 +237,13 @@ public class KbRagService {
         }
         BomImpactService.Answer answer;
         try {
-            answer = impacts.answerFor(scope, intent.getItemCode());
+            trace(events, "识别向上装配问题", "按 BOM 反向查上级：" + intent.getItemCode(), start);
+            answer = workflow.dispatch(AiDifyWorkflow.ROUTE_GRAPH,
+                Collections.singletonList(new AiDifyWorkflow.Leg(AiDifyWorkflow.GRAPH,
+                    () -> impacts.answerFor(scope, intent.getItemCode()))),
+                values -> (BomImpactService.Answer) values.get(0),
+                (stage, values) -> AiDifyWorkflow.GRAPH.equals(stage) ? "按 BOM 反向查询装配路径和授权条款" : null,
+                start, entry -> events.send("trace", entry)).value;
         } catch (ServiceException e) {
             trace(events, "向上装配查询未完成", e.getMessage(), start);
             events.send("citations", Collections.emptyList());
@@ -283,48 +255,54 @@ public class KbRagService {
         Map<String, Object> graph = BomImpactService.payload(result);
         graph.put("libraryId", String.valueOf(scope.getLibraryId()));
         graph.put("itemCode", answer.getItemCode());
-        trace(events, "识别向上装配问题", "按 BOM 反向查上级：" + answer.getItemCode(), start);
         events.send("impact", graph);
         trace(events, "反向查询物料清单", result.getEdges().size() + " 段装配、"
             + result.getPaths().size() + " 条路径", start);
         events.send("citations", answer.getCitations());
         if (stopped.getAsBoolean()) return;
         String prompt = impactPrompt(question, answer);
-        if (!skipLocal && engines.localAvailable()) {
+        if (answerWithModel(prompt, external, skipLocal, "发送装配记录与已命中的授权文档片段",
+            events, stopped, start)) return;
+        trace(events, "仅按装配记录回答", "使用 BOM 行与授权条款组织回答", start);
+        events.send("delta", answer.getSummary());
+        events.send("done", object("channel", "impact"));
+    }
+
+    private boolean answerWithModel(String prompt, boolean external, boolean skipLocal, String externalDetail,
+                                    Events events, BooleanSupplier stopped, long start) throws IOException {
+        if (stopped.getAsBoolean()) return true;
+        if (external && engines.externalAvailable()) {
+            trace(events, "外部 API 生成", externalDetail, start);
             try {
-                trace(events, "本地模型生成", engines.localName(), start);
-                String model = engines.generateLocal(SYSTEM, prompt, part -> events.send("delta", part), stopped);
-                if (!stopped.getAsBoolean()) {
-                    trace(events, "本地模型完成", model, start);
-                    events.send("done", object("channel", "local", "model", model));
-                }
-                return;
-            } catch (IOException e) {
-                if (stopped.getAsBoolean()) return;
-                events.send("reset", "");
-                trace(events, "本地模型不可用", "正在切换回答方式", start);
-            }
-        } else {
-            trace(events, skipLocal ? "演练本地模型离线" : "本地模型不可用", "正在切换回答方式", start);
-        }
-        if (external && engines.externalAvailable() && !stopped.getAsBoolean()) {
-            try {
-                trace(events, "外部 API 生成", "发送装配记录与已命中的授权文档片段", start);
                 String model = engines.generateExternal(SYSTEM, prompt, part -> events.send("delta", part), stopped);
                 if (!stopped.getAsBoolean()) {
                     trace(events, "外部 API 完成", model, start);
                     events.send("done", object("channel", "external", "model", model));
                 }
-                return;
+                return true;
             } catch (IOException e) {
-                if (stopped.getAsBoolean()) return;
+                if (stopped.getAsBoolean()) return true;
                 events.send("reset", "");
-                trace(events, "外部 API 不可用", "按已取回的装配记录组织回答", start);
+                trace(events, "外部 API 不可用", "正在切换回答方式", start);
             }
         }
-        trace(events, "仅按装配记录回答", "使用 BOM 行与授权条款组织回答", start);
-        events.send("delta", answer.getSummary());
-        events.send("done", object("channel", "impact"));
+        if (stopped.getAsBoolean()) return true;
+        if (!skipLocal && engines.localAvailable()) {
+            trace(events, "本地模型生成", engines.localName(), start);
+            try {
+                String model = engines.generateLocal(SYSTEM, prompt, part -> events.send("delta", part), stopped);
+                if (!stopped.getAsBoolean()) {
+                    trace(events, "本地模型完成", model, start);
+                    events.send("done", object("channel", "local", "model", model));
+                }
+                return true;
+            } catch (IOException e) {
+                if (stopped.getAsBoolean()) return true;
+                events.send("reset", "");
+            }
+        }
+        trace(events, skipLocal ? "演练本地模型离线" : "本地模型不可用", "使用已取回的证据回答", start);
+        return stopped.getAsBoolean();
     }
 
     /** 结构化上下文：第几段、谁装入谁、直接用量、BOM 行号，以及可引用条款。 */
@@ -408,7 +386,7 @@ public class KbRagService {
                 case AiDifyWorkflow.RANK:
                     return useGraph ? "图谱关系与文档证据合并排序" : "关键词与向量融合排序";
                 case AiDifyWorkflow.GENERATE:
-                    return "本地模型 → 已授权外部 API → 仅检索";
+                    return "已授权外部 API → 本地模型 → 仅检索";
                 case AiDifyWorkflow.CITATIONS:
                     return "为证据分配稳定引用编号";
                 default:

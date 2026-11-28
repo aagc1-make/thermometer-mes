@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ktg.mes.ai.service.AiDifyWorkflow;
+import com.ktg.mes.ai.service.KbRagEngines;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,7 +16,10 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -82,14 +87,18 @@ public class MesKnowledgeQuestionService {
     private final ObjectMapper json;
     private final RestTemplate http;
     private final MesKnowledgeGraphStore graphStore;
+    private final KbRagEngines engines;
+    private final AiDifyWorkflow workflow;
     private final String chatModel;
 
     public MesKnowledgeQuestionService(JdbcTemplate jdbc, ObjectMapper json,
-                                       MesKnowledgeGraphStore graphStore,
-                                       @Value("${mes.knowledge.model:${mes.ai.rag.local-model:qwen2.5:3b}}") String chatModel) {
+                                       MesKnowledgeGraphStore graphStore, KbRagEngines engines, AiDifyWorkflow workflow,
+                                       @Value("${mes.knowledge.model}") String chatModel) {
         this.jdbc = jdbc;
         this.json = json;
         this.graphStore = graphStore;
+        this.engines = engines;
+        this.workflow = workflow;
         this.chatModel = chatModel;
 
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -99,21 +108,122 @@ public class MesKnowledgeQuestionService {
     }
 
     public ObjectNode ask(long ownerId, String question, String mode) {
-        Map<Long, Map<String, Object>> versions = MesKnowledgeActiveVersions.load(jdbc, ownerId);
+        return ask(ownerId, question, mode, true);
+    }
 
+    public ObjectNode ask(long ownerId, String question, String mode, boolean allowExternal) {
+        long started = System.currentTimeMillis();
         ObjectNode response = json.createObjectNode();
         response.put("answer", NO_ANSWER);
         ArrayNode sources = response.putArray("sources");
         ArrayNode paths = response.putArray("paths");
-        Map<String, ObjectNode> sourcesByChunk = new HashMap<>();
-
         boolean graphMode = "graph_rag".equals(mode);
-        if (graphMode) {
-            response.put("graphStatus", "no_match");
+        if (graphMode) response.put("graphStatus", "no_match");
+
+        List<Map<String, Object>> trace = Collections.synchronizedList(new ArrayList<>());
+        String stage = graphMode ? AiDifyWorkflow.GRAPH : AiDifyWorkflow.DOC;
+        try {
+            workflow.dispatch(stage, Collections.singletonList(new AiDifyWorkflow.Leg(stage, () -> {
+                retrieve(ownerId, question, graphMode, response, sources, paths);
+                return null;
+            })), values -> null, (name, values) -> stage.equals(name) ? "检索当前账号的资料与引用" : null,
+                started, trace::add);
+        } catch (IOException e) {
+            throw new IllegalStateException("个人知识库检索未完成", e);
+        }
+        trace.add(step("检索个人知识库", "命中 " + sources.size() + " 个片段", started));
+        if (sources.size() == 0) {
+            response.set("trace", json.valueToTree(new ArrayList<>(trace)));
+            return response;
         }
 
+        StringBuilder context = new StringBuilder();
+        for (JsonNode source : sources) {
+            context.append('[').append(source.path("number").asInt()).append("] ")
+                    .append(source.path("text").asText()).append('\n');
+        }
+
+        Set<String> relations = new LinkedHashSet<>();
+        for (JsonNode path : paths) {
+            for (JsonNode step : path) {
+                relations.add(step.path("subject").asText() + " — "
+                        + step.path("predicate").asText() + " → "
+                        + step.path("object").asText() + " ["
+                        + step.path("sourceNumber").asInt() + "]");
+            }
+        }
+        if (!relations.isEmpty()) {
+            context.append("\n图谱关系（均来自已编号资料）\n");
+            for (String relation : relations) {
+                context.append(relation).append('\n');
+            }
+        }
+
+        ObjectNode chat = json.createObjectNode();
+        chat.put("model", chatModel);
+        chat.put("stream", false);
+        chat.putObject("options").put("temperature", 0).put("num_predict", 768);
+        ObjectNode format = chat.putObject("format");
+        format.put("type", "object").put("additionalProperties", false);
+        format.putArray("required").add("answer").add("sourceNumbers");
+        ObjectNode properties = format.putObject("properties");
+        properties.putObject("answer").put("type", "string");
+        properties.putObject("sourceNumbers").put("type", "array")
+                .putObject("items").put("type", "integer");
+        ArrayNode messages = chat.putArray("messages");
+        ObjectNode systemMessage = messages.addObject().put("role", "system").put("content", ANSWER_PROMPT);
+        messages.addObject().put("role", "user").put("content",
+                "问题：\n" + question + "\n\n资料：\n" + context);
+
+        Set<Integer> sourceNumbers = new LinkedHashSet<>();
+        sources.forEach(source -> sourceNumbers.add(source.path("number").asInt()));
+        String answer = null;
+        String provider = "本地模型";
+        if (allowExternal) {
+            String content = engines.citedDeepSeekText(messages);
+            if (!content.isEmpty()) {
+                try {
+                    answer = validateCitedAnswer(content, sourceNumbers);
+                    provider = "DeepSeek";
+                } catch (AnswerCitationException ignored) {
+                    // 本轮引用不可信时，交给本地模型重新生成。
+                }
+            }
+        }
+        if (answer == null) {
+            try {
+                answer = requestLocalCitedAnswer(chat, sourceNumbers);
+            } catch (AnswerCitationException e) {
+                systemMessage.put("content", ANSWER_PROMPT
+                        + "上次回答未通过校验。请返回完整正文和有效引用，或者返回无依据结果及空数组。");
+                answer = requestLocalCitedAnswer(chat, sourceNumbers);
+            }
+        }
+        if (NO_ANSWER.equals(answer)) {
+            sources.removeAll();
+            paths.removeAll();
+        } else {
+            response.put("answer", answer);
+        }
+        trace.add(step("回答及引用校验完成", provider, started));
+        response.set("trace", json.valueToTree(new ArrayList<>(trace)));
+        return response;
+    }
+
+    private static Map<String, Object> step(String label, String detail, long started) {
+        Map<String, Object> event = new LinkedHashMap<>();
+        event.put("label", label);
+        event.put("detail", detail);
+        event.put("elapsedMs", System.currentTimeMillis() - started);
+        return event;
+    }
+
+    private void retrieve(long ownerId, String question, boolean graphMode, ObjectNode response,
+                          ArrayNode sources, ArrayNode paths) {
+        Map<Long, Map<String, Object>> versions = MesKnowledgeActiveVersions.load(jdbc, ownerId);
+        Map<String, ObjectNode> sourcesByChunk = new HashMap<>();
         if (versions.isEmpty()) {
-            return response;
+            return;
         }
 
         ObjectNode embeddingRequest = json.createObjectNode();
@@ -171,10 +281,6 @@ public class MesKnowledgeQuestionService {
             );
         }
 
-        if (sources.size() == 0) {
-            return response;
-        }
-
         if (graphMode && !seeds.isEmpty()) {
             Map<String, Object> params = new HashMap<>();
             params.put("ownerId", ownerId);
@@ -191,66 +297,14 @@ public class MesKnowledgeQuestionService {
             }
         }
 
-        StringBuilder context = new StringBuilder();
-        for (JsonNode source : sources) {
-            context.append('[').append(source.path("number").asInt()).append("] ")
-                    .append(source.path("text").asText()).append('\n');
-        }
-
-        Set<String> relations = new LinkedHashSet<>();
-        for (JsonNode path : paths) {
-            for (JsonNode step : path) {
-                relations.add(step.path("subject").asText() + " — "
-                        + step.path("predicate").asText() + " → "
-                        + step.path("object").asText() + " ["
-                        + step.path("sourceNumber").asInt() + "]");
-            }
-        }
-        if (!relations.isEmpty()) {
-            context.append("\n图谱关系（均来自已编号资料）\n");
-            for (String relation : relations) {
-                context.append(relation).append('\n');
-            }
-        }
-
-        ObjectNode chat = json.createObjectNode();
-        chat.put("model", chatModel);
-        chat.put("stream", false);
-        chat.putObject("options").put("temperature", 0).put("num_predict", 768);
-        ObjectNode format = chat.putObject("format");
-        format.put("type", "object").put("additionalProperties", false);
-        format.putArray("required").add("answer").add("sourceNumbers");
-        ObjectNode properties = format.putObject("properties");
-        properties.putObject("answer").put("type", "string");
-        properties.putObject("sourceNumbers").put("type", "array")
-                .putObject("items").put("type", "integer");
-        ArrayNode messages = chat.putArray("messages");
-        ObjectNode systemMessage = messages.addObject().put("role", "system").put("content", ANSWER_PROMPT);
-        messages.addObject().put("role", "user").put("content",
-                "问题：\n" + question + "\n\n资料：\n" + context);
-
-        Set<Integer> sourceNumbers = new LinkedHashSet<>();
-        sources.forEach(source -> sourceNumbers.add(source.path("number").asInt()));
-        String answer;
-        try {
-            answer = requestCitedAnswer(chat, sourceNumbers);
-        } catch (AnswerCitationException e) {
-            systemMessage.put("content", ANSWER_PROMPT
-                    + "上次回答未通过校验。请返回完整正文和有效引用，或者返回无依据结果及空数组。");
-            answer = requestCitedAnswer(chat, sourceNumbers);
-        }
-        if (NO_ANSWER.equals(answer)) {
-            sources.removeAll();
-            paths.removeAll();
-        } else {
-            response.put("answer", answer);
-        }
-        return response;
     }
 
-    private String requestCitedAnswer(ObjectNode chat, Set<Integer> sourceNumbers) {
-        String content = post(OLLAMA + "/api/chat", chat)
-                .path("message").path("content").asText("");
+    private String requestLocalCitedAnswer(ObjectNode chat, Set<Integer> sourceNumbers) {
+        String content = post(OLLAMA + "/api/chat", chat).path("message").path("content").asText("");
+        return validateCitedAnswer(content, sourceNumbers);
+    }
+
+    private String validateCitedAnswer(String content, Set<Integer> sourceNumbers) {
         JsonNode result;
         try {
             result = json.readTree(content);
